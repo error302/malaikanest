@@ -10,7 +10,7 @@ console_command = '/code/manage.py shell'
 [build]
 
 [deploy]
-  release_command = 'python manage.py migrate --noinput'
+  release_command = 'python manage.py migrate --noinput && python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email=\"malaikanest7@gmail.com\").exists() or User.objects.create_superuser(\"malaikanest7@gmail.com\", \"Dosho10701$\")"'
 
 [env]
   PORT = '8000'

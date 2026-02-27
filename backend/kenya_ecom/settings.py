@@ -236,3 +236,11 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.7"))
 AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "1000"))
+
+# Auto-create superuser on deployment
+if os.getenv("CREATE_SUPERUSER", "false").lower() == "true":
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    if not User.objects.filter(is_superuser=True).exists():
+        User.objects.create_superuser("malaikanest7@gmail.com", "Dosho10701$")
