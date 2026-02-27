@@ -212,16 +212,15 @@ LOGGING = {
     },
 }
 
-# Cache
+# Cache - use dummy for now (no rate limiting in this deployment)
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     }
 }
 
-# Rate limiting - disabled for now
+# Rate limiting - disabled
 RATELIMIT_ENABLE = False
-RATELIMIT_USE_CACHE = "default"
 
 # Misc
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
