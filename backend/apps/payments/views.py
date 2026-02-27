@@ -20,7 +20,6 @@ logger = logging.getLogger("apps.payments")
 class InitiatePaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @method_decorator(ratelimit(key="ip", rate="10/m", block=True))
     def post(self, request):
         order_id = request.data.get("order_id")
         payment_method = request.data.get("payment_method", "mpesa")
@@ -139,7 +138,6 @@ class InitiatePaymentView(APIView):
 class MpesaSTKPushView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @method_decorator(ratelimit(key="ip", rate="10/m", block=True))
     def post(self, request):
         order_id = request.data.get("order_id")
         phone = request.data.get("phone")
@@ -277,7 +275,6 @@ class MpesaSTKPushView(APIView):
 class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
-    @method_decorator(ratelimit(key="ip", rate="60/m", block=False))
     def post(self, request):
         raw = request.data
         # Store raw callback quickly
