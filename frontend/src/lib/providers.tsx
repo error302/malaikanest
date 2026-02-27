@@ -2,7 +2,11 @@
 
 import { CartProvider } from './cartContext'
 
-export function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: React.ReactNode
+}
+
+export function Providers({ children }: ProvidersProps) {
   return (
     <CartProvider>
       {children}
