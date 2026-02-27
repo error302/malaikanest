@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from django.db.models import Q
-from apps.products.models import Category, Product, ProductImage, Banner, Inventory
+from apps.products.models import Category, Product, Banner, Inventory
 from apps.orders.models import Order
 from apps.accounts.models import User
 from .serializers import (

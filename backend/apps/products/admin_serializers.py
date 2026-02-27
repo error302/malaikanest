@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from apps.products.models import Category, Product, ProductImage, Banner
+from apps.products.models import Category, Product, Banner
 from apps.accounts.models import User
-from apps.orders.models import Order
+from apps.orders.models import Order, OrderItem
 
 
 class AdminCategorySerializer(serializers.ModelSerializer):
@@ -19,14 +19,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
         ]
 
 
-class ProductImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductImage
-        fields = ["id", "image", "alt_text", "created_at"]
-
-
 class AdminProductSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
@@ -40,11 +33,13 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "discount_price",
             "category",
             "category_name",
+            "brand",
             "featured",
             "is_active",
             "stock",
             "sku",
-            "images",
+            "image",
+            "gender",
             "created_at",
             "updated_at",
         ]
@@ -90,17 +85,10 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
-    product_image = serializers.CharField(source="product.image", read_only=True)
 
     class Meta:
-        model = Order
-        fields = [
-            "id",
-            "product_name",
-            "product_image",
-            "price_at_purchase",
-            "quantity",
-        ]
+        model = OrderItem
+        fields = ["id", "product_name", "price_at_purchase", "quantity"]
 
 
 class AdminOrderSerializer(serializers.ModelSerializer):
