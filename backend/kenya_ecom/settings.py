@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "cloudinary",
+    "django_ratelimit",
     "django_filters",
     "apps.accounts",
     "apps.products",
@@ -220,6 +221,7 @@ CACHES = {
 
 # Rate limiting - disabled for now
 RATELIMIT_ENABLE = False
+RATELIMIT_USE_CACHE = "default"
 
 # Misc
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

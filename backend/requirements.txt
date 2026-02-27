@@ -11,3 +11,4 @@ pytz==2024.2
 Pillow==10.4.0
 cloudinary==1.41.0
 redis==5.2.1
+django-ratelimit==4.1.0
