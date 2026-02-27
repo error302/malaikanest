@@ -1,5 +1,6 @@
 "use client"
-import React from 'react'
+
+import React, { createContext, useContext, useReducer, useEffect, useMemo } from 'react'
 
 type CartItem = { id: string | number; name: string; price: number; image?: string; qty: number; slug?: string }
 
@@ -36,18 +37,20 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-const CartContext = React.createContext<{
+type CartContextType = {
   items: CartItem[]
   add: (item: Omit<CartItem, 'qty'> & { qty?: number }) => void
   remove: (id: string | number) => void
   updateQty: (id: string | number, qty: number) => void
   clear: () => void
-} | null>(null)
+}
+
+const CartContext = createContext<CartContextType | null>(null)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = React.useReducer(reducer, { items: [] })
+  const [state, dispatch] = useReducer(reducer, { items: [] })
 
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
@@ -58,7 +61,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items))
     } catch (e) {
@@ -73,15 +76,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const updateQty = (id: string | number, qty: number) => dispatch({ type: 'update', id, qty })
   const clear = () => dispatch({ type: 'clear' })
 
+  const value = useMemo(() => ({ items: state.items, add, remove, updateQty, clear }), [state.items])
+
   return (
-    <CartContext.Provider value={{ items: state.items, add, remove, updateQty, clear }}>
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   )
 }
 
 export function useCart() {
-  const ctx = React.useContext(CartContext)
+  const ctx = useContext(CartContext)
   if (!ctx) throw new Error('useCart must be used within CartProvider')
   return ctx
 }
