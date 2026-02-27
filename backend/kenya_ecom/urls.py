@@ -17,7 +17,7 @@ urlpatterns = [
     # path("api/ai/", include("apps.ai.urls")),  # Optional - requires OPENAI_API_KEY
     path("api/health/", health_check, name="health_check"),
     path("api/ready/", readiness_check, name="readiness_check"),
-    path(f"{admin_secret}/admin/", admin.site.urls),
+    path("admin/", admin.site.urls),
 ]
 
 if settings.DEBUG:
