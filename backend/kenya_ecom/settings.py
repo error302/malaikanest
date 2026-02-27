@@ -22,8 +22,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
-    "cloudinary",
-    "django_celery_beat",
     "django_filters",
     "apps.accounts",
     "apps.products",
@@ -111,28 +109,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Cloudinary
-import cloudinary
-import cloudinary.uploader
-
-cloudinary_url = os.getenv("CLOUDINARY_URL", "")
-if cloudinary_url and "@" in cloudinary_url:
-    try:
-        # Parse: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-        url_without_scheme = cloudinary_url.replace("cloudinary://", "")
-        parts = url_without_scheme.split("@")
-        if len(parts) == 2:
-            creds, cloud_name = parts
-            api_key, api_secret = creds.split(":")
-            cloudinary.config(
-                cloud_name=cloud_name,
-                api_key=api_key,
-                api_secret=api_secret,
-                secure=True,
-            )
-    except Exception as e:
-        print(f"Cloudinary config error: {e}")
-
 # REST Framework + JWT
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -174,21 +150,6 @@ else:
 
 # Security proxy header when behind nginx
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-# Celery
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-from celery.schedules import crontab
-
-# Celery beat schedule: reconciliation and retries
-CELERY_BEAT_SCHEDULE = {
-    "reconcile-payments-every-15-mins": {
-        "task": "apps.payments.tasks.reconcile_payments_task",
-        "schedule": crontab(minute="*/15"),
-    },
-}
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -244,8 +205,7 @@ LOGGING = {
 # Cache
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL", "redis://localhost:6379/1"),
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
 
