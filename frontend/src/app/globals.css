@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --primary: #FFFFFF;
-  --secondary: #EDE6DC;
-  --accent: #BFA46F;
-  --text: #111111;
-  --cta: #C8A98D;
-  --cta-hover: #B8956F;
+  --primary: #F8F4EE;
+  --secondary: #D8A7B1;
+  --accent: #C6A75E;
+  --text: #2E2E2E;
+  --cta: #B76E79;
+  --cta-hover: #A45D68;
 }
 
 html, body, #__next {
@@ -38,13 +38,4 @@ body {
 .hover\:bg-cta:hover { background-color: var(--cta-hover); }
 .hover\:text-cta:hover { color: var(--cta); }
 
-.bg-pastelPink { background-color: #FFD6E0; }
-.bg-pastelBlue { background-color: #D6EEFF; }
-.bg-pastelMint { background-color: #DFFFE6; }
-.text-pastelPink { color: #E88FA0; }
-
-.from-pastelBlue { --tw-gradient-from: #D6EEFF; }
-.from-pastelPink { --tw-gradient-from: #FFD6E0; }
-.to-white { --tw-gradient-to: #FFFFFF; }
-
-.hero-cta { background: linear-gradient(90deg, #EDE6DC, #FFFFFF); }
+.hero-cta { background: linear-gradient(90deg, #F8F4EE, #FFFFFF); }

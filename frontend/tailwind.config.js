@@ -3,15 +3,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#FFFFFF',
-        secondary: '#EDE6DC',
-        accent: '#BFA46F',
-        text: '#111111',
-        cta: '#C8A98D',
-        'cta-hover': '#B8956F',
-        pastelPink: '#FFD6E0',
-        pastelBlue: '#D6EEFF',
-        pastelMint: '#DFFFE6'
+        primary: '#F8F4EE',
+        secondary: '#D8A7B1',
+        accent: '#C6A75E',
+        text: '#2E2E2E',
+        cta: '#B76E79',
+        'cta-hover': '#A45D68',
+        cream: '#F8F4EE',
+        dustyRose: '#D8A7B1',
+        mutedGold: '#C6A75E',
+        charcoal: '#2E2E2E',
+        deepBlush: '#B76E79',
       }
     }
   },
