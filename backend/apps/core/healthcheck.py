@@ -37,10 +37,13 @@ def health_check(request):
     # Check Redis (optional - not required for health)
     if REDIS_AVAILABLE:
         try:
-            redis_url = settings.CELERY_BROKER_URL
-            r = redis.from_url(redis_url)
-            r.ping()
-            status["checks"]["redis"] = "ok"
+            redis_url = getattr(settings, "CELERY_BROKER_URL", None)
+            if redis_url:
+                r = redis.from_url(redis_url)
+                r.ping()
+                status["checks"]["redis"] = "ok"
+            else:
+                status["checks"]["redis"] = "not_configured"
         except Exception as e:
             logger.warning(f"Health check - Redis error: {e}")
             status["checks"]["redis"] = "degraded"
