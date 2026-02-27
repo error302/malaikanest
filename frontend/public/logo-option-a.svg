@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120" viewBox="0 0 400 120" role="img" aria-label="Malaika Nest - Option A">
+  <rect width="400" height="120" rx="16" fill="#FFFFFF"/>
+  <text x="24" y="72" font-family="'Inter', sans-serif" font-size="48" font-weight="700" fill="#1F2937">Malaika</text>
+  <text x="220" y="72" font-family="'Inter', sans-serif" font-size="28" fill="#6B7280">Nest</text>
+  <circle cx="360" cy="36" r="20" fill="#FFD6E0" />
+  <circle cx="368" cy="28" r="6" fill="#D6EEFF" />
+</svg>

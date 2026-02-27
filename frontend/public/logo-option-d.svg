@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120" viewBox="0 0 400 120" role="img" aria-label="Malaika Nest - Option D">
+  <rect width="400" height="120" rx="14" fill="#FFF"/>
+  <g transform="translate(24,20)">
+    <path d="M40 8c-14 0-24 10-24 24s10 24 24 24 24-10 24-24S54 8 40 8z" fill="#FFD6E0"/>
+    <path d="M34 36c0-6 8-10 12-10s12 4 12 10c0 8-10 14-12 16-2-2-12-8-12-16z" fill="#1F2937"/>
+  </g>
+  <text x="110" y="72" font-family="'Inter', sans-serif" font-size="34" font-weight="700" fill="#111827">Malaika</text>
+  <text x="110" y="96" font-family="'Inter', sans-serif" font-size="18" fill="#6B7280">Nest • Kenya</text>
+</svg>

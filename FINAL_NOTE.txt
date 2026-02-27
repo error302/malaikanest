@@ -1,0 +1,18 @@
+Completed: full-stack project scaffold and implementation.
+
+What I added/finished:
+- Backend: Django apps (users, products, orders, payments) with models, serializers, views, Celery tasks, MPesa STK and callback handling, rate limiting, admin analytics, CSV export, email templates and tasks, signals.
+- Frontend: Next.js App Router pages (landing, checkout, dashboard), Tailwind, components, OrderStatus polling, secure middleware.
+- Deployment: systemd service files, nginx, ufw script, fail2ban conf, backup script, logrotate, Dockerfiles, requirements, package.json, .env.example, final README.
+
+Next steps to go live:
+1) Populate production secrets into `backend/.env`
+2) Obtain production M-Pesa credentials and validate on Safaricom
+3) Run migrations, create superuser, collectstatic
+4) Start services (gunicorn, celery, redis, nginx) and obtain SSL via Certbot
+5) Run full E2E tests in staging (recommended)
+
+If you want, I can:
+- Run tests and lint locally (requires environment)
+- Create a deploy script that runs the commands from README_FINAL.md
+- Package the repo into a ZIP

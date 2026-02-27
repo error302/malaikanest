@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Django
+backend/.env
+.env
+.env.*
+db.sqlite3
+*.log
+
+# Node
+node_modules/
+.next/
+npm-debug.log
+yarn-error.log
+
+# Build
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# OpenCode
+.agents/
+skills-lock.json
+
+# Keep example files
+!.env.example

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Abandoned Cart Reminder</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #BFA46F; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Malaika Nest</h1>
+    </div>
+    
+    <div style="padding: 20px; background-color: #f9f9f9;">
+        <h2>You left something behind!</h2>
+        
+        <p>Hi {{ user.first_name|default:"there" }},</p>
+        
+        <p>We noticed you left some items in your cart {{ cart_age_hours }} hours ago. Don't miss out on these great products!</p>
+        
+        <div style="background-color: white; padding: 15px; margin: 20px 0; border-radius: 8px;">
+            <h3 style="margin-top: 0;">Your Cart Items:</h3>
+            {% for item in items %}
+            <div style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee;">
+                {% if item.image %}
+                <img src="{{ item.image }}" alt="{{ item.name }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px; border-radius: 4px;">
+                {% else %}
+                <div style="width: 60px; height: 60px; background-color: #eee; margin-right: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    🧸
+                </div>
+                {% endif %}
+                <div>
+                    <strong>{{ item.name }}</strong><br>
+                    <small>Qty: {{ item.quantity }} × KSH {{ item.price }}</small>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div style="text-align: right; font-size: 18px; font-weight: bold; padding-top: 10px;">
+                Total: KSH {{ total|floatformat:0 }}
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="https://malaikanest.shop/cart" style="background-color: #C8A98D; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                Complete Your Order
+            </a>
+        </div>
+        
+        <p style="color: #666; font-size: 14px;">
+            Need help? Contact us at malaikanest7@gmail.com or call +254 726 771 321
+        </p>
+    </div>
+    
+    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+        <p>© {{ cart_age_hours|date:"Y" }} Malaika Nest. All rights reserved.</p>
+        <p>
+            <a href="https://malaikanest.shop" style="color: #BFA46F;">Shop</a> | 
+            <a href="https://malaikanest.shop/contact" style="color: #BFA46F;">Contact</a> | 
+            <a href="https://malaikanest.shop/privacy" style="color: #BFA46F;">Privacy Policy</a>
+        </p>
+    </div>
+</body>
+</html>

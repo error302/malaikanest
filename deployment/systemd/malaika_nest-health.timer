@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Malaika Nest healthcheck every 15 minutes
+
+[Timer]
+OnUnitActiveSec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

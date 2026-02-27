@@ -1,0 +1,16 @@
+[Unit]
+Description=Celery Service
+After=network.target
+
+[Service]
+Type=forking
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/kenya_baby_ecommerce/backend
+Environment=PATH=/opt/venv/bin
+ExecStart=/opt/venv/bin/celery -A kenya_ecom multi start worker -Q default -c 4 --logfile=/var/log/celery/worker.log --loglevel=INFO
+ExecStop=/opt/venv/bin/celery -A kenya_ecom multi stopwait worker
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

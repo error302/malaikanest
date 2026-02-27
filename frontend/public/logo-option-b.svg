@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120" viewBox="0 0 400 120" role="img" aria-label="Malaika Nest - Option B">
+  <rect width="400" height="120" rx="12" fill="#FFF"/>
+  <g transform="translate(24,20)">
+    <circle cx="44" cy="36" r="36" fill="#FFD6E0" />
+    <path d="M28 40c8-8 20-8 28 0v12c0 8-12 12-28 12S0 60 0 52V40c8-8 20-8 28 0z" fill="#1F2937"/>
+  </g>
+  <text x="110" y="72" font-family="'Inter', sans-serif" font-size="36" font-weight="700" fill="#111827">Malaika Nest</text>
+</svg>

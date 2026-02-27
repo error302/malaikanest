@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body { font-family: Arial, sans-serif; color: #111827; }
+      .card { background: #fff; padding: 20px; border-radius: 8px; }
+      .header { background: #ffd6e0; padding: 12px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="header">
+        <h2>Thank you for your order</h2>
+      </div>
+      <p>Hi {{ order.user.first_name }},</p>
+      <p>We have received your order <strong>#{{ order.id }}</strong>. Total: <strong>KSH {{ order.total }}</strong></p>
+      <h4>Items</h4>
+      <ul>
+        {% for item in order.items.all %}
+          <li>{{ item.product.name }} x {{ item.quantity }} - KSH {{ item.price }}</li>
+        {% endfor %}
+      </ul>
+      <p>We will notify you when your order is dispatched. For questions contact support@kenyababy.shop</p>
+      <p>Thanks,<br/>Kenya Baby Shop Team</p>
+    </div>
+  </body>
+</html>

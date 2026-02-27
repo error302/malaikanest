@@ -1,0 +1,23 @@
+[Unit]
+Description=Malaika Nest Gunicorn (example)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+# Set REPO_DIR to the project path and VENV_PATH to your Python venv before enabling
+Environment=REPO_DIR=/home/ubuntu/malaika_nest
+Environment=VENV_PATH=/home/ubuntu/.virtualenvs/malaika_nest/bin
+WorkingDirectory=${REPO_DIR}
+# If you run via virtualenv (non-Docker), update the ExecStart below to point to your gunicorn binary
+ExecStart=${VENV_PATH}/gunicorn --chdir ${REPO_DIR} kenya_ecom.wsgi:application \
+  --bind 0.0.0.0:8000 --workers 3 --log-level=info
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+
+# Notes:
+# - This file is an example for systems running the Django app directly (no Docker).
+# - If you deploy with `docker-compose` keep using the container-managed processes instead.

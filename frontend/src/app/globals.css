@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #FFFFFF;
+  --secondary: #EDE6DC;
+  --accent: #BFA46F;
+  --text: #111111;
+  --cta: #C8A98D;
+  --cta-hover: #B8956F;
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.bg-primary { background-color: var(--primary); }
+.bg-secondary { background-color: var(--secondary); }
+.bg-accent { background-color: var(--accent); }
+.bg-cta { background-color: var(--cta); }
+
+.text-primary { color: var(--primary); }
+.text-secondary { color: var(--secondary); }
+.text-accent { color: var(--accent); }
+.text-text { color: var(--text); }
+.text-cta { color: var(--cta); }
+
+.border-accent { border-color: var(--accent); }
+.border-cta { border-color: var(--cta); }
+
+.hover\:bg-cta:hover { background-color: var(--cta-hover); }
+.hover\:text-cta:hover { color: var(--cta); }
+
+.bg-pastelPink { background-color: #FFD6E0; }
+.bg-pastelBlue { background-color: #D6EEFF; }
+.bg-pastelMint { background-color: #DFFFE6; }
+.text-pastelPink { color: #E88FA0; }
+
+.from-pastelBlue { --tw-gradient-from: #D6EEFF; }
+.from-pastelPink { --tw-gradient-from: #FFD6E0; }
+.to-white { --tw-gradient-to: #FFFFFF; }
+
+.hero-cta { background: linear-gradient(90deg, #EDE6DC, #FFFFFF); }
