@@ -19,7 +19,7 @@ api.interceptors.response.use(
       originalRequest._retry = true
 
       try {
-        await api.post('/api/users/token/refresh/')
+        await api.post('/api/accounts/token/refresh/')
         return api(originalRequest)
       } catch (refreshError) {
         if (typeof window !== 'undefined') {

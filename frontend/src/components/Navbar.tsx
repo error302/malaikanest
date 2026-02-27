@@ -5,9 +5,19 @@ import Link from 'next/link'
 import MiniCart from './MiniCart'
 import { useCart } from '../lib/cartContext'
 
+interface Category {
+  id: number
+  name: string
+  slug: string
+  group: string
+  is_top_level: boolean
+  parent: number | null
+  children: Category[]
+}
+
 function NavbarContent() {
   const [isOpen, setIsOpen] = useState(false)
-  const [categories, setCategories] = useState<{ id: number, name: string, slug: string }[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showCart, setShowCart] = useState(false)
@@ -25,6 +35,9 @@ function NavbarContent() {
   }, [])
 
   const { items } = useCart()
+
+  // Group categories by their group field for mega menu
+  const topLevelCategories = categories.filter((c: Category) => c.is_top_level)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,38 +103,28 @@ function NavbarContent() {
               >
                 <div className="p-6">
                   <div className="grid grid-cols-4 gap-6">
-                    <div>
-                      <h4 className="font-bold text-accent border-b border-secondary pb-2 mb-3">Clothing</h4>
-                      <ul className="space-y-2 text-sm">
-                        {categories.filter(c => c.name.includes('Month') || c.name.includes('Year')).slice(0, 4).map(cat => (
-                          <li key={cat.id}><Link href={`/?category=${cat.slug}`} className="text-gray-600 hover:text-accent transition-colors block">{cat.name}</Link></li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-accent border-b border-secondary pb-2 mb-3">Feeding</h4>
-                      <ul className="space-y-2 text-sm">
-                        {categories.filter(c => c.name.includes('Feeding') || c.name.includes('Breast') || c.name.includes('Bottle')).slice(0, 4).map(cat => (
-                          <li key={cat.id}><Link href={`/?category=${cat.slug}`} className="text-gray-600 hover:text-accent transition-colors block">{cat.name}</Link></li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-accent border-b border-secondary pb-2 mb-3">Care</h4>
-                      <ul className="space-y-2 text-sm">
-                        {categories.filter(c => c.name.includes('Skin') || c.name.includes('Bath') || c.name.includes('Grooming')).slice(0, 4).map(cat => (
-                          <li key={cat.id}><Link href={`/?category=${cat.slug}`} className="text-gray-600 hover:text-accent transition-colors block">{cat.name}</Link></li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-accent border-b border-secondary pb-2 mb-3">Toys</h4>
-                      <ul className="space-y-2 text-sm">
-                        {categories.filter(c => c.name.includes('Toy')).slice(0, 4).map(cat => (
-                          <li key={cat.id}><Link href={`/?category=${cat.slug}`} className="text-gray-600 hover:text-accent transition-colors block">{cat.name}</Link></li>
-                        ))}
-                      </ul>
-                    </div>
+                    {topLevelCategories.slice(0, 8).map((groupCat: Category) => (
+                      <div key={groupCat.id}>
+                        <h4 className="font-bold text-accent border-b border-secondary pb-2 mb-3">{groupCat.name}</h4>
+                        <ul className="space-y-2 text-sm">
+                          {groupCat.children && groupCat.children.length > 0 ? (
+                            groupCat.children.slice(0, 5).map((child: Category) => (
+                              <li key={child.id}>
+                                <Link href={`/?category=${child.slug}`} className="text-gray-600 hover:text-accent transition-colors block">
+                                  {child.name}
+                                </Link>
+                              </li>
+                            ))
+                          ) : (
+                            <li>
+                              <Link href={`/?category=${groupCat.slug}`} className="text-gray-600 hover:text-accent transition-colors block">
+                                View All
+                              </Link>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
                   <div className="mt-4 pt-4 border-t border-secondary flex justify-between items-center">
                     <Link href="/categories" className="text-sm font-medium text-accent hover:text-accent/80">

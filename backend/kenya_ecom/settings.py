@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "cloudinary",
     "django_celery_beat",
+    "django_filters",
     "apps.accounts",
     "apps.products",
     "apps.orders",
