@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import api from '../lib/api'
+import api, { IS_DEMO_MODE } from '../lib/api'
 
 interface Category {
   id: number
@@ -19,6 +19,16 @@ interface Product {
   category: { name: string }
 }
 
+// Demo products for when API is not available
+const DEMO_PRODUCTS: Product[] = [
+  { id: 1, name: 'Premium Baby Blanket', price: '2500', image: null, category: { name: 'Baby Clothing' } },
+  { id: 2, name: 'Soft Cotton Onesies Pack', price: '1500', image: null, category: { name: 'Baby Clothing' } },
+  { id: 3, name: 'Baby Diapers (Pack of 30)', price: '1800', image: null, category: { name: 'Diapers' } },
+  { id: 4, name: 'Baby Bottle Set', price: '2200', image: null, category: { name: 'Feeding' } },
+  { id: 5, name: 'Educational Toys Set', price: '3500', image: null, category: { name: 'Toys' } },
+  { id: 6, name: 'Baby Stroller', price: '15000', image: null, category: { name: 'Gear' } },
+]
+
 const categories = [
   { name: 'Baby Clothing', slug: 'clothing-apparel', emoji: '👶' },
   { name: 'Accessories', slug: 'baby-accessories', emoji: '🎀' },
@@ -28,10 +38,10 @@ const categories = [
 ]
 
 const ageGroups = [
-  { name: '0-3 Months', slug: 'newborn-0-3-months', color: 'bg-[#EDE6DC]' },
-  { name: '3-6 Months', slug: 'infant-3-6-months', color: 'bg-[#F5E6D3]' },
-  { name: '6-12 Months', slug: 'infant-6-12-months', color: 'bg-[#E8DDD0]' },
-  { name: '1-3 Years', slug: 'toddler-1-3-years', color: 'bg-[#DED5C7]' },
+  { name: '0-3 Months', slug: 'newborn-0-3-months', color: 'bg-secondary' },
+  { name: '3-6 Months', slug: 'infant-3-6-months', color: 'bg-secondary/80' },
+  { name: '6-12 Months', slug: 'infant-6-12-months', color: 'bg-secondary/60' },
+  { name: '1-3 Years', slug: 'toddler-1-3-years', color: 'bg-secondary/40' },
 ]
 
 const slides = [
@@ -41,7 +51,7 @@ const slides = [
     description: 'Curated, affordable, and safe products for your baby. Shop with confidence using secure M-Pesa payments.',
     cta: 'Shop Now',
     ctaLink: '/',
-    bg: 'from-[#EDE6DC] via-[#F5F0E8] to-white',
+    bg: 'from-secondary via-primary to-white',
   },
   {
     title: 'New Arrivals',
@@ -49,7 +59,7 @@ const slides = [
     description: 'Discover our latest collection of premium baby products.',
     cta: 'Explore',
     ctaLink: '/categories',
-    bg: 'from-[#EDE6DC] via-white to-white',
+    bg: 'from-secondary via-white to-white',
   },
   {
     title: 'Flat 20% Off',
@@ -57,7 +67,7 @@ const slides = [
     description: 'Limited time offer on premium baby care products.',
     cta: 'Grab Deal',
     ctaLink: '/?category=newborn-0-3-months',
-    bg: 'from-[#BFA46F] via-[#C8A98D] to-white',
+    bg: 'from-accent via-secondary to-white',
   },
 ]
 
@@ -66,6 +76,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
+  const [demoMode, setDemoMode] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -78,9 +89,14 @@ export default function Home() {
     api.get('/api/products/products/')
       .then(res => {
         setProducts(res.data.slice(0, 8))
-        setLoading(false)
+        setDemoMode(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {
+        // Use demo data if API fails
+        setProducts(DEMO_PRODUCTS)
+        setDemoMode(true)
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -92,6 +108,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* Demo Mode Banner */}
+      {demoMode && (
+        <div className="bg-yellow-500 text-yellow-900 text-center py-2 text-sm font-medium">
+          Demo Mode - Showing sample products. Connect backend API to see real data.
+        </div>
+      )}
+      
       {/* Hero Slider */}
       <section className="relative overflow-hidden">
         {slides.map((slide, idx) => (
@@ -203,7 +226,7 @@ export default function Home() {
                         <span className="text-5xl">🧸</span>
                       </div>
                     )}
-                    <div className="absolute top-2 right-2 bg-secondary0 text-white text-xs px-2 py-1 rounded-full">
+                    <div className="absolute top-2 right-2 bg-accent text-white text-xs px-2 py-1 rounded-full">
                       New
                     </div>
                   </div>
