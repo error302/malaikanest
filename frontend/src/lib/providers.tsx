@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react'
 import { CartProvider } from './cartContext'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 interface ProvidersProps {
   children: ReactNode
@@ -10,6 +11,7 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <CartProvider>
+      <SpeedInsights />
       {children}
     </CartProvider>
   )
