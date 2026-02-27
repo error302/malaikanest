@@ -1,12 +1,11 @@
 from django.db import models
 from django.utils.text import slugify
-from cloudinary.models import CloudinaryField
 
 
 class Brand(models.Model):
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
-    logo = CloudinaryField("image", blank=True, null=True)
+    logo = models.ImageField("image", blank=True, null=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -23,7 +22,7 @@ class Brand(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
-    image = CloudinaryField("image", blank=True, null=True)
+    image = models.ImageField("image", blank=True, null=True)
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -55,8 +54,8 @@ class Banner(models.Model):
     subtitle = models.CharField(max_length=300, blank=True)
     button_text = models.CharField(max_length=50, blank=True)
     button_link = models.URLField(blank=True, null=True)
-    image = CloudinaryField("image")
-    mobile_image = CloudinaryField("mobile_image", blank=True, null=True)
+    image = models.ImageField("image")
+    mobile_image = models.ImageField("mobile_image", blank=True, null=True)
     is_active = models.BooleanField(default=True)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
@@ -115,7 +114,7 @@ class Product(models.Model):
     seo_description = models.CharField(max_length=160, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    image = CloudinaryField("image", blank=True, null=True)
+    image = models.ImageField("image", blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:

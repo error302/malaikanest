@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "cloudinary",
     "django_filters",
     "apps.accounts",
     "apps.products",
@@ -108,6 +109,14 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloudinary_url=os.getenv("CLOUDINARY_URL", ""),
+    secure=True,
+)
 
 # REST Framework + JWT
 REST_FRAMEWORK = {
