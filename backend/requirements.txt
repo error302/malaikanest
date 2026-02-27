@@ -18,8 +18,4 @@ setuptools==75.8.0
 xhtml2pdf==0.2.11
 WeasyPrint==62.3
 Pillow==10.4.0
-
-# AI Dependencies
-openai==1.58.1
-tiktoken==0.8.0
-numpy==1.26.4
+numpy>=1.26.0
