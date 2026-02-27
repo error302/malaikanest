@@ -3,6 +3,23 @@ from django.utils.text import slugify
 from cloudinary.models import CloudinaryField
 
 
+class Brand(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
+    logo = CloudinaryField("image", blank=True, null=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
 class Category(models.Model):
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
@@ -35,9 +52,14 @@ class Category(models.Model):
 
 class Banner(models.Model):
     title = models.CharField(max_length=200, blank=True)
+    subtitle = models.CharField(max_length=300, blank=True)
+    button_text = models.CharField(max_length=50, blank=True)
+    button_link = models.URLField(blank=True, null=True)
     image = CloudinaryField("image")
-    link = models.URLField(blank=True, null=True)
+    mobile_image = CloudinaryField("mobile_image", blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
     position = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -49,13 +71,48 @@ class Banner(models.Model):
 
 
 class Product(models.Model):
+    GENDER_CHOICES = [
+        ("boy", "Boy"),
+        ("girl", "Girl"),
+        ("unisex", "Unisex"),
+    ]
+
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("published", "Published"),
+    ]
+
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=300, unique=True)
+    sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
     description = models.TextField(blank=True)
     category = models.ForeignKey(
         Category, related_name="products", on_delete=models.PROTECT
     )
+    brand = models.ForeignKey(
+        "Brand",
+        related_name="products",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    stock = models.PositiveIntegerField(default=0)
+    low_stock_threshold = models.PositiveIntegerField(default=5)
+    weight = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="Weight in kg"
+    )
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default="unisex")
+    age_range = models.CharField(
+        max_length=50, blank=True, help_text="e.g., 0-3 months, 1-2 years"
+    )
+    featured = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    seo_title = models.CharField(max_length=70, blank=True)
+    seo_description = models.CharField(max_length=160, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     image = CloudinaryField("image", blank=True, null=True)
@@ -64,15 +121,39 @@ class Product(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["slug"]),
+            models.Index(fields=["sku"]),
             models.Index(fields=["name"]),
             models.Index(fields=["-created_at"]),
             models.Index(fields=["is_active", "-created_at"]),
             models.Index(fields=["category", "is_active"]),
             models.Index(fields=["price"]),
+            models.Index(fields=["featured"]),
+            models.Index(fields=["status"]),
         ]
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            import uuid
+
+            self.sku = f"SKU-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+    @property
+    def in_stock(self):
+        return self.stock > 0
+
+    @property
+    def is_low_stock(self):
+        return self.stock <= self.low_stock_threshold
+
+    @property
+    def discount_percentage(self):
+        if self.discount_price and self.discount_price < self.price:
+            return int(((self.price - self.discount_price) / self.price) * 100)
+        return 0
 
 
 class Inventory(models.Model):

@@ -1,6 +1,19 @@
 from rest_framework import serializers
-from .models import Category, Product, Inventory, Review, Wishlist
+from .models import Category, Product, Inventory, Review, Wishlist, Brand
 from .models import Banner
+
+
+class BrandSerializer(serializers.ModelSerializer):
+    logo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Brand
+        fields = ("id", "name", "slug", "logo", "description", "is_active")
+
+    def get_logo(self, obj):
+        if obj.logo:
+            return obj.logo.url
+        return None
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -34,8 +47,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    brand = BrandSerializer(read_only=True)
     image = serializers.SerializerMethodField()
-    stock = serializers.SerializerMethodField()
+    discount_percentage = serializers.ReadOnlyField()
+    in_stock = serializers.ReadOnlyField()
 
     class Meta:
         model = Product
@@ -43,12 +58,27 @@ class ProductSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "slug",
+            "sku",
             "description",
             "category",
+            "brand",
             "price",
+            "discount_price",
+            "discount_percentage",
+            "stock",
+            "low_stock_threshold",
+            "in_stock",
+            "weight",
+            "gender",
+            "age_range",
+            "featured",
+            "status",
+            "seo_title",
+            "seo_description",
             "image",
             "is_active",
-            "stock",
+            "created_at",
+            "updated_at",
         )
 
     def get_image(self, obj):
@@ -56,11 +86,33 @@ class ProductSerializer(serializers.ModelSerializer):
             return obj.image.url
         return None
 
-    def get_stock(self, obj):
-        try:
-            return obj.inventory.quantity - obj.inventory.reserved
-        except:
-            return 0
+
+class ProductListSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    image = serializers.SerializerMethodField()
+    discount_percentage = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "category",
+            "price",
+            "discount_price",
+            "discount_percentage",
+            "stock",
+            "featured",
+            "status",
+            "image",
+            "is_active",
+        )
+
+    def get_image(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
 
 
 class InventorySerializer(serializers.ModelSerializer):
@@ -107,7 +159,18 @@ class BannerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Banner
-        fields = ("id", "title", "image", "link", "is_active", "position")
+        fields = (
+            "id",
+            "title",
+            "subtitle",
+            "button_text",
+            "button_link",
+            "image",
+            "is_active",
+            "position",
+            "start_date",
+            "end_date",
+        )
 
     def get_image(self, obj):
         if obj.image:
