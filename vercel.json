@@ -1,8 +1,8 @@
 {
-  "projects": [
+  "workspaces": [
     {
       "name": "malaikanest",
-      "rootDirectory": "frontend"
+      "path": "frontend"
     }
   ]
 }
