@@ -23,7 +23,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "cloudinary",
-    "django_ratelimit",
     "django_filters",
     "apps.accounts",
     "apps.products",
