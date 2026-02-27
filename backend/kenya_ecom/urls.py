@@ -14,7 +14,7 @@ urlpatterns = [
     path("api/products/", include("apps.products.urls")),
     path("api/orders/", include("apps.orders.urls")),
     path("api/payments/", include("apps.payments.urls")),
-    path("api/ai/", include("apps.ai.urls")),
+    # path("api/ai/", include("apps.ai.urls")),  # Optional - requires OPENAI_API_KEY
     path("api/health/", health_check, name="health_check"),
     path("api/ready/", readiness_check, name="readiness_check"),
     path(f"{admin_secret}/admin/", admin.site.urls),
