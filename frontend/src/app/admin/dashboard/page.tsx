@@ -2,36 +2,38 @@
 
 import { useEffect, useState } from 'react'
 import api from '@/lib/api'
+import Link from 'next/link'
 
 interface Stats {
-  totalProducts: number
+  totalRevenue: number
   totalOrders: number
-  totalCustomers: number
-  pendingOrders: number
+  totalProducts: number
+  lowStock: any[]
 }
 
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats>({
-    totalProducts: 0,
+    totalRevenue: 0,
     totalOrders: 0,
-    totalCustomers: 0,
-    pendingOrders: 0,
+    totalProducts: 0,
+    lowStock: [],
   })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [productsRes, ordersRes] = await Promise.all([
-          api.get('/products/products/'),
-          api.get('/orders/orders/'),
+        const [analyticsRes, productsRes, ordersRes] = await Promise.all([
+          api.get('/api/orders/admin/analytics/'),
+          api.get('/api/products/products/'),
+          api.get('/api/orders/orders/'),
         ])
         
         setStats({
+          totalRevenue: analyticsRes.data.total_revenue || 0,
+          totalOrders: analyticsRes.data.total_orders || 0,
           totalProducts: productsRes.data.length || 0,
-          totalOrders: ordersRes.data.length || 0,
-          totalCustomers: 0,
-          pendingOrders: ordersRes.data.filter((o: any) => o.status === 'pending')?.length || 0,
+          lowStock: analyticsRes.data.low_stock || [],
         })
       } catch (error) {
         console.error('Error fetching stats:', error)
@@ -43,10 +45,10 @@ export default function Dashboard() {
   }, [])
 
   const statCards = [
-    { label: 'Total Products', value: stats.totalProducts, icon: '📦', color: 'bg-blue-500' },
-    { label: 'Total Orders', value: stats.totalOrders, icon: '🛒', color: 'bg-green-500' },
-    { label: 'Pending Orders', value: stats.pendingOrders, icon: '⏳', color: 'bg-yellow-500' },
-    { label: 'Total Customers', value: stats.totalCustomers, icon: '👥', color: 'bg-purple-500' },
+    { label: 'Total Revenue', value: `KSh ${stats.totalRevenue.toLocaleString()}`, icon: '💰', color: 'bg-green-500' },
+    { label: 'Total Orders', value: stats.totalOrders, icon: '🛒', color: 'bg-blue-500' },
+    { label: 'Total Products', value: stats.totalProducts, icon: '📦', color: 'bg-purple-500' },
+    { label: 'Low Stock Items', value: stats.lowStock.length, icon: '⚠️', color: 'bg-red-500' },
   ]
 
   if (loading) {

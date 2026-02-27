@@ -17,7 +17,7 @@ export default function AdminLogin() {
     setLoading(true)
 
     try {
-      const res = await api.post('/accounts/users/login/', { email, password })
+      const res = await api.post('/api/accounts/token/', { email, password })
       const { access, refresh } = res.data
       
       localStorage.setItem('access_token', access)
