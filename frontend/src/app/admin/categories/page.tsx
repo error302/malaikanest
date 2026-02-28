@@ -18,7 +18,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get('/products/categories/')
+        const res = await api.get('/api/products/admin/categories/')
         setCategories(res.data)
       } catch (error) {
         console.error('Error fetching categories:', error)
@@ -34,7 +34,7 @@ export default function CategoriesPage() {
     if (!newCategory.trim()) return
 
     try {
-      const res = await api.post('/products/categories/', {
+      const res = await api.post('/api/products/admin/categories/', {
         name: newCategory,
       })
       setCategories([...categories, res.data])
@@ -48,7 +48,7 @@ export default function CategoriesPage() {
     if (!confirm('Delete this category?')) return
 
     try {
-      await api.delete(`/products/categories/${id}/`)
+      await api.delete(`/api/products/admin/categories/${id}/`)
       setCategories(categories.filter(c => c.id !== id))
     } catch (error) {
       console.error('Error deleting category:', error)

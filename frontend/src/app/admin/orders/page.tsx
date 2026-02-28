@@ -18,7 +18,7 @@ export default function OrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await api.get('/orders/orders/')
+        const res = await api.get('/api/products/admin/orders/')
         setOrders(res.data)
       } catch (error) {
         console.error('Error fetching orders:', error)

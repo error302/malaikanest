@@ -6,7 +6,7 @@ from django.db.models import Q
 from apps.products.models import Category, Product, Banner, Inventory
 from apps.orders.models import Order
 from apps.accounts.models import User
-from .serializers import (
+from .admin_serializers import (
     AdminProductSerializer,
     AdminCategorySerializer,
     AdminBannerSerializer,
@@ -52,11 +52,6 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
 
-        # Handle images
-        images = request.FILES.getlist("images")
-        for image in images:
-            ProductImage.objects.create(product=product, image=image)
-
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
@@ -65,11 +60,6 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
-
-        # Handle new images
-        images = request.FILES.getlist("images")
-        for image in images:
-            ProductImage.objects.create(product=product, image=image)
 
         return Response(serializer.data)
 
@@ -81,7 +71,7 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
 
 
 class AdminBannerViewSet(viewsets.ModelViewSet):
-    queryset = Banner.objects.all().order_by("order")
+    queryset = Banner.objects.all().order_by("position")
     serializer_class = AdminBannerSerializer
     permission_classes = [IsAdminUserOrReadOnly]
 
