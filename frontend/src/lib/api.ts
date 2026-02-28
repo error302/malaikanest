@@ -1,28 +1,29 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-// If no API URL is configured, use demo mode
-const IS_DEMO_MODE = !API_URL || API_URL === ''
+// Validate API_URL is configured
+if (!API_URL) {
+  console.error('CRITICAL: NEXT_PUBLIC_API_URL is not configured! Please set it in your Vercel project settings.')
+}
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL || '',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
-  // Timeout for demo mode
-  timeout: IS_DEMO_MODE ? 100 : 30000,
+  timeout: 30000,
 })
 
 // Handle errors gracefully
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    // In demo mode, silently fail for data calls
-    if (IS_DEMO_MODE) {
-      console.log('Demo mode: API not available')
-      return Promise.reject(new Error('Demo mode - API not configured'))
+    // Check if API_URL is not configured
+    if (!API_URL) {
+      console.error('API URL not configured. Please set NEXT_PUBLIC_API_URL in environment variables.')
+      return Promise.reject(new Error('API not configured. Please contact the administrator.'))
     }
     
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
@@ -45,5 +46,4 @@ api.interceptors.response.use(
   }
 )
 
-export { IS_DEMO_MODE }
 export default api

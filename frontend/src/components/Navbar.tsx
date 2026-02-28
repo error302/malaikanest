@@ -38,7 +38,7 @@ function NavbarContent() {
   const { items } = useCart()
 
   // Group categories by their group field for mega menu
-  const topLevelCategories = categories.filter((c: Category) => c.is_top_level)
+  const topLevelCategories = categories.filter((c: Category) => c.is_top_level || c.parent === null)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

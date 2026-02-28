@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import api, { IS_DEMO_MODE } from '../lib/api'
+import api from '../lib/api'
 
 interface Category {
   id: number

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import api from '../../../lib/api'
+import { useCart } from '../../../lib/cartContext'
 import { LoadingPage } from '../../../components/Loading'
 
 interface Product {
@@ -26,6 +27,29 @@ export default function ProductDetailPage() {
   const [error, setError] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [addingToCart, setAddingToCart] = useState(false)
+  const { add } = useCart()
+
+  const handleAddToCart = async () => {
+    if (!product) return
+    setAddingToCart(true)
+    try {
+      await add({
+        id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+        image: product.images?.[0] || '',
+        slug: product.slug,
+        qty: quantity
+      })
+      alert('Product added to cart!')
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      alert('Failed to add to cart. Please try again.')
+    } finally {
+      setAddingToCart(false)
+    }
+  }
 
   useEffect(() => {
     if (!slug) return
@@ -163,10 +187,11 @@ export default function ProductDetailPage() {
             {/* Add to Cart */}
             <div className="mt-6 flex gap-4">
               <button
-                disabled={product.stock === 0}
+                onClick={handleAddToCart}
+                disabled={product.stock === 0 || addingToCart}
                 className="flex-1 py-4 bg-cta hover:bg-cta-hover disabled:bg-gray-300 text-white font-semibold rounded-lg transition-colors"
               >
-                Add to Cart - Ksh {total.toLocaleString()}
+                {addingToCart ? 'Adding...' : `Add to Cart - Ksh ${total.toLocaleString()}`}
               </button>
               <button className="w-14 h-14 border border-secondary rounded-lg flex items-center justify-center hover:bg-secondary transition-colors">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

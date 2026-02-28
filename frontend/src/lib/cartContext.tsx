@@ -32,7 +32,7 @@ type Action =
 
 const STORAGE_KEY = 'malaika_cart_v1'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -74,7 +74,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [synced, setSynced] = useState(false)
 
   const fetchCart = async () => {
-    if (!API_URL) return
+    if (!API_URL) {
+      console.warn('NEXT_PUBLIC_API_URL is not configured. Cart sync disabled.')
+      return
+    }
     try {
       const res = await fetch(`${API_URL}/api/orders/cart/`, {
         credentials: 'include',
@@ -107,7 +110,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const fullItem = { ...item, qty: item.qty ?? 1 }
     dispatch({ type: 'ADD', item: fullItem })
     
-    if (!API_URL) return
+    if (!API_URL) {
+      console.warn('NEXT_PUBLIC_API_URL not configured - item added locally only')
+      return
+    }
     setLoading(true)
     try {
       await fetch(`${API_URL}/api/orders/cart/add/`, {
