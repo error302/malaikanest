@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import api from '../lib/api'
 import { useCart } from '../lib/cartContext'
+import { showToast } from '../components/Toast'
 
 interface Category {
   id: number
@@ -91,10 +92,10 @@ export default function Home() {
         image: product.image || '',
         qty: 1
       })
-      alert('Product added to cart!')
+      showToast(`${product.name} added to cart!`, 'success')
     } catch (error) {
       console.error('Failed to add to cart:', error)
-      alert('Failed to add to cart. Please try again.')
+      showToast('Failed to add to cart. Please try again.', 'error')
     }
   }
 

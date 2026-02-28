@@ -5,6 +5,7 @@ import Link from 'next/link'
 import api from '../../../lib/api'
 import { useCart } from '../../../lib/cartContext'
 import { LoadingPage } from '../../../components/Loading'
+import { showToast } from '../../../components/Toast'
 
 interface Product {
   id: number
@@ -42,10 +43,10 @@ export default function ProductDetailPage() {
         slug: product.slug,
         qty: quantity
       })
-      alert('Product added to cart!')
+      showToast(`${product.name} added to cart!`, 'success')
     } catch (error) {
       console.error('Failed to add to cart:', error)
-      alert('Failed to add to cart. Please try again.')
+      showToast('Failed to add to cart. Please try again.', 'error')
     } finally {
       setAddingToCart(false)
     }

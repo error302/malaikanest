@@ -3,6 +3,7 @@ import React from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Providers } from '../lib/providers'
+import { ToastContainer } from '../components/Toast'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_API_URL || 'https://malaikanest.shop'),
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <Footer />
+          <ToastContainer />
         </Providers>
       </body>
     </html>
