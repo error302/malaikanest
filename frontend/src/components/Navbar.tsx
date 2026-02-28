@@ -217,6 +217,9 @@ function NavbarContent() {
               <Link href="/categories" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
                 Categories
               </Link>
+              <Link href="/bundle" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+                Bundle Builder
+              </Link>
               <Link href="/login" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
                 My Account
               </Link>
