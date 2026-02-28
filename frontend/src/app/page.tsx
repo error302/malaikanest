@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import api from '../lib/api'
+import { useCart } from '../lib/cartContext'
 
 interface Category {
   id: number
@@ -77,6 +78,25 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [demoMode, setDemoMode] = useState(false)
+  const { add } = useCart()
+
+  const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await add({
+        id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+        image: product.image || '',
+        qty: 1
+      })
+      alert('Product added to cart!')
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      alert('Failed to add to cart. Please try again.')
+    }
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -234,7 +254,10 @@ export default function Home() {
                     <p className="text-xs text-accent font-medium">{product.category?.name || 'Baby'}</p>
                     <h3 className="font-semibold text-gray-800 mt-1 line-clamp-2">{product.name}</h3>
                     <p className="text-lg font-bold text-gray-900 mt-2">KSH {parseFloat(product.price).toLocaleString()}</p>
-                    <button className="w-full mt-3 bg-cta hover:bg-cta-hover text-white py-2 rounded-lg transition-colors text-sm font-medium">
+                    <button 
+                      onClick={(e) => handleAddToCart(e, product)}
+                      className="w-full mt-3 bg-cta hover:bg-cta-hover text-white py-2 rounded-lg transition-colors text-sm font-medium"
+                    >
                       Add to Cart
                     </button>
                   </div>
