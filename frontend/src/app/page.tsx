@@ -167,11 +167,14 @@ export default function Home() {
             </div>
           </div>
         ))}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-          {slides.map((_, idx) => (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2" role="tablist" aria-label="Hero slider navigation">
+          {slides.map((slide, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentSlide(idx)}
+              role="tab"
+              aria-selected={idx === currentSlide}
+              aria-label={`Go to slide ${idx + 1}: ${slide.title}`}
               className={`w-3 h-3 rounded-full transition-all ${idx === currentSlide ? 'bg-secondary0 w-8' : 'bg-gray-300'}`}
             />
           ))}
