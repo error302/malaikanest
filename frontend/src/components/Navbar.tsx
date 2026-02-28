@@ -4,6 +4,7 @@ import api from '../lib/api'
 import Link from 'next/link'
 import MiniCart from './MiniCart'
 import { useCart } from '../lib/cartContext'
+import Logo from './Logo'
 
 interface Category {
   id: number
@@ -51,10 +52,7 @@ function NavbarContent() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="Malaika Nest" className="h-10 w-auto" />
-            <span className="font-bold text-xl text-text hidden sm:block">Malaika Nest</span>
-          </Link>
+          <Logo />
 
           {/* Search Bar - Desktop */}
           <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-md mx-8">
