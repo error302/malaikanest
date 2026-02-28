@@ -8,6 +8,7 @@ interface Product {
   id: number
   name: string
   slug: string
+  description: string
   price: string
   discount_price: string | null
   category: { id: number; name: string }
