@@ -35,7 +35,7 @@ function NavbarContent() {
     return () => { mounted = false }
   }, [])
 
-  const { items } = useCart()
+  const { items, remove, updateQty } = useCart()
 
   // Group categories by their group field for mega menu
   const topLevelCategories = categories.filter((c: Category) => c.is_top_level || c.parent === null)
@@ -164,7 +164,7 @@ function NavbarContent() {
             </button>
             {showCart && (
               <div className="absolute right-4 top-16 z-50">
-                <MiniCart items={items} />
+                <MiniCart items={items} onRemove={remove} onUpdateQty={updateQty} />
               </div>
             )}
           </div>
