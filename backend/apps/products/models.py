@@ -138,6 +138,13 @@ class Product(models.Model):
             import uuid
 
             self.sku = f"SKU-{uuid.uuid4().hex[:8].upper()}"
+        
+        # Auto-hide product when out of stock (if it was published)
+        if self.stock <= 0 and self.status == 'published':
+            self.is_active = False
+        elif self.stock > 0 and self.status == 'published':
+            self.is_active = True
+            
         super().save(*args, **kwargs)
 
     @property
