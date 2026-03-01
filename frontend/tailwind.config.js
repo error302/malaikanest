@@ -1,13 +1,14 @@
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}', './app/**/*.{js,jsx,ts,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         primary: '#F8F4EE',
         secondary: '#D8A7B1',
-        accent: '#B8860B', // Darkened for WCAG AA contrast
+        accent: '#B8860B',
         text: '#2E2E2E',
-        cta: '#9E3E50', // Darkened for WCAG AA contrast
+        cta: '#9E3E50',
         'cta-hover': '#7D2F40',
         cream: '#F8F4EE',
         dustyRose: '#D8A7B1',

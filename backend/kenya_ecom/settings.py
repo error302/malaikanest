@@ -228,10 +228,18 @@ LOGGING = {
     },
 }
 
-# Cache - use dummy for now (no rate limiting in this deployment)
+# Cache - use Redis for channels (or fallback to dummy)
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+    }
+}
+
+# Channels layer configuration
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     }
 }
 

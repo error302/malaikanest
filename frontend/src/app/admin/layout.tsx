@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
+import DarkModeToggle from '@/components/DarkModeToggle'
 
 const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
@@ -42,30 +43,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-amber-800 text-white shadow-lg">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-amber-800 dark:bg-gray-800 text-white shadow-lg">
         <div className="flex items-center justify-between px-6 py-4">
           <Link href="/admin/dashboard" className="text-xl font-bold">
             Malaika Nest Admin
           </Link>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-amber-700 hover:bg-amber-600 rounded-lg transition"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-4">
+            <DarkModeToggle />
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-amber-700 hover:bg-amber-600 rounded-lg transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="flex">
-        <aside className="w-64 bg-white shadow-md min-h-screen">
+        <aside className="w-64 bg-white dark:bg-gray-800 shadow-md min-h-screen">
           <nav className="p-4">
             {adminLinks.map((link) => (
               <Link
@@ -73,8 +77,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={link.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition ${
                   pathname === link.href
-                    ? 'bg-amber-100 text-amber-800'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 <span>{link.icon}</span>
