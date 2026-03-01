@@ -65,8 +65,28 @@ WSGI_APPLICATION = "kenya_ecom.wsgi.application"
 ASGI_APPLICATION = "kenya_ecom.asgi.application"
 
 # Database
+import urllib.parse
+
 DB_ENGINE = os.getenv("DB_ENGINE", "").strip() or "django.db.backends.sqlite3"
-if DB_ENGINE == "django.db.backends.sqlite3":
+
+# Support DATABASE_URL format
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    parsed = urllib.parse.urlparse(database_url)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": parsed.path[1:] if parsed.path else "postgres",
+            "USER": parsed.username,
+            "PASSWORD": parsed.password,
+            "HOST": parsed.hostname,
+            "PORT": parsed.port or 5432,
+            "OPTIONS": {
+                "sslmode": "require",
+            },
+        }
+    }
+elif DB_ENGINE == "django.db.backends.sqlite3":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
