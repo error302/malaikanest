@@ -65,43 +65,18 @@ WSGI_APPLICATION = "kenya_ecom.wsgi.application"
 ASGI_APPLICATION = "kenya_ecom.asgi.application"
 
 # Database
-import urllib.parse
-
-DB_ENGINE = os.getenv("DB_ENGINE", "").strip() or "django.db.backends.sqlite3"
+import dj_database_url
 
 # Support DATABASE_URL format
 database_url = os.getenv("DATABASE_URL")
 if database_url:
-    parsed = urllib.parse.urlparse(database_url)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": parsed.path[1:] if parsed.path else "postgres",
-            "USER": parsed.username,
-            "PASSWORD": parsed.password,
-            "HOST": parsed.hostname,
-            "PORT": parsed.port or 5432,
-            "OPTIONS": {
-                "sslmode": "require",
-            },
-        }
-    }
-elif DB_ENGINE == "django.db.backends.sqlite3":
+    DATABASES = {"default": dj_database_url.parse(database_url, conn_max_age=60)}
+else:
+    # Fallback to SQLite
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "test_db.sqlite3",
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": DB_ENGINE,
-            "NAME": os.getenv("DB_NAME"),
-            "USER": os.getenv("DB_USER"),
-            "PASSWORD": os.getenv("DB_PASSWORD"),
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
 
