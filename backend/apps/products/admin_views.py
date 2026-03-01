@@ -76,7 +76,7 @@ class AdminBannerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUserOrReadOnly]
 
 
-class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
+class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
@@ -93,6 +93,56 @@ class AdminUserViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         return queryset
+
+    @action(detail=True, methods=["patch"])
+    def promote_to_admin(self, request, pk=None):
+        """Promote a user to admin staff status"""
+        user = self.get_object()
+        user.is_staff = True
+        user.role = 'admin'
+        user.save()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["patch"])
+    def demote_to_customer(self, request, pk=None):
+        """Demote an admin to customer status"""
+        user = self.get_object()
+        # Prevent demoting superuser
+        if user.is_superuser:
+            return Response(
+                {"detail": "Cannot demote superuser"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.is_staff = False
+        user.role = 'customer'
+        user.save()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["patch"])
+    def deactivate(self, request, pk=None):
+        """Deactivate a user account"""
+        user = self.get_object()
+        # Prevent deactivating superuser
+        if user.is_superuser:
+            return Response(
+                {"detail": "Cannot deactivate superuser"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.is_active = False
+        user.save()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["patch"])
+    def activate(self, request, pk=None):
+        """Activate a user account"""
+        user = self.get_object()
+        user.is_active = True
+        user.save()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
 
 
 class AdminOrderViewSet(viewsets.ModelViewSet):

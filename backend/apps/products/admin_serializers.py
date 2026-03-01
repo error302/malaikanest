@@ -74,7 +74,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
             "last_name",
             "phone",
             "is_staff",
+            "is_superuser",
             "is_active",
+            "role",
             "date_joined",
             "total_orders",
         ]
@@ -99,6 +101,7 @@ class AdminOrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             "id",
+            "order_number",
             "user",
             "user_email",
             "items",
