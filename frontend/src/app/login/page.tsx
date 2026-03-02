@@ -1,8 +1,9 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import api from '../../lib/api'
+import { showToast } from '../../components/Toast'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -10,16 +11,51 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [apiConfigured, setApiConfigured] = useState(true)
+
+  useEffect(() => {
+    // Check if API is configured
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    if (!apiUrl) {
+      setApiConfigured(false)
+    }
+  }, [])
+
+  const handleDemoLogin = () => {
+    // Demo login - simulate successful login
+    setLoading(true)
+    setTimeout(() => {
+      // Store demo tokens
+      localStorage.setItem('access', 'demo_token_' + Date.now())
+      localStorage.setItem('refresh', 'demo_refresh_' + Date.now())
+      localStorage.setItem('user', JSON.stringify({
+        email: 'demo@example.com',
+        first_name: 'Demo',
+        last_name: 'User'
+      }))
+      showToast('Demo login successful!', 'success')
+      setLoading(false)
+      router.push('/dashboard')
+    }, 1000)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
+    // If API is not configured, show error
+    if (!apiConfigured) {
+      setError('API is not configured. Please set NEXT_PUBLIC_API_URL environment variable.')
+      setLoading(false)
+      return
+    }
+
     try {
       const res = await api.post('/api/accounts/token/', { email, password })
       localStorage.setItem('access', res.data.access)
       localStorage.setItem('refresh', res.data.refresh)
+      showToast('Login successful!', 'success')
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Invalid credentials')
@@ -46,6 +82,14 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Demo Mode Banner */}
+          {!apiConfigured && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg mb-6 text-sm">
+              <p className="font-medium mb-2">Demo Mode Active</p>
+              <p>The backend API is not connected. You can test the login with a demo account.</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-text mb-1">Email Address</label>
@@ -56,6 +100,7 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="you@example.com"
                 required
+                disabled={!apiConfigured}
               />
             </div>
 
@@ -68,6 +113,7 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="••••••••"
                 required
+                disabled={!apiConfigured}
               />
             </div>
 
@@ -83,11 +129,23 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !apiConfigured}
               className="w-full py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+
+            {/* Demo Login Button */}
+            {!apiConfigured && (
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={loading}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 mt-2"
+              >
+                {loading ? 'Logging in...' : 'Demo Login'}
+              </button>
+            )}
           </form>
 
           <div className="mt-6 text-center">

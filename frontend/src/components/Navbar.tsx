@@ -70,7 +70,7 @@ function NavbarContent() {
             </div>
           </form>
 
-          {/* Desktop Menu */}
+            {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-2">
             <Link href="/" className="px-3 py-2 text-text hover:text-accent transition-colors font-medium">
               Home
@@ -140,6 +140,14 @@ function NavbarContent() {
               My Orders
             </Link>
             
+            {/* Prominent Sign In Button */}
+            <Link 
+              href="/login" 
+              className="px-4 py-2 bg-cta hover:bg-cta-hover text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+            >
+              Sign In
+            </Link>
+
             {/* Account Icon */}
             <Link href="/login" className="p-2 text-text hover:text-accent transition-colors hover:scale-110 inline-block" title="My Account">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,11 +182,16 @@ function NavbarContent() {
             <button 
               onClick={() => setShowCart(s => !s)} 
               aria-label="Cart" 
-              className="p-2 text-text"
+              className="relative p-2 text-text"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
+              {items.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                  {items.length}
+                </span>
+              )}
             </button>
             <button
               className="p-2"
@@ -220,11 +233,16 @@ function NavbarContent() {
               <Link href="/bundle" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
                 Bundle Builder
               </Link>
-              <Link href="/login" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
-                My Account
-              </Link>
-              <Link href="/login" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+              {/* Prominent Sign In Button - Mobile */}
+              <Link 
+                href="/login" 
+                className="px-4 py-3 bg-cta hover:bg-cta-hover text-white font-medium rounded-lg transition-colors text-center mx-2 mt-2"
+                onClick={() => setIsOpen(false)}
+              >
                 Sign In
+              </Link>
+              <Link href="/register" className="px-4 py-3 bg-secondary hover:bg-accent text-text hover:text-white font-medium rounded-lg transition-colors text-center mx-2" onClick={() => setIsOpen(false)}>
+                Create Account
               </Link>
             </div>
           </div>
