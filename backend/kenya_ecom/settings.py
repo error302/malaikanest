@@ -70,28 +70,23 @@ import dj_database_url
 # Support DATABASE_URL format
 database_url = os.getenv("DATABASE_URL")
 if database_url:
-    # Log database configuration for debugging
-    print(f"[DEBUG] DATABASE_URL is set")
-    print(f"[DEBUG] DATABASE_URL host: {dj_database_url.parse(database_url).hostname}")
-    
-    # Validate the DATABASE_URL format
     try:
-        parsed_db = dj_database_url.parse(database_url)
-        if not parsed_db.hostname:
-            raise ValueError("DATABASE_URL has no hostname")
-        
-        # Check for common issues with hostname
-        hostname = parsed_db.hostname
-        if 'aws-apg' in hostname or 'rds.amazonaws.com' in hostname:
-            print(f"[WARNING] DATABASE_URL hostname '{hostname}' looks like it might be external AWS RDS.")
-            print(f"[WARNING] If deploying to Render, use the Internal Connection String from Render dashboard.")
-        
         DATABASES = {"default": dj_database_url.parse(database_url, conn_max_age=60)}
-        print(f"[DEBUG] Database configured successfully: {parsed_db.hostname}:{parsed_db.port}/{parsed_db.database}")
     except Exception as e:
-        print(f"[ERROR] Failed to parse DATABASE_URL: {e}")
-        print(f"[ERROR] DATABASE_URL value: {database_url[:50]}..." if len(database_url) > 50 else f"[ERROR] DATABASE_URL value: {database_url}")
-        raise
+        # Fallback: try manual parsing
+        import urllib.parse
+
+        parsed = urllib.parse.urlparse(database_url)
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": parsed.path[1:] if parsed.path else "malaika_db",
+                "USER": parsed.username,
+                "PASSWORD": parsed.password,
+                "HOST": parsed.hostname,
+                "PORT": parsed.port or 5432,
+            }
+        }
 else:
     print("[WARNING] DATABASE_URL is NOT set, falling back to SQLite")
     # Fallback to SQLite

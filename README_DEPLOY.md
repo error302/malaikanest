@@ -1,191 +1,321 @@
-# Deployment guide — VPS (Ubuntu 22.04+) for Malaika Nest
+# Malaika Nest - Production Deployment Guide
 
-This file contains copy-paste commands and pointers to deploy the stack on a VPS using Docker Compose, obtain TLS via Certbot, and set basic production hardening.
+This guide will help you set up a production-ready deployment on your Google Cloud VM (104.154.161.10).
 
-1) Server prep (run as a non-root sudo user)
+## Architecture Overview
 
-```bash
-sudo apt update && sudo apt upgrade -y
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
-sudo usermod -aG docker $USER
-# Install Docker Compose plugin (if not installed)
-sudo apt install -y docker-compose-plugin
-# Optional: enable unattended upgrades, fail2ban, and UFW
-sudo apt install -y ufw fail2ban
-sudo ufw allow OpenSSH
-sudo ufw allow 80,443/tcp
-sudo ufw enable
+```
+                    ┌─────────────┐
+                    │    Nginx    │
+                    │  (Port 80)  │
+                    └──────┬──────┘
+                           │
+            ┌──────────────┼──────────────┐
+            │              │              │
+            ▼              ▼              ▼
+      ┌──────────┐  ┌──────────┐  ┌──────────┐
+      │ Frontend  │  │ Backend  │  │  Static  │
+      │ (Next.js) │  │ (Django) │  │  Files   │
+      │  :3000    │  │  :8000   │  │          │
+      └──────────┘  └──────────┘  └──────────┘
+                          │
+                          ▼
+                   ┌────────────┐
+                   │ PostgreSQL  │
+                   └────────────┘
 ```
 
-2) Clone repo and prepare env
+## Option 1: Manual PM2 Deployment (Recommended for your current setup)
 
-```bash
-# on the VPS
-git clone <your-repo-url> malaika_nest
-cd malaika_nest
-cp .env.production.example .env.production
-# Edit .env.production with production values (SECRET_KEY, DB credentials, ALLOWED_HOSTS, CLOUDINARY_URL, payment keys, NEXT_PUBLIC_API_URL=https://yourdomain.com)
+### Step 1: SSH into your VM
+
+```
+bash
+ssh admin@104.154.161.10
+```
+
+### Step 2: Install required packages
+
+```
+bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Install PM2
+sudo npm install -g pm2
+
+# Install Python and pip
+sudo apt install -y python3 python3-pip python3-venv
+
+# Install Redis
+sudo apt install -y redis-server
+
+# Install Nginx
+sudo apt install -y nginx
+```
+
+### Step 3: Clone your repository
+
+```
+bash
+cd /var/www
+sudo git clone https://github.com/error302/malaikanest.git
+cd malaikanest
+```
+
+### Step 4: Set up directory structure
+
+```
+bash
+sudo mkdir -p /var/log/malaikanest
+sudo chown -R $USER:$USER /var/www/malaikanest
+```
+
+### Step 5: Configure Backend
+
+```
+bash
+cd backend
+
+# Create .env file
+cp .env.example .env
+nano .env
+```
+
+Fill in your `.env` with:
+
+```
+SECRET_KEY=your-very-long-secret-key-here
+DEBUG=False
+ALLOWED_HOSTS=104.154.161.10,localhost
+
+# Database (use SQLite for now, or set up PostgreSQL)
+DATABASE_URL=db.sqlite3
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# JWT
+SIMPLE_JWT_SECRET=your-jwt-secret-key
+ACCESS_TOKEN_LIFETIME=3600
+REFRESH_TOKEN_LIFETIME=86400
+
+# CORS - IMPORTANT for frontend to connect
+CORS_ALLOWED_ORIGINS=http://104.154.161.10:3000,http://localhost:3000
+
+# Email (optional)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL-email@gmail.com
+_HOST_USER=yourEMAIL_HOST_PASSWORD=your-app-password
+EMAIL_USE_TLS=True
+
+# Cloudinary (optional)
+CLOUDINARY_URL=your-cloudinary-url
+
+# Set this to create superuser
+CREATE_SUPERUSER=false
+```
+
+### Step 6: Set up Python environment and install dependencies
+
+```
+bash
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations
+python manage.py migrate
+
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Create superuser (optional)
+python manage.py createsuperuser
+```
+
+### Step 7: Configure Frontend
+
+```
+bash
+cd ../frontend
+
+# Create .env.production file
+cp .env.local .env.production  # or create new
 nano .env.production
 ```
 
-3) Build and run with Docker Compose (production)
+Set:
 
-```bash
-# Build images and start services
-docker compose -f docker-compose.prod.yml build --pull
-docker compose -f docker-compose.prod.yml up -d
-
-# Watch logs
-docker compose -f docker-compose.prod.yml logs -f
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-Notes:
-- `docker-compose.prod.yml` expects `.env.production` in repository root and mounts `./certbot` for Let’s Encrypt data.
-- The `nginx` service is configured to serve Challenges for Certbot; next step obtains certificates.
+### Step 8: Build the frontend
 
-4) Obtain TLS certificates (using certbot container in repo)
-
-```bash
-# Request certs (replace yourdomain.com)
-docker compose run --rm certbot certonly --webroot --webroot-path=/var/www/certbot -d yourdomain.com -d www.yourdomain.com --email admin@yourdomain.com --agree-tos --no-eff-email
-
-# After successful run, restart nginx
-docker compose -f docker-compose.prod.yml restart nginx
+```
+bash
+npm install
+npm run build
 ```
 
-If certbot run from container fails, use Certbot on host or follow certbot docs. Ensure DNS A records point to VPS IP.
+### Step 9: Configure Nginx
 
-5) Database backups and migrations
-
-```bash
-# Run migrations (from backend container)
-docker compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
-# Create superuser interactively
-docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
-# Healthcheck
-docker compose -f docker-compose.prod.yml exec backend python manage.py healthcheck
-
-Helper script
-
-I've added a small helper script at `deployment/run_migrations.sh` to run migrations,
-collect static files and seed categories in one step. On the VPS run:
-
-```bash
-sudo bash deployment/run_migrations.sh /home/ubuntu/malaika_nest
+```
+bash
+sudo cp /var/www/malaikanest/deployment/nginx-production.conf /etc/nginx/sites-available/malaikanest
+sudo ln -s /etc/nginx/sites-available/malaikanest /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
 ```
 
-The script assumes `docker compose -f docker-compose.prod.yml` is the compose command in your repo root. Adjust the path or compose filename as needed.
+### Step 10: Start services with PM2
+
+```
+bash
+# Start backend
+cd /var/www/malaikanest/backend
+pm2 start gunicorn --name backend -- kenya_ecom.wsgi:application --bind 0.0.0.0:8000 --workers 2
+
+# Start frontend
+cd /var/www/malaikanest/frontend
+pm2 start npm --name frontend -- start
+
+# Save PM2 config
+pm2 save
+
+# Set PM2 to start on boot
+pm2 startup
 ```
 
-6) Systemd (optional): keep compose running on reboot
+### Step 11: Verify everything is working
 
-Create `/etc/systemd/system/malaika_nest.service` with:
+```
+bash
+# Check PM2 status
+pm2 status
 
-```ini
-[Unit]
-Description=Malaika Nest Docker Compose
-After=network.target docker.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-WorkingDirectory=/home/ubuntu/malaika_nest
-ExecStart=/usr/bin/docker compose -f docker-compose.prod.yml up -d
-ExecStop=/usr/bin/docker compose -f docker-compose.prod.yml down
-
-[Install]
-WantedBy=multi-user.target
+# Check logs
+pm2 logs backend
+pm2 logs frontend
 ```
 
-Then:
+Your site should now be live at `http://104.154.161.10`
 
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now malaika_nest.service
+---
+
+## Option 2: Docker Compose Deployment (Cleaner, Recommended)
+
+### Step 1: Install Docker on VM
+
+```
+bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+sudo systemctl enable docker
+sudo systemctl start docker
 ```
 
-Automated healthchecks & cert renewals (systemd timers)
+### Step 2: Clone and configure
 
-The repo now includes helper scripts and systemd unit templates in `deployment/`:
-
-- `deployment/healthcheck.sh` — runs `python manage.py healthcheck` inside the backend container and restarts the backend on failure.
-- `deployment/renew_certs.sh` — runs `certbot renew` via the `certbot` container and restarts `nginx` when certificates are updated.
-- `deployment/systemd/malaika_nest-health.service` + `malaika_nest-health.timer` — run the healthcheck every 15 minutes.
-- `deployment/systemd/malaika_nest-renew.service` + `malaika_nest-renew.timer` — run certificate renewal weekly.
-
-Before enabling, edit the `WorkingDirectory` path and service `User` inside the unit files to match your VPS layout (default uses `/home/ubuntu/malaika_nest`).
-
-To install and enable the timers on the server:
-
-```bash
-# Use the included installer script (preferred) - run as sudo
-sudo bash deployment/install_systemd.sh /home/ubuntu/malaika_nest ubuntu
-
-# OR copy manually (if you prefer):
-sudo cp deployment/systemd/malaika_nest-*.service /etc/systemd/system/
-sudo cp deployment/systemd/malaika_nest-*.timer /etc/systemd/system/
-sudo cp deployment/healthcheck.sh /usr/local/bin/malaika_healthcheck.sh
-sudo cp deployment/renew_certs.sh /usr/local/bin/malaika_renew_certs.sh
-sudo chmod +x /usr/local/bin/malaika_healthcheck.sh /usr/local/bin/malaika_renew_certs.sh
-
-# Reload and enable timers
-sudo systemctl daemon-reload
-sudo systemctl enable --now malaika_nest-health.timer
-sudo systemctl enable --now malaika_nest-renew.timer
-
-# Check status
-sudo systemctl status malaika_nest-health.timer
-sudo systemctl list-timers | grep malaika_nest
+```
+bash
+cd /var/www
+git clone https://github.com/error302/malaikanest.git
+cd malaikanest
 ```
 
-Logs will be written to the `logs/` directory inside your repo by default (ensure it's writable by the service user).
+### Step 3: Configure environment
 
-Notifications
+```
+bash
+# Backend
+cp backend/.env.example backend/.env
+nano backend/.env
 
-Set `NOTIFY_WEBHOOK` as an environment variable on the VPS (in the shell that runs the installer or in your systemd unit environment) to send simple alerts to a Slack-compatible incoming webhook. Example payload is a JSON object with a `text` field.
-
-Example (on the server before enabling timers):
-
-```bash
-export NOTIFY_WEBHOOK="https://hooks.slack.com/services/T/IIII/XXXX"
-# then run the install or copy the files; systemd units will invoke the scripts which will use the env var if present
+# Set a strong password for PostgreSQL
+# POSTGRES_PASSWORD=your-secure-password
 ```
 
+### Step 4: Deploy
 
-7) Security & monitoring checklist (recommended)
-- Set `DEBUG=False` and ensure `ALLOWED_HOSTS` is set.
-- Use strong `SECRET_KEY` and rotate any keys that were committed.
-- Run Sentry for error monitoring; add `SENTRY_DSN` to env and configure SDK.
-- Configure fail2ban and UFW (done above). Consider Cloudflare WAF before the VPS.
-- Enable automatic backups for Postgres and uploaded media (Cloudinary recommended).
-- Add TLS renewal cron to run `docker compose run --rm certbot renew` regularly (certbot does this if installed on host; with container, add a cron or systemd timer).
-
-8) Rollback and maintenance
-- Keep database dumps off-site. Before major deploys, run `pg_dump` and snapshot VPS.
-
-9) Remove committed sensitive files and virtualenv (important)
-
-If you accidentally committed secrets or a Python `venv`, remove them from the index and rotate secrets immediately. On your local machine (not the server):
-
-```bash
-# stop tracking the virtualenv directory and any env files
-git rm -r --cached backend/venv || true
-git rm --cached backend/.env.production || true
-git rm --cached backend/.env || true
-git commit -m "remove tracked env and venv files"
-git push
+```
+bash
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
-This removes files from the current tree but they will still exist in git history. To purge secrets from history use a tool like `bfg` or `git filter-repo` and then rotate any secrets (Cloudinary, Stripe, JWT keys, DB passwords) immediately.
+---
 
-Recommended quick actions after removing files:
+## Testing Your Deployment
 
-```bash
-# Create example env file and keep secrets only in the VPS environment
-cp backend/.env.production.example backend/.env.production
-# Rotate API keys and update secrets in the VPS
-# Use a secrets manager where possible (Vault, AWS Secrets Manager, etc.)
+1. **Test Login Page**: Visit `http://104.154.161.10/login`
+2. **Test Registration**: Visit `http://104.154.161.10/register`
+3. **Test API**: Visit `http://104.154.161.10:8000/api/products/`
+4. **Test Admin**: Visit `http://104.154.161.10/admin`
+
+## Troubleshooting
+
+### Frontend shows "API not configured"
+
+- Check that `NEXT_PUBLIC_API_URL` is set correctly in frontend/.env.production
+- Rebuild frontend after changing: `npm run build`
+- Restart PM2: `pm2 restart frontend`
+
+### Login/Register not working
+
+- Check backend is running: `pm2 status`
+- Check CORS settings in backend/.env
+- Check browser console for errors
+- Check backend logs: `pm2 logs backend`
+
+### Can't connect to backend
+
+- Verify backend is running on port 8000: `netstat -tlnp | grep 8000`
+- Check firewall: `sudo ufw allow 8000`
+
+### Database issues
+
+- Check SQLite file exists: `ls -la backend/db.sqlite3`
+- Or check PostgreSQL if using it
+
+## Quick Commands for Managing Deployment
+
+```
+bash
+# Restart everything
+pm2 restart all
+
+# View logs
+pm2 logs --lines 50
+
+# Monitor resources
+pm2 monit
+
+# Update and redeploy
+cd /var/www/malaikanest
+git pull origin main
+pm2 restart all
+
+# Backup database
+cp backend/db.sqlite3 backup_$(date +%Y%m%d).sqlite3
 ```
 
-If you want, I can generate a `systemd` unit that runs healthchecks and rotates logs after deploy. Reply and I will add it to the repo.
+---
+
+## Files Created for Deployment
+
+- `deploy.sh` - Main deployment script
+- `frontend/ecosystem.config.js` - PM2 config for frontend
+- `backend/ecosystem.config.js` - PM2 config for backend
+- `deployment/nginx-production.conf` - Nginx reverse proxy config
+- `docker-compose.prod.yml` - Docker deployment (alternative)
+- `frontend/.env.production.example` - Frontend env template
+- `backend/.env.example` - Backend env template

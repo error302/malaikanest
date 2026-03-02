@@ -83,10 +83,10 @@ export default function LoginPage() {
           )}
 
           {/* Demo Mode Banner */}
-          {!apiConfigured && (
+          {(!apiConfigured || process.env.NEXT_PUBLIC_API_URL) && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg mb-6 text-sm">
-              <p className="font-medium mb-2">Demo Mode Active</p>
-              <p>The backend API is not connected. You can test the login with a demo account.</p>
+              <p className="font-medium mb-2">Demo Mode Available</p>
+              <p>You can use demo login to explore the site, or sign in with your account.</p>
             </div>
           )}
 
@@ -100,7 +100,6 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="you@example.com"
                 required
-                disabled={!apiConfigured}
               />
             </div>
 
@@ -113,7 +112,6 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="••••••••"
                 required
-                disabled={!apiConfigured}
               />
             </div>
 
@@ -129,23 +127,21 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !apiConfigured}
+              disabled={loading}
               className="w-full py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
 
-            {/* Demo Login Button */}
-            {!apiConfigured && (
-              <button
-                type="button"
-                onClick={handleDemoLogin}
-                disabled={loading}
-                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 mt-2"
-              >
-                {loading ? 'Logging in...' : 'Demo Login'}
-              </button>
-            )}
+            {/* Demo Login Button - Always available for testing */}
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 mt-2"
+            >
+              {loading ? 'Logging in...' : 'Demo Login'}
+            </button>
           </form>
 
           <div className="mt-6 text-center">

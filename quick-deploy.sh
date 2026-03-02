@@ -1,287 +1,97 @@
 #!/bin/bash
-# =============================================================================
-# MALAIKA NEST - QUICK DEPLOY SCRIPT
-# =============================================================================
-# This script automates the deployment process
-# Usage: sudo ./quick-deploy.sh
-# =============================================================================
+
+# Quick Deploy Script for Malaika Nest
+# Usage: ./quick-deploy.sh
 
 set -e
 
+echo "🚀 Quick Deploy for Malaika Nest"
+echo "================================"
+
 # Colors
-RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m'
 
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
-DOMAIN="${DOMAIN:-malaikanest.shop}"
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@malaikanest.shop}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
-MPESA_CONSUMER_KEY="${MPESA_CONSUMER_KEY:-}"
-MPESA_CONSUMER_SECRET="${MPESA_CONSUMER_SECRET:-}"
-MPESA_PASSKEY="${MPESA_PASSKEY:-}"
-CLOUDINARY_NAME="${CLOUDINARY_NAME:-}"
-CLOUDINARY_KEY="${CLOUDINARY_KEY:-}"
-CLOUDINARY_SECRET="${CLOUDINARY_SECRET:-}"
+# Get project directory
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
 
-# =============================================================================
-# FUNCTIONS
-# =============================================================================
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
+# Check if git is available
+if ! command -v git &> /dev/null; then
+    echo -e "${RED}Git not found. Please install git.${NC}"
+    exit 1
+fi
 
-# Check if running as root
-check_root() {
-    if [ "$EUID" -ne 0 ]; then 
-        log_error "Please run as root: sudo DOMAIN=yourdomain.com ./quick-deploy.sh"
-        exit 1
-    fi
-}
+# Pull latest changes
+echo -e "${YELLOW}📥 Pulling latest code...${NC}"
+git pull origin main 2>/dev/null || echo "Not a git repo or no remote, skipping git pull"
 
-# Generate random secret
-generate_secret() {
-    python3 -c "import secrets; print(secrets.token_hex(50))"
-}
+# ====================
+# BACKEND SETUP
+# ====================
+echo -e "${YELLOW}🐍 Setting up backend...${NC}"
+cd "$PROJECT_DIR/backend"
 
-# Generate JWT secret
-generate_jwt_secret() {
-    python3 -c "import secrets; print(secrets.token_hex(32))"
-}
+# Check if virtualenv exists
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv venv
+fi
 
-# =============================================================================
-# MAIN DEPLOYMENT
-# =============================================================================
-main() {
-    echo ""
-    echo "============================================"
-    echo "  Malaika Nest - Quick Deploy Script"
-    echo "============================================"
-    echo ""
-    
-    check_root
-    
-    log_info "Starting deployment for $DOMAIN..."
-    
-    # =============================================================================
-    # STEP 1: Install Docker if not installed
-    # =============================================================================
-    log_step "Step 1: Checking Docker installation..."
-    if ! command -v docker &> /dev/null; then
-        log_info "Installing Docker..."
-        curl -fsSL https://get.docker.com | sh
-        systemctl enable docker
-        systemctl start docker
-    fi
-    
-    if ! command -v docker-compose &> /dev/null; then
-        log_info "Installing Docker Compose..."
-        curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-    fi
-    
-    # =============================================================================
-    # STEP 2: Create environment file
-    # =============================================================================
-    log_step "Step 2: Creating environment configuration..."
-    
-    if [ -f ".env.production" ]; then
-        log_warn ".env.production already exists. Backing up and creating new..."
-        cp .env.production .env.production.backup
-    fi
-    
-    # Generate secrets if not provided
-    SECRET_KEY="${SECRET_KEY:-$(generate_secret)}"
-    JWT_SECRET="${SIMPLE_JWT_SECRET:-$(generate_jwt_secret)}"
-    ADMIN_URL_SECRET="${ADMIN_URL_SECRET:-$(generate_jwt_secret)}"
-    
-    # Default PostgreSQL password if not set
-    if [ -z "$POSTGRES_PASSWORD" ]; then
-        POSTGRES_PASSWORD=$(generate_jwt_secret)
-        log_warn "Generated random PostgreSQL password. Save this: $POSTGRES_PASSWORD"
-    fi
-    
-    cat > .env.production << EOF
-# =============================================================================
-# MALAIKA NEST - PRODUCTION ENVIRONMENT
-# =============================================================================
-# Generated by quick-deploy.sh on $(date)
+# Activate virtual environment
+source venv/bin/activate
 
-# DOMAIN
-DOMAIN=$DOMAIN
-FRONTEND_URL=https://$DOMAIN
-NEXT_PUBLIC_API_URL=https://$DOMAIN/api
+# Install dependencies
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt --quiet
+fi
 
-# DJANGO
-SECRET_KEY=$SECRET_KEY
-SIMPLE_JWT_SECRET=$JWT_SECRET
-ADMIN_URL_SECRET=$ADMIN_URL_SECRET
-DEBUG=False
-ALLOWED_HOSTS=$DOMAIN,www.$DOMAIN
+# Run migrations
+python manage.py migrate --noinput 2>/dev/null || true
 
-# DATABASE
-POSTGRES_DB=kenya_ecom
-POSTGRES_USER=kenya_user
-POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-DB_NAME=kenya_ecom
-DB_USER=kenya_user
-DB_PASSWORD=$POSTGRES_PASSWORD
-DB_HOST=db
-DB_PORT=5432
+# Collect static files
+python manage.py collectstatic --noinput 2>/dev/null || true
 
-# REDIS
-REDIS_URL=redis://redis:6379/0
-CELERY_BROKER_URL=redis://redis:6379/0
+# ====================
+# FRONTEND SETUP
+# ====================
+echo -e "${YELLOW}🏗 Building frontend...${NC}"
+cd "$PROJECT_DIR/frontend"
 
-# CLOUDINARY
-CLOUDINARY_NAME=$CLOUDINARY_NAME
-CLOUDINARY_KEY=$CLOUDINARY_KEY
-CLOUDINARY_SECRET=$CLOUDINARY_SECRET
+# Install dependencies
+npm install --silent 2>/dev/null || npm install
 
-# M-PESA (Kenya Mobile Money)
-MPESA_CONSUMER_KEY=$MPESA_CONSUMER_KEY
-MPESA_CONSUMER_SECRET=$MPESA_CONSUMER_SECRET
-MPESA_SHORTCODE=174379
-MPESA_PASSKEY=$MPESA_PASSKEY
-MPESA_ENV=production
-MPESA_CALLBACK_URL=https://$DOMAIN/api/payments/mpesa/callback/
+# Build
+npm run build
 
-# EMAIL
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=
-EMAIL_HOST_PASSWORD=
-EMAIL_USE_TLS=True
-DEFAULT_FROM_EMAIL=noreply@$DOMAIN
+# ====================
+# RESTART SERVICES
+# ====================
+echo -e "${YELLOW}🔄 Restarting services...${NC}"
 
-# CORS
-CORS_ALLOWED_ORIGINS=https://$DOMAIN,https://www.$DOMAIN
-CSRF_TRUSTED_ORIGINS=https://$DOMAIN,https://www.$DOMAIN
+# Check if PM2 is installed
+if command -v pm2 &> /dev/null; then
+    # Restart backend
+    pm2 restart backend 2>/dev/null || \
+    pm2 start gunicorn --name backend -- kenya_ecom.wsgi:application --bind 0.0.0.0:8000 --workers 2
 
-# DJANGO SETTINGS
-DJANGO_SETTINGS_MODULE=config.settings.prod
-EOF
-    
-    chmod 600 .env.production
-    log_info "Environment file created: .env.production"
-    
-    # =============================================================================
-    # STEP 3: Create required directories
-    # =============================================================================
-    log_step "Step 3: Creating directories..."
-    mkdir -p backend/media backend/staticfiles certbot/conf certbot/www logs
-    chmod -R 755 backend/media backend/staticfiles
-    
-    # =============================================================================
-    # STEP 4: Start Docker services
-    # =============================================================================
-    log_step "Step 4: Starting Docker services..."
-    
-    # Stop any existing containers
-    docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
-    
-    # Pull latest images and build
-    docker-compose -f docker-compose.prod.yml up -d --build
-    
-    log_info "Waiting for services to start..."
-    sleep 30
-    
-    # =============================================================================
-    # STEP 5: Verify services
-    # =============================================================================
-    log_step "Step 5: Verifying services..."
-    
-    echo ""
-    log_info "Service Status:"
-    docker-compose -f docker-compose.prod.yml ps
-    echo ""
-    
-    # =============================================================================
-    # STEP 6: Test endpoints
-    # =============================================================================
-    log_step "Step 6: Testing endpoints..."
-    
-    # Wait for backend to be ready
-    for i in {1..30}; do
-        if curl -s http://localhost:8000/api/core/health/ > /dev/null 2>&1; then
-            log_info "Backend is ready!"
-            break
-        fi
-        echo "Waiting for backend... ($i/30)"
-        sleep 2
-    done
-    
-    # Test health endpoint
-    if curl -s http://localhost:8000/api/core/health/ | grep -q "healthy"; then
-        log_info "Health check: OK"
-    else
-        log_warn "Health check may need attention"
-    fi
-    
-    # =============================================================================
-    # STEP 7: Create admin user
-    # =============================================================================
-    log_step "Step 7: Creating admin user..."
-    
-    # Try to create admin user (will fail if already exists)
-    docker-compose -f docker-compose.prod.yml exec -T backend python manage.py shell << PYEOF
-from apps.accounts.models import User
-if not User.objects.filter(email='admin@$DOMAIN').exists():
-    User.objects.create_superuser('admin@$DOMAIN', 'admin123', 'admin@$DOMAIN')
-    print("Admin user created: admin@$DOMAIN / admin123")
-else:
-    print("Admin user already exists")
-PYEOF
-    
-    # =============================================================================
-    # STEP 8: SSL Certificate (Optional)
-    # =============================================================================
-    log_step "Step 8: SSL Certificate setup..."
-    
-    if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
-        log_info "SSL certificate already exists"
-    else
-        log_warn "SSL certificate not found. To obtain SSL:"
-        log_warn "  1. Make sure your domain DNS points to this server"
-        log_warn "  2. Run: certbot certonly --standalone -d $DOMAIN -d www.$DOMAIN"
-        log_warn "  3. Then run this script again"
-    fi
-    
-    # =============================================================================
-    # FINAL STATUS
-    # =============================================================================
-    echo ""
-    echo "============================================"
-    echo "  Deployment Complete!"
-    echo "============================================"
-    echo ""
-    log_info "Site URL: http://$DOMAIN (or https:// if SSL configured)"
-    log_info "Admin URL: http://$DOMAIN/admin"
-    log_info "API URL: http://$DOMAIN/api"
-    echo ""
-    log_info "Admin credentials:"
-    echo "  Email: admin@$DOMAIN"
-    echo "  Password: admin123"
-    echo ""
-    log_info "Database password (save this!): $POSTGRES_PASSWORD"
-    echo ""
-    log_info "Next steps:"
-    echo "  1. Configure your domain DNS to point to this server"
-    echo "  2. Obtain SSL certificate (see above)"
-    echo "  3. Update M-Pesa credentials in .env.production"
-    echo "  4. Update Cloudinary credentials in .env.production"
-    echo "  5. Add products in admin panel"
-    echo ""
-    echo "Useful commands:"
-    echo "  docker-compose -f docker-compose.prod.yml logs -f    # View logs"
-    echo "  docker-compose -f docker-compose.prod.yml restart   # Restart services"
-    echo ""
-}
+    # Restart frontend
+    pm2 restart frontend 2>/dev/null || \
+    pm2 start npm --name frontend -- start
 
-# Run main function
-main
+    # Save PM2 state
+    pm2 save 2>/dev/null || true
+
+    echo -e "${GREEN}✅ Services restarted!${NC}"
+    pm2 status
+else
+    echo -e "${YELLOW}⚠️ PM2 not found. Please start services manually:${NC}"
+    echo "  Backend: cd $PROJECT_DIR/backend && source venv/bin/activate && gunicorn kenya_ecom.wsgi:application --bind 0.0.0.0:8000"
+    echo "  Frontend: cd $PROJECT_DIR/frontend && npm start"
+fi
+
+echo ""
+echo -e "${GREEN}🎉 Deployment complete!${NC}"
+echo "Your site should be live at http://104.154.161.10"
