@@ -8,7 +8,6 @@ from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
 from django.urls import reverse
 from django.utils import timezone
-import os
 from .serializers import UserSerializer, RegisterSerializer
 from .models import User
 import datetime
@@ -58,7 +57,7 @@ def password_reset_request_view(request):
     user.password_reset_expires = timezone.now() + datetime.timedelta(hours=24)
     user.save()
     
-    reset_url = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token={token}&email={email}"
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}&email={email}"
     
     try:
         send_mail(

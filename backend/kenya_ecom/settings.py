@@ -32,6 +32,9 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
 
+# Frontend URL - used for password reset links, etc.
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip('/')
+
 # Validate against open redirect attacks
 VALID_REDIRECT_HOSTS = os.getenv("VALID_REDIRECT_HOSTS", "").split(",")
 VALID_REDIRECT_HOSTS = [h.strip() for h in VALID_REDIRECT_HOSTS if h.strip()]
