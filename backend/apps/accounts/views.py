@@ -38,10 +38,29 @@ def logout_view(request):
     return Response({'detail': 'Logged out'})
 
 
+def _is_email_configured():
+    """Check if SMTP is properly configured"""
+    return all([
+        settings.EMAIL_HOST,
+        settings.EMAIL_HOST_USER,
+        settings.EMAIL_HOST_PASSWORD,
+        settings.DEFAULT_FROM_EMAIL,
+    ])
+
+
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def password_reset_request_view(request):
     """Request a password reset by providing email"""
+    # Check if email is configured
+    if not _is_email_configured():
+        import logging
+        logger = logging.getLogger('apps.accounts')
+        logger.error("Email not configured. Missing EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, or DEFAULT_FROM_EMAIL")
+        return Response({
+            'detail': 'Password reset is not available. Please contact support.'
+        }, status=503)
+    
     email = request.data.get('email')
     
     if not email:
@@ -50,6 +69,7 @@ def password_reset_request_view(request):
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
+        # Return success even if user doesn't exist (prevent email enumeration)
         return Response({'detail': 'If an account exists with this email, a reset link has been sent'}, status=200)
     
     token = get_random_string(32)
