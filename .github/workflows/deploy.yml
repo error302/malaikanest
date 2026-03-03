@@ -1,0 +1,46 @@
+name: Deploy to Google Cloud VM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Host ${{ secrets.VM_HOST }}
+             HostName ${{ secrets.VM_HOST }}
+             User ${{ secrets.VM_USER }}
+             StrictHostKeyChecking no" > ~/.ssh/config
+
+      - name: Deploy to VM
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd /var/www/malaikanest
+            
+            # Pull latest code
+            git pull origin main
+            
+            # Backend
+            cd backend
+            source ../venv/bin/activate
+            pip install -r requirements.txt
+            python manage.py migrate
+            python manage.py collectstatic --noinput
+            sudo systemctl restart malaika-gunicorn
+            
+            # Frontend
+            cd ../frontend
+            npm install
+            npm run build
+            pm2 restart malaika-frontend
+          EOF

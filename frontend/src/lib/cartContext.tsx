@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useReducer, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useMemo, useState, useCallback } from 'react'
 
 type CartItem = { 
   id: string | number; 
@@ -28,6 +28,7 @@ type Action =
   | { type: 'ADD'; item: CartItem }
   | { type: 'REMOVE'; id: string | number }
   | { type: 'UPDATE'; id: string | number; qty: number }
+  | { type: 'UPDATE_LOCAL'; id: string | number; qty: number }
   | { type: 'CLEAR' }
 
 const STORAGE_KEY = 'malaika_cart_v1'
@@ -48,6 +49,9 @@ function reducer(state: State, action: Action): State {
     case 'REMOVE':
       return { ...state, items: state.items.filter(i => i.id !== action.id) }
     case 'UPDATE':
+      return { ...state, items: state.items.map(i => i.id === action.id ? { ...i, qty: action.qty } : i) }
+    case 'UPDATE_LOCAL':
+      // Optimistic update - used when syncing with server
       return { ...state, items: state.items.map(i => i.id === action.id ? { ...i, qty: action.qty } : i) }
     case 'CLEAR':
       return { ...state, items: [], cartData: null }
@@ -73,7 +77,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [synced, setSynced] = useState(false)
 
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     if (!API_URL) {
       console.warn('NEXT_PUBLIC_API_URL is not configured. Cart sync disabled.')
       return
@@ -91,11 +95,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Failed to fetch cart', e)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchCart()
-  }, [])
+  }, [fetchCart])
 
   useEffect(() => {
     if (!synced) return
@@ -106,7 +110,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.items, synced])
 
-  const add = async (item: Omit<CartItem, 'qty'> & { qty?: number }) => {
+  const add = useCallback(async (item: Omit<CartItem, 'qty'> & { qty?: number }) => {
     const fullItem = { ...item, qty: item.qty ?? 1 }
     dispatch({ type: 'ADD', item: fullItem })
     
@@ -116,7 +120,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     setLoading(true)
     try {
-      await fetch(`${API_URL}/api/orders/cart/add/`, {
+      const res = await fetch(`${API_URL}/api/orders/cart/add/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -125,37 +129,132 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           quantity: fullItem.qty 
         })
       })
+      
+      if (!res.ok) {
+        // If server call fails, rollback the local change
+        dispatch({ type: 'REMOVE', id: item.id })
+        console.error('Failed to add to cart on server')
+      }
     } catch (e) {
+      // Rollback on error
+      dispatch({ type: 'REMOVE', id: item.id })
       console.error('Failed to add to cart', e)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const remove = async (id: string | number) => {
+  const remove = useCallback(async (id: string | number) => {
+    // Store for potential rollback
+    const itemToRemove = state.items.find(i => i.id === id)
     dispatch({ type: 'REMOVE', id })
     
     if (!API_URL) return
+    
     setLoading(true)
     try {
-      await fetch(`${API_URL}/api/orders/cart/remove/${id}/`, {
+      const res = await fetch(`${API_URL}/api/orders/cart/remove/${id}/`, {
         method: 'POST',
         credentials: 'include',
       })
+      
+      if (!res.ok && itemToRemove) {
+        // Rollback if server fails
+        dispatch({ type: 'ADD', item: itemToRemove })
+        console.error('Failed to remove from cart on server')
+      }
     } catch (e) {
+      // Rollback on error
+      if (itemToRemove) {
+        dispatch({ type: 'ADD', item: itemToRemove })
+      }
       console.error('Failed to remove from cart', e)
     } finally {
       setLoading(false)
     }
-  }
+  }, [state.items])
 
-  const updateQty = async (id: string | number, qty: number) => {
+  const updateQty = useCallback(async (id: string | number, qty: number) => {
+    // Prevent negative quantities
+    if (qty < 1) {
+      return remove(id)
+    }
+    
+    // Store old quantity for potential rollback
+    const oldItem = state.items.find(i => i.id === id)
+    const oldQty = oldItem?.qty
+    
+    // Optimistic update
     dispatch({ type: 'UPDATE', id, qty })
-  }
+    
+    if (!API_URL) return
+    
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/orders/cart/update/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          product_id: id, 
+          quantity: qty 
+        })
+      })
+      
+      if (!res.ok) {
+        // Rollback on error
+        if (oldQty !== undefined) {
+          dispatch({ type: 'UPDATE', id, qty: oldQty })
+        }
+        console.error('Failed to update cart on server')
+      }
+    } catch (e) {
+      // Rollback on error
+      if (oldQty !== undefined) {
+        dispatch({ type: 'UPDATE', id, qty: oldQty })
+      }
+      console.error('Failed to update cart', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [state.items, remove])
 
-  const clear = async () => {
+  const clear = useCallback(async () => {
+    // Store current items for potential rollback
+    const currentItems = [...state.items]
+    
+    // Optimistic clear
     dispatch({ type: 'CLEAR' })
-  }
+    
+    if (!API_URL) return
+    
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/orders/cart/clear/`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      
+      if (!res.ok) {
+        // Rollback on error - restore items
+        currentItems.forEach(item => {
+          dispatch({ type: 'ADD', item })
+        })
+        console.error('Failed to clear cart on server')
+      } else {
+        // Also clear localStorage
+        localStorage.removeItem(STORAGE_KEY)
+      }
+    } catch (e) {
+      // Rollback on error
+      currentItems.forEach(item => {
+        dispatch({ type: 'ADD', item })
+      })
+      console.error('Failed to clear cart', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [state.items])
 
   const value = useMemo(() => ({ 
     items: state.items, 
@@ -165,7 +264,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     clear, 
     loading, 
     synced 
-  }), [state.items, loading, synced])
+  }), [state.items, add, remove, updateQty, clear, loading, synced])
 
   return (
     <CartContext.Provider value={value}>

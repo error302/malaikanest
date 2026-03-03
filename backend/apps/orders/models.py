@@ -85,27 +85,58 @@ class OrderItem(models.Model):
 
 
 def create_order_from_cart(user, cart, coupon=None, receipt_number=None):
+    """
+    Create an order from a cart with proper inventory locking to prevent race conditions.
+    Uses select_for_update to lock all inventory rows within a single transaction.
+    """
     with transaction.atomic():
-        # Create order row with total calculation and reserve stock using select_for_update
+        # Lock all inventory rows at once to prevent race conditions
+        cart_items = cart.items.select_related('product').all()
+        product_ids = [item.product_id for item in cart_items]
+        
+        # Lock all inventory rows for the products in the cart
+        inventories = {
+            inv.product_id: inv 
+            for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
+        }
+        
+        # Validate stock and calculate total
         total = 0
         items = []
-        for ci in cart.items.select_related('product').all():
-            inv = Inventory.objects.select_for_update().get(product=ci.product)
+        
+        for ci in cart_items:
+            inv = inventories.get(ci.product_id)
+            
+            # Handle case where inventory record doesn't exist
+            if inv is None:
+                raise ValueError(f'No inventory record found for {ci.product.name}')
+            
             if inv.available() < ci.quantity:
-                raise ValueError(f'Product {ci.product.name} out of stock')
+                raise ValueError(f'Product {ci.product.name} is out of stock. Available: {inv.available()}')
+            
             total += ci.product.price * ci.quantity
             items.append((ci.product, ci.quantity, ci.product.price, inv))
 
+        # Apply coupon discount
         if coupon and coupon.active:
             total = max(total - coupon.amount, 0)
 
-        order = Order.objects.create(user=user, total=total, status='pending', coupon=coupon, receipt_number=receipt_number)
+        # Create the order
+        order = Order.objects.create(
+            user=user, 
+            total=total, 
+            status='pending', 
+            coupon=coupon, 
+            receipt_number=receipt_number
+        )
 
+        # Deduct inventory and create order items
         for product, qty, price, inv in items:
-            # Deduct from inventory atomically
-            inv.quantity -= qty
-            inv.reserved = max(inv.reserved - qty, 0)
-            inv.save()
+            # Atomically deduct from inventory using F() expression
+            Inventory.objects.filter(pk=inv.pk).update(
+                quantity=models.F('quantity') - qty,
+                reserved=models.F('reserved') - qty
+            )
             OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
 
         return order

@@ -7,6 +7,7 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
 from django.urls import reverse
+from django.utils import timezone
 import os
 from .serializers import UserSerializer, RegisterSerializer
 from .models import User
@@ -54,7 +55,7 @@ def password_reset_request_view(request):
     
     token = get_random_string(32)
     user.password_reset_token = token
-    user.password_reset_expires = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+    user.password_reset_expires = timezone.now() + datetime.timedelta(hours=24)
     user.save()
     
     reset_url = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token={token}&email={email}"
@@ -100,7 +101,7 @@ def password_reset_confirm_view(request):
     except User.DoesNotExist:
         return Response({'detail': 'Invalid or expired reset token'}, status=400)
     
-    if not user.password_reset_expires or user.password_reset_expires < datetime.datetime.utcnow():
+    if not user.password_reset_expires or user.password_reset_expires < timezone.now():
         return Response({'detail': 'Reset token has expired'}, status=400)
     
     user.set_password(new_password)
@@ -121,7 +122,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             refresh = resp.data.get('refresh')
             if refresh:
                 max_age = int(settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME', 86400).total_seconds() if hasattr(settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME'), 'total_seconds') else settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME', 86400))
-                expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age)
+                expires = timezone.now() + datetime.timedelta(seconds=max_age)
                 resp.set_cookie(
                     settings.SIMPLE_JWT.get('AUTH_COOKIE', 'refresh_token'),
                     refresh,

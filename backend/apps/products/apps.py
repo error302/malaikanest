@@ -5,3 +5,7 @@ class ProductsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.products'
     verbose_name = 'Products'
+
+    def ready(self):
+        # Import signals to register them
+        import apps.products.signals  # noqa

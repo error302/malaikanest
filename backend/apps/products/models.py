@@ -10,11 +10,6 @@ class Brand(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return self.name
 
@@ -33,13 +28,6 @@ class Category(models.Model):
     group = models.CharField(
         max_length=120, blank=True, help_text="Top-level group for mega menu navigation"
     )
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-        if self.parent is None and not self.group:
-            self.group = self.name
-        super().save(*args, **kwargs)
 
     @property
     def is_top_level(self):
@@ -133,19 +121,7 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
-        if not self.sku:
-            import uuid
-
-            self.sku = f"SKU-{uuid.uuid4().hex[:8].upper()}"
-        
-        # Auto-hide product when out of stock (if it was published)
-        if self.stock <= 0 and self.status == 'published':
-            self.is_active = False
-        elif self.stock > 0 and self.status == 'published':
-            self.is_active = True
-            
-        super().save(*args, **kwargs)
+    # Business logic moved to signals.py for better separation of concerns
 
     @property
     def in_stock(self):

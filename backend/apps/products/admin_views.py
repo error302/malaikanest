@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
+from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from apps.products.models import Category, Product, Banner, Inventory
 from apps.orders.models import Order
@@ -13,6 +14,12 @@ from .admin_serializers import (
     AdminUserSerializer,
     AdminOrderSerializer,
 )
+
+
+class AdminPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 class IsAdminUserOrReadOnly(permissions.BasePermission):
@@ -28,6 +35,7 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AdminProductSerializer
     permission_classes = [IsAdminUserOrReadOnly]
+    pagination_class = AdminPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -68,18 +76,21 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = AdminCategorySerializer
     permission_classes = [IsAdminUserOrReadOnly]
+    pagination_class = AdminPagination
 
 
 class AdminBannerViewSet(viewsets.ModelViewSet):
     queryset = Banner.objects.all().order_by("position")
     serializer_class = AdminBannerSerializer
     permission_classes = [IsAdminUserOrReadOnly]
+    pagination_class = AdminPagination
 
 
 class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
+    pagination_class = AdminPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -151,6 +162,7 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AdminOrderSerializer
     permission_classes = [IsAdminUser]
+    pagination_class = AdminPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()

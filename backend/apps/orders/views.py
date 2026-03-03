@@ -150,6 +150,48 @@ class CartViewSet(viewsets.ViewSet):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'])
+    def update(self, request):
+        """Update quantity of a cart item"""
+        product_id = request.data.get('product_id')
+        quantity = int(request.data.get('quantity', 1))
+        
+        if quantity < 1:
+            return Response({'detail': 'Quantity must be at least 1'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if request.user.is_authenticated:
+            cart = get_object_or_404(Cart, user=request.user)
+        else:
+            session_key = request.session.session_key
+            if not session_key:
+                return Response({'detail': 'No cart found'}, status=status.HTTP_400_BAD_REQUEST)
+            cart = get_object_or_404(Cart, session_key=session_key, user=None)
+        
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+            cart_item.quantity = quantity
+            cart_item.save()
+        except CartItem.DoesNotExist:
+            return Response({'detail': 'Item not found in cart'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def clear(self, request):
+        """Clear all items from the cart"""
+        if request.user.is_authenticated:
+            cart = get_object_or_404(Cart, user=request.user)
+        else:
+            session_key = request.session.session_key
+            if not session_key:
+                return Response({'detail': 'No cart found'}, status=status.HTTP_400_BAD_REQUEST)
+            cart = get_object_or_404(Cart, session_key=session_key, user=None)
+        
+        CartItem.objects.filter(cart=cart).delete()
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
 
 class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Order.objects.all()
@@ -157,13 +199,48 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        user = self.request.user
+        
+        # Admin users can see all orders
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            return Order.objects.all().select_related('user').prefetch_related('items__product')
+        
+        # Regular users can only see their own orders
+        return Order.objects.filter(user=user).select_related('user').prefetch_related('items__product')
+
+    def get_object(self):
+        """
+        Override to add row-level security check.
+        Ensures users can only access their own orders.
+        """
+        obj = super().get_object()
+        user = self.request.user
+        
+        # Admin can access any order
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            return obj
+        
+        # Check if user owns this order
+        if obj.user != user:
+            # Also check guest email for guest orders
+            if not obj.guest_email or obj.guest_email != user.email:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("You do not have permission to view this order")
+        
+        return obj
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
-        order = get_object_or_404(Order, pk=pk, user=request.user)
+        # Use get_object to ensure row-level security
+        order = self.get_object()
+        
         if order.status in ['paid', 'initiated']:
             return Response({'detail': 'Cannot cancel processed order'}, status=400)
+        
+        if order.status == 'cancelled':
+            return Response({'detail': 'Order is already cancelled'}, status=400)
+        
         order.status = 'cancelled'
         order.save()
+        
         return Response({'detail': 'cancelled'})

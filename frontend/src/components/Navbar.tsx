@@ -5,6 +5,7 @@ import Link from 'next/link'
 import MiniCart from './MiniCart'
 import { useCart } from '../lib/cartContext'
 import Logo from './Logo'
+import { getCachedData, setCachedData } from '../lib/cache'
 
 interface Category {
   id: number
@@ -16,6 +17,8 @@ interface Category {
   children: Category[]
 }
 
+const CATEGORIES_CACHE_KEY = 'navbar_categories'
+
 function NavbarContent() {
   const [isOpen, setIsOpen] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
@@ -25,10 +28,20 @@ function NavbarContent() {
 
   useEffect(() => {
     let mounted = true
+    
+    // Check cache first
+    const cached = getCachedData<Category[]>(CATEGORIES_CACHE_KEY)
+    if (cached) {
+      setCategories(cached)
+    }
+    
+    // Fetch fresh data and update cache
     api.get('/api/products/categories/')
       .then(res => {
         if (mounted) {
           setCategories(res.data)
+          // Cache for 5 minutes
+          setCachedData(CATEGORIES_CACHE_KEY, res.data, 5 * 60 * 1000)
         }
       })
       .catch(err => console.error("Failed to load categories", err))
