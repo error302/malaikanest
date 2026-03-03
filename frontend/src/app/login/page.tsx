@@ -16,7 +16,8 @@ export default function LoginPage() {
   useEffect(() => {
     // Check if API is configured
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    if (!apiUrl) {
+    // Check if API_URL is set AND not empty string
+    if (!apiUrl || apiUrl === '' || apiUrl === 'http://localhost:8000') {
       setApiConfigured(false)
     }
   }, [])
@@ -82,8 +83,8 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Demo Mode Banner */}
-          {(!apiConfigured || process.env.NEXT_PUBLIC_API_URL) && (
+          {/* Demo Mode Banner - only show when API is not properly configured */}
+          {!apiConfigured && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg mb-6 text-sm">
               <p className="font-medium mb-2">Demo Mode Available</p>
               <p>You can use demo login to explore the site, or sign in with your account.</p>
