@@ -13,6 +13,8 @@ const adminLinks = [
   { href: '/admin/banners', label: 'Banners', icon: '🖼️' },
   { href: '/admin/orders', label: 'Orders', icon: '🛒' },
   { href: '/admin/customers', label: 'Customers', icon: '👥' },
+  { href: '/admin/reports', label: 'Reports', icon: '📈' },
+  { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
