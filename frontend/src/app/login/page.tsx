@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import api from '../../lib/api'
 import { showToast } from '../../components/Toast'
+import Logo from '../../components/Logo'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -66,15 +67,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-[#1C1C2E] flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-[#252538] rounded-2xl shadow-xl p-8 border border-[#3A3A55]">
           <div className="text-center mb-8">
-            <Link href="/" className="inline-block">
-              <img src="/logo.svg" alt="Malaika Nest" className="h-10 w-auto mx-auto" />
-            </Link>
-            <h2 className="text-2xl font-bold text-text mt-6">Welcome Back</h2>
-            <p className="text-gray-500 mt-2">Sign in to your account</p>
+            <div className="flex justify-center">
+              <Logo variant="large" linkWrapper={false} />
+            </div>
+            <h2 className="text-2xl font-bold text-white mt-6">Welcome Back</h2>
+            <p className="text-[#A0A0B8] mt-2">Sign in to your account</p>
           </div>
 
           {error && (

@@ -56,7 +56,7 @@ function ProductCardInner({ product }: Props) {
             {product.name}
           </h3>
         </Link>
-        <p className="text-text-muted text-[13px] mt-1">by {product.seller?.name || 'Kenya Baby'}</p>
+        <p className="text-text-muted text-[13px] mt-1">by {product.seller?.name || 'Malaika Nest'}</p>
         <div className="mt-3 flex items-center justify-between">
           <div>
             <span className="text-xl font-bold text-white">KES {parseFloat(product.price).toLocaleString()}</span>

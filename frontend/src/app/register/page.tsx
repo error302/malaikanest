@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import api from '../../lib/api'
+import Logo from '../../components/Logo'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -73,9 +74,9 @@ export default function RegisterPage() {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <Link href="/" className="inline-block">
-              <img src="/logo.svg" alt="Malaika Nest" className="h-10 w-auto mx-auto" />
-            </Link>
+            <div className="flex justify-center">
+              <Logo variant="large" linkWrapper={false} />
+            </div>
             <h2 className="text-2xl font-bold text-text mt-6">Create Account</h2>
             <p className="text-gray-500 mt-2">Join Malaika Nest for the best baby products</p>
           </div>

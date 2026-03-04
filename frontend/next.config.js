@@ -15,7 +15,12 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+      },
     ],
+    domains: ['localhost', '127.0.0.1'],
   },
 }
 

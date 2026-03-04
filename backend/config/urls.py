@@ -5,8 +5,8 @@ from django.conf.urls.static import static
 import os
 from apps.core.healthcheck import health_check, readiness_check
 
-admin.site.site_header = 'Kenya Baby E-Commerce Admin'
-admin.site.site_title = 'Kenya Baby Shop Admin'
+admin.site.site_header = 'Malaika Nest E-Commerce Admin'
+admin.site.site_title = 'Malaika Nest Shop Admin'
 
 admin_secret = os.getenv('ADMIN_URL_SECRET', 'admin-secret-url')
 

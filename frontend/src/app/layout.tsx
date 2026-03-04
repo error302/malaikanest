@@ -23,14 +23,14 @@ const inter = Inter({
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_API_URL || 'https://malaikanest.shop'),
   title: {
-    default: 'Kenya Baby - Premium Baby Products in Kenya',
-    template: '%s | Kenya Baby'
+    default: 'Malaika Nest — Baby Products & Toys in Kenya',
+    template: '%s | Malaika Nest'
   },
-  description: 'Trusted online baby store in Kenya. Shop safe, quality baby products with secure M-Pesa payments. Free delivery in Nairobi, Mombasa, Kisumu and across Kenya.',
-  keywords: ['baby shop Kenya', 'baby products Kenya', 'M-Pesa payments', 'baby store Nairobi', 'infant supplies Kenya', 'safe baby products', 'Kenya Baby'],
-  authors: [{ name: 'Kenya Baby' }],
-  creator: 'Kenya Baby',
-  publisher: 'Kenya Baby',
+  description: 'Shop premium baby products, accessories and toys in Kenya. Secure M-Pesa payments, fast delivery nationwide.',
+  keywords: ['baby shop Kenya', 'baby products Kenya', 'M-Pesa payments', 'baby store Nairobi', 'infant supplies Kenya', 'safe baby products', 'Malaika Nest'],
+  authors: [{ name: 'Malaika Nest' }],
+  creator: 'Malaika Nest',
+  publisher: 'Malaika Nest',
   robots: {
     index: true,
     follow: true,
@@ -46,23 +46,23 @@ export const metadata = {
     type: 'website',
     locale: 'en_KE',
     url: 'https://malaikanest.shop',
-    siteName: 'Kenya Baby',
-    title: 'Kenya Baby - Premium Baby Products in Kenya',
-    description: 'Trusted online baby store in Kenya. Shop safe, quality baby products with secure M-Pesa payments.',
+    siteName: 'Malaika Nest',
+    title: 'Malaika Nest — Baby Products & Toys in Kenya',
+    description: 'Shop premium baby products, accessories and toys in Kenya. Secure M-Pesa payments, fast delivery nationwide.',
     images: [
       {
-        url: '/logo.svg',
+        url: '/images/logo.png',
         width: 1200,
         height: 630,
-        alt: 'Kenya Baby - Quality Baby Products',
+        alt: 'Malaika Nest - Quality Baby Products',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Kenya Baby - Premium Baby Products',
-    description: 'Trusted online baby store with secure M-Pesa payments',
-    images: ['/logo.svg'],
+    title: 'Malaika Nest — Baby Products & Toys',
+    description: 'Shop premium baby products with secure M-Pesa payments',
+    images: ['/images/logo.png'],
   },
   verification: {
     google: 'google-site-verification-code',
@@ -83,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "Kenya Baby",
+              "name": "Malaika Nest",
               "url": "https://malaikanest.shop",
               "potentialAction": {
                 "@type": "SearchAction",

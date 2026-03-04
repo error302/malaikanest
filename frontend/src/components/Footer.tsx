@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import TrustBadges from './TrustBadges'
+import Logo from './Logo'
 
 export default function Footer() {
   return (
@@ -11,13 +12,8 @@ export default function Footer() {
           <div className="grid md:grid-cols-4 gap-8">
             {/* Column 1 - Logo + Description */}
             <div>
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-[#C8963E] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">K</span>
-                </div>
-                <span className="font-bold text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Malaika Nest</span>
-              </Link>
-              <p className="text-[#A0A0B8] text-sm leading-relaxed mt-3">
+              <Logo variant="footer" linkWrapper={true} />
+              <p className="text-[#A0A0B8] text-sm leading-relaxed mt-3 max-w-xs">
                 Premium baby products, accessories and toys for Kenyan families.
               </p>
               {/* Social Icons */}
