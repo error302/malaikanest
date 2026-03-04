@@ -66,9 +66,6 @@ const testimonials = [
   { name: 'Aisha M.', location: 'Kisumu', rating: 5, text: 'The nursing pillow I ordered is amazing. Highly recommend Malaika Nest to all new mums in Kenya!', avatar: '👩‍🦰' },
 ]
 
-// Kenyan media brands
-const brands = ['Nation Media', 'Standard Group', 'Citizen TV', 'Nairobi News', 'Tuko.co.ke']
-
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -444,19 +441,6 @@ export default function Home() {
               ))}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Brand Logos Bar */}
-      <section className="py-8 bg-[#252538]">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40 hover:opacity-70 transition-opacity">
-            {brands.map((brand) => (
-              <span key={brand} className="text-lg md:text-xl font-bold text-[#A0A0B8] hover:text-white transition-colors">
-                {brand}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 

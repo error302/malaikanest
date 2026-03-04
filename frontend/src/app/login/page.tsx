@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import api from '../../lib/api'
@@ -12,46 +12,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [apiConfigured, setApiConfigured] = useState(true)
-
-  useEffect(() => {
-    // Check if API is configured
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    // Check if API_URL is set AND not empty string
-    if (!apiUrl || apiUrl === '' || apiUrl === 'http://localhost:8000') {
-      setApiConfigured(false)
-    }
-  }, [])
-
-  const handleDemoLogin = () => {
-    // Demo login - simulate successful login
-    setLoading(true)
-    setTimeout(() => {
-      // Store demo tokens
-      localStorage.setItem('access', 'demo_token_' + Date.now())
-      localStorage.setItem('refresh', 'demo_refresh_' + Date.now())
-      localStorage.setItem('user', JSON.stringify({
-        email: 'demo@example.com',
-        first_name: 'Demo',
-        last_name: 'User'
-      }))
-      showToast('Demo login successful!', 'success')
-      setLoading(false)
-      router.push('/dashboard')
-    }, 1000)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    // If API is not configured, show error
-    if (!apiConfigured) {
-      setError('API is not configured. Please set NEXT_PUBLIC_API_URL environment variable.')
-      setLoading(false)
-      return
-    }
 
     try {
       const res = await api.post('/api/accounts/token/', { email, password })
@@ -84,34 +49,26 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Demo Mode Banner - only show when API is not properly configured */}
-          {!apiConfigured && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg mb-6 text-sm">
-              <p className="font-medium mb-2">Demo Mode Available</p>
-              <p>You can use demo login to explore the site, or sign in with your account.</p>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Email Address</label>
+              <label className="block text-sm font-medium text-white mb-1">Email Address</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full px-4 py-3 bg-[#1C1C2E] border border-[#3A3A55] text-white placeholder-[#A0A0B8] rounded-lg focus:outline-none focus:border-[#C8963E] focus:ring-1 focus:ring-[#C8963E]"
                 placeholder="you@example.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Password</label>
+              <label className="block text-sm font-medium text-white mb-1">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full px-4 py-3 bg-[#1C1C2E] border border-[#3A3A55] text-white placeholder-[#A0A0B8] rounded-lg focus:outline-none focus:border-[#C8963E] focus:ring-1 focus:ring-[#C8963E]"
                 placeholder="••••••••"
                 required
               />
@@ -119,10 +76,10 @@ export default function LoginPage() {
 
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded border-secondary" />
-                <span className="text-gray-600">Remember me</span>
+                <input type="checkbox" className="rounded border-[#3A3A55]" />
+                <span className="text-[#A0A0B8]">Remember me</span>
               </label>
-              <Link href="/forgot-password" className="text-accent hover:underline">
+              <Link href="/forgot-password" className="text-[#C8963E] hover:text-[#E0A83F]">
                 Forgot password?
               </Link>
             </div>
@@ -130,27 +87,17 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-[#C8963E] hover:bg-[#E0A83F] text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-
-            {/* Demo Login Button - Always available for testing */}
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={loading}
-              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 mt-2"
-            >
-              {loading ? 'Logging in...' : 'Demo Login'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-[#A0A0B8]">
               Don't have an account?{' '}
-              <Link href="/register" className="text-accent font-medium hover:underline">
-                Create one
+              <Link href="/register" className="text-[#C8963E] font-medium hover:text-[#E0A83F]">
+                Sign Up
               </Link>
             </p>
           </div>
@@ -159,3 +106,4 @@ export default function LoginPage() {
     </div>
   )
 }
+
