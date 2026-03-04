@@ -5,50 +5,43 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary dark theme colors
-        primary: '#1C1C2E',      // Deep dark navy/charcoal
-        card: '#252538',         // Slightly lighter dark
-        'card-hover': '#2D2D45', // Even lighter on hover
-        accent: '#7B2FBE',       // Rich purple
-        'accent-hover': '#9B4FDE',
-        muted: '#A0A0B8',        // Muted grey-purple
-        border: '#3A3A55',       // Border/divider
-        gold: '#FFD700',         // Golden yellow
+        // Core backgrounds
+        'bg-primary':    '#1C1C2E',
+        'bg-card':       '#252538',
+        'bg-card-hover': '#2D2D45',
+        'bg-section':    '#1A1A2E',
         
-        // Legacy colors (kept for compatibility)
-        secondary: '#D8A7B1',
-        text: '#FFFFFF',
-        cta: '#7B2FBE',
-        'cta-hover': '#9B4FDE',
-        cream: '#F8F4EE',
-        dustyRose: '#D8A7B1',
-        mutedGold: '#B8860B',
-        charcoal: '#2E2E2E',
-        deepBlush: '#9E3E50',
+        // Accents
+        'accent':        '#C8963E',
+        'accent-hover':  '#E0A83F',
+        'purple':        '#7B2FBE',
+        'purple-hover':  '#9B4FDE',
         
-        // Utility colors
-        success: '#4CAF50',
-        warning: '#FFB800',
-        error: '#EF4444',
+        // Text
+        'text-primary':  '#FFFFFF',
+        'text-muted':    '#A0A0B8',
+        'text-dark':     '#1C1C2E',
+        
+        // UI
+        'border-dark':   '#3A3A55',
+        'badge-new':     '#C8963E',
+        'star':          '#FFB800',
+        'out-of-stock':  '#6B7280',
       },
       fontFamily: {
         display: ['Space Grotesk', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        body:    ['Inter', 'sans-serif'],
       },
       borderRadius: {
-        'card': '20px',
-        'button': '12px',
-        'input': '12px',
-        'tag': '8px',
+        'card':   '20px',
+        'btn':    '12px',
+        'input':  '12px',
+        'badge':  '8px',
       },
       boxShadow: {
-        'card': '0 8px 32px rgba(0,0,0,0.4)',
-        'card-hover': '0 12px 40px rgba(123,47,190,0.3)',
-        'button': '0 4px 20px rgba(123,47,190,0.4)',
-      },
-      spacing: {
-        'section': '80px',
-        'section-x': '120px',
+        'card':   '0 8px 32px rgba(0,0,0,0.4)',
+        'accent': '0 4px 20px rgba(200,150,62,0.4)',
+        'purple': '0 4px 20px rgba(123,47,190,0.4)',
       },
       animation: {
         'float': 'float 3s ease-in-out infinite',
@@ -58,8 +51,8 @@ module.exports = {
       },
       keyframes: {
         float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%':       { transform: 'translateY(-12px)' },
         },
         fadeIn: {
           '0%': { opacity: '0' },
@@ -70,12 +63,11 @@ module.exports = {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
+          '0%': { backgroundPosition: '-1000px 0' },
+          '100%': { backgroundPosition: '1000px 0' },
         },
       },
     },
   },
   plugins: [],
 }
-

@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --primary: #F8F4EE;
-  --secondary: #D8A7B1;
-  --accent: #C6A75E;
-  --text: #2E2E2E;
-  --cta: #B76E79;
-  --cta-hover: #A45D68;
+  --primary: #1C1C2E;
+  --secondary: #252538;
+  --accent: #C8963E;
+  --text: #FFFFFF;
+  --cta: #7B2FBE;
+  --cta-hover: #9B4FDE;
 }
 
 html, body, #__next {
@@ -38,4 +38,3 @@ body {
 .hover\:bg-cta:hover { background-color: var(--cta-hover); }
 .hover\:text-cta:hover { color: var(--cta); }
 
-.hero-cta { background: linear-gradient(90deg, #F8F4EE, #FFFFFF); }
