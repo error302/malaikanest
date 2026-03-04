@@ -6,8 +6,7 @@ import { useCart } from '../lib/cartContext'
 import { showToast } from '../components/Toast'
 import ProductCard from '../components/ProductCard'
 import SkeletonCard from '../components/ui/SkeletonCard'
-import SectionHeader from '../components/ui/SectionHeader'
-import { Search, ChevronLeft, ChevronRight, Star, ArrowRight } from 'lucide-react'
+import { Search, Star, ArrowRight } from 'lucide-react'
 
 interface Product {
   id: number
@@ -50,12 +49,6 @@ const ageGroups = [
   { name: '4-6 Years', slug: '4-6-years', emoji: '👦' },
 ]
 
-const heroProducts = [
-  { id: 1, name: 'Premium Baby Bundle Set', price: '4500', image: null },
-  { id: 2, name: 'Soft Plush Teddy Bear', price: '1200', image: null },
-  { id: 3, name: 'Educational Building Blocks', price: '2800', image: null },
-]
-
 const testimonials = [
   { name: 'Grace W.', location: 'Nairobi', rating: 5, text: 'Malaika Nest delivered in 2 days! The baby clothes are exactly as described and the M-Pesa payment was instant.', avatar: '👩' },
   { name: 'Peter K.', location: 'Mombasa', rating: 5, text: 'Best baby store online in Kenya. Great quality and fair prices.', avatar: '👨' },
@@ -70,7 +63,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [demoMode, setDemoMode] = useState(false)
-  const [currentHeroProduct, setCurrentHeroProduct] = useState(0)
   const [activeAgeGroup, setActiveAgeGroup] = useState(0)
   const { add } = useCart()
 
@@ -91,14 +83,6 @@ export default function Home() {
       showToast('Failed to add to cart. Please try again.', 'error')
     }
   }
-
-  // Auto-rotate hero product
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentHeroProduct((prev) => (prev + 1) % heroProducts.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     api.get('/api/products/products/')
@@ -129,107 +113,69 @@ export default function Home() {
         </div>
       )}
 
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center bg-[#1C1C2E] pt-16">
-        <div className="max-w-7xl mx-auto px-4 w-full">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Text Content */}
-            <div className="order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 bg-[#C8963E]/20 text-[#C8963E] px-4 py-2 rounded-full mb-6">
-                <span className="text-xl">🧸</span>
-                <span className="text-sm font-medium">Brain Growth Toys</span>
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl lg:text-[56px] font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Products That Help Brain Growth for your Children
-              </h1>
-              
-              <p className="text-[#A0A0B8] text-lg mb-8 max-w-lg">
-                Choose to pay monthly or prepay for 3, 6, or 12 to 48 months 
-                in advance for discounts!
-              </p>
+      {/* Hero Section - Full Banner Layout */}
+      <section className="relative w-full min-h-[90vh] bg-[#1C1C2E] overflow-hidden flex items-center">
+        {/* Background banner image */}
+        <div className="absolute inset-0 z-0">
+          {/* TODO: Replace with real Malaika Nest banner image 
+              Upload your banner to /public/images/hero-banner.jpg
+              Recommended size: 1600x900px */}
+          <img
+            src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=1600&q=80"
+            alt="Happy baby with toys"
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Dark gradient overlay so text is always readable */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1C1C2E] via-[#1C1C2E]/80 to-transparent" />
+          {/* Bottom fade */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#1C1C2E] to-transparent" />
+        </div>
 
-              {/* Search Bar */}
-              <form onSubmit={handleSearch} className="w-full max-w-lg mb-8">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search Baby Products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-14 bg-[#252538] border border-[#3A3A55] rounded-[14px] text-white placeholder-[#A0A0B8] pl-5 pr-32 focus:outline-none focus:border-[#C8963E] transition-all"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 bg-[#C8963E] hover:bg-[#E0A83F] text-white px-5 rounded-[10px] transition-colors flex items-center gap-2"
-                  >
-                    <Search className="w-4 h-4" />
-                    Search
-                  </button>
-                </div>
-              </form>
+        {/* Content overlay — left aligned */}
+        <div className="relative z-10 px-4 sm:px-8 lg:px-24 max-w-2xl py-20">
+          {/* Top badge */}
+          <div className="inline-flex items-center gap-2 bg-[#C8963E]/20 border border-[#C8963E]/40 rounded-full px-4 py-2 mb-6">
+            <span>🧸</span>
+            <span className="text-[#C8963E] text-sm font-medium">
+              Premium Baby Products
+            </span>
+          </div>
 
-              <div className="flex items-center gap-6 text-[#A0A0B8] text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span> M-Pesa Secure
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-500">✓</span> Free Shipping over KES 5,000
-                </div>
-              </div>
-            </div>
+          {/* Main heading */}
+          <h1 className="font-bold text-white leading-tight text-4xl sm:text-5xl lg:text-6xl mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Everything Your<br />
+            <span className="text-[#C8963E]">Little One</span><br />
+            Needs
+          </h1>
 
-            {/* Right Column - Featured Product Carousel */}
-            <div className="order-1 lg:order-2">
-              <div className="relative bg-[#252538] rounded-[24px] p-8 md:p-12 border border-[#3A3A55]">
-                <button 
-                  onClick={() => setCurrentHeroProduct((prev) => (prev - 1 + heroProducts.length) % heroProducts.length)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-[12px] border border-[#3A3A55] text-white hover:border-[#C8963E] hover:text-[#C8963E] transition-all z-10"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => setCurrentHeroProduct((prev) => (prev + 1) % heroProducts.length)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-[12px] bg-[#C8963E] text-white hover:bg-[#E0A83F] transition-all z-10"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+          {/* Subtext */}
+          <p className="text-[#A0A0B8] text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
+            Shop trusted baby products, accessories and toys — 
+            delivered across Kenya. Pay instantly with M-Pesa.
+          </p>
 
-                <div className="text-center">
-                  <div className="w-64 h-64 mx-auto mb-6 bg-[#2D2D45] rounded-full flex items-center justify-center animate-float">
-                    <span className="text-8xl">
-                      {heroProducts[currentHeroProduct].image || '🧸'}
-                    </span>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-white mb-1">
-                    {heroProducts[currentHeroProduct].name}
-                  </h3>
-                  <p className="text-[#A0A0B8] text-sm mb-4">by Malaika Nest</p>
-                  
-                  <p className="text-3xl font-bold text-white mb-6">
-                    KES {parseFloat(heroProducts[currentHeroProduct].price).toLocaleString()}
-                  </p>
+          {/* Search bar */}
+          <form onSubmit={handleSearch} className="flex items-center bg-[#252538] border border-[#3A3A55] rounded-[14px] overflow-hidden max-w-lg h-14 focus-within:border-[#C8963E] transition-colors duration-200">
+            <input
+              type="text"
+              placeholder="Search baby products, toys & accessories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-white placeholder-[#A0A0B8] px-5 text-sm outline-none"
+            />
+            <button type="submit" className="bg-[#C8963E] hover:bg-[#E0A83F] text-white font-semibold text-sm px-6 h-full flex items-center gap-2 transition-colors duration-200 shrink-0">
+              🔍 Search
+            </button>
+          </form>
 
-                  <button 
-                    onClick={(e) => {
-                      const product = DEMO_PRODUCTS[0]
-                      handleAddToCart(e, product)
-                    }}
-                    className="w-14 h-14 mx-auto flex items-center justify-center bg-[#252538] border border-[#3A3A55] rounded-[12px] text-white hover:bg-[#C8963E] hover:border-[#C8963E] transition-all"
-                  >
-                    <span className="text-xl">🛒</span>
-                  </button>
-                </div>
-
-                <div className="absolute -top-4 -right-4 w-12 h-12 bg-[#C8963E]/20 rounded-full flex items-center justify-center animate-float" style={{ animationDelay: '0.5s' }}>
-                  <span className="text-2xl">✈️</span>
-                </div>
-                <div className="absolute -bottom-4 -left-4 w-12 h-12 bg-[#C8963E]/20 rounded-full flex items-center justify-center animate-float" style={{ animationDelay: '1s' }}>
-                  <span className="text-2xl">🧸</span>
-                </div>
-              </div>
-            </div>
+          {/* Trust pills */}
+          <div className="flex items-center gap-6 mt-6 flex-wrap">
+            <span className="flex items-center gap-2 text-[#A0A0B8] text-sm">
+              <span className="text-green-400">✓</span> M-Pesa Secure
+            </span>
+            <span className="flex items-center gap-2 text-[#A0A0B8] text-sm">
+              <span className="text-green-400">✓</span> Free Shipping over KES 5,000
+            </span>
           </div>
         </div>
       </section>
