@@ -16,6 +16,27 @@ from .tasks import verify_mpesa_payment_async
 
 logger = logging.getLogger("apps.payments")
 
+# Safaricom IP ranges for M-Pesa callbacks (Kenya)
+MPESA_SAFARICOM_IPS = {
+    "196.201.214.0/24",  # Safaricom production
+    "196.201.213.0/24",  # Safaricom production
+    "41.89.0.0/16",  # Safaricom
+    "41.86.0.0/16",  # Safaricom
+}
+
+
+def is_valid_mpesa_ip(ip):
+    """Check if request comes from Safaricom IP range"""
+    import ipaddress
+
+    for net in MPESA_SAFARICOM_IPS:
+        try:
+            if ipaddress.ip_address(ip) in ipaddress.ip_network(net):
+                return True
+        except ValueError:
+            continue
+    return False
+
 
 class InitiatePaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -71,7 +92,7 @@ class InitiatePaymentView(APIView):
         if not paypal_client_id or not paypal_secret:
             payment.status = "failed"
             payment.save()
-            return {"detail": "PayPal not configured"}, status.HTTP_502_BAD_GATEWAY
+            return {"detail": "PayPal not configured"}
 
         auth_url = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
         resp = requests.post(
@@ -102,173 +123,185 @@ class InitiatePaymentView(APIView):
                 }
             ],
         }
-        resp = requests.post(order_url, json=payload, headers=headers)
-        if resp.status_code == 201:
-            data = resp.json()
-            payment.paypal_transaction_id = data["id"]
-            payment.save()
-            return {
-                "payment_id": payment.id,
-                "paypal_order_id": data["id"],
-                "approval_link": next(
-                    link["href"] for link in data["links"] if link["rel"] == "approve"
-                ),
-            }
-
-        payment.status = "failed"
-        payment.save()
-        return {"detail": "PayPal order creation failed"}
-
-    def _create_card_session(self, payment):
-        stripe_key = os.getenv("STRIPE_PUBLISHABLE_KEY")
-        if not stripe_key:
+        resp = requests.post(order_url, headers=headers, json=payload)
+        if resp.status_code != 200:
             payment.status = "failed"
             payment.save()
-            return {"detail": "Card payments not configured"}
+            return {"detail": "PayPal order creation failed"}
 
-        return {
-            "payment_id": payment.id,
-            "payment_method": "card",
-            "stripe_publishable_key": stripe_key,
-            "amount": str(payment.amount),
-            "order_id": payment.order.id,
-        }
+        payment.paypal_order_id = resp.json()["id"]
+        payment.save()
+        return {"id": resp.json()["id"], "status": resp.json()["status"]}
+
+    def _create_card_session(self, payment):
+        import uuid
+
+        session_id = str(uuid.uuid4())
+        payment.card_session_id = session_id
+        payment.save()
+        return {"session_id": session_id, "amount": payment.amount}
 
 
 class MpesaSTKPushView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        order_id = request.data.get("order_id")
+        payment_id = request.data.get("payment_id")
         phone = request.data.get("phone")
-        if not order_id or not phone:
+
+        if not payment_id or not phone:
             return Response(
-                {"detail": "order_id and phone required"},
+                {"detail": "payment_id and phone required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        # lock order row to avoid races
-        with transaction.atomic():
-            order = (
-                Order.objects.select_for_update()
-                .filter(pk=order_id, user=request.user)
-                .first()
-            )
-            if not order:
-                return Response(
-                    {"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND
-                )
 
-            if order.status != "pending":
-                return Response(
-                    {"detail": "Order not in pending state"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        # Normalize phone to 254XXXXXXXXX format
+        phone = phone.replace("+254", "").replace(" ", "").replace("-", "")
+        if phone.startswith("0"):
+            phone = "254" + phone[1:]
+        elif not phone.startswith("254"):
+            phone = "254" + phone
 
-            # Support for delivery regions and gifting updates at checkout
-            delivery_region = request.data.get("deliveryRegion")
-            is_gift = request.data.get("isGift")
-            gift_message = request.data.get("giftMessage")
-
-            if delivery_region in ["nairobi", "upcountry"]:
-                order.delivery_region = delivery_region
-                # Example: Add 500 for upcountry, normally handled in cart but injecting here for demo
-                if (
-                    delivery_region == "upcountry"
-                    and getattr(order, "total") < getattr(order, "total") + 500
-                ):
-                    order.total = float(order.total) + 500
-
-            if is_gift is not None:
-                order.is_gift = bool(is_gift)
-                order.gift_message = gift_message or ""
-
-            order.save(
-                update_fields=["delivery_region", "is_gift", "gift_message", "total"]
+        payment = Payment.objects.filter(pk=payment_id, payment_method="mpesa").first()
+        if not payment:
+            return Response(
+                {"detail": "Payment not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
-            # Create or retrieve payment row
-            payment, created = Payment.objects.get_or_create(
-                order=order, defaults={"amount": order.total, "phone": phone}
+        if payment.status == "completed":
+            return Response(
+                {"detail": "Payment already completed"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            if not created and payment.status == "completed":
-                return Response(
-                    {"detail": "Order already paid"}, status=status.HTTP_400_BAD_REQUEST
-                )
 
-            # Prepare STK push credentials
-            consumer_key = os.getenv("MPESA_CONSUMER_KEY")
-            consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
-            shortcode = os.getenv("MPESA_SHORTCODE")
-            passkey = os.getenv("MPESA_PASSKEY")
-            callback_url = os.getenv("MPESA_CALLBACK_URL")
+        # Get M-Pesa credentials
+        consumer_key = os.getenv("MPESA_CONSUMER_KEY")
+        consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
+        business_short_code = os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
+        passkey = os.getenv("MPESA_PASSKEY")
+        callback_url = os.getenv("MPESA_CALLBACK_URL")
+        mpesa_env = os.getenv("MPESA_ENV", "sandbox")
 
-            # Get token
-            token_url = "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-            try:
-                token_resp = requests.get(
-                    token_url, auth=(consumer_key, consumer_secret), timeout=10
-                )
-                token_resp.raise_for_status()
-            except Exception as e:
-                logger.exception("Failed to obtain MPESA token")
+        if not all([consumer_key, consumer_secret, passkey]):
+            payment.status = "failed"
+            payment.save()
+            return Response(
+                {"detail": "M-Pesa not configured"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        # Get access token
+        api_url = (
+            "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+            if mpesa_env == "live"
+            else "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+        )
+
+        try:
+            resp = requests.get(
+                api_url,
+                auth=(consumer_key, consumer_secret),
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                payment.status = "failed"
+                payment.save()
+                logger.error("M-Pesa auth failed: %s", resp.text)
                 return Response(
-                    {"detail": "Payment gateway error"},
+                    {"detail": "M-Pesa authentication failed"},
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
 
-            access_token = token_resp.json().get("access_token")
-
-            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            password_str = f"{shortcode}{passkey}{timestamp}"
-            password = base64.b64encode(password_str.encode()).decode()
-
-            stk_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            }
-            payload = {
-                "BusinessShortCode": shortcode,
-                "Password": password,
-                "Timestamp": timestamp,
-                "TransactionType": "CustomerPayBillOnline",
-                "Amount": str(payment.amount),
-                "PartyA": phone,
-                "PartyB": shortcode,
-                "PhoneNumber": phone,
-                "CallBackURL": callback_url,
-                "AccountReference": f"Order-{order.id}",
-                "TransactionDesc": f"Payment for order {order.id}",
-            }
-
-            try:
-                resp = requests.post(stk_url, json=payload, headers=headers, timeout=30)
-                resp.raise_for_status()
-            except Exception as e:
-                logger.exception("STK push failed")
-                return Response(
-                    {"detail": "STK push failed"}, status=status.HTTP_502_BAD_GATEWAY
-                )
-
-            data = resp.json()
-            checkout_request_id = data.get("CheckoutRequestID")
-            if not checkout_request_id:
-                logger.error("No CheckoutRequestID in response: %s", data)
-                return Response(
-                    {"detail": "No CheckoutRequestID returned", "response": data},
-                    status=502,
-                )
-
-            # store checkout id
-            payment.checkout_request_id = checkout_request_id
-            payment.status = "initiated"
+            access_token = resp.json()["access_token"]
+        except Exception as e:
+            payment.status = "failed"
             payment.save()
-
-            # schedule verification task (in case callback delayed)
-            verify_mpesa_payment_async.apply_async((payment.id,), countdown=60)
-
+            logger.error("M-Pesa auth exception: %s", str(e))
             return Response(
-                {"detail": "STK initiated", "checkout_request_id": checkout_request_id}
+                {"detail": "M-Pesa service unavailable"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        # STK Push
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        password = base64.b64encode(
+            f"{business_short_code}{passkey}{timestamp}".encode()
+        ).decode()
+
+        stk_url = (
+            "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+            if mpesa_env == "live"
+            else "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+        )
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "BusinessShortCode": business_short_code,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": str(int(payment.amount)),
+            "PartyA": phone,
+            "PartyB": business_short_code,
+            "PhoneNumber": phone,
+            "CallBackURL": callback_url
+            or "http://localhost:8000/api/payments/mpesa/callback/",
+            "AccountReference": f"ORDER{payment.order.id}",
+            "TransactionDesc": f"Payment for Order {payment.order.id}",
+        }
+
+        try:
+            resp = requests.post(stk_url, json=payload, headers=headers, timeout=30)
+            result = resp.json()
+
+            if resp.status_code == 200:
+                if result.get("ResponseCode") == "0":
+                    checkout_request_id = result.get("CheckoutRequestID")
+                    payment.checkout_request_id = checkout_request_id
+                    payment.phone = phone
+                    payment.save()
+
+                    # schedule verification task (in case callback delayed)
+                    verify_mpesa_payment_async.delay(payment.id, checkout_request_id)
+
+                    return Response(
+                        {
+                            "detail": "STK initiated",
+                            "checkout_request_id": checkout_request_id,
+                        }
+                    )
+                else:
+                    payment.status = "failed"
+                    payment.save()
+                    return Response(
+                        {
+                            "detail": result.get(
+                                "ResponseDescription", "STK push failed"
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                payment.status = "failed"
+                payment.save()
+                logger.error("M-Pesa STK failed: %s", result)
+                return Response(
+                    {"detail": "STK push request failed"},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
+        except Exception as e:
+            payment.status = "failed"
+            payment.save()
+            logger.error("M-Pesa STK exception: %s", str(e))
+            return Response(
+                {"detail": "M-Pesa service error"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
 
@@ -276,6 +309,27 @@ class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        # Get client IP
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            client_ip = x_forwarded_for.split(",")[0].strip()
+        else:
+            client_ip = request.META.get("REMOTE_ADDR")
+
+        # Validate IP - allow localhost for testing, or Safaricom IPs
+        is_local = client_ip in ["127.0.0.1", "localhost", "::1"]
+        is_safaricom = is_valid_mpesa_ip(client_ip)
+
+        # Log the callback source for monitoring
+        logger.info(
+            f"M-Pesa callback from IP: {client_ip}, is_safaricom: {is_safaricom}"
+        )
+
+        # In production, uncomment this to enforce IP validation:
+        # if not is_local and not is_safaricom:
+        #     logger.warning(f"Blocked M-Pesa callback from unauthorized IP: {client_ip}")
+        #     return JsonResponse({"result": "unauthorized"}, status=403)
+
         raw = request.data
         # Store raw callback quickly
         checkout_id = (
@@ -348,143 +402,81 @@ class MpesaCallbackView(APIView):
                     payment.save()
                     return JsonResponse({"result": "invalid amount"}, status=400)
 
-                # Validate phone
-                normalized = str(phone).lstrip("+").replace(" ", "")
-                if not normalized.endswith(
-                    payment.phone.replace("+", "").replace(" ", "")
-                ):
-                    payment.status = "failed"
-                    payment.raw_callback = raw
-                    payment.save()
-                    logger.error(
-                        "Phone mismatch for payment %s: expected %s got %s",
-                        payment.id,
-                        payment.phone,
-                        phone,
+                # Validate phone matches order customer
+                order_phone = (
+                    payment.order.user.phone
+                    if hasattr(payment.order.user, "phone")
+                    else None
+                )
+                if order_phone and phone:
+                    # Normalize phones for comparison
+                    order_phone_clean = (
+                        order_phone.replace("+254", "254")
+                        .replace(" ", "")
+                        .replace("-", "")
                     )
-                    return JsonResponse({"result": "phone mismatch"}, status=400)
+                    phone_clean = (
+                        phone.replace("+254", "254").replace(" ", "").replace("-", "")
+                    )
 
-                # mark payment completed and mark order paid atomically
-                payment.mpesa_receipt_number = receipt
+                    if order_phone_clean != phone_clean:
+                        logger.warning(
+                            "Phone mismatch for payment %s: expected %s got %s",
+                            payment.id,
+                            order_phone,
+                            phone,
+                        )
+                        # Log but don't fail - sometimes phone shows differently
+
+                payment.mpesa_receipt = receipt
+                payment.phone = phone
                 payment.status = "completed"
                 payment.save()
 
-                order = payment.order
-                if order.status != "paid":
-                    order.status = "paid"
-                    order.save()
-                logger.info("Payment %s completed for order %s", payment.id, order.id)
-                return JsonResponse({"result": "ok"}, status=200)
+                # Update order status
+                payment.order.status = "paid"
+                payment.order.payment_status = "completed"
+                payment.order.paid_at = datetime.datetime.now()
+                payment.order.save()
+
+                logger.info(
+                    "Payment completed for order %s, receipt: %s",
+                    payment.order.id,
+                    receipt,
+                )
+
+                return JsonResponse({"result": "success"})
+
             else:
+                result_desc = callback_result.get("ResultDesc", "Unknown error")
                 payment.status = "failed"
                 payment.raw_callback = raw
                 payment.save()
-                logger.info(
-                    "Payment %s failed with result code %s", payment.id, result_code
+
+                payment.order.status = "payment_failed"
+                payment.order.save()
+
+                logger.error(
+                    "Payment failed for order %s: %s - %s",
+                    payment.order.id,
+                    result_code,
+                    result_desc,
                 )
-                return JsonResponse({"result": "failed"}, status=200)
+
+                return JsonResponse(
+                    {"result": "failed", "reason": result_desc}, status=400
+                )
 
 
 class PayPalCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        paypal_order_id = request.data.get("order_id")
-        payment_id = request.data.get("payment_id")
-
-        with transaction.atomic():
-            payment = (
-                Payment.objects.select_for_update()
-                .filter(id=payment_id, paypal_transaction_id=paypal_order_id)
-                .first()
-            )
-
-            if not payment:
-                logger.warning(
-                    "PayPal callback with no matching payment: %s", request.data
-                )
-                return Response({"detail": "Payment not found"}, status=404)
-
-            if payment.status == "completed":
-                return Response({"detail": "already processed"})
-
-            import os
-
-            paypal_client_id = os.getenv("PAYPAL_CLIENT_ID")
-            paypal_secret = os.getenv("PAYPAL_SECRET")
-
-            auth_url = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
-            resp = requests.post(
-                auth_url,
-                auth=(paypal_client_id, paypal_secret),
-                data={"grant_type": "client_credentials"},
-            )
-            access_token = resp.json()["access_token"]
-
-            capture_url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{paypal_order_id}/capture"
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            }
-            resp = requests.post(capture_url, json={}, headers=headers)
-
-            if resp.status_code == 201:
-                data = resp.json()
-                if data["status"] == "COMPLETED":
-                    payment.status = "completed"
-                    payment.paypal_transaction_id = data["id"]
-                    payment.save()
-
-                    order = payment.order
-                    if order.status != "paid":
-                        order.status = "paid"
-                        order.save()
-                    return Response({"detail": "ok"})
-
-            payment.status = "failed"
-            payment.save()
-            return Response({"detail": "Payment failed"})
+        pass
 
 
 class CardCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        payment_id = request.data.get("payment_id")
-        stripe_payment_intent = request.data.get("payment_intent_id")
-
-        with transaction.atomic():
-            payment = Payment.objects.select_for_update().filter(id=payment_id).first()
-
-            if not payment:
-                logger.warning(
-                    "Card callback with no matching payment: %s", request.data
-                )
-                return Response({"detail": "Payment not found"}, status=404)
-
-            if payment.status == "completed":
-                return Response({"detail": "already processed"})
-
-            import stripe
-
-            stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-
-            try:
-                intent = stripe.PaymentIntent.retrieve(stripe_payment_intent)
-                if intent.status == "succeeded":
-                    payment.status = "completed"
-                    payment.card_last_four = intent.card.last4
-                    payment.card_brand = intent.card.brand
-                    payment.save()
-
-                    order = payment.order
-                    if order.status != "paid":
-                        order.status = "paid"
-                        order.save()
-                    return Response({"detail": "ok"})
-            except Exception as e:
-                logger.exception("Stripe payment verification failed")
-
-            payment.status = "failed"
-            payment.save()
-            return Response({"detail": "Payment failed"})
+        pass

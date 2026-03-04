@@ -6,6 +6,7 @@ import MiniCart from './MiniCart'
 import { useCart } from '../lib/cartContext'
 import Logo from './Logo'
 import { getCachedData, setCachedData } from '../lib/cache'
+import { Search, ShoppingCart, Menu, X, ChevronDown } from 'lucide-react'
 
 interface Category {
   id: number
@@ -25,6 +26,15 @@ function NavbarContent() {
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showCart, setShowCart] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 80)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -61,31 +71,38 @@ function NavbarContent() {
   }
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-primary shadow-lg' : 'bg-transparent'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Logo />
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">K</span>
+            </div>
+            <span className="font-display font-bold text-xl text-white">Kenya Baby</span>
+          </Link>
 
           {/* Search Bar - Desktop */}
           <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <input
                 type="text"
-                placeholder="Search baby products..."
+                placeholder="Search Baby Products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-secondary rounded-full focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                className="w-full h-11 pl-10 pr-4 bg-card border border-border rounded-button text-white placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
               />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
             </div>
           </form>
 
-            {/* Desktop Menu */}
+          {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-2">
-            <Link href="/" className="px-3 py-2 text-text hover:text-accent transition-colors font-medium">
+            <Link href="/" className="px-3 py-2 text-white hover:text-accent transition-colors font-medium text-[15px]">
               Home
             </Link>
 
@@ -94,21 +111,16 @@ function NavbarContent() {
               onMouseEnter={() => setIsCategoriesOpen(true)}
               onMouseLeave={() => setIsCategoriesOpen(false)}
             >
-              <button className="px-3 py-2 text-text hover:text-accent transition-colors flex items-center gap-1 font-medium">
+              <button className="px-3 py-2 text-white hover:text-accent transition-colors flex items-center gap-1 font-medium text-[15px]">
                 Shop
-                <svg 
+                <ChevronDown 
                   className={`w-4 h-4 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                />
               </button>
 
               {/* Mega Menu */}
               <div 
-                className={`absolute left-1/2 -translate-x-1/2 top-full w-[700px] bg-white shadow-xl rounded-b-xl border-t-4 border-accent z-50 transition-all duration-200 ${
+                className={`absolute left-1/2 -translate-x-1/2 top-full w-[700px] bg-card shadow-xl rounded-b-xl border-t-4 border-accent z-50 transition-all duration-200 ${
                   isCategoriesOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
                 }`}
               >
@@ -116,19 +128,19 @@ function NavbarContent() {
                   <div className="grid grid-cols-4 gap-6">
                     {topLevelCategories.slice(0, 8).map((groupCat: Category) => (
                       <div key={groupCat.id}>
-                        <h4 className="font-bold text-accent border-b border-secondary pb-2 mb-3">{groupCat.name}</h4>
+                        <h4 className="font-bold text-accent border-b border-border pb-2 mb-3">{groupCat.name}</h4>
                         <ul className="space-y-2 text-sm">
                           {groupCat.children && groupCat.children.length > 0 ? (
                             groupCat.children.slice(0, 5).map((child: Category) => (
                               <li key={child.id}>
-                                <Link href={`/?category=${child.slug}`} className="text-gray-600 hover:text-accent transition-colors block">
+                                <Link href={`/?category=${child.slug}`} className="text-muted hover:text-accent transition-colors block">
                                   {child.name}
                                 </Link>
                               </li>
                             ))
                           ) : (
                             <li>
-                              <Link href={`/?category=${groupCat.slug}`} className="text-gray-600 hover:text-accent transition-colors block">
+                              <Link href={`/?category=${groupCat.slug}`} className="text-muted hover:text-accent transition-colors block">
                                 View All
                               </Link>
                             </li>
@@ -137,11 +149,11 @@ function NavbarContent() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 pt-4 border-t border-secondary flex justify-between items-center">
+                  <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
                     <Link href="/categories" className="text-sm font-medium text-accent hover:text-accent/80">
                       View All Categories →
                     </Link>
-                    <Link href="/categories" className="text-sm bg-secondary text-text px-4 py-2 rounded-full hover:bg-accent hover:text-white transition-colors">
+                    <Link href="/categories" className="text-sm bg-accent text-white px-4 py-2 rounded-button hover:bg-accent-hover transition-colors">
                       Shop Now
                     </Link>
                   </div>
@@ -149,34 +161,33 @@ function NavbarContent() {
               </div>
             </div>
 
-            <Link href="/account/orders" className="px-3 py-2 text-text hover:text-accent transition-colors font-medium">
+            <Link href="/account/orders" className="px-3 py-2 text-white hover:text-accent transition-colors font-medium text-[15px]">
               My Orders
             </Link>
             
-            {/* Prominent Sign In Button */}
+            {/* Log In */}
             <Link 
               href="/login" 
-              className="px-4 py-2 bg-cta hover:bg-cta-hover text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+              className="px-4 py-2 text-white hover:text-accent transition-colors font-medium text-[15px]"
             >
-              Sign In
+              Log In
             </Link>
 
-            {/* Account Icon */}
-            <Link href="/login" className="p-2 text-text hover:text-accent transition-colors hover:scale-110 inline-block" title="My Account">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+            {/* Get Started Button */}
+            <Link 
+              href="/login" 
+              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-button transition-all shadow-button"
+            >
+              Get Started
             </Link>
 
             {/* Cart */}
             <button 
               onClick={() => setShowCart(s => !s)} 
               aria-label="Cart" 
-              className="relative p-2 text-text hover:text-accent transition-colors hover:scale-110 inline-block"
+              className="relative p-2 text-white hover:text-accent transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+              <ShoppingCart className="w-6 h-6" />
               {items.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
                   {items.length}
@@ -195,11 +206,9 @@ function NavbarContent() {
             <button 
               onClick={() => setShowCart(s => !s)} 
               aria-label="Cart" 
-              className="relative p-2 text-text"
+              className="relative p-2 text-white"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+              <ShoppingCart className="w-6 h-6" />
               {items.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
                   {items.length}
@@ -207,17 +216,11 @@ function NavbarContent() {
               )}
             </button>
             <button
-              className="p-2"
+              className="p-2 text-white"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -229,33 +232,36 @@ function NavbarContent() {
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-secondary rounded-full focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full h-11 pl-10 pr-4 bg-card border border-border rounded-button text-white placeholder-muted focus:outline-none focus:border-accent"
           />
         </form>
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t">
+          <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-2">
-              <Link href="/" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+              <Link href="/" className="px-3 py-2 text-white hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
                 Home
               </Link>
-              <Link href="/categories" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+              <Link href="/categories" className="px-3 py-2 text-white hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
                 Categories
               </Link>
-              <Link href="/bundle" className="px-3 py-2 text-text hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+              <Link href="/bundle" className="px-3 py-2 text-white hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
                 Bundle Builder
               </Link>
-              {/* Prominent Sign In Button - Mobile */}
               <Link 
                 href="/login" 
-                className="px-4 py-3 bg-cta hover:bg-cta-hover text-white font-medium rounded-lg transition-colors text-center mx-2 mt-2"
+                className="px-4 py-3 text-white hover:text-accent font-medium text-center"
                 onClick={() => setIsOpen(false)}
               >
-                Sign In
+                Log In
               </Link>
-              <Link href="/register" className="px-4 py-3 bg-secondary hover:bg-accent text-text hover:text-white font-medium rounded-lg transition-colors text-center mx-2" onClick={() => setIsOpen(false)}>
-                Create Account
+              <Link 
+                href="/login" 
+                className="px-4 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-button transition-colors text-center mx-2 mt-2"
+                onClick={() => setIsOpen(false)}
+              >
+                Get Started
               </Link>
             </div>
           </div>
@@ -266,3 +272,4 @@ function NavbarContent() {
 }
 
 export default NavbarContent
+
