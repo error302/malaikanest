@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import api from '../lib/api'
 import { useCart } from '../lib/cartContext'
@@ -21,6 +21,17 @@ interface Product {
   rating?: number
   reviews_count?: number
   stock?: number
+}
+
+interface Banner {
+  id: number
+  title: string
+  subtitle: string
+  button_text: string
+  button_link: string
+  image: string
+  is_active: boolean
+  position: number
 }
  
 // Demo products for when API is not available
@@ -65,6 +76,53 @@ export default function Home() {
   const [demoMode, setDemoMode] = useState(false)
   const [activeAgeGroup, setActiveAgeGroup] = useState(0)
   const { add } = useCart()
+
+  // Banner state for dynamic hero
+  const [banners, setBanners] = useState<Banner[]>([])
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [bannersLoaded, setBannersLoaded] = useState(false)
+
+  // Fetch banners on mount
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+    fetch(`${apiUrl}/api/banners/`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBanners(data)
+        }
+        setBannersLoaded(true)
+      })
+      .catch(() => setBannersLoaded(true))
+  }, [])
+
+  // Auto-rotate banners
+  const goToNextBanner = useCallback(() => {
+    if (banners.length <= 1) return
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentBannerIndex(i => (i + 1) % banners.length)
+      setIsTransitioning(false)
+    }, 300)
+  }, [banners.length])
+
+  const goToPrevBanner = useCallback(() => {
+    if (banners.length <= 1) return
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentBannerIndex(i => (i - 1 + banners.length) % banners.length)
+      setIsTransitioning(false)
+    }, 300)
+  }, [banners.length])
+
+  useEffect(() => {
+    if (banners.length <= 1) return
+    const timer = setInterval(goToNextBanner, 5000)
+    return () => clearInterval(timer)
+  }, [banners.length, goToNextBanner])
+
+  const currentBanner = banners[currentBannerIndex] || null
 
   const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
     e.preventDefault()
@@ -117,41 +175,155 @@ export default function Home() {
       <section className="relative w-full min-h-[90vh] bg-[#1C1C2E] overflow-hidden flex items-center">
         {/* Background banner image */}
         <div className="absolute inset-0 z-0">
-          {/* TODO: Replace with real Malaika Nest banner image 
-              Upload your banner to /public/images/hero-banner.jpg
-              Recommended size: 1600x900px */}
-          <img
-            src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=1600&q=80"
-            alt="Happy baby with toys"
-            className="w-full h-full object-cover object-center"
-          />
-          {/* Dark gradient overlay so text is always readable */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1C1C2E] via-[#1C1C2E]/80 to-transparent" />
-          {/* Bottom fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#1C1C2E] to-transparent" />
+          {/* Dynamic banner image — fades between banners */}
+          {currentBanner?.image ? (
+            <img
+              key={currentBanner.id}
+              src={currentBanner.image}
+              alt={currentBanner.title || 'Malaika Nest Banner'}
+              className={`
+                w-full h-full object-cover object-center
+                transition-opacity duration-500
+                ${isTransitioning ? 'opacity-0' : 'opacity-100'}
+              `}
+            />
+          ) : (
+            // Fallback when no banners uploaded yet
+            // Beautiful dark gradient — site looks good even before any banners are uploaded
+            <div className="
+              w-full h-full
+              bg-gradient-to-br 
+              from-[#2D1B4E] via-[#1C1C2E] to-[#1A1A2E]
+            ">
+              {/* Decorative circles */}
+              <div className="
+                absolute top-20 right-40
+                w-64 h-64 rounded-full
+                bg-[#C8963E]/10 blur-3xl
+              " />
+              <div className="
+                absolute bottom-20 right-20
+                w-48 h-48 rounded-full
+                bg-[#7B2FBE]/10 blur-3xl
+              " />
+            </div>
+          )}
+
+          {/* Dark gradient overlay — always present */}
+          {/* Makes text readable over ANY banner image */}
+          <div className="
+            absolute inset-0
+            bg-gradient-to-r
+            from-[#1C1C2E] 
+            via-[#1C1C2E]/75
+            to-[#1C1C2E]/20
+          " />
+          {/* Bottom fade into next section */}
+          <div className="
+            absolute bottom-0 left-0 right-0 h-24
+            bg-gradient-to-t from-[#1C1C2E] to-transparent
+          " />
         </div>
+
+        {/* Arrow navigation - only visible if 2+ banners */}
+        {banners.length > 1 && (
+          <>
+            {/* Left arrow */}
+            <button
+              onClick={goToPrevBanner}
+              className="
+                absolute left-4 top-1/2 -translate-y-1/2 z-20
+                w-10 h-10 rounded-full
+                bg-black/30 hover:bg-black/60
+                backdrop-blur-sm
+                flex items-center justify-center
+                text-white text-lg
+                transition-all duration-200
+                hover:scale-110
+              "
+              aria-label="Previous banner"
+            >
+              ‹
+            </button>
+
+            {/* Right arrow */}
+            <button
+              onClick={goToNextBanner}
+              className="
+                absolute right-4 top-1/2 -translate-y-1/2 z-20
+                w-10 h-10 rounded-full
+                bg-[#C8963E]/80 hover:bg-[#C8963E]
+                backdrop-blur-sm
+                flex items-center justify-center
+                text-white text-lg
+                transition-all duration-200
+                hover:scale-110
+              "
+              aria-label="Next banner"
+            >
+              ›
+            </button>
+          </>
+        )}
+
+        {/* Dot navigation - only if 2+ banners */}
+        {banners.length > 1 && (
+          <div className="
+            absolute bottom-8 left-1/2 -translate-x-1/2 z-20
+            flex items-center gap-2
+          ">
+            {banners.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setIsTransitioning(true)
+                  setTimeout(() => {
+                    setCurrentBannerIndex(i)
+                    setIsTransitioning(false)
+                  }, 300)
+                }}
+                className={`
+                  rounded-full transition-all duration-300
+                  ${i === currentBannerIndex
+                    ? 'bg-[#C8963E] w-6 h-2'
+                    : 'bg-white/40 hover:bg-white/70 w-2 h-2'
+                  }
+                `}
+                aria-label={`Go to banner ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Content overlay — left aligned */}
         <div className="relative z-10 px-4 sm:px-8 lg:px-24 max-w-2xl py-20">
-          {/* Top badge */}
-          <div className="inline-flex items-center gap-2 bg-[#C8963E]/20 border border-[#C8963E]/40 rounded-full px-4 py-2 mb-6">
-            <span>🧸</span>
-            <span className="text-[#C8963E] text-sm font-medium">
-              Premium Baby Products
-            </span>
-          </div>
+          {/* Top badge - hide if banner has custom content */}
+          {!currentBanner?.title && (
+            <div className="inline-flex items-center gap-2 bg-[#C8963E]/20 border border-[#C8963E]/40 rounded-full px-4 py-2 mb-6">
+              <span>🧸</span>
+              <span className="text-[#C8963E] text-sm font-medium">
+                Premium Baby Products
+              </span>
+            </div>
+          )}
 
-          {/* Main heading */}
+          {/* Main heading - use banner title if set, else default */}
           <h1 className="font-bold text-white leading-tight text-4xl sm:text-5xl lg:text-6xl mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Everything Your<br />
-            <span className="text-[#C8963E]">Little One</span><br />
-            Needs
+            {currentBanner?.title ? (
+              currentBanner.title
+            ) : (
+              <>
+                Everything Your<br />
+                <span className="text-[#C8963E]">Little One</span><br />
+                Needs
+              </>
+            )}
           </h1>
 
-          {/* Subtext */}
+          {/* Subtext - use banner subtitle if set */}
           <p className="text-[#A0A0B8] text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
-            Shop trusted baby products, accessories and toys — 
-            delivered across Kenya. Pay instantly with M-Pesa.
+            {currentBanner?.subtitle || 
+             'Shop trusted baby products, accessories and toys — delivered across Kenya. Pay instantly with M-Pesa.'}
           </p>
 
           {/* Search bar */}
