@@ -37,15 +37,17 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pastel-beige via-pastel-peach to-pastel-pink/30">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-pastel-beige">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-amber-800" style={{ fontFamily: "'Playfair Display', serif" }}>Malaika Nest</h1>
+          <h1 className="text-3xl font-bold text-pastel-navy" style={{ fontFamily: "'Playfair Display', serif" }}>
+            Malaika Nest
+          </h1>
           <p className="text-gray-500 mt-2">Admin Dashboard Login</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm border border-red-100">
             {error}
           </div>
         )}
@@ -57,7 +59,7 @@ export default function AdminLogin() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pastel-mint/50 focus:border-pastel-mint transition-all bg-pastel-beige/20"
               placeholder="admin@example.com"
               required
             />
@@ -69,7 +71,7 @@ export default function AdminLogin() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pastel-mint/50 focus:border-pastel-mint transition-all bg-pastel-beige/20"
               placeholder="••••••••"
               required
             />
@@ -78,14 +80,14 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-amber-700 text-white py-3 rounded-lg font-semibold hover:bg-amber-800 transition disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-pastel-pink to-pastel-mint text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link href="/" className="text-amber-700 hover:underline text-sm">
+          <Link href="/" className="text-pastel-navy hover:text-pastel-pink text-sm transition-colors">
             ← Back to Website
           </Link>
         </div>

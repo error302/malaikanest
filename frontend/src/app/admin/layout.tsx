@@ -37,12 +37,16 @@ function AdminSidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white shadow-xl fixed h-full z-50 border-r border-slate-100 flex flex-col">
-      <div className="p-6 border-b border-slate-100">
+    <aside className="w-64 bg-white shadow-xl fixed h-full z-50 border-r border-pastel-peach/30 flex flex-col">
+      <div className="p-6 border-b border-pastel-beige">
         <Link href="/admin" className="block">
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: '22px', color: '#8B5E3C' }}>Malaika Nest</span>
+          <span className="text-2xl font-bold text-pastel-navy" style={{ fontFamily: "'Playfair Display', serif" }}>
+            Malaika Nest
+          </span>
         </Link>
-        <p className="text-xs text-slate-400 mt-1 uppercase tracking-[2px]" style={{ fontFamily: 'Montserrat, sans-serif' }}>Admin Dashboard</p>
+        <p className="text-xs text-gray-400 mt-1 uppercase tracking-wider" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          Admin Dashboard
+        </p>
       </div>
       
       <nav className="p-3 space-y-1 flex-1">
@@ -52,39 +56,39 @@ function AdminSidebar() {
             href={item.href}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
               isActive(item.href, item.exact)
-                ? 'bg-amber-50 text-amber-700'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-amber-700'
+                ? 'bg-pastel-pink/20 text-pastel-navy font-medium'
+                : 'text-gray-600 hover:bg-pastel-beige/50 hover:text-pastel-navy'
             }`}
           >
-            <svg className="w-5 h-5 group-hover:text-amber-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <svg className={`w-5 h-5 transition-colors ${isActive(item.href, item.exact) ? 'text-pastel-pink' : 'group-hover:text-pastel-mint'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
             </svg>
-            <span className="font-medium text-sm" style={{ fontFamily: 'Montserrat, sans-serif' }}>{item.label}</span>
+            <span className="text-sm" style={{ fontFamily: 'Montserrat, sans-serif' }}>{item.label}</span>
           </Link>
         ))}
       </nav>
 
-      <div className="p-3 border-t border-slate-100 space-y-1">
+      <div className="p-3 border-t border-pastel-beige space-y-1">
         <Link 
           href="/" 
           target="_blank"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-amber-700 transition-all duration-200 group"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-pastel-beige/50 hover:text-pastel-navy transition-all duration-200 group"
         >
-          <svg className="w-5 h-5 group-hover:text-amber-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-5 h-5 group-hover:text-pastel-mint transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          <span className="font-medium text-sm" style={{ fontFamily: 'Montserrat, sans-serif' }}>View Store</span>
+          <span className="text-sm" style={{ fontFamily: 'Montserrat, sans-serif' }}>View Store</span>
         </Link>
         
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group disabled:opacity-50"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-red-50 hover:text-red-500 transition-all duration-200 group disabled:opacity-50"
         >
-          <svg className="w-5 h-5 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-5 h-5 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span className="font-medium text-sm" style={{ fontFamily: 'Montserrat, sans-serif' }}>{loggingOut ? 'Logging out...' : 'Logout'}</span>
+          <span className="text-sm" style={{ fontFamily: 'Montserrat, sans-serif' }}>{loggingOut ? 'Logging out...' : 'Logout'}</span>
         </button>
       </div>
     </aside>
@@ -93,37 +97,37 @@ function AdminSidebar() {
 
 function AdminHeader() {
   return (
-    <header className="bg-white shadow-sm border-b border-slate-100 px-8 py-4 flex items-center justify-between sticky top-0 z-40">
+    <header className="bg-white shadow-sm border-b border-pastel-beige px-8 py-4 flex items-center justify-between sticky top-0 z-40">
       <div className="flex-1 max-w-md">
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input 
             type="text" 
             placeholder="Search products, orders, customers..." 
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:bg-white transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-pastel-beige/30 border-0 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pastel-mint/50 focus:bg-white transition-all"
           />
         </div>
       </div>
       
       <div className="flex items-center gap-4">
-        <button className="relative p-2.5 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-amber-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+        <button className="relative p-2.5 rounded-xl text-gray-500 hover:bg-pastel-beige/50 hover:text-pastel-navy transition-all focus:outline-none focus:ring-2 focus:ring-pastel-mint/50">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-pastel-pink rounded-full border-2 border-white"></span>
         </button>
         
-        <div className="h-8 w-px bg-slate-200"></div>
+        <div className="h-8 w-px bg-gray-200"></div>
         
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-semibold shadow-lg shadow-amber-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pastel-pink to-pastel-mint flex items-center justify-center text-white font-semibold shadow-lg">
             A
           </div>
           <div className="hidden md:block">
-            <p className="text-sm font-semibold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>Admin</p>
-            <p className="text-xs text-slate-500">Administrator</p>
+            <p className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>Admin</p>
+            <p className="text-xs text-gray-500">Administrator</p>
           </div>
         </div>
       </div>
@@ -133,7 +137,7 @@ function AdminHeader() {
 
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-pastel-beige/20">
       <AdminSidebar />
       <div className="flex-1 ml-64">
         <AdminHeader />
