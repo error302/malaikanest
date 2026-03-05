@@ -19,11 +19,11 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const res = await api.post('/api/accounts/token/', { email, password })
-      localStorage.setItem('access', res.data.access)
-      localStorage.setItem('refresh', res.data.refresh)
+      // Use withCredentials — backend sets httpOnly cookies on login
+      await api.post('/api/accounts/token/', { email, password })
       showToast('Login successful!', 'success')
-      router.push('/dashboard')
+      const redirect = new URLSearchParams(window.location.search).get('redirect')
+      router.push(redirect || '/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Invalid credentials')
     } finally {

@@ -40,13 +40,8 @@ export default function OrdersPage() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const token = localStorage.getItem('access')
-      if (!token) {
-        router.push('/login?redirect=/account/orders')
-        return
-      }
       const res = await fetch('/api/orders/orders/', {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -114,7 +109,7 @@ export default function OrdersPage() {
           <div className="space-y-4">
             {orders.map(order => (
               <div key={order.id} className="bg-white rounded-xl shadow-sm border border-secondary/50 overflow-hidden">
-                <div 
+                <div
                   className="p-4 cursor-pointer hover:bg-secondary/20 transition-colors"
                   onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                 >
@@ -156,7 +151,7 @@ export default function OrdersPage() {
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="border-t border-secondary pt-3 text-sm">
                       <div className="flex justify-between mb-1">
                         <span className="text-gray-600">Subtotal</span>

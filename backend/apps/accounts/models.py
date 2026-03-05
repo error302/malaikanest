@@ -38,6 +38,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     password_reset_token = models.CharField(max_length=32, blank=True, null=True)
     password_reset_expires = models.DateTimeField(blank=True, null=True)
     verification_token = models.CharField(max_length=64, blank=True, null=True)
+    # MED-04: Added expiry for email verification tokens (was missing, tokens never expired)
+    verification_token_expires = models.DateTimeField(blank=True, null=True)
     email_verified = models.BooleanField(default=False)
 
     objects = UserManager()

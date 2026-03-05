@@ -216,12 +216,15 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
 }
 
-# JWT Configuration - 7 days access, refresh token rotation
+# JWT Configuration - SHORT access token, long refresh with rotation
+# HIGH-01: Reduced ACCESS_TOKEN_LIFETIME from 7 days to 15 minutes.
+# Access tokens cannot be revoked (stateless JWT); 7 days = week-long compromise window.
+# The httpOnly cookie + refresh rotation handles seamless renewal.
 SIMPLE_JWT = {
     "ALGORITHM": "HS256",
     "SIGNING_KEY": os.getenv("JWT_SIGNING_KEY", os.getenv("SECRET_KEY")),
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),  # 7 days
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),  # 30 days
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_COOKIE": "refresh_token",

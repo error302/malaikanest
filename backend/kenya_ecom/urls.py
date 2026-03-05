@@ -7,7 +7,10 @@ from apps.core.healthcheck import health_check, readiness_check
 
 admin.site.site_header = "Malaika Nest Admin"
 
-admin_secret = os.getenv("ADMIN_URL_SECRET", "admin")
+# CRIT-02: ADMIN_URL_SECRET env var now ACTUALLY used (was read but never applied before)
+# Set ADMIN_URL_SECRET to something obscure in production .env
+# Default "admin" only for local dev — MUST be changed before deployment
+admin_secret = os.getenv("ADMIN_URL_SECRET", "admin").strip("/")
 
 urlpatterns = [
     path("api/accounts/", include("apps.accounts.urls")),
@@ -17,7 +20,7 @@ urlpatterns = [
     # path("api/ai/", include("apps.ai.urls")),  # Optional - requires OPENAI_API_KEY
     path("api/health/", health_check, name="health_check"),
     path("api/ready/", readiness_check, name="readiness_check"),
-    path("admin/", admin.site.urls),
+    path(f"{admin_secret}/", admin.site.urls),
 ]
 
 if settings.DEBUG:

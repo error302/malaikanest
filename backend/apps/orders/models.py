@@ -17,12 +17,18 @@ class Cart(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     session_key = models.CharField(max_length=40, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['session_key']),
             models.Index(fields=['user', 'session_key']),
         ]
+
+    def __str__(self):
+        # LOW-01: Added __str__ so admin panel shows useful info instead of "Cart object (1)"
+        if self.user:
+            return f"Cart for {self.user.email}"
+        return f"Guest cart ({self.session_key or 'no session'})"
 
 
 class CartItem(models.Model):
@@ -39,15 +45,19 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('initiated', 'Initiated'),
         ('paid', 'Paid'),
+        ('payment_failed', 'Payment Failed'),
         ('failed', 'Failed'),
         ('cancelled', 'Cancelled'),
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
     ]
     DELIVERY_CHOICES = [
         ('mombasa', 'Mombasa (Same Day)'),
         ('nairobi', 'Nairobi (1-2 Days)'),
         ('upcountry', 'Upcountry (2-3 Days)')
     ]
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     total = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -84,7 +94,14 @@ class OrderItem(models.Model):
         return f"{self.product.name} x {self.quantity}"
 
 
-def create_order_from_cart(user, cart, coupon=None, receipt_number=None):
+DELIVERY_FEES = {
+    'mombasa': 0,
+    'nairobi': 300,
+    'upcountry': 500,
+}
+
+
+def create_order_from_cart(user, cart, coupon=None, receipt_number=None, delivery_region='nairobi'):
     """
     Create an order from a cart with proper inventory locking to prevent race conditions.
     Uses select_for_update to lock all inventory rows within a single transaction.
@@ -121,13 +138,18 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None):
         if coupon and coupon.active:
             total = max(total - coupon.amount, 0)
 
+        # Apply delivery fee
+        delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
+        total += delivery_fee
+
         # Create the order
         order = Order.objects.create(
-            user=user, 
-            total=total, 
-            status='pending', 
-            coupon=coupon, 
-            receipt_number=receipt_number
+            user=user,
+            total=total,
+            status='pending',
+            coupon=coupon,
+            receipt_number=receipt_number,
+            delivery_region=delivery_region,
         )
 
         # Deduct inventory and create order items

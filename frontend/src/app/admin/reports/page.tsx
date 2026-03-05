@@ -38,35 +38,7 @@ export default function ReportsPage() {
       setReportData(res.data)
     } catch (error) {
       console.error('Error fetching reports:', error)
-      // Use demo data if API fails
-      setReportData({
-        totalRevenue: 125000,
-        totalOrders: 45,
-        averageOrderValue: 2777,
-        totalCustomers: 38,
-        topProducts: [
-          { name: 'Baby Stroller', quantity: 12, revenue: 48000 },
-          { name: 'Diapers Pack', quantity: 35, revenue: 17500 },
-          { name: 'Baby Bottle Set', quantity: 20, revenue: 14000 },
-          { name: 'Cradle Bed', quantity: 8, revenue: 12000 },
-          { name: 'Baby Clothes Set', quantity: 25, revenue: 7500 },
-        ],
-        ordersByStatus: [
-          { status: 'delivered', count: 28 },
-          { status: 'shipped', count: 10 },
-          { status: 'pending', count: 5 },
-          { status: 'cancelled', count: 2 },
-        ],
-        revenueByMonth: [
-          { month: 'Jan', revenue: 15000 },
-          { month: 'Feb', revenue: 18000 },
-          { month: 'Mar', revenue: 22000 },
-          { month: 'Apr', revenue: 19500 },
-          { month: 'May', revenue: 25000 },
-          { month: 'Jun', revenue: 25000 },
-        ],
-        recentTransactions: [],
-      })
+      setReportData(null)
     } finally {
       setLoading(false)
     }
@@ -104,6 +76,21 @@ export default function ReportsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"></div>
+      </div>
+    )
+  }
+
+  if (!reportData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <p className="text-lg">Unable to load report data</p>
+        <p className="text-sm">Please ensure the backend API is running</p>
+        <button 
+          onClick={fetchReportData}
+          className="mt-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+        >
+          Try Again
+        </button>
       </div>
     )
   }

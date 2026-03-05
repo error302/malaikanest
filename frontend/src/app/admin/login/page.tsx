@@ -17,12 +17,7 @@ export default function AdminLogin() {
     setLoading(true)
 
     try {
-      const res = await api.post('/api/accounts/token/', { email, password })
-      const { access, refresh } = res.data
-      
-      localStorage.setItem('access_token', access)
-      localStorage.setItem('refresh_token', refresh)
-      
+      await api.post('/api/accounts/token/', { email, password })
       router.push('/admin/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Invalid credentials')

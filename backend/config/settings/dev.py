@@ -38,6 +38,13 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-CORS_ALLOW_ALL_ORIGINS = True
+# In dev, allow all local origins for convenience - DO NOT set CORS_ALLOW_ALL_ORIGINS
+# The base.py CORS_ALLOWED_ORIGINS already handles allowed origins from env
+if not os.getenv("CORS_ALLOWED_ORIGINS"):
+    # Add common dev origins if none are configured
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
 print("Running in DEVELOPMENT mode")

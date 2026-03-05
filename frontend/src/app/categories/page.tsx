@@ -127,10 +127,10 @@ export default function CategoriesPage() {
   const activeFiltersCount = [selectedCategory, selectedAge, selectedPrice, searchQuery].filter(Boolean).length
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#1C1C2E]">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-text mb-2">Shop</h1>
-        <p className="text-gray-500 mb-6">
+        <h1 className="text-3xl font-bold text-white mb-2">Shop</h1>
+        <p className="text-[#A0A0B8] mb-6">
           {products.length} products available
         </p>
 
@@ -141,11 +141,11 @@ export default function CategoriesPage() {
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+              className="flex-1 px-4 py-3 bg-[#252538] border border-[#3A3A55] text-white placeholder-[#A0A0B8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E]"
             />
             <button
               type="submit"
-              className="px-6 py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors"
+              className="px-6 py-3 bg-[#7B2FBE] hover:bg-[#9B4FDE] text-white font-semibold rounded-lg transition-colors"
             >
               Search
             </button>
@@ -155,14 +155,14 @@ export default function CategoriesPage() {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 border border-secondary rounded-lg hover:bg-secondary transition-colors whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2 border border-[#3A3A55] text-white rounded-lg hover:bg-[#252538] transition-colors whitespace-nowrap"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
             Filters
             {activeFiltersCount > 0 && (
-              <span className="bg-accent text-white text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-[#C8963E] text-white text-xs px-2 py-0.5 rounded-full">
                 {activeFiltersCount}
               </span>
             )}
@@ -171,7 +171,7 @@ export default function CategoriesPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white whitespace-nowrap"
+            className="px-4 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white whitespace-nowrap"
           >
             {sortOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.name}</option>
@@ -181,7 +181,7 @@ export default function CategoriesPage() {
           {activeFiltersCount > 0 && (
             <button
               onClick={clearFilters}
-              className="px-4 py-2 text-red-500 hover:text-red-700 transition-colors whitespace-nowrap"
+              className="px-4 py-2 text-red-400 hover:text-red-300 transition-colors whitespace-nowrap"
             >
               Clear Filters
             </button>
@@ -189,14 +189,14 @@ export default function CategoriesPage() {
         </div>
 
         {showFilters && (
-          <div className="bg-secondary/30 p-4 rounded-lg mb-6">
+          <div className="bg-[#252538]/30 p-4 rounded-lg mb-6">
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-text mb-2">Category</label>
+                <label className="block text-sm font-medium text-white mb-2">Category</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white"
+                  className="w-full px-3 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white"
                 >
                   <option value="">All Categories</option>
                   {categories.map(cat => (
@@ -206,11 +206,11 @@ export default function CategoriesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text mb-2">Age Group</label>
+                <label className="block text-sm font-medium text-white mb-2">Age Group</label>
                 <select
                   value={selectedAge}
                   onChange={(e) => { setSelectedAge(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white"
+                  className="w-full px-3 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white"
                 >
                   {ageFilters.map(age => (
                     <option key={age.value} value={age.value}>{age.name}</option>
@@ -219,11 +219,11 @@ export default function CategoriesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text mb-2">Price Range</label>
+                <label className="block text-sm font-medium text-white mb-2">Price Range</label>
                 <select
                   value={selectedPrice}
                   onChange={(e) => { setSelectedPrice(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white"
+                  className="w-full px-3 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white"
                 >
                   {priceRanges.map(range => (
                     <option key={range.name} value={range.name}>{range.name}</option>
@@ -236,22 +236,22 @@ export default function CategoriesPage() {
 
         {!selectedCategory && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-text mb-4">Browse by Category</h2>
+            <h2 className="text-xl font-semibold text-white mb-4">Browse by Category</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {categories.slice(0, 12).map((category) => (
                 <button
                   key={category.id}
                   onClick={() => { setSelectedCategory(category.slug); setPage(1); }}
-                  className="bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 text-center"
+                  className="bg-[#252538] p-4 rounded-xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 text-center"
                 >
-                  <div className="aspect-square bg-secondary rounded-lg mb-2 flex items-center justify-center">
+                  <div className="aspect-square bg-[#1C1C2E] rounded-lg mb-2 flex items-center justify-center">
                     {category.image ? (
                       <img src={category.image} alt={category.name} className="w-full h-full object-cover rounded-lg" />
                     ) : (
                       <span className="text-3xl">📁</span>
                     )}
                   </div>
-                  <p className="text-sm font-medium text-text line-clamp-2">{category.name}</p>
+                  <p className="text-sm font-medium text-white line-clamp-2">{category.name}</p>
                 </button>
               ))}
             </div>
@@ -263,9 +263,9 @@ export default function CategoriesPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-16">
             <span className="text-6xl block mb-4">🔍</span>
-            <h3 className="text-xl font-semibold text-text">No products found</h3>
-            <p className="text-gray-500 mt-2">Try adjusting your filters or search terms</p>
-            <button onClick={clearFilters} className="mt-4 text-accent hover:underline">
+            <h3 className="text-xl font-semibold text-white">No products found</h3>
+            <p className="text-[#A0A0B8] mt-2">Try adjusting your filters or search terms</p>
+            <button onClick={clearFilters} className="mt-4 text-[#C8963E] hover:underline">
               Clear all filters
             </button>
           </div>
@@ -282,7 +282,7 @@ export default function CategoriesPage() {
                 <button
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
-                  className="px-4 py-2 border border-secondary rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary transition-colors"
+                  className="px-4 py-2 border border-[#3A3A55] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#252538] transition-colors"
                 >
                   Previous
                 </button>
@@ -303,7 +303,7 @@ export default function CategoriesPage() {
                       key={pageNum}
                       onClick={() => setPage(pageNum)}
                       className={`w-10 h-10 rounded-lg transition-colors ${
-                        page === pageNum ? 'bg-accent text-white' : 'border border-secondary hover:bg-secondary'
+                        page === pageNum ? 'bg-[#C8963E] text-white' : 'border border-[#3A3A55] text-white hover:bg-[#252538]'
                       }`}
                     >
                       {pageNum}
@@ -314,7 +314,7 @@ export default function CategoriesPage() {
                 <button
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
-                  className="px-4 py-2 border border-secondary rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary transition-colors"
+                  className="px-4 py-2 border border-[#3A3A55] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#252538] transition-colors"
                 >
                   Next
                 </button>

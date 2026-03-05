@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.conf import settings
 
 
 class Brand(models.Model):
@@ -130,6 +131,7 @@ class Product(models.Model):
             models.Index(fields=["status"]),
         ]
 
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
@@ -140,11 +142,30 @@ class Product(models.Model):
 
     @property
     def in_stock(self):
-        return self.stock > 0
+        """
+        LOW-02: Read from Inventory.available() instead of Product.stock
+        to eliminate the dual-source-of-truth problem. Product.stock is kept
+        for backward compatibility but the canonical source is the Inventory model.
+        """
+        try:
+            return self.inventory.available() > 0
+        except Exception:
+            return self.stock > 0
+
+    @property
+    def available_stock(self):
+        """Canonical available stock from Inventory model."""
+        try:
+            return self.inventory.available()
+        except Exception:
+            return self.stock
 
     @property
     def is_low_stock(self):
-        return self.stock <= self.low_stock_threshold
+        try:
+            return self.inventory.available() <= self.low_stock_threshold
+        except Exception:
+            return self.stock <= self.low_stock_threshold
 
     @property
     def discount_percentage(self):
@@ -228,26 +249,43 @@ class Review(models.Model):
     product = models.ForeignKey(
         Product, related_name="reviews", on_delete=models.CASCADE
     )
-    user_email = models.EmailField()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviews",
+    )
+    # Keep user_email for legacy/guest reviews
+    user_email = models.EmailField(blank=True)
     rating = models.PositiveSmallIntegerField()
     title = models.CharField(max_length=200, blank=True)
     body = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        # MED-07: Added unique_together to prevent duplicate reviews per user per product
+        unique_together = [('product', 'user')]
         indexes = [
             models.Index(fields=["product"]),
             models.Index(fields=["-created_at"]),
         ]
 
     def __str__(self):
-        return f"{self.product.name} review by {self.user_email}"
+        identifier = self.user.email if self.user else self.user_email
+        return f"{self.product.name} review by {identifier}"
 
 
 class Wishlist(models.Model):
-    user_email = models.EmailField()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="wishlist",
+        null=True,
+        blank=True,
+    )
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("user_email", "product")
+        unique_together = ("user", "product")

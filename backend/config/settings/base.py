@@ -1,10 +1,17 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
+_SECRET_KEY = os.getenv("SECRET_KEY")
+if not _SECRET_KEY:
+    raise ImproperlyConfigured(
+        "SECRET_KEY environment variable is not set. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_hex(50))\""
+    )
+SECRET_KEY = _SECRET_KEY
 
 # Admin URL secret for protected admin access (e.g., /secret-admin/)
 ADMIN_URL_SECRET = os.getenv("ADMIN_URL_SECRET", "change-me-in-production")
@@ -91,7 +98,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.accounts.authentication.CookieJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
@@ -104,12 +111,16 @@ REST_FRAMEWORK = {
         "anon": "100/day",
         "user": "1000/day",
         "payments": "10/minute",
+        "login": "5/minute",
+        "password_reset": "5/hour",
     },
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 24,
 }
 
 SIMPLE_JWT = {
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": os.getenv("SIMPLE_JWT_SECRET"),
+    "SIGNING_KEY": os.getenv("SIMPLE_JWT_SECRET") or SECRET_KEY,
     "ACCESS_TOKEN_LIFETIME": timedelta(
         seconds=int(os.getenv("ACCESS_TOKEN_LIFETIME", "300"))
     ),
@@ -126,6 +137,9 @@ SIMPLE_JWT = {
 
 _cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 CORS_ALLOWED_ORIGINS = [u.strip() for u in _cors_env.split(",") if u.strip()]
+
+# Essential for session cookies (guest cart) and HTTPOnly JWTs to work across domains
+CORS_ALLOW_CREDENTIALS = True
 
 _csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if _csrf_env:

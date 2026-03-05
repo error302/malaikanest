@@ -32,16 +32,15 @@ export default function CartPage() {
 
   const fetchCart = useCallback(async () => {
     try {
-      const token = localStorage.getItem('access')
       const res = await fetch('/api/orders/cart/', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
         setCart(data)
       }
     } catch (err) {
-      console.error('Failed to fetch cart', err)
+      // Cart fetch error — silently ignore (guest may not have cart yet)
     } finally {
       setLoading(false)
     }
@@ -55,20 +54,17 @@ export default function CartPage() {
     if (newQty < 1) return
     setUpdating(itemId)
     try {
-      const token = localStorage.getItem('access')
       const res = await fetch('/api/orders/cart/add/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_id: itemId, quantity: newQty })
       })
       if (res.ok) {
         await fetchCart()
       }
-    } catch (err) {
-      console.error('Failed to update quantity', err)
+    } catch {
+      // silently ignore
     } finally {
       setUpdating(null)
     }
@@ -77,16 +73,15 @@ export default function CartPage() {
   const removeItem = async (itemId: number) => {
     setUpdating(itemId)
     try {
-      const token = localStorage.getItem('access')
       const res = await fetch(`/api/orders/cart/remove/${itemId}/`, {
         method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        credentials: 'include',
       })
       if (res.ok) {
         await fetchCart()
       }
-    } catch (err) {
-      console.error('Failed to remove item', err)
+    } catch {
+      // silently ignore
     } finally {
       setUpdating(null)
     }
@@ -116,8 +111,8 @@ export default function CartPage() {
           <div className="text-6xl mb-4">🛒</div>
           <h1 className="text-2xl font-semibold text-text mb-2">Your cart is empty</h1>
           <p className="text-gray-500 mb-8">Add some items to get started</p>
-          <Link 
-            href="/categories" 
+          <Link
+            href="/categories"
             className="inline-block px-8 py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors"
           >
             Start Shopping
@@ -131,11 +126,11 @@ export default function CartPage() {
     <div className="min-h-screen bg-secondary/20 pt-24 pb-12">
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-2xl font-semibold text-text mb-6">Shopping Cart ({cart.items.length} items)</h1>
-        
+
         <div className="space-y-4 mb-8">
           {cart.items.map(item => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className="bg-white rounded-xl p-4 flex gap-4 shadow-sm border border-secondary/50"
             >
               <Link href={`/products/${item.product.slug}`} className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
@@ -145,7 +140,7 @@ export default function CartPage() {
                   <div className="w-full h-full flex items-center justify-center text-3xl">🧸</div>
                 )}
               </Link>
-              
+
               <div className="flex-1 min-w-0">
                 <Link href={`/products/${item.product.slug}`} className="font-medium text-text hover:text-cta transition-colors line-clamp-1">
                   {item.product.name}
@@ -153,10 +148,10 @@ export default function CartPage() {
                 <div className="text-sm text-gray-500 mt-1">
                   Ksh {parseInt(item.product.price).toLocaleString()}
                 </div>
-                
+
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                       disabled={updating === item.product.id}
                       className="w-8 h-8 bg-secondary rounded flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -164,7 +159,7 @@ export default function CartPage() {
                       -
                     </button>
                     <span className="w-8 text-center font-medium">{item.quantity}</span>
-                    <button 
+                    <button
                       onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                       disabled={updating === item.product.id}
                       className="w-8 h-8 bg-secondary rounded flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -172,12 +167,12 @@ export default function CartPage() {
                       +
                     </button>
                   </div>
-                  
+
                   <div className="text-right">
                     <div className="font-semibold text-text">
                       Ksh {(parseInt(item.product.price) * item.quantity).toLocaleString()}
                     </div>
-                    <button 
+                    <button
                       onClick={() => removeItem(item.product.id)}
                       disabled={updating === item.product.id}
                       className="text-xs text-gray-400 hover:text-red-500 transition-colors"
@@ -204,16 +199,16 @@ export default function CartPage() {
             <span className="font-semibold text-lg">Total</span>
             <span className="font-bold text-xl text-text">Ksh {parseInt(cart.total || '0').toLocaleString()}</span>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => router.push('/checkout')}
             className="w-full mt-6 py-4 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors"
           >
             Proceed to Checkout
           </button>
-          
-          <Link 
-            href="/categories" 
+
+          <Link
+            href="/categories"
             className="block text-center mt-3 text-sm text-gray-500 hover:text-cta transition-colors"
           >
             Continue Shopping

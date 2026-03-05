@@ -20,7 +20,7 @@ urlpatterns = [
     path('api/core/', include('apps.core.urls')),
     path('api/health/', health_check, name='health_check'),
     path('api/ready/', readiness_check, name='readiness_check'),
-    path('admin/', admin.site.urls),
+    path(f'{admin_secret}/', admin.site.urls),
 ]
 
 if settings.DEBUG:

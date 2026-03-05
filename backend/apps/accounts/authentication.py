@@ -12,6 +12,29 @@ from rest_framework_simplejwt.settings import api_settings
 logger = logging.getLogger('security')
 
 
+class CookieJWTAuthentication(JWTAuthentication):
+    """
+    Custom authentication class that checks for the 'access_token' in
+    HTTPOnly cookies instead of just the Authorization header.
+    """
+    def authenticate(self, request):
+        # Default behavior: checks Authorization header first
+        header = self.get_header(request)
+        
+        if header is None:
+            # If no Authorization header, look for cookie
+            raw_token = request.COOKIES.get('access_token')
+            if not raw_token:
+                return None
+        else:
+            raw_token = self.get_raw_token(header)
+            if raw_token is None:
+                return None
+
+        validated_token = self.get_validated_token(raw_token)
+        return self.get_user(validated_token), validated_token
+
+
 class JWTAuthenticationWithRotation(JWTAuthentication):
     """
     JWT Authentication with automatic refresh token rotation.

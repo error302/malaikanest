@@ -35,16 +35,18 @@ def logout_view(request):
 
 
 class CookieTokenObtainPairView(TokenObtainPairView):
-    """Returns access token in body and sets refresh token in httpOnly secure cookie"""
+    """Returns access token in body and sets refresh and access tokens in httpOnly secure cookies"""
 
     def finalize_response(self, request, response, *args, **kwargs):
         return super().finalize_response(request, response, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         resp = super().post(request, *args, **kwargs)
-        # If tokens present, set refresh token as httpOnly secure cookie
+        # If tokens present, set them as httpOnly secure cookies
         try:
             refresh = resp.data.get('refresh')
+            access = resp.data.get('access')
+            
             if refresh:
                 max_age = int(settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME', 86400).total_seconds() if hasattr(settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME'), 'total_seconds') else settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME', 86400))
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age)
@@ -56,8 +58,23 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                     samesite='Lax',
                     expires=expires,
                 )
-                # remove refresh from body
-                resp.data.pop('refresh', None)
+                
+            if access:
+                max_access_age = int(settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME', 300).total_seconds() if hasattr(settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME'), 'total_seconds') else settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME', 300))
+                expires_access = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_access_age)
+                resp.set_cookie(
+                    'access_token',
+                    access,
+                    httponly=True,
+                    secure=not settings.DEBUG,
+                    samesite='Lax',
+                    expires=expires_access,
+                )
+                
+            # Remove tokens from body — they are now in HTTPOnly cookies only
+            # This prevents XSS from reading tokens via JavaScript
+            resp.data.pop('refresh', None)
+            resp.data.pop('access', None)
         except Exception:
             pass
         return resp

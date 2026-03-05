@@ -30,13 +30,9 @@ function CheckoutContent() {
 
   const fetchCart = useCallback(async () => {
     try {
-      const token = localStorage.getItem('access')
-      if (!token) {
-        router.push('/login?redirect=/checkout')
-        return
-      }
+      // Use withCredentials (httpOnly cookies) — no raw token reading from localStorage
       const res = await fetch('/api/orders/cart/', {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include',
       })
       if (res.ok) {
         const data = await res.json()
@@ -69,15 +65,16 @@ function CheckoutContent() {
     setProcessing(true)
 
     try {
-      const token = localStorage.getItem('access')!
-      
+      // All requests use withCredentials (httpOnly cookies) — no localStorage token reading
       const checkoutRes = await fetch('/api/orders/cart/checkout/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({})
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          delivery_region: deliveryRegion,
+          is_gift: isGift,
+          gift_message: giftMessage,
+        }),
       })
 
       if (!checkoutRes.ok) {
@@ -90,17 +87,12 @@ function CheckoutContent() {
 
       const paymentRes = await fetch('/api/payments/mpesa/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order_id: order.id,
           phone: phone.replace(/\D/g, ''),
-          delivery_region: deliveryRegion,
-          is_gift: isGift,
-          gift_message: giftMessage
-        })
+        }),
       })
 
       if (!paymentRes.ok) {
@@ -108,9 +100,7 @@ function CheckoutContent() {
         throw new Error(err.detail || 'Payment initiation failed')
       }
 
-      const payment = await paymentRes.json()
       setPaymentInitiated(true)
-      
       pollPaymentStatus(order.id)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -119,36 +109,45 @@ function CheckoutContent() {
   }
 
   const pollPaymentStatus = async (orderId: number) => {
-    const token = localStorage.getItem('access')!
     let attempts = 0
     const maxAttempts = 30
+    let consecutiveErrors = 0
 
     const poll = async () => {
       attempts++
       try {
         const res = await fetch(`/api/orders/orders/${orderId}/`, {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include',
         })
         if (res.ok) {
           const order = await res.json()
+          consecutiveErrors = 0
           if (order.status === 'paid') {
             router.push(`/checkout/success?order_id=${orderId}`)
             return
           }
-          if (order.status === 'cancelled' || order.status === 'failed') {
-            setError('Payment was not completed')
+          if (order.status === 'payment_failed' || order.status === 'cancelled' || order.status === 'failed') {
+            setError('Payment was not completed. Please try again.')
             setProcessing(false)
             return
           }
+        } else if (res.status === 401) {
+          router.push('/login?redirect=/checkout')
+          return
         }
       } catch (err) {
-        console.error('Poll error', err)
+        consecutiveErrors++
+        if (consecutiveErrors >= 3) {
+          setError('Network error while checking payment status. Please check your order history or contact support.')
+          setProcessing(false)
+          return
+        }
       }
 
       if (attempts < maxAttempts) {
         setTimeout(poll, 5000)
       } else {
-        setError('Payment verification timed out. Please check your phone for M-Pesa prompt.')
+        setError('Payment verification timed out. Check your M-Pesa messages — if charged, your order will be confirmed shortly.')
         setProcessing(false)
       }
     }
@@ -211,7 +210,7 @@ function CheckoutContent() {
 
             <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-secondary/50">
               <h2 className="font-semibold text-lg mb-4">Delivery Details</h2>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Region</label>
                 <select

@@ -37,3 +37,8 @@ skills-lock.json
 
 # Keep example files
 !.env.example
+
+# Debug/temp scripts — never commit these
+backend/temp_script*.py
+backend/dump_phase_*.py
+frontend/tsc_errors.txt

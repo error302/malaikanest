@@ -81,6 +81,23 @@ class ProductSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    def create(self, validated_data):
+        # Handle the custom multipart field from Next.js Dropzone
+        request = self.context.get('request')
+        image = None
+        if request and request.FILES:
+            # We take the first image if multiple were uploaded
+            files = request.FILES.getlist('uploaded_images')
+            if files:
+                image = files[0]
+
+        product = Product.objects.create(**validated_data)
+        if image:
+            product.image = image
+            product.save()
+            
+        return product
+
     def get_image(self, obj):
         if obj.image:
             return obj.image.url

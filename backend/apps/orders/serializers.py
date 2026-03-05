@@ -21,10 +21,15 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'items', 'created_at', 'subtotal', 'total')
 
     def get_subtotal(self, obj):
-        return sum(ci.product.price * ci.quantity for ci in obj.items.select_related('product').all())
+        # Use already-prefetched items to avoid N+1 queries
+        return sum(ci.product.price * ci.quantity for ci in obj.items.all())
 
     def get_total(self, obj):
         return self.get_subtotal(obj)
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -40,7 +45,11 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ('id', 'user', 'total', 'status', 'items', 'created_at', 'receipt_number')
+        fields = (
+            'id', 'user', 'total', 'status', 'items', 'created_at',
+            'receipt_number', 'delivery_region', 'is_gift', 'gift_message',
+            'guest_email',
+        )
 
 
 class CouponSerializer(serializers.ModelSerializer):

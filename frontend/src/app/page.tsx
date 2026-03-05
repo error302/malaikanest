@@ -6,7 +6,7 @@ import { useCart } from '../lib/cartContext'
 import { showToast } from '../components/Toast'
 import ProductCard from '../components/ProductCard'
 import SkeletonCard from '../components/ui/SkeletonCard'
-import { Search, Star, ArrowRight } from 'lucide-react'
+import { Star, ArrowRight } from 'lucide-react'
 
 interface Product {
   id: number
@@ -33,19 +33,7 @@ interface Banner {
   is_active: boolean
   position: number
 }
- 
-// Demo products for when API is not available
-const DEMO_PRODUCTS: Product[] = [
-  { id: 1, name: 'Premium Baby Blanket', slug: 'baby-blanket', price: '2500', image: null, category: { name: 'Baby Clothing' }, seller: { name: 'Malaika Nest' }, is_new: true, rating: 5, reviews_count: 12, stock: 25 },
-  { id: 2, name: 'Soft Cotton Onesies Pack', slug: 'onesies-pack', price: '1500', image: null, category: { name: 'Baby Clothing' }, seller: { name: 'Malaika Nest' }, rating: 4, reviews_count: 8, stock: 50 },
-  { id: 3, name: 'Baby Diapers (Pack of 30)', slug: 'baby-diapers', price: '1800', image: null, category: { name: 'Diapers' }, seller: { name: 'Malaika Nest' }, is_new: true, rating: 5, reviews_count: 25, stock: 100 },
-  { id: 4, name: 'Baby Bottle Set', slug: 'bottle-set', price: '2200', image: null, category: { name: 'Feeding' }, seller: { name: 'Malaika Nest' }, rating: 4, reviews_count: 15, stock: 0 },
-  { id: 5, name: 'Educational Toys Set', slug: 'edu-toys', price: '3500', image: null, category: { name: 'Toys' }, seller: { name: 'Malaika Nest' }, rating: 5, reviews_count: 30, stock: 15 },
-  { id: 6, name: 'Baby Stroller', slug: 'baby-stroller', price: '15000', image: null, category: { name: 'Gear' }, seller: { name: 'Malaika Nest' }, is_new: true, rating: 4, reviews_count: 5, stock: 8 },
-  { id: 7, name: 'Baby Walker', slug: 'baby-walker', price: '4500', image: null, category: { name: 'Gear' }, seller: { name: 'Malaika Nest' }, rating: 4, reviews_count: 18, stock: 0 },
-  { id: 8, name: 'Nursing Pillow', slug: 'nursing-pillow', price: '2800', image: null, category: { name: 'Feeding' }, seller: { name: 'Malaika Nest' }, rating: 5, reviews_count: 22, stock: 12 },
-]
- 
+
 const categories = [
   { name: 'Baby Clothing', slug: 'clothing-apparel', emoji: '👶' },
   { name: 'Accessories', slug: 'baby-accessories', emoji: '🎀' },
@@ -69,18 +57,13 @@ const testimonials = [
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [demoMode, setDemoMode] = useState(false)
   const [activeAgeGroup, setActiveAgeGroup] = useState(0)
   const { add } = useCart()
 
-  // Banner state for dynamic hero
   const [banners, setBanners] = useState<Banner[]>([])
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [bannersLoaded, setBannersLoaded] = useState(false)
 
-  // Fetch banners on mount
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
     fetch(`${apiUrl}/api/banners/`)
@@ -89,12 +72,10 @@ export default function Home() {
         if (Array.isArray(data) && data.length > 0) {
           setBanners(data)
         }
-        setBannersLoaded(true)
       })
-      .catch(() => setBannersLoaded(true))
+      .catch(() => {})
   }, [])
 
-  // Auto-rotate banners
   const goToNextBanner = useCallback(() => {
     if (banners.length <= 1) return
     setIsTransitioning(true)
@@ -143,132 +124,54 @@ export default function Home() {
     api.get('/api/products/products/')
       .then(res => {
         setProducts(res.data.slice(0, 8))
-        setDemoMode(false)
-      })
-      .catch(() => {
-        setProducts(DEMO_PRODUCTS)
-        setDemoMode(true)
       })
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      window.location.href = `/?search=${encodeURIComponent(searchQuery)}`
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#1C1C2E]">
-      {/* Demo Mode Banner - Only show in development */}
-      {process.env.NODE_ENV === 'development' && demoMode && (
-        <div className="bg-yellow-600/90 text-yellow-100 text-center py-2 text-sm font-medium sticky top-16 z-40">
-          Demo Mode - Showing sample products. Connect backend API to see real data.
-        </div>
-      )}
 
-      {/* Hero Section - Full Banner Layout */}
-      <section className="relative w-full min-h-[90vh] bg-[#1C1C2E] overflow-hidden flex items-center">
-        {/* Background banner image */}
+      <section className="relative w-full bg-[#1C1C2E] overflow-hidden" style={{ aspectRatio: '16/5' }}>
         <div className="absolute inset-0 z-0">
-          {/* Dynamic banner image — fades between banners */}
           {currentBanner?.image ? (
             <img
               key={currentBanner.id}
               src={currentBanner.image}
               alt={currentBanner.title || 'Malaika Nest Banner'}
-              className={`
-                w-full h-full object-cover object-center
-                transition-opacity duration-500
-                ${isTransitioning ? 'opacity-0' : 'opacity-100'}
-              `}
+              className={`w-full h-full object-cover object-center transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
             />
           ) : (
-            // Fallback when no banners uploaded yet
-            // Beautiful dark gradient — site looks good even before any banners are uploaded
-            <div className="
-              w-full h-full
-              bg-gradient-to-br 
-              from-[#2D1B4E] via-[#1C1C2E] to-[#1A1A2E]
-            ">
-              {/* Decorative circles */}
-              <div className="
-                absolute top-20 right-40
-                w-64 h-64 rounded-full
-                bg-[#C8963E]/10 blur-3xl
-              " />
-              <div className="
-                absolute bottom-20 right-20
-                w-48 h-48 rounded-full
-                bg-[#7B2FBE]/10 blur-3xl
-              " />
+            <div className="w-full h-full bg-gradient-to-br from-[#2D1B4E] via-[#1C1C2E] to-[#1A1A2E]">
+              <div className="absolute top-10 right-32 w-72 h-72 rounded-full bg-[#C8963E]/10 blur-3xl" />
+              <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-[#7B2FBE]/10 blur-3xl" />
+              <div className="absolute inset-0 flex items-center justify-center flex-col gap-3">
+                <p className="text-[#3A3A55] text-sm">No banner uploaded yet</p>
+                <a href="/admin/banners/banner/add/" className="text-[#C8963E] text-xs underline hover:text-[#E0A83F]">
+                  Upload a banner in admin →
+                </a>
+              </div>
             </div>
           )}
-
-          {/* Dark gradient overlay — always present */}
-          {/* Makes text readable over ANY banner image */}
-          <div className="
-            absolute inset-0
-            bg-gradient-to-r
-            from-[#1C1C2E] 
-            via-[#1C1C2E]/75
-            to-[#1C1C2E]/20
-          " />
-          {/* Bottom fade into next section */}
-          <div className="
-            absolute bottom-0 left-0 right-0 h-24
-            bg-gradient-to-t from-[#1C1C2E] to-transparent
-          " />
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#1C1C2E] to-transparent" />
         </div>
 
-        {/* Arrow navigation - only visible if 2+ banners */}
         {banners.length > 1 && (
           <>
-            {/* Left arrow */}
             <button
               onClick={goToPrevBanner}
-              className="
-                absolute left-4 top-1/2 -translate-y-1/2 z-20
-                w-10 h-10 rounded-full
-                bg-black/30 hover:bg-black/60
-                backdrop-blur-sm
-                flex items-center justify-center
-                text-white text-lg
-                transition-all duration-200
-                hover:scale-110
-              "
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-sm text-white text-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
               aria-label="Previous banner"
-            >
-              ‹
-            </button>
-
-            {/* Right arrow */}
+            >‹</button>
             <button
               onClick={goToNextBanner}
-              className="
-                absolute right-4 top-1/2 -translate-y-1/2 z-20
-                w-10 h-10 rounded-full
-                bg-[#C8963E]/80 hover:bg-[#C8963E]
-                backdrop-blur-sm
-                flex items-center justify-center
-                text-white text-lg
-                transition-all duration-200
-                hover:scale-110
-              "
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-[#C8963E]/80 hover:bg-[#C8963E] backdrop-blur-sm text-white text-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
               aria-label="Next banner"
-            >
-              ›
-            </button>
+            >›</button>
           </>
         )}
 
-        {/* Dot navigation - only if 2+ banners */}
         {banners.length > 1 && (
-          <div className="
-            absolute bottom-8 left-1/2 -translate-x-1/2 z-20
-            flex items-center gap-2
-          ">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
             {banners.map((_, i) => (
               <button
                 key={i}
@@ -279,66 +182,41 @@ export default function Home() {
                     setIsTransitioning(false)
                   }, 300)
                 }}
-                className={`
-                  rounded-full transition-all duration-300
-                  ${i === currentBannerIndex
-                    ? 'bg-[#C8963E] w-6 h-2'
-                    : 'bg-white/40 hover:bg-white/70 w-2 h-2'
-                  }
-                `}
+                className={`rounded-full transition-all duration-300 ${i === currentBannerIndex ? 'bg-[#C8963E] w-6 h-2' : 'bg-white/40 hover:bg-white/70 w-2 h-2'}`}
                 aria-label={`Go to banner ${i + 1}`}
               />
             ))}
           </div>
         )}
+      </section>
 
-        {/* Content overlay — left aligned */}
-        <div className="relative z-10 px-4 sm:px-8 lg:px-24 max-w-2xl py-20">
-          {/* Top badge - hide if banner has custom content */}
-          {!currentBanner?.title && (
-            <div className="inline-flex items-center gap-2 bg-[#C8963E]/20 border border-[#C8963E]/40 rounded-full px-4 py-2 mb-6">
-              <span>🧸</span>
-              <span className="text-[#C8963E] text-sm font-medium">
-                Premium Baby Products
-              </span>
-            </div>
-          )}
+      <section className="bg-[#1C1C2E] px-4 sm:px-8 lg:px-24 py-12">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 bg-[#C8963E]/15 border border-[#C8963E]/30 rounded-full px-4 py-1.5 mb-5">
+            <span>🧸</span>
+            <span className="text-[#C8963E] text-sm font-medium">Premium Baby Products</span>
+          </div>
 
-          {/* Main heading - use banner title if set, else default */}
-          <h1 className="font-bold text-white leading-tight text-4xl sm:text-5xl lg:text-6xl mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {currentBanner?.title ? (
-              currentBanner.title
-            ) : (
-              <>
-                Everything Your<br />
-                <span className="text-[#C8963E]">Little One</span><br />
-                Needs
-              </>
-            )}
+          <h1 className="font-display font-bold text-white leading-tight text-4xl sm:text-5xl lg:text-6xl mb-4">
+            Everything Your<br />
+            <span className="text-[#C8963E]">Little One</span><br />
+            Needs
           </h1>
 
-          {/* Subtext - use banner subtitle if set */}
-          <p className="text-[#A0A0B8] text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
-            {currentBanner?.subtitle || 
-             'Shop trusted baby products, accessories and toys — delivered across Kenya. Pay instantly with M-Pesa.'}
+          <p className="text-[#A0A0B8] text-base sm:text-lg leading-relaxed mb-6 max-w-lg">
+            Shop trusted baby products, accessories and toys — delivered across Kenya. Pay instantly with M-Pesa.
           </p>
 
-          {/* Search bar */}
-          <form onSubmit={handleSearch} className="flex items-center bg-[#252538] border border-[#3A3A55] rounded-[14px] overflow-hidden max-w-lg h-14 focus-within:border-[#C8963E] transition-colors duration-200">
-            <input
-              type="text"
-              placeholder="Search baby products, toys & accessories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent text-white placeholder-[#A0A0B8] px-5 text-sm outline-none"
-            />
-            <button type="submit" className="bg-[#C8963E] hover:bg-[#E0A83F] text-white font-semibold text-sm px-6 h-full flex items-center gap-2 transition-colors duration-200 shrink-0">
-              🔍 Search
-            </button>
-          </form>
+          <div className="flex items-center gap-4 mb-6">
+            <Link href="/categories" className="bg-[#C8963E] hover:bg-[#E0A83F] text-white font-semibold px-8 py-3 rounded-[12px] transition-all duration-200 hover:shadow-[0_4px_20px_rgba(200,150,62,0.4)]">
+              Shop Now
+            </Link>
+            <Link href="/#categories" className="border border-[#C8963E] text-[#C8963E] hover:bg-[#C8963E]/10 px-8 py-3 rounded-[12px] font-semibold transition-all duration-200">
+              View Categories
+            </Link>
+          </div>
 
-          {/* Trust pills */}
-          <div className="flex items-center gap-6 mt-6 flex-wrap">
+          <div className="flex items-center gap-6">
             <span className="flex items-center gap-2 text-[#A0A0B8] text-sm">
               <span className="text-green-400">✓</span> M-Pesa Secure
             </span>
@@ -349,14 +227,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Shop by Category */}
-      <section className="py-16 bg-[#252538]">
+      <section className="py-16 bg-[#252538]" id="categories">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Shop by Category</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
-            {categories.map((cat, idx) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/?category=${cat.slug}`}
@@ -370,7 +247,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Age-Based Browse Section */}
       <section className="py-16 bg-[#1A1A2E]">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -382,11 +258,10 @@ export default function Home() {
               <button
                 key={age.slug}
                 onClick={() => setActiveAgeGroup(idx)}
-                className={`px-6 py-3 rounded-[12px] font-medium transition-all ${
-                  activeAgeGroup === idx 
-                    ? 'bg-[#C8963E] text-white' 
-                    : 'bg-[#252538] text-[#A0A0B8] hover:text-white border border-[#3A3A55]'
-                }`}
+                className={`px-6 py-3 rounded-[12px] font-medium transition-all ${activeAgeGroup === idx
+                  ? 'bg-[#C8963E] text-white'
+                  : 'bg-[#252538] text-[#A0A0B8] hover:text-white border border-[#3A3A55]'
+                  }`}
               >
                 {age.emoji} {age.name}
               </button>
@@ -412,7 +287,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Toys Section */}
       <section className="py-16 bg-[#252538]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
@@ -421,15 +295,11 @@ export default function Home() {
               <p className="text-[#A0A0B8] mt-1">Handpicked for your little ones</p>
             </div>
             <div className="flex gap-2">
-              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] border border-[#3A3A55] text-white hover:border-[#C8963E] hover:text-[#C8963E] transition-all">
-                ←
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] bg-[#C8963E] text-white hover:bg-[#E0A83F] transition-all">
-                →
-              </button>
+              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] border border-[#3A3A55] text-white hover:border-[#C8963E] hover:text-[#C8963E] transition-all">←</button>
+              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] bg-[#C8963E] text-white hover:bg-[#E0A83F] transition-all">→</button>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
@@ -444,13 +314,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
       <section className="py-16 bg-[#1C1C2E]">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             Satisfied People from Malaika Nest
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((testimonial, idx) => (
               <div key={idx} className="bg-[#252538] rounded-[20px] p-6 border border-[#3A3A55] hover:border-[#C8963E] transition-all">
@@ -475,7 +344,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Newsletter Section */}
       <section className="py-20 px-4 sm:px-8 lg:px-24 bg-[#1C1C2E] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2D1B4E 0%, #1C1C2E 100%)' }}>
         <div className="absolute inset-0 bg-gradient-to-r from-[#7B2FBE]/10 to-transparent"></div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
@@ -488,7 +356,7 @@ export default function Home() {
             Subscribe Newsletter
           </h2>
           <p className="text-[#A0A0B8] text-base mt-2 mb-6">Get the latest baby product deals and updates</p>
-          
+
           <form className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
             <input
               type="email"
@@ -508,4 +376,3 @@ export default function Home() {
     </div>
   )
 }
-

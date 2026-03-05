@@ -93,25 +93,26 @@ class RateLimitMiddleware:
         return request.META.get('REMOTE_ADDR', 'unknown')
     
     def _check_rate_limit(self, key, rate_limit):
-        """Check if request is within rate limit"""
+        """
+        Check if request is within rate limit.
+        HIGH-03: Fixed — using atomic cache.add() + cache.incr() instead of
+        non-atomic cache.get() + cache.set(), which had a race condition allowing
+        concurrent requests to bypass the rate limit entirely.
+        """
         limit, period = self._parse_rate_limit(rate_limit)
-        
-        # Get current count
         cache_key = f"ratelimit:{key}"
-        current = cache.get(cache_key, 0)
-        
-        if current >= limit:
-            return False
-        
-        # Increment counter
-        # Use add to handle race conditions
+
         try:
-            cache.set(cache_key, current + 1, period)
+            # Atomically initialize the key if it doesn't exist
+            cache.add(cache_key, 0, period)
+            # Atomically increment — returns new value
+            current = cache.incr(cache_key)
         except Exception:
-            # If cache fails, allow request
-            pass
-        
-        return True
+            # If cache (Redis) is unavailable, allow request but log
+            logger.error("Rate limit cache unavailable — allowing request for %s", key)
+            return True
+
+        return current <= limit
     
     def _get_remaining_requests(self, key, rate_limit):
         """Get remaining requests in current period"""
