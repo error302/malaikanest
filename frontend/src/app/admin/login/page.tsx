@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
+import DarkModeToggle from '@/components/DarkModeToggle'
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -37,41 +38,45 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pastel-beige via-pastel-peach to-pastel-pink/30">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-pastel-beige">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--pastel-beige)] via-[var(--bg-secondary)] to-[var(--pastel-pink)]/30 dark:from-[var(--bg-primary)] dark:via-[var(--bg-secondary)] dark:to-[var(--pastel-pink)]/10">
+      <div className="bg-[var(--bg-card)] p-8 rounded-2xl shadow-xl w-full max-w-md border border-[var(--border)]">
+        <div className="flex justify-end mb-4">
+          <DarkModeToggle />
+        </div>
+        
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-pastel-navy" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="text-3xl font-bold text-[var(--accent)]" style={{ fontFamily: "'Playfair Display', serif" }}>
             Malaika Nest
           </h1>
-          <p className="text-gray-500 mt-2">Admin Dashboard Login</p>
+          <p className="text-[var(--text-muted)] mt-2">Admin Dashboard Login</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm border border-red-100">
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl mb-6 text-sm border border-red-100 dark:border-red-800">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-2">Email Address</label>
+            <label className="block text-[var(--text-primary)] font-medium mb-2">Email Address</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pastel-mint/50 focus:border-pastel-mint transition-all bg-pastel-beige/20"
+              className="w-full px-4 py-3 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)] transition-all bg-[var(--bg-secondary)] text-[var(--text-primary)]"
               placeholder="admin@example.com"
               required
             />
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-2">Password</label>
+            <label className="block text-[var(--text-primary)] font-medium mb-2">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pastel-mint/50 focus:border-pastel-mint transition-all bg-pastel-beige/20"
+              className="w-full px-4 py-3 border border-[var(--border)] rounded-xl focus:ring-2 focus:ring-[var(--accent)]/50 focus:border-[var(--accent)] transition-all bg-[var(--bg-secondary)] text-[var(--text-primary)]"
               placeholder="••••••••"
               required
             />
@@ -80,14 +85,14 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-pastel-pink to-pastel-mint text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:hover:scale-100"
+            className="w-full bg-gradient-to-r from-[var(--accent)] to-[var(--pastel-pink)] text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link href="/" className="text-pastel-navy hover:text-pastel-pink text-sm transition-colors">
+          <Link href="/" className="text-[var(--accent)] hover:text-[var(--accent-hover)] text-sm transition-colors">
             ← Back to Website
           </Link>
         </div>
@@ -95,3 +100,4 @@ export default function AdminLogin() {
     </div>
   )
 }
+

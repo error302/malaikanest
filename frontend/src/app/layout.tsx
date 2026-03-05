@@ -5,7 +5,8 @@ import Footer from '../components/Footer'
 import { Providers } from '../lib/providers'
 import { ToastContainer } from '../components/Toast'
 import AIChatWidget from '../components/AIChatWidget'
-import { Space_Grotesk, Inter } from 'next/font/google'
+import DarkModeToggle from '../components/DarkModeToggle'
+import { Space_Grotesk, Inter, Playfair_Display } from 'next/font/google'
 
 // Configure fonts
 const spaceGrotesk = Space_Grotesk({
@@ -20,8 +21,14 @@ const inter = Inter({
   display: 'swap',
 })
 
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
+
 export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_API_URL || 'https://malaikanest.shop'),
+  metadataBase: new URL('https://malaikanest.duckdns.org'),
   title: {
     default: 'Malaika Nest — Baby Products & Toys in Kenya',
     template: '%s | Malaika Nest'
@@ -45,7 +52,7 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_KE',
-    url: 'https://malaikanest.shop',
+    url: 'https://malaikanest.duckdns.org',
     siteName: 'Malaika Nest',
     title: 'Malaika Nest — Baby Products & Toys in Kenya',
     description: 'Shop premium baby products, accessories and toys in Kenya. Secure M-Pesa payments, fast delivery nationwide.',
@@ -71,12 +78,12 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/logo-compact.svg" />
-        <meta name="theme-color" content="#1C1C2E" />
+        <meta name="theme-color" content="#FFFDF7" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -84,10 +91,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "Malaika Nest",
-              "url": "https://malaikanest.shop",
+              "url": "https://malaikanest.duckdns.org",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://malaikanest.shop/search?q={search_term_string}",
+                "target": "https://malaikanest.duckdns.org/search?q={search_term_string}",
                 "query-input": "required name=search_term_string"
               },
               "description": "Trusted online baby store in Kenya with secure M-Pesa payments"
@@ -95,8 +102,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className="bg-primary text-white antialiased font-body">
+      <body className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased font-body transition-colors duration-300">
         <Providers>
+          {/* Top Banner */}
+          <div className="top-banner text-xs sm:text-sm py-2 px-4 text-center">
+            <span className="hidden sm:inline">🎀 Free Kenyan Delivery on Orders Over KSh 10,000! </span>
+            <span className="sm:hidden">🎀 Free Delivery Over KSh 10,000!</span>
+            <span className="mx-2">•</span>
+            <span>Secure M-Pesa Payments</span>
+          </div>
+          
           <Navbar />
           <main className="min-h-screen flex flex-col">
             {children}

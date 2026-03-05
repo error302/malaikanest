@@ -89,13 +89,13 @@ export default function CartPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-secondary/20 pt-24 pb-12">
+      <div className="min-h-screen bg-[var(--bg-secondary)] pt-24 pb-12">
         <div className="max-w-4xl mx-auto px-4">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-8 bg-[var(--border)] rounded w-1/4"></div>
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white p-4 rounded-xl h-24"></div>
+                <div key={i} className="bg-[var(--bg-card)] p-4 rounded-xl h-24"></div>
               ))}
             </div>
           </div>
@@ -106,14 +106,14 @@ export default function CartPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-secondary/20 pt-24 pb-12">
+      <div className="min-h-screen bg-[var(--bg-secondary)] pt-24 pb-12">
         <div className="max-w-4xl mx-auto px-4 text-center py-16">
           <div className="text-6xl mb-4">🛒</div>
-          <h1 className="text-2xl font-semibold text-text mb-2">Your cart is empty</h1>
-          <p className="text-gray-500 mb-8">Add some items to get started</p>
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-2">Your cart is empty</h1>
+          <p className="text-[var(--text-muted)] mb-8">Add some items to get started</p>
           <Link
             href="/categories"
-            className="inline-block px-8 py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors"
+            className="inline-block px-8 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-colors"
           >
             Start Shopping
           </Link>
@@ -123,17 +123,17 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/20 pt-24 pb-12">
+    <div className="min-h-screen bg-[var(--bg-secondary)] pt-24 pb-12">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-2xl font-semibold text-text mb-6">Shopping Cart ({cart.items.length} items)</h1>
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-6">Shopping Cart ({cart.items.length} items)</h1>
 
         <div className="space-y-4 mb-8">
           {cart.items.map(item => (
             <div
               key={item.id}
-              className="bg-white rounded-xl p-4 flex gap-4 shadow-sm border border-secondary/50"
+              className="bg-[var(--bg-card)] rounded-xl p-4 flex gap-4 shadow-sm border border-[var(--border)]"
             >
-              <Link href={`/products/${item.product.slug}`} className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+              <Link href={`/products/${item.product.slug}`} className="w-24 h-24 bg-[var(--bg-secondary)] rounded-lg overflow-hidden flex-shrink-0">
                 {item.product.image ? (
                   <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
                 ) : (
@@ -142,10 +142,10 @@ export default function CartPage() {
               </Link>
 
               <div className="flex-1 min-w-0">
-                <Link href={`/products/${item.product.slug}`} className="font-medium text-text hover:text-cta transition-colors line-clamp-1">
+                <Link href={`/products/${item.product.slug}`} className="font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-1">
                   {item.product.name}
                 </Link>
-                <div className="text-sm text-gray-500 mt-1">
+                <div className="text-sm text-[var(--text-muted)] mt-1">
                   Ksh {parseInt(item.product.price).toLocaleString()}
                 </div>
 
@@ -154,28 +154,28 @@ export default function CartPage() {
                     <button
                       onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                       disabled={updating === item.product.id}
-                      className="w-8 h-8 bg-secondary rounded flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      className="w-8 h-8 bg-[var(--bg-secondary)] rounded flex items-center justify-center hover:bg-[var(--border)] transition-colors disabled:opacity-50 text-[var(--text-primary)]"
                     >
                       -
                     </button>
-                    <span className="w-8 text-center font-medium">{item.quantity}</span>
+                    <span className="w-8 text-center font-medium text-[var(--text-primary)]">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                       disabled={updating === item.product.id}
-                      className="w-8 h-8 bg-secondary rounded flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      className="w-8 h-8 bg-[var(--bg-secondary)] rounded flex items-center justify-center hover:bg-[var(--border)] transition-colors disabled:opacity-50 text-[var(--text-primary)]"
                     >
                       +
                     </button>
                   </div>
 
                   <div className="text-right">
-                    <div className="font-semibold text-text">
+                    <div className="font-semibold text-[var(--text-primary)]">
                       Ksh {(parseInt(item.product.price) * item.quantity).toLocaleString()}
                     </div>
                     <button
                       onClick={() => removeItem(item.product.id)}
                       disabled={updating === item.product.id}
-                      className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                      className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors"
                     >
                       Remove
                     </button>
@@ -186,30 +186,30 @@ export default function CartPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-secondary/50">
+        <div className="bg-[var(--bg-card)] rounded-xl p-6 shadow-sm border border-[var(--border)]">
           <div className="flex justify-between mb-2">
-            <span className="text-gray-600">Subtotal</span>
-            <span className="text-text">Ksh {parseInt(cart.subtotal || '0').toLocaleString()}</span>
+            <span className="text-[var(--text-secondary)]">Subtotal</span>
+            <span className="text-[var(--text-primary)]">Ksh {parseInt(cart.subtotal || '0').toLocaleString()}</span>
           </div>
-          <div className="flex justify-between mb-4 text-sm text-gray-500">
+          <div className="flex justify-between mb-4 text-sm text-[var(--text-muted)]">
             <span>Shipping</span>
             <span>Calculated at checkout</span>
           </div>
-          <div className="flex justify-between pt-4 border-t border-secondary">
-            <span className="font-semibold text-lg">Total</span>
-            <span className="font-bold text-xl text-text">Ksh {parseInt(cart.total || '0').toLocaleString()}</span>
+          <div className="flex justify-between pt-4 border-t border-[var(--border)]">
+            <span className="font-semibold text-lg text-[var(--text-primary)]">Total</span>
+            <span className="font-bold text-xl text-[var(--text-primary)]">Ksh {parseInt(cart.total || '0').toLocaleString()}</span>
           </div>
 
           <button
             onClick={() => router.push('/checkout')}
-            className="w-full mt-6 py-4 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors"
+            className="w-full mt-6 py-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg transition-colors"
           >
             Proceed to Checkout
           </button>
 
           <Link
             href="/categories"
-            className="block text-center mt-3 text-sm text-gray-500 hover:text-cta transition-colors"
+            className="block text-center mt-3 text-sm text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
           >
             Continue Shopping
           </Link>
@@ -218,3 +218,4 @@ export default function CartPage() {
     </div>
   )
 }
+

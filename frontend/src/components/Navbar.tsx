@@ -5,8 +5,9 @@ import Link from 'next/link'
 import MiniCart from './MiniCart'
 import { useCart } from '../lib/cartContext'
 import Logo from './Logo'
+import DarkModeToggle from './DarkModeToggle'
 import { getCachedData, setCachedData } from '../lib/cache'
-import { Search, ShoppingCart, Menu, X, ChevronDown } from 'lucide-react'
+import { Search, ShoppingCart, Menu, X, ChevronDown, User } from 'lucide-react'
 
 interface Category {
   id: number
@@ -27,6 +28,11 @@ function NavbarContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showCart, setShowCart] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -70,11 +76,15 @@ function NavbarContent() {
     }
   }
 
+  // Use CSS variable for transparent background in dark mode
+  const navBgClass = scrolled 
+    ? 'bg-[var(--bg-card)] border-b-[var(--border)] shadow-[var(--shadow-md)]' 
+    : 'bg-transparent'
+
   return (
     <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-primary shadow-lg' : 'bg-transparent'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBgClass}`}
+      style={{ borderBottomWidth: scrolled ? 1 : 0 }}
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
@@ -86,18 +96,18 @@ function NavbarContent() {
             <div className="relative w-full">
               <input
                 type="text"
-                placeholder="Search Baby Products..."
+                placeholder="Search baby products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 pl-10 pr-4 bg-card border border-border rounded-button text-white placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                className="w-full h-11 pl-10 pr-4 input-soft"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
             </div>
           </form>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-2">
-            <Link href="/" className="px-3 py-2 text-white hover:text-accent transition-colors font-medium text-[15px]">
+            <Link href="/" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors font-medium text-[15px]">
               Home
             </Link>
 
@@ -106,7 +116,7 @@ function NavbarContent() {
               onMouseEnter={() => setIsCategoriesOpen(true)}
               onMouseLeave={() => setIsCategoriesOpen(false)}
             >
-              <button className="px-3 py-2 text-white hover:text-accent transition-colors flex items-center gap-1 font-medium text-[15px]">
+              <button className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors flex items-center gap-1 font-medium text-[15px]">
                 Shop
                 <ChevronDown 
                   className={`w-4 h-4 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''}`}
@@ -115,7 +125,7 @@ function NavbarContent() {
 
               {/* Mega Menu */}
               <div 
-                className={`absolute left-1/2 -translate-x-1/2 top-full w-[700px] bg-card shadow-xl rounded-b-xl border-t-4 border-accent z-50 transition-all duration-200 ${
+                className={`absolute left-1/2 -translate-x-1/2 top-full w-[700px] bg-[var(--bg-card)] shadow-[var(--shadow-xl)] rounded-b-xl border-t-4 border-[var(--accent)] z-50 transition-all duration-200 ${
                   isCategoriesOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
                 }`}
               >
@@ -123,19 +133,19 @@ function NavbarContent() {
                   <div className="grid grid-cols-4 gap-6">
                     {topLevelCategories.slice(0, 8).map((groupCat: Category) => (
                       <div key={groupCat.id}>
-                        <h4 className="font-bold text-accent border-b border-border pb-2 mb-3">{groupCat.name}</h4>
+                        <h4 className="font-bold text-[var(--accent)] border-b border-[var(--border)] pb-2 mb-3">{groupCat.name}</h4>
                         <ul className="space-y-2 text-sm">
                           {groupCat.children && groupCat.children.length > 0 ? (
                             groupCat.children.slice(0, 5).map((child: Category) => (
                               <li key={child.id}>
-                                <Link href={`/?category=${child.slug}`} className="text-muted hover:text-accent transition-colors block">
+                                <Link href={`/?category=${child.slug}`} className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors block">
                                   {child.name}
                                 </Link>
                               </li>
                             ))
                           ) : (
                             <li>
-                              <Link href={`/?category=${groupCat.slug}`} className="text-muted hover:text-accent transition-colors block">
+                              <Link href={`/?category=${groupCat.slug}`} className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors block">
                                 View All
                               </Link>
                             </li>
@@ -144,11 +154,11 @@ function NavbarContent() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
-                    <Link href="/categories" className="text-sm font-medium text-accent hover:text-accent/80">
+                  <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-between items-center">
+                    <Link href="/categories" className="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]">
                       View All Categories →
                     </Link>
-                    <Link href="/categories" className="text-sm bg-accent text-white px-4 py-2 rounded-button hover:bg-accent-hover transition-colors">
+                    <Link href="/categories" className="text-sm bg-[var(--accent)] text-white px-4 py-2 rounded-[12px] hover:bg-[var(--accent-hover)] transition-colors">
                       Shop Now
                     </Link>
                   </div>
@@ -156,22 +166,26 @@ function NavbarContent() {
               </div>
             </div>
 
-            <Link href="/account/orders" className="px-3 py-2 text-white hover:text-accent transition-colors font-medium text-[15px]">
+            <Link href="/account/orders" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors font-medium text-[15px]">
               My Orders
             </Link>
             
-            {/* Log In */}
+            {/* Theme Toggle */}
+            {mounted && <DarkModeToggle />}
+            
+            {/* User Icon */}
             <Link 
               href="/login" 
-              className="px-4 py-2 text-white hover:text-accent transition-colors font-medium text-[15px]"
+              className="p-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
+              aria-label="Account"
             >
-              Log In
+              <User className="w-5 h-5" />
             </Link>
 
             {/* Get Started Button */}
             <Link 
               href="/login" 
-              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-medium rounded-button transition-all shadow-button"
+              className="px-5 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-[12px] transition-all shadow-[var(--shadow-accent)]"
             >
               Get Started
             </Link>
@@ -180,11 +194,11 @@ function NavbarContent() {
             <button 
               onClick={() => setShowCart(s => !s)} 
               aria-label="Cart" 
-              className="relative p-2 text-white hover:text-accent transition-colors"
+              className="relative p-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
             >
               <ShoppingCart className="w-6 h-6" />
               {items.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                <span className="absolute -top-1 -right-1 bg-[var(--accent)] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
                   {items.length}
                 </span>
               )}
@@ -198,20 +212,22 @@ function NavbarContent() {
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            <button 
-              onClick={() => setShowCart(s => !s)} 
-              aria-label="Cart" 
-              className="relative p-2 text-white"
-            >
-              <ShoppingCart className="w-6 h-6" />
-              {items.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
-                  {items.length}
-                </span>
-              )}
-            </button>
+            {mounted && (
+              <button 
+                onClick={() => setShowCart(s => !s)} 
+                aria-label="Cart" 
+                className="relative p-2 text-[var(--text-primary)]"
+              >
+                <ShoppingCart className="w-6 h-6" />
+                {items.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[var(--accent)] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                    {items.length}
+                  </span>
+                )}
+              </button>
+            )}
             <button
-              className="p-2 text-white"
+              className="p-2 text-[var(--text-primary)]"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
@@ -227,33 +243,36 @@ function NavbarContent() {
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 bg-card border border-border rounded-button text-white placeholder-muted focus:outline-none focus:border-accent"
+            className="w-full h-11 pl-10 pr-4 input-soft"
           />
         </form>
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-border">
+          <div className="md:hidden py-4 border-t border-[var(--border)]">
             <div className="flex flex-col gap-2">
-              <Link href="/" className="px-3 py-2 text-white hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+              <Link href="/" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium" onClick={() => setIsOpen(false)}>
                 Home
               </Link>
-              <Link href="/categories" className="px-3 py-2 text-white hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+              <Link href="/categories" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium" onClick={() => setIsOpen(false)}>
                 Categories
               </Link>
-              <Link href="/bundle" className="px-3 py-2 text-white hover:text-accent font-medium" onClick={() => setIsOpen(false)}>
+              <Link href="/bundle" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium" onClick={() => setIsOpen(false)}>
                 Bundle Builder
               </Link>
+              <div className="flex items-center gap-3 px-3 py-2">
+                {mounted && <DarkModeToggle />}
+              </div>
               <Link 
                 href="/login" 
-                className="px-4 py-3 text-white hover:text-accent font-medium text-center"
+                className="px-4 py-3 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium text-center"
                 onClick={() => setIsOpen(false)}
               >
                 Log In
               </Link>
               <Link 
                 href="/login" 
-                className="px-4 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-button transition-colors text-center mx-2 mt-2"
+                className="px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-[12px] transition-colors text-center mx-2 mt-2"
                 onClick={() => setIsOpen(false)}
               >
                 Get Started

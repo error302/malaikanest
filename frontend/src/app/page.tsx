@@ -129,9 +129,10 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#1C1C2E]">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
 
-      <section className="relative w-full bg-[#1C1C2E] overflow-hidden" style={{ aspectRatio: '16/5' }}>
+      {/* Hero/Banner Section */}
+      <section className="relative w-full bg-[var(--bg-secondary)] overflow-hidden" style={{ aspectRatio: '16/5' }}>
         <div className="absolute inset-0 z-0">
           {currentBanner?.image ? (
             <img
@@ -141,18 +142,18 @@ export default function Home() {
               className={`w-full h-full object-cover object-center transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#2D1B4E] via-[#1C1C2E] to-[#1A1A2E]">
-              <div className="absolute top-10 right-32 w-72 h-72 rounded-full bg-[#C8963E]/10 blur-3xl" />
-              <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-[#7B2FBE]/10 blur-3xl" />
+            <div className="w-full h-full bg-gradient-to-br from-[var(--pastel-pink)]/20 via-[var(--bg-secondary)] to-[var(--pastel-lavender)]/20">
+              <div className="absolute top-10 right-32 w-72 h-72 rounded-full bg-[var(--accent)]/10 blur-3xl" />
+              <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-[var(--purple)]/10 blur-3xl" />
               <div className="absolute inset-0 flex items-center justify-center flex-col gap-3">
-                <p className="text-[#3A3A55] text-sm">No banner uploaded yet</p>
-                <a href="/admin/banners/banner/add/" className="text-[#C8963E] text-xs underline hover:text-[#E0A83F]">
+                <p className="text-[var(--text-muted)] text-sm">No banner uploaded yet</p>
+                <a href="/admin/banners" className="text-[var(--accent)] text-xs underline hover:text-[var(--accent-hover)]">
                   Upload a banner in admin →
                 </a>
               </div>
             </div>
           )}
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#1C1C2E] to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[var(--bg-primary)] to-transparent" />
         </div>
 
         {banners.length > 1 && (
@@ -164,7 +165,7 @@ export default function Home() {
             >‹</button>
             <button
               onClick={goToNextBanner}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-[#C8963E]/80 hover:bg-[#C8963E] backdrop-blur-sm text-white text-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-[var(--accent)]/80 hover:bg-[var(--accent)] backdrop-blur-sm text-white text-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
               aria-label="Next banner"
             >›</button>
           </>
@@ -182,7 +183,7 @@ export default function Home() {
                     setIsTransitioning(false)
                   }, 300)
                 }}
-                className={`rounded-full transition-all duration-300 ${i === currentBannerIndex ? 'bg-[#C8963E] w-6 h-2' : 'bg-white/40 hover:bg-white/70 w-2 h-2'}`}
+                className={`rounded-full transition-all duration-300 ${i === currentBannerIndex ? 'bg-[var(--accent)] w-6 h-2' : 'bg-white/40 hover:bg-white/70 w-2 h-2'}`}
                 aria-label={`Go to banner ${i + 1}`}
               />
             ))}
@@ -190,66 +191,69 @@ export default function Home() {
         )}
       </section>
 
-      <section className="bg-[#1C1C2E] px-4 sm:px-8 lg:px-24 py-12">
+      {/* Hero Content */}
+      <section className="bg-[var(--bg-primary)] px-4 sm:px-8 lg:px-24 py-12">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 bg-[#C8963E]/15 border border-[#C8963E]/30 rounded-full px-4 py-1.5 mb-5">
+          <div className="inline-flex items-center gap-2 bg-[var(--pastel-pink)]/20 border border-[var(--pastel-pink)]/30 rounded-full px-4 py-1.5 mb-5">
             <span>🧸</span>
-            <span className="text-[#C8963E] text-sm font-medium">Premium Baby Products</span>
+            <span className="text-[var(--accent)] text-sm font-medium">Premium Baby Products</span>
           </div>
 
-          <h1 className="font-display font-bold text-white leading-tight text-4xl sm:text-5xl lg:text-6xl mb-4">
+          <h1 className="font-display font-bold text-[var(--text-primary)] leading-tight text-4xl sm:text-5xl lg:text-6xl mb-4">
             Everything Your<br />
-            <span className="text-[#C8963E]">Little One</span><br />
+            <span className="text-[var(--accent)]">Little One</span><br />
             Needs
           </h1>
 
-          <p className="text-[#A0A0B8] text-base sm:text-lg leading-relaxed mb-6 max-w-lg">
+          <p className="text-[var(--text-secondary)] text-base sm:text-lg leading-relaxed mb-6 max-w-lg">
             Shop trusted baby products, accessories and toys — delivered across Kenya. Pay instantly with M-Pesa.
           </p>
 
           <div className="flex items-center gap-4 mb-6">
-            <Link href="/categories" className="bg-[#C8963E] hover:bg-[#E0A83F] text-white font-semibold px-8 py-3 rounded-[12px] transition-all duration-200 hover:shadow-[0_4px_20px_rgba(200,150,62,0.4)]">
+            <Link href="/categories" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold px-8 py-3 rounded-[12px] transition-all duration-200 hover:shadow-[var(--shadow-accent)]">
               Shop Now
             </Link>
-            <Link href="/#categories" className="border border-[#C8963E] text-[#C8963E] hover:bg-[#C8963E]/10 px-8 py-3 rounded-[12px] font-semibold transition-all duration-200">
+            <Link href="/#categories" className="border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 px-8 py-3 rounded-[12px] font-semibold transition-all duration-200">
               View Categories
             </Link>
           </div>
 
           <div className="flex items-center gap-6">
-            <span className="flex items-center gap-2 text-[#A0A0B8] text-sm">
-              <span className="text-green-400">✓</span> M-Pesa Secure
+            <span className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
+              <span className="text-green-500">✓</span> M-Pesa Secure
             </span>
-            <span className="flex items-center gap-2 text-[#A0A0B8] text-sm">
-              <span className="text-green-400">✓</span> Free Shipping over KES 5,000
+            <span className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
+              <span className="text-green-500">✓</span> Free Shipping over KES 5,000
             </span>
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-[#252538]" id="categories">
+      {/* Categories Section */}
+      <section className="py-16 bg-[var(--bg-secondary)]" id="categories">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Shop by Category</h2>
+            <h2 className="text-3xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "'Playfair Display', serif" }}>Shop by Category</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
             {categories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/?category=${cat.slug}`}
-                className="group bg-[#1C1C2E] hover:bg-[#2D2D45] rounded-[20px] p-6 text-center transition-all duration-300 hover:-translate-y-1 border border-[#3A3A55] hover:border-[#C8963E]"
+                className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] rounded-[20px] p-6 text-center transition-all duration-300 hover:-translate-y-1 border border-[var(--border)] hover:border-[var(--accent)]"
               >
                 <div className="text-4xl mb-3">{cat.emoji}</div>
-                <h3 className="font-semibold text-white group-hover:text-[#C8963E] transition-colors">{cat.name}</h3>
+                <h3 className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">{cat.name}</h3>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-[#1A1A2E]">
+      {/* Age Groups Section */}
+      <section className="py-16 bg-[var(--bg-primary)]">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <h2 className="text-3xl font-bold text-[var(--text-primary)] text-center mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>
             Browse Different Types of Toys for Different Ages
           </h2>
 
@@ -259,8 +263,8 @@ export default function Home() {
                 key={age.slug}
                 onClick={() => setActiveAgeGroup(idx)}
                 className={`px-6 py-3 rounded-[12px] font-medium transition-all ${activeAgeGroup === idx
-                  ? 'bg-[#C8963E] text-white'
-                  : 'bg-[#252538] text-[#A0A0B8] hover:text-white border border-[#3A3A55]'
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]'
                   }`}
               >
                 {age.emoji} {age.name}
@@ -279,7 +283,7 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-8">
-            <Link href="/categories" className="inline-flex items-center gap-2 px-6 py-3 bg-[#C8963E] hover:bg-[#E0A83F] text-white rounded-[12px] transition-colors">
+            <Link href="/categories" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-[12px] transition-colors">
               See More Toys
               <ArrowRight className="w-4 h-4" />
             </Link>
@@ -287,16 +291,17 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 bg-[#252538]">
+      {/* Featured Products Section */}
+      <section className="py-16 bg-[var(--bg-secondary)]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Featured Toys</h2>
-              <p className="text-[#A0A0B8] mt-1">Handpicked for your little ones</p>
+              <h2 className="text-3xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "'Playfair Display', serif" }}>Featured Toys</h2>
+              <p className="text-[var(--text-secondary)] mt-1">Handpicked for your little ones</p>
             </div>
             <div className="flex gap-2">
-              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] border border-[#3A3A55] text-white hover:border-[#C8963E] hover:text-[#C8963E] transition-all">←</button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] bg-[#C8963E] text-white hover:bg-[#E0A83F] transition-all">→</button>
+              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all">←</button>
+              <button className="w-10 h-10 flex items-center justify-center rounded-[12px] bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all">→</button>
             </div>
           </div>
 
@@ -314,59 +319,61 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 bg-[#1C1C2E]">
+      {/* Testimonials Section */}
+      <section className="py-16 bg-[var(--bg-primary)]">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Satisfied People from Malaika Nest
+          <h2 className="text-3xl font-bold text-[var(--text-primary)] text-center mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>
+            Happy Parents Love Malaika Nest
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((testimonial, idx) => (
-              <div key={idx} className="bg-[#252538] rounded-[20px] p-6 border border-[#3A3A55] hover:border-[#C8963E] transition-all">
+              <div key={idx} className="bg-[var(--bg-card)] rounded-[20px] p-6 border border-[var(--border)] hover:border-[var(--accent)] transition-all">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-[#7B2FBE]/20 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-[var(--pastel-pink)]/20 rounded-full flex items-center justify-center">
                     <span className="text-2xl">{testimonial.avatar}</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-white">{testimonial.name}</h4>
-                    <p className="text-[#C8963E] text-xs">{testimonial.location}</p>
+                    <h4 className="font-semibold text-[var(--text-primary)]">{testimonial.name}</h4>
+                    <p className="text-[var(--accent)] text-xs">{testimonial.location}</p>
                   </div>
                 </div>
                 <div className="flex gap-1 mb-3">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className={`w-4 h-4 ${star <= testimonial.rating ? 'text-[#FFB800] fill-[#FFB800]' : 'text-[#A0A0B8]'}`} />
+                    <Star key={star} className={`w-4 h-4 ${star <= testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-[var(--text-muted)]'}`} />
                   ))}
                 </div>
-                <p className="text-[#A0A0B8] text-sm leading-relaxed italic">"{testimonial.text}"</p>
+                <p className="text-[var(--text-secondary)] text-sm leading-relaxed italic">"{testimonial.text}"</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-4 sm:px-8 lg:px-24 bg-[#1C1C2E] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2D1B4E 0%, #1C1C2E 100%)' }}>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#7B2FBE]/10 to-transparent"></div>
+      {/* Newsletter Section */}
+      <section className="py-20 px-4 sm:px-8 lg:px-24 bg-[var(--bg-primary)] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--pastel-pink)/20 0%, var(--bg-primary) 100%)' }}>
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--pastel-lavender)]/10 to-transparent"></div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-[#C8963E] rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-[var(--accent)] rounded-full flex items-center justify-center">
               <span className="text-3xl text-white">📧</span>
             </div>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Subscribe Newsletter
+          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+            Subscribe to Our Newsletter
           </h2>
-          <p className="text-[#A0A0B8] text-base mt-2 mb-6">Get the latest baby product deals and updates</p>
+          <p className="text-[var(--text-secondary)] text-base mt-2 mb-6">Get the latest baby product deals and updates</p>
 
           <form className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
             <input
               type="email"
               placeholder="Your email address"
-              className="flex-1 h-14 bg-[#1C1C2E] border border-[#3A3A55] text-white placeholder-[#A0A0B8] rounded-[12px] px-5 focus:border-[#C8963E] focus:outline-none w-full sm:max-w-md"
+              className="flex-1 h-14 bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-[12px] px-5 focus:border-[var(--accent)] focus:outline-none w-full sm:max-w-md"
               required
             />
             <button
               type="submit"
-              className="h-14 px-8 bg-[#C8963E] hover:bg-[#E0A83F] text-white font-semibold rounded-[12px] transition-all duration-200 whitespace-nowrap"
+              className="h-14 px-8 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-[12px] transition-all duration-200 whitespace-nowrap"
             >
               Subscribe
             </button>
@@ -376,3 +383,4 @@ export default function Home() {
     </div>
   )
 }
+
