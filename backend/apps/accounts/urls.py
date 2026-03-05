@@ -8,8 +8,8 @@ from .views import (
     password_reset_confirm_view,
     verify_email_view,
     resend_verification_view,
+    CookieTokenObtainPairView,
 )
-from apps.users.views import CookieTokenObtainPairView
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),

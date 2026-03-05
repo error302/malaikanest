@@ -1,37 +1,42 @@
 #!/bin/bash
-# Deployment Commands for Malaika Nest
-# Run these commands on your server (SSH into your GCP VM)
 
-echo "=== MALAIKA NEST DEPLOYMENT COMMANDS ==="
-echo ""
-echo "1. SSH into your server:"
-echo "   ssh root@104.154.161.10"
-echo ""
-echo "2. Clone the project (first time only):"
-echo "   cd /opt"
-echo "   git clone https://github.com/error302/malaikanest.git"
-echo "   cd malaikanest"
-echo ""
-echo "3. Setup environment file:"
-echo "   cp .env.example backend/.env"
-echo "   nano backend/.env"
-echo ""
-echo "4. Install backend dependencies and run migrations:"
-echo "   cd backend"
-echo "   pip install -r requirements.txt"
-echo "   python manage.py migrate"
-echo "   python manage.py collectstatic --noinput"
-echo ""
-echo "5. Install frontend and build:"
-echo "   cd ../frontend"
-echo "   npm install"
-echo "   npm run build"
-echo ""
-echo "6. Get SSL Certificate (run after DNS propagates):"
-echo "   sudo certbot --nginx -d malaikanest.duckdns.org"
-echo ""
-echo "7. Restart services:"
-echo "   pm2 restart all"
-echo ""
-echo "=== Your site will be live at: https://malaikanest.duckdns.org ==="
+# ============================================
+# MALAIKA NEST - DEPLOYMENT COMMANDS
+# ============================================
+
+echo "=== Malaika Nest Deployment ==="
+
+# Navigate to backend
+cd ~/malaikanest/backend
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Set environment variables
+export SECRET_KEY='f@$zl+8_nwk7&#w^xgi0+ims&88q0ho1(!eegmssk3q2@(@x7sc'
+export DEBUG=False
+export ALLOWED_HOSTS='malaikanest.duckdns.org,www.malaikanest.duckdns.org,localhost,127.0.0.1'
+export DATABASE_URL='postgresql://malaika_user:Dosho10701$@localhost:5432/malaika_db'
+export FRONTEND_URL='https://malaikanest.duckdns.org'
+export CORS_ALLOWED_ORIGINS='https://malaikanest.duckdns.org,http://localhost:3000'
+export CSRF_TRUSTED_ORIGINS='https://malaikanest.duckdns.org'
+export REDIS_URL='redis://localhost:6379/0'
+export JWT_SIGNING_KEY='f@$zl+8_nwk7&#w^xgi0+ims&88q0ho1(!eegmssk3q2@(@x7sc'
+
+# Run migrations
+echo "Running migrations..."
+python manage.py migrate
+
+# Collect static files (if needed)
+python manage.py collectstatic --noinput
+
+# Restart backend service
+echo "Restarting Gunicorn..."
+sudo systemctl restart gunicorn
+
+# Or if using PM2:
+# pm2 restart backend
+
+echo "=== Deployment Complete ==="
+echo "Backend should be running at: https://malaikanest.duckdns.org"
 
