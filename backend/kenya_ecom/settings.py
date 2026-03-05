@@ -11,14 +11,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # CRITICAL: Validate required environment variables
 # ============================================================================
 REQUIRED_ENV_VARS = [
-    'SECRET_KEY',
-    'DATABASE_URL',
-    'ALLOWED_HOSTS',
+    "SECRET_KEY",
+    "DATABASE_URL",
+    "ALLOWED_HOSTS",
 ]
 
 missing_vars = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
-if missing_vars and os.getenv('DEBUG', 'False') != 'True':
-    raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")
+if missing_vars and os.getenv("DEBUG", "False") != "True":
+    raise RuntimeError(
+        f"Missing required environment variables: {', '.join(missing_vars)}"
+    )
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
@@ -33,7 +35,7 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
 
 # Frontend URL - used for password reset links, etc.
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip('/')
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
 
 # Validate against open redirect attacks
 VALID_REDIRECT_HOSTS = os.getenv("VALID_REDIRECT_HOSTS", "").split(",")
@@ -55,6 +57,7 @@ INSTALLED_APPS = [
     "cloudinary",
     "django_filters",
     "apps.accounts",
+    "apps.users",
     "apps.products",
     "apps.orders",
     "apps.payments",
@@ -106,13 +109,14 @@ if database_url:
     try:
         DATABASES = {
             "default": dj_database_url.parse(
-                database_url, 
+                database_url,
                 conn_max_age=60,
                 conn_health_checks=True,
             )
         }
     except Exception as e:
         import urllib.parse
+
         parsed = urllib.parse.urlparse(database_url)
         DATABASES = {
             "default": {
@@ -182,14 +186,14 @@ cloudinary.config(
 
 # Cloudinary Storage Configuration
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
 }
 
 # Use Cloudinary for media file storage
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+MEDIA_URL = "/media/"
 
 # ============================================================================
 # REST Framework + JWT - SECURE CONFIGURATION
@@ -210,9 +214,7 @@ REST_FRAMEWORK = {
         "user": "200/hour",
         "password_reset": "3/hour",
     },
-    "DEFAULT_RENDERER_CLASSES": (
-        "rest_framework.renderers.JSONRenderer",
-    ),
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
 }
 
@@ -239,10 +241,10 @@ SIMPLE_JWT = {
 # CORS - Strict Allowlist Configuration
 # ============================================================================
 CORS_ALLOWED_ORIGINS = os.getenv(
-    "CORS_ALLOWED_ORIGINS", 
-    "http://localhost:3000,https://localhost:3000"
+    "CORS_ALLOWED_ORIGINS", "http://localhost:3000,https://localhost:3000"
 ).split(",")
 CORS_ALLOWED_ORIGINS = [u.strip() for u in CORS_ALLOWED_ORIGINS if u.strip()]
+
 
 # Validate all origins have proper scheme
 def validate_origin(origin):
@@ -254,6 +256,7 @@ def validate_origin(origin):
         return f"https://{origin}"
     return origin
 
+
 CORS_ALLOWED_ORIGINS = [validate_origin(u) for u in CORS_ALLOWED_ORIGINS]
 
 # Disallow credentials from other origins in production
@@ -261,31 +264,30 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Explicitly whitelist methods
 CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
 ]
 
 # Explicitly whitelist headers
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 # CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = os.getenv(
-    "CSRF_TRUSTED_ORIGINS", 
-    ",".join(CORS_ALLOWED_ORIGINS)
+    "CSRF_TRUSTED_ORIGINS", ",".join(CORS_ALLOWED_ORIGINS)
 ).split(",")
 CSRF_TRUSTED_ORIGINS = [u.strip() for u in CSRF_TRUSTED_ORIGINS if u.strip()]
 CSRF_TRUSTED_ORIGINS = [validate_origin(u) for u in CSRF_TRUSTED_ORIGINS]
@@ -328,13 +330,15 @@ CSP_FRAME_ANCESTORS = ("'none'",)
 # ============================================================================
 # EMAIL - Gmail SMTP Configuration
 # ============================================================================
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 
 # ============================================================================
 # LOGGING - Secure Configuration
@@ -438,7 +442,7 @@ if os.getenv("CREATE_SUPERUSER", "false").lower() == "true" and not DEBUG:
     User = get_user_model()
     superuser_email = os.getenv("SUPERUSER_EMAIL")
     superuser_password = os.getenv("SUPERUSER_PASSWORD")
-    
+
     if superuser_email and superuser_password:
         if not User.objects.filter(is_superuser=True).exists():
             User.objects.create_superuser(superuser_email, superuser_password)
