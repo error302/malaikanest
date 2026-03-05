@@ -72,8 +72,12 @@ class ReviewAdmin(admin.ModelAdmin):
 class WishlistAdmin(admin.ModelAdmin):
     list_display = ('user_email', 'product', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('user_email', 'product__name')
+    search_fields = ('user__email', 'product__name')
     readonly_fields = ('created_at',)
+
+    def user_email(self, obj):
+        return obj.user.email if obj.user else "Guest"
+    user_email.short_description = 'User Email'
 
 
 @admin.register(Banner)
