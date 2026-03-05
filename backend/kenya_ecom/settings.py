@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "cloudinary",
     "django_filters",
     "apps.accounts",
-    "apps.users",
+    # "apps.users",  # Disabled - conflicts with accounts.User
     "apps.products",
     "apps.orders",
     "apps.payments",
