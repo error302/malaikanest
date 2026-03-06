@@ -42,9 +42,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_healthy
-    ports:
-      - "8000:8000"
+        condition: service_healthy
     volumes:
       - backend_media:/app/media
       - staticfiles:/app/staticfiles
@@ -56,7 +54,7 @@ services:
       dockerfile: Dockerfile.prod
     restart: always
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-https://malaikanest.duckdns.org}"
       NODE_ENV: "production"
     ports:
       - "3000:3000"
@@ -82,3 +80,4 @@ volumes:
   redis_data:
   staticfiles:
   backend_media:
+

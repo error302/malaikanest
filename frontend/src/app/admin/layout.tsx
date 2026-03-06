@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import api from '@/lib/api'
@@ -27,15 +27,15 @@ function AdminSidebar() {
     setLoggingOut(true)
     try {
       await api.post('/api/accounts/logout/')
-    } catch (e) {
-      // Ignore logout errors
+    } catch (_e) {
+      // Ignore logout errors, but still force navigation out of admin
+    } finally {
+      // Cookies are httpOnly and cleared by backend logout response
+      router.refresh()
+      router.replace('/admin/login')
+      setLoggingOut(false)
     }
-    // Clear cookies
-    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/'
-    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/'
-    router.push('/admin/login')
   }
-
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href
     return pathname.startsWith(href)

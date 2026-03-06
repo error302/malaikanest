@@ -168,7 +168,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 class WishlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wishlist
-        fields = ("id", "user_email", "product", "created_at")
+        fields = ("id", "user", "product", "created_at")
+        read_only_fields = ("user",)
 
 
 class BannerSerializer(serializers.ModelSerializer):
@@ -193,3 +194,5 @@ class BannerSerializer(serializers.ModelSerializer):
         if obj.image:
             return obj.image.url
         return None
+
+

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import api from '@/lib/api'
@@ -12,14 +12,6 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    // Check if already logged in
-    const token = document.cookie.includes('access_token')
-    if (token) {
-      router.push('/admin')
-    }
-  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,4 +92,5 @@ export default function AdminLogin() {
     </div>
   )
 }
+
 

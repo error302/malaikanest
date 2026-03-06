@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+
+import api, { handleApiError } from '@/lib/api'
 
 type CartData = {
   id: number
@@ -14,6 +16,17 @@ type CartData = {
   total: string
 }
 
+const toMoneyNumber = (value: string | number): number => {
+  const num = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(num) ? num : 0
+}
+
+const formatKsh = (value: string | number): string =>
+  new Intl.NumberFormat('en-KE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(toMoneyNumber(value))
+
 function CheckoutContent() {
   const [cart, setCart] = useState<CartData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -24,26 +37,21 @@ function CheckoutContent() {
   const [giftMessage, setGiftMessage] = useState('')
   const [error, setError] = useState('')
   const [orderId, setOrderId] = useState<number | null>(null)
-  const [paymentId, setPaymentId] = useState<number | null>(null)
   const [paymentInitiated, setPaymentInitiated] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const fetchCart = useCallback(async () => {
     try {
-      // Use withCredentials (httpOnly cookies) — no raw token reading from localStorage
-      const res = await fetch('/api/orders/cart/', {
-        credentials: 'include',
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setCart(data)
-      } else if (res.status === 401) {
+      const res = await api.get('/api/orders/cart/')
+      setCart(res.data)
+    } catch (err: unknown) {
+      const msg = handleApiError(err)
+      if (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid refresh token')) {
         router.push('/login?redirect=/checkout')
+      } else {
+        setError(msg)
       }
-    } catch (err) {
-      console.error('Failed to fetch cart', err)
-      setError('Failed to load cart')
     } finally {
       setLoading(false)
     }
@@ -56,7 +64,7 @@ function CheckoutContent() {
   useEffect(() => {
     const pendingOrder = searchParams.get('order_id')
     if (pendingOrder) {
-      setOrderId(parseInt(pendingOrder))
+      setOrderId(parseInt(pendingOrder, 10))
       setPaymentInitiated(true)
     }
   }, [searchParams])
@@ -66,52 +74,29 @@ function CheckoutContent() {
     setProcessing(true)
 
     try {
-      // Step 1: Create order via checkout
-      const checkoutRes = await fetch('/api/orders/cart/checkout/', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          delivery_region: deliveryRegion,
-          is_gift: isGift,
-          gift_message: giftMessage,
-        }),
+      const checkoutRes = await api.post('/api/orders/cart/checkout/', {
+        delivery_region: deliveryRegion,
+        is_gift: isGift,
+        gift_message: giftMessage,
       })
 
-      if (!checkoutRes.ok) {
-        const err = await checkoutRes.json()
-        throw new Error(err.detail || 'Checkout failed')
-      }
-
-      const order = await checkoutRes.json()
+      const order = checkoutRes.data
       setOrderId(order.id)
 
-      // Step 2: Use consolidated endpoint - creates Payment + triggers STK in one call
-      const mpesaRes = await fetch('/api/payments/mpesa/pay/', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: order.id,
-          phone: phone.replace(/\D/g, ''),
-        }),
+      await api.post('/api/payments/mpesa/pay/', {
+        order_id: order.id,
+        phone: phone.replace(/\D/g, ''),
       })
 
-      if (!mpesaRes.ok) {
-        const err = await mpesaRes.json()
-        throw new Error(err.detail || 'Payment initiation failed')
-      }
-
-      const mpesaResult = await mpesaRes.json()
       setPaymentInitiated(true)
       pollPaymentStatus(order.id)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(handleApiError(err))
       setProcessing(false)
     }
   }
 
-  const pollPaymentStatus = async (orderId: number) => {
+  const pollPaymentStatus = async (oid: number) => {
     let attempts = 0
     const maxAttempts = 30
     let consecutiveErrors = 0
@@ -119,26 +104,27 @@ function CheckoutContent() {
     const poll = async () => {
       attempts++
       try {
-        const res = await fetch(`/api/orders/orders/${orderId}/`, {
-          credentials: 'include',
-        })
-        if (res.ok) {
-          const order = await res.json()
-          consecutiveErrors = 0
-          if (order.status === 'paid') {
-            router.push(`/checkout/success?order_id=${orderId}`)
-            return
-          }
-          if (order.status === 'payment_failed' || order.status === 'cancelled' || order.status === 'failed') {
-            setError('Payment was not completed. Please try again.')
-            setProcessing(false)
-            return
-          }
-        } else if (res.status === 401) {
+        const res = await api.get(`/api/orders/orders/${oid}/`)
+        const order = res.data
+        consecutiveErrors = 0
+
+        if (order.status === 'paid') {
+          router.push(`/checkout/success?order_id=${oid}`)
+          return
+        }
+
+        if (['payment_failed', 'cancelled', 'failed'].includes(order.status)) {
+          setError('Payment was not completed. Please try again.')
+          setProcessing(false)
+          return
+        }
+      } catch (err: unknown) {
+        const msg = handleApiError(err)
+        if (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid refresh token')) {
           router.push('/login?redirect=/checkout')
           return
         }
-      } catch (err) {
+
         consecutiveErrors++
         if (consecutiveErrors >= 3) {
           setError('Network error while checking payment status. Please check your order history or contact support.')
@@ -195,24 +181,22 @@ function CheckoutContent() {
 
         {!paymentInitiated ? (
           <>
-            {/* Order Summary */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 mb-6 shadow-sm border border-[var(--border)]">
               <h2 className="font-semibold text-lg mb-4 text-[var(--text-primary)]">Order Summary</h2>
               <div className="space-y-3 max-h-48 overflow-y-auto">
-                {cart.items.map(item => (
+                {cart.items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm text-[var(--text-secondary)]">
                     <span>{item.product.name} x {item.quantity}</span>
-                    <span>Ksh {(parseInt(item.product.price) * item.quantity).toLocaleString()}</span>
+                    <span>Ksh {formatKsh(toMoneyNumber(item.product.price) * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               <div className="border-t border-[var(--border)] mt-4 pt-4 flex justify-between font-semibold text-[var(--text-primary)]">
                 <span>Total</span>
-                <span>Ksh {parseInt(cart.total).toLocaleString()}</span>
+                <span>Ksh {formatKsh(cart.total)}</span>
               </div>
             </div>
 
-            {/* Delivery Details */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 mb-6 shadow-sm border border-[var(--border)]">
               <h2 className="font-semibold text-lg mb-4 text-[var(--text-primary)]">Delivery Details</h2>
 
@@ -220,7 +204,7 @@ function CheckoutContent() {
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">Delivery Region</label>
                 <select
                   value={deliveryRegion}
-                  onChange={e => setDeliveryRegion(e.target.value)}
+                  onChange={(e) => setDeliveryRegion(e.target.value)}
                   className="w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent bg-[var(--bg-card)] text-[var(--text-primary)]"
                 >
                   <option value="mombasa">Mombasa (Free)</option>
@@ -234,7 +218,7 @@ function CheckoutContent() {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
                   placeholder="07XXXXXXXX"
                   className="w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent bg-[var(--bg-card)] text-[var(--text-primary)]"
                 />
@@ -246,7 +230,7 @@ function CheckoutContent() {
                   <input
                     type="checkbox"
                     checked={isGift}
-                    onChange={e => setIsGift(e.target.checked)}
+                    onChange={(e) => setIsGift(e.target.checked)}
                     className="w-4 h-4 text-[var(--accent)] rounded"
                   />
                   <span className="text-sm font-medium text-[var(--text-primary)]">This is a gift</span>
@@ -258,7 +242,7 @@ function CheckoutContent() {
                   <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">Gift Message (optional)</label>
                   <textarea
                     value={giftMessage}
-                    onChange={e => setGiftMessage(e.target.value)}
+                    onChange={(e) => setGiftMessage(e.target.value)}
                     placeholder="Add a personal message..."
                     rows={3}
                     className="w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent bg-[var(--bg-card)] text-[var(--text-primary)]"
@@ -267,7 +251,6 @@ function CheckoutContent() {
               )}
             </div>
 
-            {/* Payment */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 shadow-sm border border-[var(--border)]">
               <h2 className="font-semibold text-lg mb-4 text-[var(--text-primary)]">Payment</h2>
               <div className="flex items-center gap-3 p-4 bg-[var(--bg-secondary)] rounded-lg">
@@ -285,7 +268,7 @@ function CheckoutContent() {
                 disabled={processing || !phone}
                 className="w-full mt-6 py-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:bg-[var(--text-muted)] text-white font-semibold rounded-lg transition-colors"
               >
-                {processing ? 'Processing...' : `Pay Ksh ${parseInt(cart.total).toLocaleString()} with M-Pesa`}
+                {processing ? 'Processing...' : `Pay Ksh ${formatKsh(cart.total)} with M-Pesa`}
               </button>
             </div>
           </>
@@ -317,18 +300,19 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[var(--bg-secondary)] pt-24 pb-12">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-[var(--border)] rounded w-1/3"></div>
-            <div className="bg-[var(--bg-card)] p-6 rounded-xl h-64"></div>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--bg-secondary)] pt-24 pb-12">
+          <div className="max-w-2xl mx-auto px-4">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-[var(--border)] rounded w-1/3"></div>
+              <div className="bg-[var(--bg-card)] p-6 rounded-xl h-64"></div>
+            </div>
           </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <CheckoutContent />
     </Suspense>
   )
 }
-

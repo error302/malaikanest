@@ -65,12 +65,11 @@ export default function Home() {
   const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
-    fetch(`${apiUrl}/api/banners/`)
-      .then(res => res.ok ? res.json() : [])
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setBanners(data)
+    api
+      .get('/api/banners/')
+      .then((res) => {
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setBanners(res.data)
         }
       })
       .catch(() => {})

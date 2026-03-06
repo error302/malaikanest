@@ -25,3 +25,15 @@ if not globals().get('SECRET_KEY'):
 # Enable DEBUG and local hosts for convenient local smoke tests
 DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+SILENCED_SYSTEM_CHECKS = ['fields.E210']
+
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SIMPLE_JWT['AUTH_COOKIE_SECURE'] = False
+
+CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+
+DEBUG_PROPAGATE_EXCEPTIONS = True
+

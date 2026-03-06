@@ -1,8 +1,11 @@
-import os
 import base64
 import datetime
-import requests
+import hashlib
+import json
 import logging
+import os
+
+import requests
 from django.db import transaction
 from django.utils import timezone
 
@@ -11,23 +14,44 @@ logger = logging.getLogger("apps.payments")
 try:
     from celery import shared_task
 except ImportError:
+
     def shared_task(func=None, **kwargs):
         if func is not None:
             return func
+
         def decorator(f):
             return f
+
         return decorator
+
+
+def _payload_hash(payload):
+    serialized = json.dumps(payload, sort_keys=True, default=str, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def _audit_log(payment=None, event_type="reconcile_query", payload=None, **extra):
+    from .models import PaymentAuditLog
+
+    safe_payload = payload or {}
+    try:
+        PaymentAuditLog.objects.create(
+            payment=payment,
+            event_type=event_type,
+            source="celery",
+            checkout_request_id=extra.get("checkout_request_id"),
+            merchant_request_id=extra.get("merchant_request_id"),
+            result_code=extra.get("result_code"),
+            payload_hash=_payload_hash(safe_payload),
+            payload=safe_payload,
+            notes=extra.get("notes", ""),
+        )
+    except Exception as exc:
+        logger.warning("payment audit log write skipped: %s", exc)
 
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
 def verify_mpesa_payment_async(self, payment_id):
-    """
-    CRIT-01: Fixed — task signature now only takes payment_id (was incorrectly called
-              with payment_id + checkout_request_id causing TypeError on every call).
-    CRIT-08: Fixed — now respects MPESA_ENV (was hardcoded to live API).
-    HIGH-05: Fixed — timestamp is now properly generated (was empty string, causing
-              every Safaricom query to be rejected with malformed password).
-    """
     from .models import Payment
 
     try:
@@ -36,26 +60,36 @@ def verify_mpesa_payment_async(self, payment_id):
         logger.warning("verify_mpesa_payment_async: payment %s not found", payment_id)
         return "not found"
 
+    if payment.payment_method != "mpesa":
+        return "unsupported method"
+
     if payment.status == "completed":
         return "already completed"
 
     if not payment.checkout_request_id:
-        logger.warning("verify_mpesa_payment_async: payment %s has no checkout_request_id", payment_id)
+        _audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"reason": "missing_checkout_request_id", "payment_id": payment.id},
+            notes="Cannot reconcile payment without checkout_request_id",
+        )
         return "no checkout_request_id"
 
     consumer_key = os.getenv("MPESA_CONSUMER_KEY")
     consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
-    # HIGH-08: Standardized env var name
     shortcode = os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
     passkey = os.getenv("MPESA_PASSKEY")
-    # CRIT-08: Respect MPESA_ENV — was hardcoded to live API
     mpesa_env = os.getenv("MPESA_ENV", "sandbox")
 
     if not all([consumer_key, consumer_secret, shortcode, passkey]):
-        logger.error("verify_mpesa_payment_async: M-Pesa not fully configured")
+        _audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"reason": "missing_mpesa_config", "payment_id": payment.id},
+            notes="M-Pesa credentials not fully configured",
+        )
         return "not configured"
 
-    # CRIT-08: Select correct API URL based on environment
     token_url = (
         "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
         if mpesa_env == "live"
@@ -68,27 +102,22 @@ def verify_mpesa_payment_async(self, payment_id):
     )
 
     try:
-        token_resp = requests.get(
-            token_url,
-            auth=(consumer_key, consumer_secret),
-            timeout=10,
-        )
+        token_resp = requests.get(token_url, auth=(consumer_key, consumer_secret), timeout=10)
         token_resp.raise_for_status()
         access_token = token_resp.json().get("access_token")
     except requests.exceptions.RequestException as exc:
-        logger.error("verify_mpesa_payment_async: token fetch failed for payment %s: %s", payment_id, exc)
+        _audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"stage": "token", "error": str(exc)},
+            checkout_request_id=payment.checkout_request_id,
+            notes="Token fetch failed",
+        )
         raise self.retry(exc=exc)
 
-    # HIGH-05: Fixed — timestamp must be YYYYMMDDHHMMSS, was empty string breaking password
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    password = base64.b64encode(
-        f"{shortcode}{passkey}{timestamp}".encode()
-    ).decode()
+    password = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
 
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
     payload = {
         "BusinessShortCode": shortcode,
         "CheckoutRequestID": payment.checkout_request_id,
@@ -97,61 +126,90 @@ def verify_mpesa_payment_async(self, payment_id):
     }
 
     try:
-        resp = requests.post(query_url, json=payload, headers=headers, timeout=10)
+        resp = requests.post(
+            query_url,
+            json=payload,
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            timeout=10,
+        )
         resp.raise_for_status()
         data = resp.json()
-        logger.info("STK query result for payment %s: %s", payment_id, data)
-
         result_code = data.get("ResultCode")
-        # Safaricom may return int or string
+
+        _audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"request": {**payload, "Password": "***"}, "response": data},
+            checkout_request_id=payment.checkout_request_id,
+            result_code=str(result_code) if result_code is not None else None,
+        )
+
         if result_code == "0" or result_code == 0:
             with transaction.atomic():
                 p = Payment.objects.select_for_update().get(pk=payment_id)
                 if p.status != "completed":
                     p.status = "completed"
-                    # Note: STK query doesn't return MpesaReceiptNumber — that comes from callback
-                    p.save()
+                    p.save(update_fields=["status", "updated_at"])
                     order = p.order
                     if order.status != "paid":
                         order.status = "paid"
-                        order.paid_at = timezone.now()
-                        order.save()
-            logger.info("Payment %s verified and marked completed via query", payment_id)
+                        if hasattr(order, "paid_at"):
+                            order.paid_at = timezone.now()
+                            order.save(update_fields=["status", "paid_at", "updated_at"])
+                        else:
+                            order.save(update_fields=["status", "updated_at"])
+
+                    _audit_log(
+                        payment=p,
+                        event_type="reconcile_completed",
+                        payload={"payment_id": p.id, "order_id": p.order_id},
+                        checkout_request_id=p.checkout_request_id,
+                        result_code="0",
+                        notes="Recovered payment via STK query reconciliation",
+                    )
             return "completed"
-        else:
-            result_desc = data.get("ResultDesc", "")
-            logger.info(
-                "Payment %s verification query: not yet completed — ResultCode=%s, Desc=%s",
-                payment_id, result_code, result_desc,
-            )
-            # If still pending, retry
-            raise self.retry()
+
+        raise self.retry()
 
     except requests.exceptions.RequestException as exc:
-        logger.error("verify_mpesa_payment_async: query failed for payment %s: %s", payment_id, exc)
+        _audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"stage": "query", "error": str(exc)},
+            checkout_request_id=payment.checkout_request_id,
+            notes="STK query failed",
+        )
         raise self.retry(exc=exc)
     except Payment.DoesNotExist:
         return "not found"
 
 
 @shared_task
-def reconcile_payments_task():
-    """
-    LOW-09: Fixed — use timezone.now() instead of datetime.utcnow() to avoid
-    comparing naive UTC to timezone-aware EAT datetimes.
-    """
+def reconcile_payments_task(stale_minutes=30, limit=200):
     from .models import Payment
 
-    # Find payments that have been in "initiated" status for over 30 minutes
-    cutoff = timezone.now() - datetime.timedelta(minutes=30)
-    payments = Payment.objects.filter(status="initiated", created_at__lt=cutoff)
-    count = 0
+    cutoff = timezone.now() - datetime.timedelta(minutes=stale_minutes)
+    payments = (
+        Payment.objects.filter(payment_method="mpesa", status="initiated", created_at__lt=cutoff)
+        .exclude(checkout_request_id__isnull=True)
+        .exclude(checkout_request_id="")
+        .order_by("created_at")[:limit]
+    )
+
+    queued = 0
     for p in payments:
         try:
             verify_mpesa_payment_async.delay(p.id)
-            count += 1
-        except Exception as e:
-            logger.error("reconcile_payments_task: failed to queue payment %s: %s", p.id, e)
-            continue
-    logger.info("reconcile_payments_task: queued %s payments for verification", count)
-    return f"queued {count}"
+            queued += 1
+            _audit_log(
+                payment=p,
+                event_type="reconcile_queued",
+                payload={"payment_id": p.id, "stale_minutes": stale_minutes},
+                checkout_request_id=p.checkout_request_id,
+                notes="Queued by reconcile_payments_task",
+            )
+        except Exception as exc:
+            logger.error("reconcile_payments_task: failed to queue payment %s: %s", p.id, exc)
+
+    logger.info("reconcile_payments_task: queued %s payments", queued)
+    return f"queued {queued}"

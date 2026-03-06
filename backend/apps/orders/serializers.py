@@ -31,10 +31,6 @@ class CartSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
 
-
-class OrderItemSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True)
-
     class Meta:
         model = OrderItem
         fields = ('id', 'product', 'price', 'quantity')

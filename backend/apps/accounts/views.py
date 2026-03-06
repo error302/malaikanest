@@ -1,9 +1,10 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.views import APIView
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
@@ -65,6 +66,61 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         return resp
 
 
+
+class CookieTokenRefreshView(APIView):
+    """Refresh JWT using httpOnly refresh cookie (or body fallback), then rotate cookies."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from rest_framework_simplejwt.exceptions import TokenError
+
+        refresh_value = request.COOKIES.get(settings.SIMPLE_JWT.get('AUTH_COOKIE', 'refresh_token'))
+        if not refresh_value:
+            refresh_value = request.data.get('refresh')
+
+        if not refresh_value:
+            return Response({"detail": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            refresh = RefreshToken(refresh_value)
+            user_id = refresh.get('user_id')
+            user = User.objects.get(id=user_id)
+
+            new_refresh = RefreshToken.for_user(user)
+            access = str(new_refresh.access_token)
+
+            resp = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
+
+            refresh_max_age = int(settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME', datetime.timedelta(days=30)).total_seconds())
+            access_max_age = int(settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME', datetime.timedelta(minutes=15)).total_seconds())
+            refresh_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=refresh_max_age)
+            access_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=access_max_age)
+
+            resp.set_cookie(
+                settings.SIMPLE_JWT.get('AUTH_COOKIE', 'refresh_token'),
+                str(new_refresh),
+                httponly=True,
+                secure=not settings.DEBUG,
+                samesite='Lax',
+                expires=refresh_expires,
+            )
+            resp.set_cookie(
+                'access_token',
+                access,
+                httponly=True,
+                secure=not settings.DEBUG,
+                samesite='Lax',
+                expires=access_expires,
+            )
+
+            try:
+                refresh.blacklist()
+            except Exception:
+                pass
+
+            return resp
+        except (TokenError, User.DoesNotExist, Exception):
+            return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 class ResendVerificationThrottle(AnonRateThrottle):
     # MED-08: Rate limit resend verification to 3 per hour per IP
     rate = "3/hour"
@@ -183,13 +239,13 @@ def verify_email_view(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([ResendVerificationThrottle])
 def resend_verification_view(request):
     """
     Resend verification email.
     MED-08: Rate limited to 3/hour per IP.
     HIGH-02: Fixed user enumeration — always returns same message whether user exists or not.
     """
-    throttle_classes = [ResendVerificationThrottle]
 
     email = request.data.get("email")
 
@@ -232,12 +288,19 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def logout_view(request):
-    try:
-        token = RefreshToken(request.data.get("refresh"))
-        token.blacklist()
-    except Exception as e:
-        logger.warning("Logout token blacklist failed: %s", e)
-    return Response({"detail": "Logged out"})
+    refresh_value = request.data.get("refresh") or request.COOKIES.get(
+        settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token")
+    )
+    if refresh_value:
+        try:
+            RefreshToken(refresh_value).blacklist()
+        except Exception as e:
+            logger.warning("Logout token blacklist failed: %s", e)
+
+    resp = Response({"detail": "Logged out"})
+    resp.delete_cookie("access_token")
+    resp.delete_cookie(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"))
+    return resp
 
 
 def _is_email_configured():
@@ -333,3 +396,7 @@ def password_reset_confirm_view(request):
     user.save()
 
     return Response({"detail": "Password has been reset successfully."})
+
+
+
+

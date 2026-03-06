@@ -28,8 +28,9 @@ class RateLimitMiddleware:
     
     # Endpoints that require special rate limiting
     SENSITIVE_ENDPOINTS = [
-        '/api/accounts/login/',
+        '/api/accounts/token/',
         '/api/accounts/register/',
+        '/api/accounts/resend-verification/',
         '/api/accounts/password/reset/',
         '/api/accounts/token/refresh/',
     ]

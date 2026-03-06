@@ -1,32 +1,135 @@
 import os
+import importlib.util
 from pathlib import Path
 from datetime import timedelta
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ============================================================================
-# CRITICAL: Validate required environment variables
-# ============================================================================
-REQUIRED_ENV_VARS = [
-    "SECRET_KEY",
-    "DATABASE_URL",
-    "ALLOWED_HOSTS",
-]
 
-missing_vars = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
-if missing_vars and os.getenv("DEBUG", "False") != "True":
-    raise RuntimeError(
-        f"Missing required environment variables: {', '.join(missing_vars)}"
+def _to_bool(value):
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_localhost_url(value):
+    if not value:
+        return False
+    try:
+        parsed = urlparse(value)
+    except Exception:
+        return True
+    hostname = (parsed.hostname or "").lower()
+    return hostname in {"localhost", "127.0.0.1", "0.0.0.0", "::1"} or hostname.endswith(".local")
+
+
+def _looks_placeholder(value):
+    if value is None:
+        return True
+    normalized = str(value).strip().lower()
+    if not normalized:
+        return True
+    placeholder_tokens = (
+        "changeme",
+        "change-me",
+        "placeholder",
+        "replace_me",
+        "replace-me",
+        "example",
+        "dummy",
+        "your-",
+        "your_",
+        "default",
+        "sample",
+        "test",
     )
+    return any(token in normalized for token in placeholder_tokens)
+
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
+IS_PRODUCTION = ENVIRONMENT in {"production", "prod", "live"} or _to_bool(
+    os.getenv("DJANGO_PRODUCTION", "False")
+)
+DEBUG = _to_bool(os.getenv("DEBUG", "False"))
+
+
+def validate_production_env(env):
+    errors = []
+
+    env_name = str(env.get("ENVIRONMENT", "development")).strip().lower()
+    is_production = env_name in {"production", "prod", "live"} or _to_bool(env.get("DJANGO_PRODUCTION", "False"))
+    if not is_production:
+        return
+
+    if _to_bool(env.get("DEBUG", "False")):
+        errors.append("DEBUG must be False in production.")
+
+    required_secure_vars = [
+        "SECRET_KEY",
+        "DATABASE_URL",
+        "ALLOWED_HOSTS",
+        "FRONTEND_URL",
+        "CORS_ALLOWED_ORIGINS",
+        "CSRF_TRUSTED_ORIGINS",
+        "MPESA_CALLBACK_URL",
+        "MPESA_CONSUMER_KEY",
+        "MPESA_CONSUMER_SECRET",
+        "MPESA_PASSKEY",
+        "EMAIL_HOST_USER",
+        "EMAIL_HOST_PASSWORD",
+        "CLOUDINARY_CLOUD_NAME",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+    ]
+    missing = [var for var in required_secure_vars if not env.get(var)]
+    if missing:
+        errors.append(f"Missing required production env vars: {', '.join(missing)}")
+
+    secret_key = env.get("SECRET_KEY", "")
+    if len(secret_key) < 32:
+        errors.append("SECRET_KEY is too short. Use at least 32 characters.")
+    if _looks_placeholder(secret_key):
+        errors.append("SECRET_KEY appears to be a placeholder value.")
+
+    for var in [
+        "MPESA_CONSUMER_KEY",
+        "MPESA_CONSUMER_SECRET",
+        "MPESA_PASSKEY",
+        "EMAIL_HOST_PASSWORD",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+    ]:
+        value = env.get(var)
+        if value and _looks_placeholder(value):
+            errors.append(f"{var} appears to be a placeholder value.")
+
+    allowed_hosts_raw = env.get("ALLOWED_HOSTS", "")
+    if "*" in {host.strip() for host in allowed_hosts_raw.split(",") if host.strip()}:
+        errors.append("ALLOWED_HOSTS must not contain '*'.")
+
+    callback_url = env.get("MPESA_CALLBACK_URL", "")
+    if callback_url:
+        if not callback_url.startswith("https://"):
+            errors.append("MPESA_CALLBACK_URL must use https in production.")
+        if _is_localhost_url(callback_url):
+            errors.append("MPESA_CALLBACK_URL must not point to localhost or local network addresses.")
+
+    frontend_url = env.get("FRONTEND_URL", "")
+    if frontend_url and (not frontend_url.startswith("https://") or _is_localhost_url(frontend_url)):
+        errors.append("FRONTEND_URL must be a public https URL in production.")
+
+    if errors:
+        joined = "\n- ".join(errors)
+        raise RuntimeError(f"Production environment validation failed:\n- {joined}")
+
+
+validate_production_env(os.environ)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY must be set in environment variables")
-
-DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # ============================================================================
 # HOST VALIDATION - Prevent host header attacks
@@ -54,8 +157,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
-    "cloudinary",
-    "django_filters",
     "apps.accounts",
     "apps.products",
     "apps.orders",
@@ -64,6 +165,15 @@ INSTALLED_APPS = [
     "apps.ai",
 ]
 
+if importlib.util.find_spec("cloudinary"):
+    INSTALLED_APPS.append("cloudinary")
+elif IS_PRODUCTION:
+    raise RuntimeError("cloudinary package must be installed in production.")
+
+if importlib.util.find_spec("django_filters"):
+    INSTALLED_APPS.append("django_filters")
+elif IS_PRODUCTION:
+    raise RuntimeError("django-filter package must be installed in production.")
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -101,22 +211,40 @@ WSGI_APPLICATION = "kenya_ecom.wsgi.application"
 ASGI_APPLICATION = "kenya_ecom.asgi.application"
 
 # Database - with connection pooling for security
-import dj_database_url
+try:
+    import dj_database_url
+except ModuleNotFoundError:
+    dj_database_url = None
 
 database_url = os.getenv("DATABASE_URL")
 if database_url:
     try:
-        DATABASES = {
-            "default": dj_database_url.parse(
-                database_url,
-                conn_max_age=60,
-                conn_health_checks=True,
-            )
-        }
-    except Exception as e:
-        import urllib.parse
-
-        parsed = urllib.parse.urlparse(database_url)
+        if dj_database_url is not None:
+            DATABASES = {
+                "default": dj_database_url.parse(
+                    database_url,
+                    conn_max_age=60,
+                    conn_health_checks=True,
+                )
+            }
+        else:
+            parsed = urlparse(database_url)
+            DATABASES = {
+                "default": {
+                    "ENGINE": "django.db.backends.postgresql",
+                    "NAME": parsed.path[1:] if parsed.path else "malaika_db",
+                    "USER": parsed.username,
+                    "PASSWORD": parsed.password,
+                    "HOST": parsed.hostname,
+                    "PORT": parsed.port or 5432,
+                    "CONN_MAX_AGE": 60,
+                    "OPTIONS": {
+                        "sslmode": "require",
+                    },
+                }
+            }
+    except Exception:
+        parsed = urlparse(database_url)
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.postgresql",
@@ -127,7 +255,7 @@ if database_url:
                 "PORT": parsed.port or 5432,
                 "CONN_MAX_AGE": 60,
                 "OPTIONS": {
-                    "sslmode": "require",  # Enforce SSL
+                    "sslmode": "require",
                 },
             }
         }
@@ -173,33 +301,34 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Cloudinary - Secure configuration
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
+CLOUDINARY_ENABLED = bool(importlib.util.find_spec("cloudinary") and importlib.util.find_spec("cloudinary_storage"))
+if CLOUDINARY_ENABLED:
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
 
-cloudinary.config(
-    cloudinary_url=os.getenv("CLOUDINARY_URL", ""),
-    secure=True,
-    ssl_verify=True,
-)
+    cloudinary.config(
+        cloudinary_url=os.getenv("CLOUDINARY_URL", ""),
+        secure=True,
+        ssl_verify=True,
+    )
 
-# Cloudinary Storage Configuration
-CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
-    "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
-    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
-}
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
+        "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
+        "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
+    }
 
-# Use Cloudinary for media file storage
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-MEDIA_URL = "/media/"
-
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+    MEDIA_URL = "/media/"
+elif IS_PRODUCTION:
+    raise RuntimeError("cloudinary_storage package must be installed in production.")
 # ============================================================================
 # REST Framework + JWT - SECURE CONFIGURATION
 # ============================================================================
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "apps.accounts.authentication.JWTAuthenticationWithRotation",
+        "apps.accounts.authentication.CookieJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
@@ -445,3 +574,9 @@ if os.getenv("CREATE_SUPERUSER", "false").lower() == "true" and not DEBUG:
     if superuser_email and superuser_password:
         if not User.objects.filter(is_superuser=True).exists():
             User.objects.create_superuser(superuser_email, superuser_password)
+
+
+
+
+
+

@@ -1,8 +1,11 @@
 "use client"
-import { useState, useEffect, useCallback } from 'react'
+
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+
+import api from '@/lib/api'
 
 type CartItem = {
   id: number
@@ -24,23 +27,32 @@ type CartData = {
   total: string
 }
 
+const toMoneyNumber = (value: string | number): number => {
+  const num = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(num) ? num : 0
+}
+
+const formatKsh = (value: string | number): string =>
+  new Intl.NumberFormat('en-KE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(toMoneyNumber(value))
+
 export default function CartPage() {
   const [cart, setCart] = useState<CartData | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<number | null>(null)
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const fetchCart = useCallback(async () => {
     try {
-      const res = await fetch('/api/orders/cart/', {
-        credentials: 'include',
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setCart(data)
-      }
-    } catch (err) {
-      // Cart fetch error — silently ignore (guest may not have cart yet)
+      const res = await api.get('/api/orders/cart/')
+      setCart(res.data)
+      setError('')
+    } catch {
+      // Guest may not have a cart yet.
+      setCart(null)
     } finally {
       setLoading(false)
     }
@@ -50,38 +62,28 @@ export default function CartPage() {
     fetchCart()
   }, [fetchCart])
 
-  const updateQuantity = async (itemId: number, newQty: number) => {
+  const updateQuantity = async (productId: number, newQty: number) => {
     if (newQty < 1) return
-    setUpdating(itemId)
+    setUpdating(productId)
+    setError('')
     try {
-      const res = await fetch('/api/orders/cart/add/', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: itemId, quantity: newQty })
-      })
-      if (res.ok) {
-        await fetchCart()
-      }
+      await api.post('/api/orders/cart/add/', { product_id: productId, quantity: newQty })
+      await fetchCart()
     } catch {
-      // silently ignore
+      setError('Failed to update cart item.')
     } finally {
       setUpdating(null)
     }
   }
 
-  const removeItem = async (itemId: number) => {
-    setUpdating(itemId)
+  const removeItem = async (productId: number) => {
+    setUpdating(productId)
+    setError('')
     try {
-      const res = await fetch(`/api/orders/cart/remove/${itemId}/`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      if (res.ok) {
-        await fetchCart()
-      }
+      await api.post(`/api/orders/cart/remove/${productId}/`)
+      await fetchCart()
     } catch {
-      // silently ignore
+      setError('Failed to remove cart item.')
     } finally {
       setUpdating(null)
     }
@@ -94,7 +96,7 @@ export default function CartPage() {
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-[var(--border)] rounded w-1/4"></div>
             <div className="space-y-3">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-[var(--bg-card)] p-4 rounded-xl h-24"></div>
               ))}
             </div>
@@ -127,15 +129,17 @@ export default function CartPage() {
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-6">Shopping Cart ({cart.items.length} items)</h1>
 
+        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
         <div className="space-y-4 mb-8">
-          {cart.items.map(item => (
+          {cart.items.map((item) => (
             <div
               key={item.id}
               className="bg-[var(--bg-card)] rounded-xl p-4 flex gap-4 shadow-sm border border-[var(--border)]"
             >
-              <Link href={`/products/${item.product.slug}`} className="w-24 h-24 bg-[var(--bg-secondary)] rounded-lg overflow-hidden flex-shrink-0">
+              <Link href={`/products/${item.product.slug}`} className="w-24 h-24 bg-[var(--bg-secondary)] rounded-lg overflow-hidden flex-shrink-0 relative">
                 {item.product.image ? (
-                  <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                  <Image src={item.product.image} alt={item.product.name} fill sizes="96px" className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-3xl">🧸</div>
                 )}
@@ -145,9 +149,7 @@ export default function CartPage() {
                 <Link href={`/products/${item.product.slug}`} className="font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-1">
                   {item.product.name}
                 </Link>
-                <div className="text-sm text-[var(--text-muted)] mt-1">
-                  Ksh {parseInt(item.product.price).toLocaleString()}
-                </div>
+                <div className="text-sm text-[var(--text-muted)] mt-1">Ksh {formatKsh(item.product.price)}</div>
 
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-2">
@@ -169,9 +171,7 @@ export default function CartPage() {
                   </div>
 
                   <div className="text-right">
-                    <div className="font-semibold text-[var(--text-primary)]">
-                      Ksh {(parseInt(item.product.price) * item.quantity).toLocaleString()}
-                    </div>
+                    <div className="font-semibold text-[var(--text-primary)]">Ksh {formatKsh(toMoneyNumber(item.product.price) * item.quantity)}</div>
                     <button
                       onClick={() => removeItem(item.product.id)}
                       disabled={updating === item.product.id}
@@ -189,7 +189,7 @@ export default function CartPage() {
         <div className="bg-[var(--bg-card)] rounded-xl p-6 shadow-sm border border-[var(--border)]">
           <div className="flex justify-between mb-2">
             <span className="text-[var(--text-secondary)]">Subtotal</span>
-            <span className="text-[var(--text-primary)]">Ksh {parseInt(cart.subtotal || '0').toLocaleString()}</span>
+            <span className="text-[var(--text-primary)]">Ksh {formatKsh(cart.subtotal || '0')}</span>
           </div>
           <div className="flex justify-between mb-4 text-sm text-[var(--text-muted)]">
             <span>Shipping</span>
@@ -197,7 +197,7 @@ export default function CartPage() {
           </div>
           <div className="flex justify-between pt-4 border-t border-[var(--border)]">
             <span className="font-semibold text-lg text-[var(--text-primary)]">Total</span>
-            <span className="font-bold text-xl text-[var(--text-primary)]">Ksh {parseInt(cart.total || '0').toLocaleString()}</span>
+            <span className="font-bold text-xl text-[var(--text-primary)]">Ksh {formatKsh(cart.total || '0')}</span>
           </div>
 
           <button
@@ -218,4 +218,3 @@ export default function CartPage() {
     </div>
   )
 }
-
