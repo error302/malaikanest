@@ -23,11 +23,10 @@ const CATEGORIES_CACHE_KEY = 'navbar_categories'
 
 function NavbarContent() {
   const [isOpen, setIsOpen] = useState(false)
+  const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showCart, setShowCart] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -35,39 +34,49 @@ function NavbarContent() {
   }, [])
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 80)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    let isMounted = true
 
-  useEffect(() => {
-    let mounted = true
-    
-    // Check cache first
     const cached = getCachedData<Category[]>(CATEGORIES_CACHE_KEY)
     if (cached) {
       setCategories(cached)
     }
-    
-    // Fetch fresh data and update cache
+
     api.get('/api/products/categories/')
       .then(res => {
-        if (mounted) {
+        if (isMounted) {
           setCategories(res.data)
-          // Cache for 5 minutes
           setCachedData(CATEGORIES_CACHE_KEY, res.data, 5 * 60 * 1000)
         }
       })
-      .catch(err => console.error("Failed to load categories", err))
-    return () => { mounted = false }
+      .catch(err => console.error('Failed to load categories', err))
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const { items, remove, updateQty } = useCart()
 
-  // Group categories by their group field for mega menu
-  const topLevelCategories = categories.filter((c: Category) => c.is_top_level || c.parent === null)
+  const topLevelCategories = categories.filter((c) => c.is_top_level || c.parent === null)
+  const featuredTopCategories = topLevelCategories.slice(0, 6)
+
+  const ageGroups = [
+    { name: 'Newborn 0-12m', href: '/?age=newborn-0-12m' },
+    { name: 'Baby 1-3y', href: '/?age=baby-1-3y' },
+    { name: 'Toddler 3-5y', href: '/?age=toddler-3-5y' },
+    { name: 'Kids 6-8y', href: '/?age=kids-6-8y' },
+    { name: 'Big Kids 9-12y', href: '/?age=big-kids-9-12y' },
+  ]
+
+  const navGroups = [
+    { name: 'Home', href: '/' },
+    { name: 'Girls Clothing', href: '/?category=girls-clothing' },
+    { name: 'Boys Clothing', href: '/?category=boys-clothing' },
+    { name: 'Baby Accessories', href: '/?category=baby-accessories' },
+    { name: 'Toys & Gifts', href: '/?category=toys-learning' },
+    { name: 'Collections', href: '/categories' },
+    { name: 'Nursery', href: '/?category=nursery' },
+  ]
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,27 +85,31 @@ function NavbarContent() {
     }
   }
 
-  // Use CSS variable for transparent background in dark mode
-  const navBgClass = scrolled 
-    ? 'bg-[var(--bg-card)] border-b-[var(--border)] shadow-[var(--shadow-md)]' 
-    : 'bg-transparent'
-
   return (
-    <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBgClass}`}
-      style={{ borderBottomWidth: scrolled ? 1 : 0 }}
-    >
+    <nav className="sticky top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--bg-card)]/95 backdrop-blur">
+      <div className="top-banner">
+        <div className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-between text-xs sm:text-sm">
+          <p className="font-medium truncate pr-4">Free Kenyan Delivery on Orders Over KSh 10,000+</p>
+          <div className="hidden sm:flex items-center gap-4">
+            <span>KES</span>
+            <Link href="/login" className="hover:text-[var(--accent)] transition-colors">Login</Link>
+            <Link href="/account/orders" className="hover:text-[var(--accent)] transition-colors">My Account</Link>
+            <Link href="/admin/login" className="hover:text-[var(--accent)] transition-colors">Admin</Link>
+            {mounted && <DarkModeToggle />}
+          </div>
+          <div className="sm:hidden">{mounted && <DarkModeToggle />}</div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+        <div className="flex justify-between items-center h-16 gap-3">
           <Logo variant="default" linkWrapper={true} />
 
-          {/* Search Bar - Desktop */}
           <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <input
                 type="text"
-                placeholder="Search baby products..."
+                placeholder="Search clothes, toys, accessories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-11 pl-10 pr-4 input-soft"
@@ -105,95 +118,23 @@ function NavbarContent() {
             </div>
           </form>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-2">
-            <Link href="/" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors font-medium text-[15px]">
-              Home
-            </Link>
-
-            <div
-              className="relative"
-              onMouseEnter={() => setIsCategoriesOpen(true)}
-              onMouseLeave={() => setIsCategoriesOpen(false)}
-            >
-              <button className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors flex items-center gap-1 font-medium text-[15px]">
-                Shop
-                <ChevronDown 
-                  className={`w-4 h-4 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''}`}
-                />
-              </button>
-
-              {/* Mega Menu */}
-              <div 
-                className={`absolute left-1/2 -translate-x-1/2 top-full w-[700px] bg-[var(--bg-card)] shadow-[var(--shadow-xl)] rounded-b-xl border-t-4 border-[var(--accent)] z-50 transition-all duration-200 ${
-                  isCategoriesOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
-                }`}
-              >
-                <div className="p-6">
-                  <div className="grid grid-cols-4 gap-6">
-                    {topLevelCategories.slice(0, 8).map((groupCat: Category) => (
-                      <div key={groupCat.id}>
-                        <h4 className="font-bold text-[var(--accent)] border-b border-[var(--border)] pb-2 mb-3">{groupCat.name}</h4>
-                        <ul className="space-y-2 text-sm">
-                          {groupCat.children && groupCat.children.length > 0 ? (
-                            groupCat.children.slice(0, 5).map((child: Category) => (
-                              <li key={child.id}>
-                                <Link href={`/?category=${child.slug}`} className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors block">
-                                  {child.name}
-                                </Link>
-                              </li>
-                            ))
-                          ) : (
-                            <li>
-                              <Link href={`/?category=${groupCat.slug}`} className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors block">
-                                View All
-                              </Link>
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-[var(--border)] flex justify-between items-center">
-                    <Link href="/categories" className="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]">
-                      View All Categories →
-                    </Link>
-                    <Link href="/categories" className="text-sm bg-[var(--accent)] text-white px-4 py-2 rounded-[12px] hover:bg-[var(--accent-hover)] transition-colors">
-                      Shop Now
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Link href="/account/orders" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors font-medium text-[15px]">
-              My Orders
-            </Link>
-            
-            {/* Theme Toggle */}
-            {mounted && <DarkModeToggle />}
-            
-            {/* User Icon */}
-            <Link 
-              href="/login" 
+          <div className="hidden md:flex items-center gap-1">
+            <Link
+              href="/login"
               className="p-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
               aria-label="Account"
             >
               <User className="w-5 h-5" />
             </Link>
-
-            {/* Get Started Button */}
-            <Link 
-              href="/login" 
-              className="px-5 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-[12px] transition-all shadow-[var(--shadow-accent)]"
+            <Link
+              href="/login"
+              className="px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-[12px] transition-all shadow-[var(--shadow-accent)]"
             >
-              Get Started
+              Sign In
             </Link>
-
-            {/* Cart */}
-            <button 
-              onClick={() => setShowCart(s => !s)} 
-              aria-label="Cart" 
+            <button
+              onClick={() => setShowCart((s) => !s)}
+              aria-label="Cart"
               className="relative p-2 text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
             >
               <ShoppingCart className="w-6 h-6" />
@@ -210,22 +151,19 @@ function NavbarContent() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            {mounted && (
-              <button 
-                onClick={() => setShowCart(s => !s)} 
-                aria-label="Cart" 
-                className="relative p-2 text-[var(--text-primary)]"
-              >
-                <ShoppingCart className="w-6 h-6" />
-                {items.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[var(--accent)] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
-                    {items.length}
-                  </span>
-                )}
-              </button>
-            )}
+            <button
+              onClick={() => setShowCart((s) => !s)}
+              aria-label="Cart"
+              className="relative p-2 text-[var(--text-primary)]"
+            >
+              <ShoppingCart className="w-6 h-6" />
+              {items.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[var(--accent)] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                  {items.length}
+                </span>
+              )}
+            </button>
             <button
               className="p-2 text-[var(--text-primary)]"
               onClick={() => setIsOpen(!isOpen)}
@@ -236,46 +174,90 @@ function NavbarContent() {
           </div>
         </div>
 
-        {/* Mobile Search */}
+        <div className="hidden md:flex items-center gap-5 h-12 border-t border-[var(--border)]">
+          <div className="group relative">
+            <button className="h-12 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors">
+              Shop by Age
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 absolute top-full left-0 w-64 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 shadow-[var(--shadow-lg)] transition-all">
+              <div className="flex flex-col">
+                {ageGroups.map((group) => (
+                  <Link key={group.name} href={group.href} className="px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--bg-card-hover)]">
+                    {group.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+          {navGroups.map((group) => (
+            <Link key={group.name} href={group.href} className="text-sm font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors">
+              {group.name}
+            </Link>
+          ))}
+          <Link href="/lookbook" className="ml-auto text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">
+            Lookbook
+          </Link>
+        </div>
+
         <form onSubmit={handleSearch} className="md:hidden pb-3">
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 input-soft"
-          />
+          <div className="relative w-full">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-11 pl-10 pr-4 input-soft"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
+          </div>
         </form>
 
-        {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-[var(--border)]">
-            <div className="flex flex-col gap-2">
-              <Link href="/" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium" onClick={() => setIsOpen(false)}>
-                Home
-              </Link>
-              <Link href="/categories" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium" onClick={() => setIsOpen(false)}>
-                Categories
-              </Link>
-              <Link href="/bundle" className="px-3 py-2 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium" onClick={() => setIsOpen(false)}>
-                Bundle Builder
-              </Link>
-              <div className="flex items-center gap-3 px-3 py-2">
-                {mounted && <DarkModeToggle />}
+          <div className="md:hidden py-3 border-t border-[var(--border)]">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+              <button
+                className="w-full flex items-center justify-between px-2 py-3 text-left font-medium text-[var(--text-primary)]"
+                onClick={() => setOpenMobileGroup(openMobileGroup === 'age' ? null : 'age')}
+              >
+                <span>Shop by Age</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openMobileGroup === 'age' ? 'rotate-180' : ''}`} />
+              </button>
+              {openMobileGroup === 'age' && (
+                <div className="pb-2 px-2 flex flex-col gap-1">
+                  {ageGroups.map((group) => (
+                    <Link key={group.name} href={group.href} className="py-2 text-sm text-[var(--text-secondary)]" onClick={() => setIsOpen(false)}>
+                      {group.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              <div className="h-px bg-[var(--border)] my-2" />
+              <div className="flex flex-col gap-1">
+                {navGroups.map((group) => (
+                  <Link key={group.name} href={group.href} className="px-2 py-2.5 text-sm font-medium text-[var(--text-primary)]" onClick={() => setIsOpen(false)}>
+                    {group.name}
+                  </Link>
+                ))}
+                {featuredTopCategories.map((groupCat) => (
+                  <Link key={groupCat.id} href={`/?category=${groupCat.slug}`} className="px-2 py-2 text-xs text-[var(--text-secondary)]" onClick={() => setIsOpen(false)}>
+                    {groupCat.name}
+                  </Link>
+                ))}
               </div>
-              <Link 
-                href="/login" 
-                className="px-4 py-3 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium text-center"
+              <Link
+                href="/login"
+                className="mt-2 px-4 py-3 text-[var(--text-primary)] hover:text-[var(--accent)] font-medium text-center block"
                 onClick={() => setIsOpen(false)}
               >
                 Log In
               </Link>
-              <Link 
-                href="/login" 
-                className="px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-[12px] transition-colors text-center mx-2 mt-2"
+              <Link
+                href="/login"
+                className="px-4 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-[12px] transition-colors text-center block mt-2"
                 onClick={() => setIsOpen(false)}
               >
-                Get Started
+                Continue
               </Link>
             </div>
           </div>
@@ -286,4 +268,3 @@ function NavbarContent() {
 }
 
 export default NavbarContent
-

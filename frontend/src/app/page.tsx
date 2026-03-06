@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import api from '../lib/api'
 import { useCart } from '../lib/cartContext'
 import { showToast } from '../components/Toast'
@@ -131,14 +132,17 @@ export default function Home() {
     <div className="min-h-screen bg-[var(--bg-primary)]">
 
       {/* Hero/Banner Section */}
-      <section className="relative w-full bg-[var(--bg-secondary)] overflow-hidden" style={{ aspectRatio: '16/5' }}>
+      <section className="relative w-full bg-[var(--bg-secondary)] overflow-hidden min-h-[260px] md:min-h-[360px]">
         <div className="absolute inset-0 z-0">
           {currentBanner?.image ? (
-            <img
+            <Image
               key={currentBanner.id}
               src={currentBanner.image}
               alt={currentBanner.title || 'Malaika Nest Banner'}
-              className={`w-full h-full object-cover object-center transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
+              fill
+              sizes="100vw"
+              priority
+              className={`object-cover object-center transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[var(--pastel-pink)]/20 via-[var(--bg-secondary)] to-[var(--pastel-lavender)]/20">
@@ -192,28 +196,30 @@ export default function Home() {
 
       {/* Hero Content */}
       <section className="bg-[var(--bg-primary)] px-4 sm:px-8 lg:px-24 py-12">
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 bg-[var(--pastel-pink)]/20 border border-[var(--pastel-pink)]/30 rounded-full px-4 py-1.5 mb-5">
             <span>🧸</span>
-            <span className="text-[var(--accent)] text-sm font-medium">Premium Baby Products</span>
+            <span className="text-[var(--accent)] text-sm font-medium">Newborn to 12 Years</span>
           </div>
 
           <h1 className="font-display font-bold text-[var(--text-primary)] leading-tight text-4xl sm:text-5xl lg:text-6xl mb-4">
-            Everything Your<br />
-            <span className="text-[var(--accent)]">Little One</span><br />
-            Needs
+            Clothes, Toys & Accessories<br />
+            for Every <span className="text-[var(--accent)]">Precious Moment</span>
           </h1>
 
           <p className="text-[var(--text-secondary)] text-base sm:text-lg leading-relaxed mb-6 max-w-lg">
-            Shop trusted baby products, accessories and toys — delivered across Kenya. Pay instantly with M-Pesa.
+            Shop joyful essentials for girls and boys across Kenya, from first outfits to big-kid favorites. Secure M-Pesa checkout, fast delivery.
           </p>
 
-          <div className="flex items-center gap-4 mb-6">
-            <Link href="/categories" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold px-8 py-3 rounded-[12px] transition-all duration-200 hover:shadow-[var(--shadow-accent)]">
-              Shop Now
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <Link href="/?category=girls-clothing" className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold px-7 py-3 rounded-[12px] transition-all duration-200 hover:shadow-[var(--shadow-accent)]">
+              Shop Girls
             </Link>
-            <Link href="/#categories" className="border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 px-8 py-3 rounded-[12px] font-semibold transition-all duration-200">
-              View Categories
+            <Link href="/?category=boys-clothing" className="border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 px-7 py-3 rounded-[12px] font-semibold transition-all duration-200">
+              Shop Boys
+            </Link>
+            <Link href="/categories" className="border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] px-7 py-3 rounded-[12px] font-semibold transition-all duration-200">
+              Shop All
             </Link>
           </div>
 
@@ -382,4 +388,5 @@ export default function Home() {
     </div>
   )
 }
+
 
