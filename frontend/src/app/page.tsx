@@ -7,7 +7,9 @@ import { useCart } from '../lib/cartContext'
 import { showToast } from '../components/Toast'
 import ProductCard from '../components/ProductCard'
 import SkeletonCard from '../components/ui/SkeletonCard'
-import { Star, ArrowRight } from 'lucide-react'
+import AnimatedSection from '../components/AnimatedSection'
+import StaggeredGrid from '../components/StaggeredGrid'
+import { Star, ArrowRight, ShoppingCart } from 'lucide-react'
 
 interface Product {
   id: number
@@ -59,7 +61,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [activeAgeGroup, setActiveAgeGroup] = useState(0)
-  const { add } = useCart()
+  const { add, items } = useCart()
 
   const [banners, setBanners] = useState<Banner[]>([])
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
@@ -195,6 +197,7 @@ export default function Home() {
       </section>
 
       {/* Hero Content */}
+      <AnimatedSection>
       <section className="bg-[var(--bg-primary)] px-4 sm:px-8 lg:px-24 py-12">
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 bg-[var(--pastel-pink)]/20 border border-[var(--pastel-pink)]/30 rounded-full px-4 py-1.5 mb-5">
@@ -230,17 +233,18 @@ export default function Home() {
             <span className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
               <span className="text-green-500">✓</span> Free Shipping over KES 5,000
             </span>
-          </div>
+            </div>
         </div>
-      </section>
+      </AnimatedSection>
 
+      <AnimatedSection delay={100}>
       {/* Categories Section */}
       <section className="py-16 bg-[var(--bg-secondary)]" id="categories">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "'Playfair Display', serif" }}>Shop by Category</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+          <StaggeredGrid className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
             {categories.map((cat) => (
               <Link
                 key={cat.slug}
@@ -251,10 +255,12 @@ export default function Home() {
                 <h3 className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">{cat.name}</h3>
               </Link>
             ))}
-          </div>
+          </StaggeredGrid>
         </div>
       </section>
+      </AnimatedSection>
 
+      <AnimatedSection delay={150}>
       {/* Age Groups Section */}
       <section className="py-16 bg-[var(--bg-primary)]">
         <div className="max-w-7xl mx-auto px-4">
@@ -295,7 +301,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </AnimatedSection>
 
+      <AnimatedSection delay={200}>
       {/* Featured Products Section */}
       <section className="py-16 bg-[var(--bg-secondary)]">
         <div className="max-w-7xl mx-auto px-4">
@@ -315,15 +323,17 @@ export default function Home() {
               {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <StaggeredGrid className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </StaggeredGrid>
           )}
         </div>
       </section>
+      </AnimatedSection>
 
+      <AnimatedSection delay={250}>
       {/* Testimonials Section */}
       <section className="py-16 bg-[var(--bg-primary)]">
         <div className="max-w-7xl mx-auto px-4">
@@ -354,7 +364,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </AnimatedSection>
 
+      <AnimatedSection delay={300}>
       {/* Newsletter Section */}
       <section className="py-20 px-4 sm:px-8 lg:px-24 bg-[var(--bg-primary)] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--pastel-pink)/20 0%, var(--bg-primary) 100%)' }}>
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--pastel-lavender)]/10 to-transparent"></div>
@@ -385,6 +397,20 @@ export default function Home() {
           </form>
         </div>
       </section>
+      </AnimatedSection>
+
+      {/* Floating Cart Button for Mobile */}
+      {items.length > 0 && (
+        <div className="fixed bottom-6 right-6 z-50 md:hidden">
+          <Link
+            href="/cart"
+            className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-5 py-3 rounded-full shadow-[var(--shadow-accent)] transition-all hover:scale-105"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span className="font-semibold">View Cart ({items.length})</span>
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
