@@ -83,11 +83,11 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Handle the custom multipart field from Next.js Dropzone
-        request = self.context.get('request')
+        request = self.context.get("request")
         image = None
         if request and request.FILES:
             # We take the first image if multiple were uploaded
-            files = request.FILES.getlist('uploaded_images')
+            files = request.FILES.getlist("uploaded_images")
             if files:
                 image = files[0]
 
@@ -95,12 +95,17 @@ class ProductSerializer(serializers.ModelSerializer):
         if image:
             product.image = image
             product.save()
-            
+
         return product
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            url = obj.image.url
+            if url.startswith("http"):
+                return url
+            from django.conf import settings
+
+            return f"{getattr(settings, 'SITE_URL', 'https://malaikanest.duckdns.org')}{url}"
         return None
 
 
@@ -128,7 +133,12 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            url = obj.image.url
+            if url.startswith("http"):
+                return url
+            from django.conf import settings
+
+            return f"{getattr(settings, 'SITE_URL', 'https://malaikanest.duckdns.org')}{url}"
         return None
 
 
@@ -192,7 +202,10 @@ class BannerSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            url = obj.image.url
+            if url.startswith("http"):
+                return url
+            from django.conf import settings
+
+            return f"{getattr(settings, 'SITE_URL', 'https://malaikanest.duckdns.org')}{url}"
         return None
-
-
