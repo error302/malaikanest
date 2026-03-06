@@ -2,12 +2,16 @@ from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+
 try:
     from django_filters.rest_framework import DjangoFilterBackend
 except ModuleNotFoundError:
+
     class DjangoFilterBackend(filters.BaseFilterBackend):
         def filter_queryset(self, request, queryset, view):
             return queryset
+
+
 from .models import Category, Product, Inventory, Review, Wishlist, Brand
 from .serializers import (
     CategorySerializer,
@@ -45,7 +49,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = (
-        Product.objects.filter(is_active=True)
+        Product.objects.filter(is_active=True, stock__gt=0)
         .select_related("category", "brand")
         .prefetch_related("category__children")
     )
@@ -144,11 +148,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
 class BannerViewSet(viewsets.ModelViewSet):
     queryset = Banner.objects.all()
     serializer_class = BannerSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        if self.request.user.is_staff:
-            return Banner.objects.all()
         return Banner.objects.filter(is_active=True)
-
-
