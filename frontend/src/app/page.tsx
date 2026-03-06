@@ -235,6 +235,7 @@ export default function Home() {
             </span>
             </div>
         </div>
+      </section>
       </AnimatedSection>
 
       <AnimatedSection delay={100}>
