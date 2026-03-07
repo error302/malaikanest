@@ -9,6 +9,7 @@ import api from '../lib/api'
 import { useCart } from '../lib/cartContext'
 import MiniCart from './MiniCart'
 import Logo from './Logo'
+import DarkModeToggle from './DarkModeToggle'
 
 interface Category {
   id: number
@@ -84,6 +85,8 @@ export default function Navbar() {
             >
               <Search size={18} />
             </button>
+
+            <DarkModeToggle />
 
             <Link
               href="/login"

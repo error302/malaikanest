@@ -14,8 +14,11 @@ export default function DarkModeToggle() {
 
   if (!mounted) {
     return (
-      <button className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800">
-        <Sun className="w-5 h-5 text-gray-400" />
+      <button 
+        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface"
+        aria-label="Toggle dark mode"
+      >
+        <Sun className="w-[18px] h-[18px] text-[var(--text-secondary)]" />
       </button>
     );
   }
@@ -23,13 +26,13 @@ export default function DarkModeToggle() {
   return (
     <button
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)] hover:bg-[var(--bg-soft)] transition-colors"
       aria-label="Toggle dark mode"
     >
       {theme === "dark" ? (
-        <Sun className="w-5 h-5 text-amber-500" />
+        <Sun className="w-[18px] h-[18px] text-amber-500" />
       ) : (
-        <Moon className="w-5 h-5 text-gray-600" />
+        <Moon className="w-[18px] h-[18px] text-[var(--text-primary)]" />
       )}
     </button>
   );
