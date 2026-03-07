@@ -14,6 +14,7 @@ export default function NewProduct() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [image, setImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -56,7 +57,7 @@ export default function NewProduct() {
       form.append('status', formData.status)
       if (image) form.append('image', image)
 
-      await api.post('/api/products/admin/products/', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      await api.post('/api/products/admin/products/', form)
       router.push('/admin/products')
     } catch (error) {
       console.error('Error creating product:', error)
@@ -96,7 +97,24 @@ export default function NewProduct() {
 
         <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" className="w-full px-4 py-3 border rounded-lg" rows={4} />
 
-        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setImage(e.target.files?.[0] || null)} />
+        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => {
+          const file = e.target.files?.[0] || null
+          setImage(file)
+          if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => setImagePreview(reader.result as string)
+            reader.readAsDataURL(file)
+          } else {
+            setImagePreview(null)
+          }
+        }} />
+        
+        {imagePreview && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600 mb-2">Image Preview:</p>
+            <img src={imagePreview} alt="Preview" className="w-48 h-48 object-cover rounded-lg border" />
+          </div>
+        )}
 
         <div className="flex gap-4">
           <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} /> Active</label>
