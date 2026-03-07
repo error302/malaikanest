@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import api from '@/lib/api'
 
 interface Banner {
@@ -11,27 +10,43 @@ interface Banner {
   button_text: string
   button_link: string
   image: string
+  mobile_image: string
   is_active: boolean
   position: number
+  start_date: string
+  end_date: string
 }
 
 export default function BannersPage() {
   const [banners, setBanners] = useState<Banner[]>([])
   const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [form, setForm] = useState({ title: '', subtitle: '', button_text: '', button_link: '', is_active: true, position: 0 })
-  const [file, setFile] = useState<File | null>(null)
+  const [form, setForm] = useState({
+    title: '',
+    subtitle: '',
+    button_text: '',
+    button_link: '',
+    is_active: true,
+    position: 1,
+    start_date: '',
+    end_date: '',
+  })
+  const [image, setImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [mobileImage, setMobileImage] = useState<File | null>(null)
+  const [mobilePreview, setMobilePreview] = useState<string | null>(null)
 
-  useEffect(() => { fetchBanners() }, [])
+  useEffect(() => {
+    fetchBanners()
+  }, [])
 
   const fetchBanners = async () => {
     try {
       const res = await api.get('/api/products/admin/banners/')
-      const data = Array.isArray(res.data) ? res.data : res.data?.results || []
-      setBanners(data)
+      setBanners(res.data || [])
     } catch (error) {
       console.error('Error fetching banners:', error)
-      setBanners([])
     } finally {
       setLoading(false)
     }
@@ -39,23 +54,41 @@ export default function BannersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!file) return
-
+    if (!image) {
+      alert('Please select a desktop image')
+      return
+    }
     setUploading(true)
+    
     try {
-      const body = new FormData()
-      body.append('title', form.title)
-      body.append('subtitle', form.subtitle)
-      body.append('button_text', form.button_text)
-      body.append('button_link', form.button_link)
-      body.append('is_active', form.is_active ? 'true' : 'false')
-      body.append('position', String(form.position))
-      body.append('image', file)
+      const formData = new FormData()
+      formData.append('title', form.title)
+      formData.append('subtitle', form.subtitle)
+      formData.append('button_text', form.button_text)
+      formData.append('button_link', form.button_link)
+      formData.append('is_active', form.is_active ? 'true' : 'false')
+      formData.append('position', String(form.position))
+      
+      if (form.start_date) {
+        formData.append('start_date', `${form.start_date}T00:00:00Z`)
+      }
+      if (form.end_date) {
+        formData.append('end_date', `${form.end_date}T23:59:59Z`)
+      }
+      
+      formData.append('image', image)
+      if (mobileImage) {
+        formData.append('mobile_image', mobileImage)
+      }
 
-      await api.post('/api/products/admin/banners/', body, { headers: { 'Content-Type': 'multipart/form-data' } })
-      setForm({ title: '', subtitle: '', button_text: '', button_link: '', is_active: true, position: 0 })
-      setFile(null)
-      await fetchBanners()
+      await api.post('/api/products/admin/banners/', formData)
+      setShowForm(false)
+      setForm({ title: '', subtitle: '', button_text: '', button_link: '', is_active: true, position: 1, start_date: '', end_date: '' })
+      setImage(null)
+      setImagePreview(null)
+      setMobileImage(null)
+      setMobilePreview(null)
+      fetchBanners()
     } catch (error) {
       console.error('Error creating banner:', error)
     } finally {
@@ -67,7 +100,7 @@ export default function BannersPage() {
     if (!confirm('Delete this banner?')) return
     try {
       await api.delete(`/api/products/admin/banners/${id}/`)
-      setBanners(banners.filter((b) => b.id !== id))
+      setBanners(banners.filter(b => b.id !== id))
     } catch (error) {
       console.error('Error deleting banner:', error)
     }
@@ -82,53 +115,119 @@ export default function BannersPage() {
     }
   }
 
-  if (loading) return <div className="p-6">Loading banners...</div>
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (f: File | null) => void, setPreview: (p: string | null) => void) => {
+    const file = e.target.files?.[0] || null
+    setFile(file)
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => setPreview(reader.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setPreview(null)
+    }
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-96"><div className="w-16 h-16 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"></div></div>
+  }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Banners</h1>
-
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6 space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Title" className="px-4 py-3 border rounded-lg" />
-          <input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="Subtitle" className="px-4 py-3 border rounded-lg" />
-          <input value={form.button_text} onChange={(e) => setForm({ ...form, button_text: e.target.value })} placeholder="Button text" className="px-4 py-3 border rounded-lg" />
-          <input value={form.button_link} onChange={(e) => setForm({ ...form, button_link: e.target.value })} placeholder="Button link" className="px-4 py-3 border rounded-lg" />
-          <input type="number" value={form.position} onChange={(e) => setForm({ ...form, position: Number(e.target.value) })} placeholder="Position" className="px-4 py-3 border rounded-lg" />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Active</label>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">Banners</h2>
+          <p className="text-slate-500 mt-1">Manage your homepage banners</p>
         </div>
-
-        <div className="border-2 border-dashed rounded-xl p-6">
-          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-        </div>
-
-        <button type="submit" disabled={uploading || !file} className="px-6 py-3 bg-amber-700 text-white rounded-lg disabled:opacity-50">
-          {uploading ? 'Uploading...' : 'Upload Banner'}
+        <button onClick={() => setShowForm(!showForm)} className="px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700">
+          {showForm ? 'Cancel' : 'Add Banner'}
         </button>
-      </form>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {banners.map((banner) => (
-          <div key={banner.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="relative w-full h-48">
-              <Image src={banner.image} alt={banner.title || 'Banner'} fill className="object-cover" />
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border p-8 space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Title</label>
+              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Welcome to Malaika Nest" className="w-full px-4 py-3 rounded-xl border" required />
             </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-800">{banner.title || 'Untitled'}</h3>
-              <p className="text-gray-500 text-sm">{banner.subtitle}</p>
-              <div className="flex items-center justify-between mt-4">
-                <span className={`px-2 py-1 rounded text-xs ${banner.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>{banner.is_active ? 'Active' : 'Inactive'}</span>
-                <div className="flex gap-2">
-                  <button onClick={() => toggleActive(banner)} className="px-3 py-1 bg-blue-500 text-white rounded text-sm">{banner.is_active ? 'Disable' : 'Enable'}</button>
-                  <button onClick={() => handleDelete(banner.id)} className="px-3 py-1 bg-red-500 text-white rounded text-sm">Delete</button>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Subtitle</label>
+              <input type="text" value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="Premium Baby Products" className="w-full px-4 py-3 rounded-xl border" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Button Text</label>
+              <input type="text" value={form.button_text} onChange={(e) => setForm({ ...form, button_text: e.target.value })} placeholder="Shop Now" className="w-full px-4 py-3 rounded-xl border" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Button Link</label>
+              <input type="text" value={form.button_link} onChange={(e) => setForm({ ...form, button_link: e.target.value })} placeholder="/categories" className="w-full px-4 py-3 rounded-xl border" required />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Position</label>
+              <input type="number" value={form.position} onChange={(e) => setForm({ ...form, position: parseInt(e.target.value) })} className="w-full px-4 py-3 rounded-xl border" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Active</label>
+              <label className="flex items-center gap-3 mt-3">
+                <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-5 h-5" />
+                <span>Banner is active</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Desktop Image *</label>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageChange(e, setImage, setImagePreview)} className="w-full px-4 py-3 rounded-xl border" required />
+              {imagePreview && <img src={imagePreview} alt="Preview" className="mt-4 w-48 h-32 object-cover rounded-lg" />}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Mobile Image (optional)</label>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageChange(e, setMobileImage, setMobilePreview)} className="w-full px-4 py-3 rounded-xl border" />
+              {mobilePreview && <img src={mobilePreview} alt="Preview" className="mt-4 w-48 h-32 object-cover rounded-lg" />}
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <button type="submit" disabled={uploading} className="px-8 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 disabled:opacity-50">
+              {uploading ? 'Saving...' : 'Save Banner'}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-8 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl">Cancel</button>
+          </div>
+        </form>
+      )}
+
+      {banners.length === 0 && !showForm ? (
+        <div className="bg-white rounded-2xl p-12 text-center">
+          <p className="text-slate-600">No banners yet</p>
+          <button onClick={() => setShowForm(true)} className="mt-4 px-6 py-3 bg-amber-600 text-white rounded-xl">Create First Banner</button>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-3 gap-6">
+          {banners.map((banner) => (
+            <div key={banner.id} className="bg-white rounded-2xl overflow-hidden border hover:shadow-md">
+              <div className="relative h-48 bg-slate-100">
+                {banner.image ? (
+                  <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">No Image</div>
+                )}
+                <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold ${banner.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {banner.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold">{banner.title || 'Untitled'}</h3>
+                <p className="text-slate-500 text-sm">{banner.subtitle}</p>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => toggleActive(banner)} className="flex-1 px-3 py-2 bg-slate-100 rounded-lg text-sm">{banner.is_active ? 'Disable' : 'Enable'}</button>
+                  <button onClick={() => handleDelete(banner.id)} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm">Delete</button>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {banners.length === 0 && <div className="text-center py-12 text-gray-500">No banners yet.</div>}
+          ))}
+        </div>
+      )}
     </div>
   )
 }
