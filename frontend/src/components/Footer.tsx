@@ -1,98 +1,84 @@
+"use client"
+
 import Link from 'next/link'
-import TrustBadges from './TrustBadges'
+import { usePathname } from 'next/navigation'
+import { Facebook, Instagram, MessageCircle } from 'lucide-react'
+
 import Logo from './Logo'
 
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+  </svg>
+)
+
 export default function Footer() {
+  const pathname = usePathname()
+
+  if (pathname.startsWith('/admin')) return null
+
   return (
-    <>
-      <TrustBadges />
-      {/* Main Footer Body */}
-      <footer className="bg-[var(--bg-card)] text-[var(--text-primary)] mt-auto pt-16 pb-8 px-4 sm:px-8 lg:px-24 border-t border-[var(--border)]">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            {/* Column 1 - Logo + Description */}
-            <div>
-              <Logo variant="footer" linkWrapper={true} />
-              <p className="text-[var(--text-secondary)] text-sm leading-relaxed mt-3 max-w-xs">
-                Premium baby products, accessories and toys for Kenyan families.
-              </p>
-              {/* Social Icons */}
-              <div className="flex gap-4 mt-4">
-                <a href="#" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </a>
-                <a href="#" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                  </svg>
-                </a>
-                <a href="#" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-
-            {/* Column 2 - Shop Links */}
-            <div>
-              <h4 className="font-semibold text-sm text-[var(--text-primary)] uppercase tracking-widest mb-4">Shop</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/categories" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">All Products</Link></li>
-                <li><Link href="/categories?category=newborn" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Newborn</Link></li>
-                <li><Link href="/categories?category=feeding" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Feeding</Link></li>
-                <li><Link href="/categories?category=toys" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Toys</Link></li>
-                <li><Link href="/categories?category=accessories" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Accessories</Link></li>
-              </ul>
-            </div>
-
-            {/* Column 3 - Support Links */}
-            <div>
-              <h4 className="font-semibold text-sm text-[var(--text-primary)] uppercase tracking-widest mb-4">Support</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/faq" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">FAQ</Link></li>
-                <li><Link href="/shipping" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Shipping Info</Link></li>
-                <li><Link href="/contact" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Contact Us</Link></li>
-                <li><Link href="/about" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">About Us</Link></li>
-              </ul>
-            </div>
-
-            {/* Column 4 - Contact */}
-            <div>
-              <h4 className="font-semibold text-sm text-[var(--text-primary)] uppercase tracking-widest mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <span className="text-[var(--accent)]">📧</span>
-                  <span className="text-[var(--text-secondary)]">support@malaikanest7@gmail.com</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[var(--accent)]">📞</span>
-                  <span className="text-[var(--text-secondary)]">+254 726 771 321</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[var(--accent)]">📍</span>
-                  <span className="text-[var(--text-secondary)]">Mombasa, Kenya</span>
-                </li>
-              </ul>
-            </div>
+    <footer className="border-t border-default bg-surface pt-16">
+      <div className="container-shell grid gap-10 pb-12 md:grid-cols-2 xl:grid-cols-4">
+        <section>
+          <Logo />
+          <p className="mt-5 max-w-xs text-[18px] text-[var(--text-secondary)]">Premium baby products for Kenyan families.</p>
+          <div className="mt-6 flex items-center gap-4 text-[var(--text-primary)]">
+            <a href="https://www.facebook.com/groups/1614565823184535/?ref=share&mibextid=NSMWBT" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-default transition-colors hover:bg-[var(--bg-soft)]">
+              <Facebook size={18} />
+            </a>
+            <a href="https://www.instagram.com/rashidmaimuna?igsh=MWkwdnJndWw1a2E0MA==" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-default transition-colors hover:bg-[var(--bg-soft)]">
+              <Instagram size={18} />
+            </a>
+            <a href="https://www.tiktok.com/@tawakaltotowear?_r=1&_t=ZS-94UPJxYR7uy" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-default transition-colors hover:bg-[var(--bg-soft)]">
+              <TikTokIcon className="text-current" />
+            </a>
+            <a href="https://wa.me/254726771321" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-default transition-colors hover:bg-[var(--bg-soft)]">
+              <MessageCircle size={18} />
+            </a>
           </div>
-        </div>
-      </footer>
+        </section>
 
-      {/* Bottom Bar */}
-      <div className="bg-[var(--bg-secondary)] border-t border-[var(--border)] py-5 px-4 sm:px-8 lg:px-24">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-[var(--text-secondary)] text-sm">
-            © {new Date().getFullYear()} Malaika Nest. All rights reserved.
-          </p>
-          <p className="text-[var(--text-secondary)] text-sm">
-            Made with ❤️ in Mombasa, Kenya
-          </p>
+        <section>
+          <h3 className="font-body text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">Shop</h3>
+          <ul className="mt-6 space-y-3 text-[18px] text-[var(--text-secondary)]">
+            <li><Link href="/categories" className="transition-colors hover:text-[var(--text-primary)]">All Products</Link></li>
+            <li><Link href="/categories?group=Newborn" className="transition-colors hover:text-[var(--text-primary)]">Newborn</Link></li>
+            <li><Link href="/categories?group=Feeding" className="transition-colors hover:text-[var(--text-primary)]">Feeding</Link></li>
+            <li><Link href="/categories?group=Toys" className="transition-colors hover:text-[var(--text-primary)]">Toys</Link></li>
+            <li><Link href="/categories?group=Bundles" className="transition-colors hover:text-[var(--text-primary)]">Bundles</Link></li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="font-body text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">Support</h3>
+          <ul className="mt-6 space-y-3 text-[18px] text-[var(--text-secondary)]">
+            <li><Link href="/faq" className="transition-colors hover:text-[var(--text-primary)]">FAQ</Link></li>
+            <li><Link href="/shipping" className="transition-colors hover:text-[var(--text-primary)]">Shipping Info</Link></li>
+            <li><Link href="/contact" className="transition-colors hover:text-[var(--text-primary)]">Contact Us</Link></li>
+            <li><Link href="/about" className="transition-colors hover:text-[var(--text-primary)]">About Us</Link></li>
+            <li><Link href="/contact" className="transition-colors hover:text-[var(--text-primary)]">Order Support</Link></li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="font-body text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">Contact</h3>
+          <ul className="mt-6 space-y-3 text-[18px] text-[var(--text-secondary)]">
+            <li>support@malaikanest7@gmail.com</li>
+            <li>+254 726 771 321</li>
+            <li>Mombasa, Kenya</li>
+            <li>M-Pesa Till: 3370347</li>
+          </ul>
+        </section>
+      </div>
+
+      <div className="border-t border-default bg-[var(--bg-primary)] py-6">
+        <div className="container-shell flex flex-col items-center justify-between gap-2 text-sm text-[var(--text-secondary)] sm:flex-row">
+          <p>© 2026 Malaika Nest. All rights reserved.</p>
+          <p>Made with ❤️ in Mombasa, Kenya</p>
         </div>
       </div>
-    </>
+    </footer>
   )
 }
 

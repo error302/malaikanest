@@ -1,4 +1,5 @@
 "use client"
+
 import { useState } from 'react'
 
 type FAQItem = {
@@ -6,170 +7,152 @@ type FAQItem = {
   answer: string
 }
 
-const faqCategories = [
+const faqCategories: Array<{ title: string; items: FAQItem[] }> = [
   {
     title: 'Orders & Shopping',
     items: [
       {
         question: 'How do I place an order?',
-        answer: 'Browse our products, add items to your cart, and proceed to checkout. You\'ll need to create an account or sign in to complete your purchase. We accept M-Pesa payments for convenient checkout.'
+        answer:
+          'Browse products, add items to cart, and proceed to checkout. You can complete your purchase after account login and M-Pesa confirmation.',
       },
       {
         question: 'Can I modify or cancel my order?',
-        answer: 'You can modify or cancel your order as long as it hasn\'t been processed for delivery. Please contact our support team immediately with your order number.'
+        answer:
+          'Yes, before fulfillment starts. Contact support with your order number as soon as possible and we will assist.',
       },
       {
         question: 'How do I track my order?',
-        answer: 'Once your order is shipped, you\'ll receive an SMS with tracking information. You can also log into your account and view order status under "My Orders".'
+        answer:
+          'You can track status from your account order history, and we also share delivery updates through phone or email.',
       },
       {
         question: 'Do you offer gift wrapping?',
-        answer: 'Yes! During checkout, you can mark your order as a gift and include a personalized message. We\'ll beautifully wrap your items.'
-      }
-    ]
+        answer:
+          'Yes. During checkout, mark your order as a gift and optionally include a personal message.',
+      },
+    ],
   },
   {
     title: 'Payments',
     items: [
       {
         question: 'What payment methods do you accept?',
-        answer: 'We accept M-Pesa payments through Safaricom\'s STK Push service. This is the most convenient and secure way to pay for Kenyan customers.'
+        answer:
+          'We currently support M-Pesa STK Push payments for secure and convenient checkout in Kenya.',
       },
       {
-        question: 'Is it safe to pay with M-Pesa?',
-        answer: 'Yes, absolutely. We use secure M-Pesa integration and never store your M-Pesa PIN or credentials. Payments are processed directly through Safaricom.'
+        question: 'Is payment secure?',
+        answer:
+          'Yes. Payment authorization is handled through Safaricom channels and we do not store your M-Pesa PIN.',
       },
       {
-        question: 'Will I receive a payment receipt?',
-        answer: 'Yes, you\'ll receive an M-Pesa confirmation message from Safaricom, and we\'ll send you an email confirmation of your order.'
-      }
-    ]
+        question: 'Will I receive confirmation?',
+        answer:
+          'Yes. You receive an M-Pesa confirmation and an order confirmation from Malaika Nest.',
+      },
+    ],
   },
   {
     title: 'Delivery',
     items: [
       {
         question: 'Where do you deliver?',
-        answer: 'We deliver throughout Kenya. Nairobi deliveries are free. Upcountry deliveries have a Ksh 500 shipping fee.'
+        answer: 'We deliver across Kenya including Mombasa, Nairobi, and upcountry regions.',
       },
       {
         question: 'How long does delivery take?',
-        answer: 'Nairobi: 1-2 business days. Upcountry: 3-5 business days depending on location.'
+        answer: 'Mombasa and Nairobi typically 1-2 business days. Upcountry generally 3-5 business days.',
       },
       {
-        question: 'How much does delivery cost?',
-        answer: 'Nairobi deliveries are FREE. Upcountry deliveries cost Ksh 500 per order.'
+        question: 'Can I request delivery instructions?',
+        answer:
+          'Yes. Add your delivery notes during checkout and our team will coordinate with you before dispatch.',
       },
-      {
-        question: 'Can I specify a delivery time?',
-        answer: 'While we cannot guarantee specific time slots, you can add delivery instructions during checkout and our delivery team will contact you.'
-      }
-    ]
+    ],
   },
   {
-    title: 'Returns & Refunds',
+    title: 'Product Support',
     items: [
       {
-        question: 'What is your return policy?',
-        answer: 'We accept returns within 7 days of delivery for unused items in original packaging. Contact us first to initiate a return.'
+        question: 'What if I receive a damaged or wrong item?',
+        answer:
+          'Contact support immediately with your order number and product photos. We prioritize resolution quickly.',
       },
       {
-        question: 'Who pays for return shipping?',
-        answer: 'Customers are responsible for return shipping costs unless the item is defective or we made an error.'
+        question: 'How do I choose the right size?',
+        answer:
+          'Product pages include sizing guidance where relevant. If unsure, contact support before ordering.',
       },
       {
-        question: 'How long do refunds take?',
-        answer: 'Once we receive and inspect your return, refunds are processed within 5-7 business days. M-Pesa refunds reflect within 1-2 business days.'
-      }
-    ]
+        question: 'Do you support wholesale or bulk orders?',
+        answer: 'Yes. Reach out through our contact page for wholesale and bulk pricing support.',
+      },
+    ],
   },
-  {
-    title: 'Products & Sizing',
-    items: [
-      {
-        question: 'How do I know what size to buy?',
-        answer: 'Each product page includes a size guide. For clothing, we recommend checking age recommendations and measurements.'
-      },
-      {
-        question: 'Are your products safe for babies?',
-        answer: 'All our products meet safety standards. We carefully curate trusted brands and conduct quality checks.'
-      },
-      {
-        question: 'Do you offer wholesale or bulk orders?',
-        answer: 'Yes, we offer wholesale pricing for retailers and bulk orders. Contact our business team for inquiries.'
-      }
-    ]
-  }
 ]
 
 export default function FAQPage() {
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
 
   const toggle = (key: string) => {
-    setOpenItems(prev => ({ ...prev, [key]: !prev[key] }))
+    setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
   return (
-    <div className="min-h-screen bg-secondary/20 pt-24 pb-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-text mb-4">Frequently Asked Questions</h1>
-          <p className="text-xl text-gray-600">Find answers to common questions</p>
-        </div>
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <header className="mb-10 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Support</p>
+          <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Frequently Asked Questions</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-[18px] text-[var(--text-secondary)]">
+            Clear answers on orders, payments, delivery, and customer support.
+          </p>
+        </header>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {faqCategories.map((category, catIndex) => (
-            <div key={catIndex} className="bg-white rounded-2xl shadow-sm border border-secondary/50 overflow-hidden">
-              <div className="px-6 py-4 bg-cta/5 border-b border-secondary">
-                <h2 className="text-xl font-semibold text-text">{category.title}</h2>
+            <section key={category.title} className="card-soft overflow-hidden">
+              <div className="border-b border-default bg-[var(--bg-soft)] px-5 py-4 md:px-6">
+                <h2 className="text-[22px] font-semibold text-[var(--text-primary)]">{category.title}</h2>
               </div>
-              <div className="divide-y divide-secondary">
+              <div className="divide-y divide-[var(--border)]">
                 {category.items.map((item, itemIndex) => {
                   const key = `${catIndex}-${itemIndex}`
                   const isOpen = openItems[key]
                   return (
-                    <div key={itemIndex}>
+                    <article key={item.question}>
                       <button
                         onClick={() => toggle(key)}
-                        className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-secondary/20 transition-colors"
+                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-soft)] md:px-6"
                       >
-                        <span className="font-medium text-text">{item.question}</span>
-                        <svg 
-                          className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <span className="font-medium">{item.question}</span>
+                        <span className={`text-[var(--text-secondary)] transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+                          ▾
+                        </span>
                       </button>
-                      <div 
-                        className={`overflow-hidden transition-all duration-300 ${
-                          isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
-                        }`}
-                      >
-                        <div className="px-6 pb-4 text-gray-600">
-                          {item.answer}
+                      <div className={`grid transition-all duration-300 ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                        <div className="overflow-hidden">
+                          <p className="px-5 pb-4 text-[16px] text-[var(--text-secondary)] md:px-6">{item.answer}</p>
                         </div>
                       </div>
-                    </div>
+                    </article>
                   )
                 })}
               </div>
-            </div>
+            </section>
           ))}
         </div>
 
-        <div className="mt-12 bg-white rounded-2xl p-8 shadow-sm border border-secondary/50 text-center">
-          <h2 className="text-xl font-semibold text-text mb-2">Still have questions?</h2>
-          <p className="text-gray-600 mb-6">Can't find the answer you're looking for? Our team is here to help.</p>
-          <a 
-            href="/contact" 
-            className="inline-block px-6 py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors"
-          >
-            Contact Us
+        <section className="card-soft mt-10 p-8 text-center">
+          <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Need direct support?</h2>
+          <p className="mt-2 text-[18px] text-[var(--text-secondary)]">
+            Reach the team for order help, product guidance, or delivery coordination.
+          </p>
+          <a href="/contact" className="btn-primary mt-6 inline-flex px-7">
+            Contact Support
           </a>
-        </div>
+        </section>
       </div>
     </div>
   )

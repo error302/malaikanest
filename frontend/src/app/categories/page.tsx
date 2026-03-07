@@ -1,8 +1,12 @@
 "use client"
-import React, { useState, useEffect } from 'react'
+
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
+import { Filter, Search } from 'lucide-react'
+
 import api from '../../lib/api'
 import ProductCard from '../../components/ProductCard'
-import { LoadingGrid } from '../../components/Loading'
 
 interface Category {
   id: number
@@ -17,304 +21,275 @@ interface Product {
   slug: string
   price: string
   image: string | null
-  category: { name: string }
-  stock: number
-  images: string[]
+  category?: { name: string }
+  stock?: number
+  images?: string[]
 }
 
-const ageFilters = [
-  { name: 'All Ages', value: '' },
-  { name: 'Newborn (0-3 Months)', value: 'newborn' },
-  { name: 'Infants (3-12 Months)', value: 'infant' },
-  { name: 'Toddlers (1-3 Years)', value: 'toddler' },
-  { name: 'Moms & Maternity', value: 'maternity' },
-]
-
 const priceRanges = [
-  { name: 'All Prices', min: '', max: '' },
-  { name: 'Under KSH 1,000', min: '0', max: '1000' },
-  { name: 'KSH 1,000 - 3,000', min: '1000', max: '3000' },
-  { name: 'KSH 3,000 - 5,000', min: '3000', max: '5000' },
-  { name: 'KSH 5,000 - 10,000', min: '5000', max: '10000' },
-  { name: 'Over KSH 10,000', min: '10000', max: '' },
+  { label: 'All Prices', min: '', max: '' },
+  { label: 'Under KES 1,000', min: '0', max: '1000' },
+  { label: 'KES 1,000 - 3,000', min: '1000', max: '3000' },
+  { label: 'KES 3,000 - 5,000', min: '3000', max: '5000' },
+  { label: 'KES 5,000 - 10,000', min: '5000', max: '10000' },
+  { label: 'Over KES 10,000', min: '10000', max: '' },
 ]
 
 const sortOptions = [
-  { name: 'Newest First', value: '-created_at' },
-  { name: 'Price: Low to High', value: 'price' },
-  { name: 'Price: High to Low', value: '-price' },
-  { name: 'Name: A-Z', value: 'name' },
-  { name: 'Name: Z-A', value: '-name' },
+  { label: 'Newest First', value: '-created_at' },
+  { label: 'Price: Low to High', value: 'price' },
+  { label: 'Price: High to Low', value: '-price' },
+  { label: 'Name: A-Z', value: 'name' },
+  { label: 'Name: Z-A', value: '-name' },
 ]
 
 export default function CategoriesPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingProducts, setLoadingProducts] = useState(false)
-  
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [selectedAge, setSelectedAge] = useState('')
-  const [selectedPrice, setSelectedPrice] = useState('')
-  const [sortBy, setSortBy] = useState('-created_at')
-  const [searchQuery, setSearchQuery] = useState('')
-  
+
+  const [loadingCategories, setLoadingCategories] = useState(true)
+  const [loadingProducts, setLoadingProducts] = useState(true)
+
+  const [category, setCategory] = useState(searchParams.get('category') || '')
+  const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || '-created_at')
+  const [priceRange, setPriceRange] = useState('All Prices')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    api.get('/api/products/categories/')
-      .then(res => {
-        setCategories(res.data)
-      })
-      .catch(err => console.error('Failed to load categories', err))
+    api
+      .get('/api/products/categories/')
+      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setCategories([]))
+      .finally(() => setLoadingCategories(false))
   }, [])
 
   useEffect(() => {
-    fetchProducts()
-  }, [selectedCategory, selectedAge, selectedPrice, sortBy, page])
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (search) params.set('search', search)
+    if (sortBy && sortBy !== '-created_at') params.set('sort', sortBy)
+    router.replace(params.toString() ? `/categories?${params.toString()}` : '/categories')
+  }, [category, search, sortBy, router])
 
-  const fetchProducts = () => {
-    setLoadingProducts(true)
+  useEffect(() => {
     const params: Record<string, string> = {
-      page: page.toString(),
+      page: String(page),
       page_size: '12',
     }
-    
-    if (selectedCategory) params.category = selectedCategory
+
+    if (category) params.category = category
+    if (search.trim()) params.search = search.trim()
     if (sortBy) params.ordering = sortBy
-    if (searchQuery) params.search = searchQuery
-    
-    if (selectedPrice) {
-      const range = priceRanges.find(p => p.name === selectedPrice)
-      if (range) {
-        if (range.min) params.price_min = range.min
-        if (range.max) params.price_max = range.max
-      }
-    }
 
-    api.get('/api/products/products/', { params })
-      .then(res => {
-        setProducts(res.data.results || res.data)
-        const total = res.data.count ? Math.ceil(res.data.count / 12) : 1
-        setTotalPages(total)
-        setLoading(false)
-        setLoadingProducts(false)
-      })
-      .catch(err => {
-        console.error('Failed to load products', err)
-        setLoading(false)
-        setLoadingProducts(false)
-      })
-  }
+    const selectedRange = priceRanges.find((range) => range.label === priceRange)
+    if (selectedRange?.min) params.price_min = selectedRange.min
+    if (selectedRange?.max) params.price_max = selectedRange.max
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setPage(1)
-    fetchProducts()
-  }
+    setLoadingProducts(true)
+    api
+      .get('/api/products/products/', { params })
+      .then((res) => {
+        const data = res.data
+        const rows = Array.isArray(data) ? data : data.results || []
+        setProducts(rows)
+        setTotalPages(data?.count ? Math.max(1, Math.ceil(data.count / 12)) : 1)
+      })
+      .catch(() => setProducts([]))
+      .finally(() => setLoadingProducts(false))
+  }, [category, search, sortBy, priceRange, page])
+
+  const activeFilterCount = useMemo(() => [category, search.trim(), priceRange !== 'All Prices' ? priceRange : '', sortBy !== '-created_at' ? sortBy : ''].filter(Boolean).length, [category, search, priceRange, sortBy])
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, idx) => idx + 1)
+    let start = Math.max(1, page - 2)
+    let end = Math.min(totalPages, start + 4)
+    if (end - start < 4) start = Math.max(1, end - 4)
+    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx)
+  }, [page, totalPages])
 
   const clearFilters = () => {
-    setSelectedCategory('')
-    setSelectedAge('')
-    setSelectedPrice('')
-    setSearchQuery('')
+    setCategory('')
+    setSearch('')
     setSortBy('-created_at')
+    setPriceRange('All Prices')
     setPage(1)
   }
 
-  const activeFiltersCount = [selectedCategory, selectedAge, selectedPrice, searchQuery].filter(Boolean).length
+  const onSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    setPage(1)
+  }
 
   return (
-    <div className="min-h-screen bg-[#1C1C2E]">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Shop</h1>
-        <p className="text-[#A0A0B8] mb-6">
-          {products.length} products available
-        </p>
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <div className="mb-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Catalog</p>
+          <h1 className="font-display mt-2 text-[48px] text-[var(--text-primary)]">Shop Collection</h1>
+          <p className="mt-3 text-[18px] text-[var(--text-secondary)]">Explore premium baby and maternity products curated for comfort, safety, and everyday ease.</p>
+        </div>
 
-        <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex gap-2">
+        <form onSubmit={onSearchSubmit} className="mb-4 flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" size={18} />
             <input
               type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-3 bg-[#252538] border border-[#3A3A55] text-white placeholder-[#A0A0B8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-soft pl-10"
+              placeholder="Search products"
             />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-[#7B2FBE] hover:bg-[#9B4FDE] text-white font-semibold rounded-lg transition-colors"
-            >
-              Search
-            </button>
           </div>
+          <button type="submit" className="btn-primary px-6">Search</button>
         </form>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="mb-8 flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 border border-[#3A3A55] text-white rounded-lg hover:bg-[#252538] transition-colors whitespace-nowrap"
+            type="button"
+            onClick={() => setShowFilters((prev) => !prev)}
+            className="btn-secondary inline-flex items-center gap-2 px-4"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
+            <Filter size={16} />
             Filters
-            {activeFiltersCount > 0 && (
-              <span className="bg-[#C8963E] text-white text-xs px-2 py-0.5 rounded-full">
-                {activeFiltersCount}
-              </span>
-            )}
+            {activeFilterCount > 0 && <span className="rounded-full bg-[var(--text-primary)] px-2 py-0.5 text-xs text-white">{activeFilterCount}</span>}
           </button>
-          
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white whitespace-nowrap"
-          >
-            {sortOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.name}</option>
-            ))}
-          </select>
 
-          {activeFiltersCount > 0 && (
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 text-red-400 hover:text-red-300 transition-colors whitespace-nowrap"
-            >
-              Clear Filters
+          {activeFilterCount > 0 && (
+            <button type="button" className="btn-secondary px-4" onClick={clearFilters}>
+              Clear all
             </button>
           )}
         </div>
 
         {showFilters && (
-          <div className="bg-[#252538]/30 p-4 rounded-lg mb-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">Category</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white"
-                >
+          <section className="mb-8 rounded-[12px] border border-default bg-surface p-4 md:p-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                Category
+                <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1) }} className="input-soft mt-2">
                   <option value="">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  {categories.map((item) => (
+                    <option key={item.id} value={item.slug}>{item.name}</option>
                   ))}
                 </select>
-              </div>
+              </label>
 
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">Age Group</label>
-                <select
-                  value={selectedAge}
-                  onChange={(e) => { setSelectedAge(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white"
-                >
-                  {ageFilters.map(age => (
-                    <option key={age.value} value={age.value}>{age.name}</option>
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                Price Range
+                <select value={priceRange} onChange={(e) => { setPriceRange(e.target.value); setPage(1) }} className="input-soft mt-2">
+                  {priceRanges.map((range) => (
+                    <option key={range.label} value={range.label}>{range.label}</option>
                   ))}
                 </select>
-              </div>
+              </label>
 
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">Price Range</label>
-                <select
-                  value={selectedPrice}
-                  onChange={(e) => { setSelectedPrice(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-[#3A3A55] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8963E] bg-[#252538] text-white"
-                >
-                  {priceRanges.map(range => (
-                    <option key={range.name} value={range.name}>{range.name}</option>
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                Sort By
+                <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1) }} className="input-soft mt-2">
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
-              </div>
+              </label>
             </div>
-          </div>
+          </section>
         )}
 
-        {!selectedCategory && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">Browse by Category</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {categories.slice(0, 12).map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => { setSelectedCategory(category.slug); setPage(1); }}
-                  className="bg-[#252538] p-4 rounded-xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 text-center"
-                >
-                  <div className="aspect-square bg-[#1C1C2E] rounded-lg mb-2 flex items-center justify-center">
-                    {category.image ? (
-                      <img src={category.image} alt={category.name} className="w-full h-full object-cover rounded-lg" />
-                    ) : (
-                      <span className="text-3xl">📁</span>
-                    )}
+        {!category && (
+          <section className="mb-12">
+            <h2 className="mb-5 text-[28px] font-semibold text-[var(--text-primary)]">Browse Categories</h2>
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
+              {loadingCategories &&
+                Array.from({ length: 12 }).map((_, idx) => (
+                  <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-3">
+                    <div className="aspect-square rounded-[12px] bg-[var(--bg-soft)]" />
+                    <div className="mx-auto mt-3 h-4 w-3/4 rounded bg-[var(--bg-soft)]" />
                   </div>
-                  <p className="text-sm font-medium text-white line-clamp-2">{category.name}</p>
-                </button>
-              ))}
+                ))}
+
+              {!loadingCategories &&
+                categories.slice(0, 12).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => { setCategory(item.slug); setPage(1) }}
+                    className="group rounded-[12px] border border-default bg-surface p-3 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
+                  >
+                    <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+                      {item.image ? (
+                        <Image src={item.image} alt={item.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
+                          <span className="font-display text-5xl text-[var(--text-primary)]">{item.name.charAt(0)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-3 line-clamp-2 text-sm font-semibold text-[var(--text-primary)]">{item.name}</p>
+                  </button>
+                ))}
             </div>
-          </div>
+          </section>
         )}
 
         {loadingProducts ? (
-          <LoadingGrid count={12} />
-        ) : products.length === 0 ? (
-          <div className="text-center py-16">
-            <span className="text-6xl block mb-4">🔍</span>
-            <h3 className="text-xl font-semibold text-white">No products found</h3>
-            <p className="text-[#A0A0B8] mt-2">Try adjusting your filters or search terms</p>
-            <button onClick={clearFilters} className="mt-4 text-[#C8963E] hover:underline">
-              Clear all filters
-            </button>
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-4">
+                <div className="aspect-square rounded-[12px] bg-[var(--bg-soft)]" />
+                <div className="mt-4 h-4 w-2/3 rounded bg-[var(--bg-soft)]" />
+                <div className="mt-2 h-4 w-1/2 rounded bg-[var(--bg-soft)]" />
+                <div className="mt-4 h-10 rounded bg-[var(--bg-soft)]" />
+              </div>
+            ))}
           </div>
+        ) : products.length === 0 ? (
+          <section className="rounded-[12px] border border-default bg-surface p-12 text-center">
+            <h3 className="text-[28px] font-semibold text-[var(--text-primary)]">No products found</h3>
+            <p className="mt-2 text-[18px] text-[var(--text-secondary)]">Try adjusting filters or search terms.</p>
+            <button type="button" onClick={clearFilters} className="btn-primary mt-6 px-6">Reset Filters</button>
+          </section>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
                 <button
-                  onClick={() => setPage(Math.max(1, page - 1))}
+                  type="button"
+                  className="btn-secondary px-4"
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                   disabled={page === 1}
-                  className="px-4 py-2 border border-[#3A3A55] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#252538] transition-colors"
                 >
                   Previous
                 </button>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum
-                  if (totalPages <= 5) {
-                    pageNum = i + 1
-                  } else if (page <= 3) {
-                    pageNum = i + 1
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i
-                  } else {
-                    pageNum = page - 2 + i
-                  }
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setPage(pageNum)}
-                      className={`w-10 h-10 rounded-lg transition-colors ${
-                        page === pageNum ? 'bg-[#C8963E] text-white' : 'border border-[#3A3A55] text-white hover:bg-[#252538]'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  )
-                })}
+
+                {pageNumbers.map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setPage(pageNum)}
+                    className={page === pageNum ? 'btn-primary w-11 px-0' : 'btn-secondary w-11 px-0'}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
 
                 <button
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  type="button"
+                  className="btn-secondary px-4"
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={page === totalPages}
-                  className="px-4 py-2 border border-[#3A3A55] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#252538] transition-colors"
                 >
                   Next
                 </button>

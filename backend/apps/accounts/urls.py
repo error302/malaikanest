@@ -8,7 +8,9 @@ from .views import (
     verify_email_view,
     resend_verification_view,
     CookieTokenObtainPairView,
+    AdminCookieTokenObtainPairView,
     CookieTokenRefreshView,
+    admin_session_view,
 )
 
 urlpatterns = [
@@ -16,6 +18,8 @@ urlpatterns = [
     path("verify-email/", verify_email_view, name="verify_email"),
     path("resend-verification/", resend_verification_view, name="resend_verification"),
     path("token/", CookieTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("admin/login/", AdminCookieTokenObtainPairView.as_view(), name="admin_login"),
+    path("admin/session/", admin_session_view, name="admin_session"),
     path("token/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh"),
     path("profile/", ProfileView.as_view(), name="profile"),
     path("logout/", logout_view, name="logout"),

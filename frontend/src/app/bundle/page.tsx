@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+
 import api from '@/lib/api'
 
 interface BundleProduct {
@@ -76,7 +78,7 @@ export default function BundleBuilderPage() {
   const addBundleToCart = async () => {
     if (!bundle) return
     setAddingToCart(true)
-    
+
     for (const product of bundle.products) {
       try {
         await api.post('/api/orders/cart/add/', {
@@ -87,100 +89,67 @@ export default function BundleBuilderPage() {
         console.error('Failed to add to cart:', error)
       }
     }
-    
+
     setTimeout(() => {
       setAddingToCart(false)
       router.push('/cart')
     }, 1000)
   }
 
+  const selectedBundleName = BUNDLE_TYPES.find((t) => t.id === selections.bundleType)?.name || 'Custom Bundle'
+  const selectedAge = AGE_GROUPS.find((a) => a.id === selections.ageGroup)?.label || 'Newborn'
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            🎁 AI Bundle Builder
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Let our AI create the perfect baby product bundle for you
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <header className="mb-10 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Personalized Shopping</p>
+          <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">AI Bundle Builder</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-[18px] text-[var(--text-secondary)]">
+            Build a curated baby bundle based on age, gender preference, and budget.
           </p>
+        </header>
+
+        <div className="mb-8 flex items-center justify-center gap-3">
+          {[1, 2, 3].map((s) => (
+            <div key={s} className="flex items-center gap-3">
+              <span className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold ${step >= s ? 'bg-[var(--text-primary)] text-white border-[var(--text-primary)]' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] border-default'}`}>
+                {s}
+              </span>
+              {s < 3 && <span className={`h-1 w-12 rounded ${step > s ? 'bg-[var(--text-primary)]' : 'bg-[var(--border)]'}`} />}
+            </div>
+          ))}
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex justify-center mb-12">
-          <div className="flex items-center">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                    step >= s
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  {s}
-                </div>
-                {s < 3 && (
-                  <div
-                    className={`w-20 h-1 ${
-                      step > s ? 'bg-amber-600' : 'bg-gray-200'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Step 1: Select Preferences */}
         {step === 1 && (
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold mb-6">What do you need?</h2>
-            
-            <div className="space-y-6">
-              {/* Bundle Type */}
+          <section className="card-soft p-6 md:p-8">
+            <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Select Preferences</h2>
+
+            <div className="mt-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Bundle Type
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <label className="mb-3 block text-sm font-medium text-[var(--text-primary)]">Bundle Type</label>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {BUNDLE_TYPES.map((type) => (
                     <button
                       key={type.id}
-                      onClick={() =>
-                        setSelections({ ...selections, bundleType: type.id })
-                      }
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        selections.bundleType === type.id
-                          ? 'border-amber-500 bg-amber-50'
-                          : 'border-gray-200 hover:border-amber-300'
-                      }`}
+                      onClick={() => setSelections({ ...selections, bundleType: type.id })}
+                      className={`rounded-[12px] border p-4 text-left transition ${selections.bundleType === type.id ? 'border-[var(--text-primary)] bg-[var(--bg-soft)]' : 'border-default hover:border-[var(--accent-primary)]'}`}
                     >
-                      <p className="font-medium text-gray-800">{type.name}</p>
-                      <p className="text-sm text-gray-500">{type.age}</p>
+                      <p className="font-semibold text-[var(--text-primary)]">{type.name}</p>
+                      <p className="mt-1 text-sm text-[var(--text-secondary)]">{type.age}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Age Group */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Baby's Age
-                </label>
-                <div className="flex gap-3">
+                <label className="mb-3 block text-sm font-medium text-[var(--text-primary)]">Baby's Age</label>
+                <div className="flex flex-wrap gap-2">
                   {AGE_GROUPS.map((age) => (
                     <button
                       key={age.id}
-                      onClick={() =>
-                        setSelections({ ...selections, ageGroup: age.id })
-                      }
-                      className={`px-6 py-3 rounded-full border-2 transition-all ${
-                        selections.ageGroup === age.id
-                          ? 'border-amber-500 bg-amber-50 text-amber-700'
-                          : 'border-gray-200 hover:border-amber-300'
-                      }`}
+                      onClick={() => setSelections({ ...selections, ageGroup: age.id })}
+                      className={`rounded-full border px-4 py-2 text-sm transition ${selections.ageGroup === age.id ? 'border-[var(--text-primary)] bg-[var(--bg-soft)] text-[var(--text-primary)]' : 'border-default text-[var(--text-secondary)] hover:border-[var(--accent-primary)]'}`}
                     >
                       {age.label}
                     </button>
@@ -188,23 +157,14 @@ export default function BundleBuilderPage() {
                 </div>
               </div>
 
-              {/* Gender */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Gender Preference
-                </label>
-                <div className="flex gap-3">
+                <label className="mb-3 block text-sm font-medium text-[var(--text-primary)]">Gender Preference</label>
+                <div className="flex flex-wrap gap-2">
                   {GENDERS.map((gender) => (
                     <button
                       key={gender.id}
-                      onClick={() =>
-                        setSelections({ ...selections, gender: gender.id })
-                      }
-                      className={`px-6 py-3 rounded-full border-2 transition-all ${
-                        selections.gender === gender.id
-                          ? 'border-amber-500 bg-amber-50 text-amber-700'
-                          : 'border-gray-200 hover:border-amber-300'
-                      }`}
+                      onClick={() => setSelections({ ...selections, gender: gender.id })}
+                      className={`rounded-full border px-4 py-2 text-sm transition ${selections.gender === gender.id ? 'border-[var(--text-primary)] bg-[var(--bg-soft)] text-[var(--text-primary)]' : 'border-default text-[var(--text-secondary)] hover:border-[var(--accent-primary)]'}`}
                     >
                       {gender.label}
                     </button>
@@ -212,170 +172,111 @@ export default function BundleBuilderPage() {
                 </div>
               </div>
 
-              {/* Budget */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Budget (KSh)
-                </label>
+                <label className="mb-3 block text-sm font-medium text-[var(--text-primary)]">Budget (KES)</label>
                 <input
                   type="range"
                   min="1000"
                   max="20000"
                   step="1000"
                   value={selections.budget}
-                  onChange={(e) =>
-                    setSelections({
-                      ...selections,
-                      budget: parseInt(e.target.value),
-                    })
-                  }
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  onChange={(e) => setSelections({ ...selections, budget: parseInt(e.target.value) })}
+                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[var(--border)]"
                 />
-                <div className="flex justify-between text-sm text-gray-500 mt-2">
-                  <span>KSh 1,000</span>
-                  <span className="text-amber-600 font-bold">
-                    KSh {selections.budget.toLocaleString()}
-                  </span>
-                  <span>KSh 20,000</span>
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="text-[var(--text-secondary)]">KES 1,000</span>
+                  <span className="font-semibold text-[var(--text-primary)]">KES {selections.budget.toLocaleString()}</span>
+                  <span className="text-[var(--text-secondary)]">KES 20,000</span>
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={() => setStep(2)}
-              className="w-full mt-8 bg-amber-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-amber-700 transition"
-            >
-              Generate My Bundle ✨
-            </button>
-          </div>
+            <button onClick={() => setStep(2)} className="btn-primary mt-8 w-full">Review Bundle</button>
+          </section>
         )}
 
-        {/* Step 2: Confirm */}
         {step === 2 && (
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold mb-6">Confirm Your Selection</h2>
-            
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              <div className="grid grid-cols-2 gap-4">
+          <section className="card-soft p-6 md:p-8">
+            <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Confirm Selection</h2>
+
+            <div className="mt-5 rounded-[12px] border border-default bg-[var(--bg-soft)] p-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm text-gray-500">Bundle Type</p>
-                  <p className="font-medium">
-                    {BUNDLE_TYPES.find((t) => t.id === selections.bundleType)?.name || 'Custom Bundle'}
-                  </p>
+                  <p className="text-sm text-[var(--text-secondary)]">Bundle Type</p>
+                  <p className="font-semibold text-[var(--text-primary)]">{selectedBundleName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Age Group</p>
-                  <p className="font-medium">
-                    {AGE_GROUPS.find((a) => a.id === selections.ageGroup)?.label}
-                  </p>
+                  <p className="text-sm text-[var(--text-secondary)]">Age Group</p>
+                  <p className="font-semibold text-[var(--text-primary)]">{selectedAge}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Gender</p>
-                  <p className="font-medium capitalize">{selections.gender}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">Gender</p>
+                  <p className="font-semibold capitalize text-[var(--text-primary)]">{selections.gender}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Budget</p>
-                  <p className="font-medium text-amber-600">
-                    KSh {selections.budget.toLocaleString()}
-                  </p>
+                  <p className="text-sm text-[var(--text-secondary)]">Budget</p>
+                  <p className="font-semibold text-[var(--text-primary)]">KES {selections.budget.toLocaleString()}</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <button
-                onClick={() => setStep(1)}
-                className="flex-1 py-4 rounded-xl font-bold border-2 border-gray-300 hover:border-gray-400 transition"
-              >
-                Back
-              </button>
-              <button
-                onClick={generateBundle}
-                disabled={loading}
-                className="flex-1 bg-amber-600 text-white py-4 rounded-xl font-bold hover:bg-amber-700 transition disabled:opacity-50"
-              >
-                {loading ? 'Generating...' : 'Generate Bundle 🤖'}
+            <div className="mt-6 flex gap-3">
+              <button onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button>
+              <button onClick={generateBundle} disabled={loading} className="btn-primary flex-1 disabled:opacity-60">
+                {loading ? 'Generating...' : 'Generate Bundle'}
               </button>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Step 3: Results */}
         {step === 3 && bundle && (
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="text-center mb-8">
-              <div className="text-5xl mb-4">🎁</div>
-              <h2 className="text-2xl font-bold">{bundle.name}</h2>
-              <p className="text-gray-600">{bundle.description}</p>
+          <section className="card-soft p-6 md:p-8">
+            <div className="text-center">
+              <h2 className="font-display text-[36px] text-[var(--text-primary)]">{bundle.name}</h2>
+              <p className="mt-2 text-[16px] text-[var(--text-secondary)]">{bundle.description}</p>
             </div>
 
-            <div className="space-y-4 mb-8">
+            <div className="mt-6 space-y-3">
               {bundle.products.map((product, index) => (
-                <div
-                  key={product.id}
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl"
-                >
-                  <span className="w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center font-bold">
-                    {index + 1}
-                  </span>
-                  <div className="w-16 h-16 bg-white rounded-lg overflow-hidden">
+                <article key={product.id} className="flex items-center gap-3 rounded-[12px] border border-default bg-[var(--bg-soft)] p-3">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-secondary)] text-sm font-semibold text-[var(--text-primary)]">{index + 1}</span>
+                  <div className="h-14 w-14 overflow-hidden rounded-lg border border-default bg-surface">
                     {product.images?.[0]?.image ? (
-                      <img
-                        src={product.images[0].image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
+                      <Image width={112} height={112} src={product.images[0].image} alt={product.name} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-gray-200" />
+                      <div className="h-full w-full bg-[var(--border)]" />
                     )}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-amber-600 font-bold">
-                      KSh {parseFloat(product.price).toLocaleString()}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-1 font-medium text-[var(--text-primary)]">{product.name}</p>
+                    <p className="text-sm text-[var(--text-secondary)]">KES {parseFloat(product.price).toLocaleString()}</p>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
 
-            <div className="bg-amber-50 rounded-xl p-6 mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Total Value:</span>
-                <span className="line-through text-gray-500">
-                  KSh {bundle.total_price.toLocaleString()}
-                </span>
+            <div className="mt-6 rounded-[12px] border border-default bg-[var(--bg-soft)] p-5">
+              <div className="mb-2 flex items-center justify-between text-sm text-[var(--text-secondary)]">
+                <span>Total Value</span>
+                <span className="line-through">KES {bundle.total_price.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Your Price:</span>
-                <span className="text-2xl font-bold text-amber-600">
-                  KSh {(bundle.total_price - bundle.savings).toLocaleString()}
-                </span>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[var(--text-secondary)]">Your Price</span>
+                <span className="text-2xl font-semibold text-[var(--text-primary)]">KES {(bundle.total_price - bundle.savings).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">You Save:</span>
-                <span className="text-green-600 font-bold">
-                  KSh {bundle.savings.toLocaleString()}!
-                </span>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--text-secondary)]">You Save</span>
+                <span className="font-semibold text-green-700">KES {bundle.savings.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <button
-                onClick={() => setStep(1)}
-                className="flex-1 py-4 rounded-xl font-bold border-2 border-gray-300 hover:border-gray-400 transition"
-              >
-                Start Over
-              </button>
-              <button
-                onClick={addBundleToCart}
-                disabled={addingToCart}
-                className="flex-1 bg-amber-600 text-white py-4 rounded-xl font-bold hover:bg-amber-700 transition disabled:opacity-50"
-              >
-                {addingToCart ? 'Adding...' : 'Add All to Cart 🛒'}
+            <div className="mt-6 flex gap-3">
+              <button onClick={() => setStep(1)} className="btn-secondary flex-1">Start Over</button>
+              <button onClick={addBundleToCart} disabled={addingToCart} className="btn-primary flex-1 disabled:opacity-60">
+                {addingToCart ? 'Adding...' : 'Add All to Cart'}
               </button>
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>

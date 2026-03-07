@@ -21,6 +21,7 @@ class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     is_top_level = serializers.BooleanField(read_only=True)
     group = serializers.CharField(read_only=True)
+    product_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -33,6 +34,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "children",
             "is_top_level",
             "group",
+            "product_count",
         )
 
     def get_image(self, obj):
@@ -43,6 +45,9 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_children(self, obj):
         children = obj.children.all()
         return CategorySerializer(children, many=True).data if children else []
+
+    def get_product_count(self, obj):
+        return obj.products.filter(is_active=True).count()
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -82,11 +87,9 @@ class ProductSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        # Handle the custom multipart field from Next.js Dropzone
         request = self.context.get("request")
         image = None
         if request and request.FILES:
-            # We take the first image if multiple were uploaded
             files = request.FILES.getlist("uploaded_images")
             if files:
                 image = files[0]
@@ -94,18 +97,13 @@ class ProductSerializer(serializers.ModelSerializer):
         product = Product.objects.create(**validated_data)
         if image:
             product.image = image
-            product.save()
+            product.save(update_fields=["image"])
 
         return product
 
     def get_image(self, obj):
         if obj.image:
-            url = obj.image.url
-            if url.startswith("http"):
-                return url
-            from django.conf import settings
-
-            return f"{getattr(settings, 'SITE_URL', 'https://malaikanest.duckdns.org')}{url}"
+            return obj.image.url
         return None
 
 
@@ -133,12 +131,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            url = obj.image.url
-            if url.startswith("http"):
-                return url
-            from django.conf import settings
-
-            return f"{getattr(settings, 'SITE_URL', 'https://malaikanest.duckdns.org')}{url}"
+            return obj.image.url
         return None
 
 
@@ -150,6 +143,9 @@ class InventorySerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_email_masked = serializers.SerializerMethodField()
+    user_name = serializers.SerializerMethodField()
+    comment = serializers.CharField(source="body", read_only=True)
+    location = serializers.SerializerMethodField()
 
     class Meta:
         model = Review
@@ -158,9 +154,12 @@ class ReviewSerializer(serializers.ModelSerializer):
             "product",
             "user_email",
             "user_email_masked",
+            "user_name",
+            "location",
             "rating",
             "title",
             "body",
+            "comment",
             "created_at",
         )
 
@@ -173,6 +172,19 @@ class ReviewSerializer(serializers.ModelSerializer):
             masked_local = local[:3] + "***" if len(local) > 3 else local
             return f"{masked_local}@{domain}"
         return email[:4] + "***"
+
+    def get_user_name(self, obj):
+        if obj.user:
+            full_name = f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
+            if full_name:
+                return full_name
+            return obj.user.email.split("@")[0]
+        if obj.user_email:
+            return obj.user_email.split("@")[0]
+        return "Customer"
+
+    def get_location(self, _obj):
+        return "Kenya"
 
 
 class WishlistSerializer(serializers.ModelSerializer):
@@ -202,10 +214,5 @@ class BannerSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            url = obj.image.url
-            if url.startswith("http"):
-                return url
-            from django.conf import settings
-
-            return f"{getattr(settings, 'SITE_URL', 'https://malaikanest.duckdns.org')}{url}"
+            return obj.image.url
         return None

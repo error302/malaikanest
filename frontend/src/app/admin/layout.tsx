@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import api from '@/lib/api'
@@ -166,7 +166,32 @@ function AdminHeader() {
 
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  
+  const router = useRouter()
+  const [authChecking, setAuthChecking] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+
+    const verifyAdmin = async () => {
+      try {
+        await api.get('/api/accounts/admin/session/')
+      } catch (_err) {
+        router.replace('/admin/login')
+      } finally {
+        if (mounted) setAuthChecking(false)
+      }
+    }
+
+    verifyAdmin()
+    return () => {
+      mounted = false
+    }
+  }, [router])
+
+  if (authChecking) {
+    return <div className="min-h-screen flex items-center justify-center text-[var(--text-secondary)]">Checking admin session...</div>
+  }
+
   return (
     <div className="flex min-h-screen bg-[var(--bg-secondary)]">
       <AdminSidebar />
@@ -179,4 +204,3 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
     </div>
   )
 }
-

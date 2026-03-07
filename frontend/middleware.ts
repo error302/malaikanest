@@ -1,26 +1,22 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('access_token')
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isLoginPage = request.nextUrl.pathname === '/admin/login'
 
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
-    const accessToken = req.cookies.get('access_token')
-    if (!accessToken) {
-      const loginUrl = new URL('/admin/login', req.url)
-      loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
-    }
+  if (isAdminRoute && !isLoginPage && !token) {
+    return NextResponse.redirect(new URL('/admin/login', request.url))
+  }
+  if (isLoginPage && token) {
+    return NextResponse.redirect(new URL('/admin', request.url))
   }
 
-  const res = NextResponse.next()
-  res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
-  res.headers.set('X-Frame-Options', 'DENY')
-  res.headers.set('X-Content-Type-Options', 'nosniff')
-  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  return res
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/dashboard/:path*'],
+  matcher: ['/admin/:path*'],
 }
+

@@ -1,11 +1,13 @@
 "use client"
-import React, { useState, useEffect } from 'react'
+
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
+import { CheckCircle2, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
+
 import api from '../../../lib/api'
 import { useCart } from '../../../lib/cartContext'
-import { LoadingPage } from '../../../components/Loading'
-import { showToast } from '../../../components/Toast'
 
 interface Product {
   id: number
@@ -13,222 +15,185 @@ interface Product {
   slug: string
   price: string
   description: string
-  category: { id: number; name: string; slug: string }
-  images: string[]
+  category?: { id: number; name: string; slug: string }
+  image: string | null
   stock: number
-  is_active: boolean
+}
+
+function DetailSkeleton() {
+  return (
+    <div className="container-shell py-12">
+      <div className="grid gap-10 md:grid-cols-2">
+        <div className="aspect-square animate-pulse rounded-[12px] border border-default bg-surface" />
+        <div className="space-y-4">
+          <div className="h-10 w-3/4 animate-pulse rounded bg-[var(--bg-soft)]" />
+          <div className="h-5 w-1/3 animate-pulse rounded bg-[var(--bg-soft)]" />
+          <div className="h-8 w-1/2 animate-pulse rounded bg-[var(--bg-soft)]" />
+          <div className="h-28 animate-pulse rounded bg-[var(--bg-soft)]" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function ProductDetailPage() {
   const params = useParams()
   const slug = params?.slug as string
-  
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [quantity, setQuantity] = useState(1)
-  const [selectedImage, setSelectedImage] = useState(0)
-  const [addingToCart, setAddingToCart] = useState(false)
+
   const { add } = useCart()
 
-  const handleAddToCart = async () => {
-    if (!product) return
-    setAddingToCart(true)
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [quantity, setQuantity] = useState(1)
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!slug) return
+
+    setLoading(true)
+    api
+      .get(`/api/products/products/?slug=${slug}`)
+      .then((res) => {
+        const rows = res.data?.results || res.data || []
+        if (rows.length > 0) {
+          setProduct(rows[0])
+          setError('')
+        } else {
+          setProduct(null)
+          setError('Product not found')
+        }
+      })
+      .catch(() => {
+        setProduct(null)
+        setError('Failed to load product')
+      })
+      .finally(() => setLoading(false))
+  }, [slug])
+
+  const parsedPrice = useMemo(() => (product ? Number(product.price) : 0), [product])
+  const total = parsedPrice * quantity
+
+  const addToCart = async () => {
+    if (!product || product.stock <= 0) return
+    setAdding(true)
     try {
       await add({
         id: product.id,
         name: product.name,
-        price: parseFloat(product.price),
-        image: product.images?.[0] || '',
+        price: parsedPrice,
+        image: product.image || '',
         slug: product.slug,
-        qty: quantity
+        qty: quantity,
       })
-      showToast(`${product.name} added to cart!`, 'success')
-    } catch (error) {
-      console.error('Failed to add to cart:', error)
-      showToast('Failed to add to cart. Please try again.', 'error')
     } finally {
-      setAddingToCart(false)
+      setAdding(false)
     }
   }
 
-  useEffect(() => {
-    if (!slug) return
-    
-    api.get(`/api/products/products/?slug=${slug}`)
-      .then(res => {
-        if (res.data.results && res.data.results.length > 0) {
-          setProduct(res.data.results[0])
-        } else if (res.data[0]) {
-          setProduct(res.data[0])
-        } else {
-          setError('Product not found')
-        }
-        setLoading(false)
-      })
-      .catch(() => {
-        setError('Failed to load product')
-        setLoading(false)
-      })
-  }, [slug])
+  if (loading) return <DetailSkeleton />
 
-  if (loading) return <LoadingPage />
-  if (error || !product) {
+  if (!product) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold text-text">Product Not Found</h1>
-          <p className="text-gray-500 mt-2">{error}</p>
-          <Link href="/categories" className="inline-block mt-4 text-accent hover:underline">
-            Browse Products
-          </Link>
-        </div>
+      <div className="container-shell py-16 text-center">
+        <h1 className="font-display text-[36px] text-[var(--text-primary)]">Product Not Found</h1>
+        <p className="mt-3 text-[18px] text-[var(--text-secondary)]">{error || 'This product is unavailable.'}</p>
+        <Link href="/categories" className="btn-primary mt-6 inline-flex px-6">Browse Products</Link>
       </div>
     )
   }
 
-  const price = parseFloat(product.price)
-  const total = price * quantity
-
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <nav className="text-sm text-gray-500 mb-6">
-          <Link href="/" className="hover:text-accent">Home</Link>
+    <div className="py-10">
+      <div className="container-shell">
+        <nav className="mb-6 text-sm text-[var(--text-secondary)]">
+          <Link href="/" className="hover:text-[var(--text-primary)]">Home</Link>
           <span className="mx-2">/</span>
-          <Link href="/categories" className="hover:text-accent">Products</Link>
+          <Link href="/categories" className="hover:text-[var(--text-primary)]">Shop</Link>
+          {product.category?.slug && (
+            <>
+              <span className="mx-2">/</span>
+              <Link href={`/categories?category=${product.category.slug}`} className="hover:text-[var(--text-primary)]">
+                {product.category.name}
+              </Link>
+            </>
+          )}
           <span className="mx-2">/</span>
-          <Link href={`/?category=${product.category?.slug}`} className="hover:text-accent">{product.category?.name}</Link>
-          <span className="mx-2">/</span>
-          <span className="text-text">{product.name}</span>
+          <span className="text-[var(--text-primary)]">{product.name}</span>
         </nav>
 
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Images */}
-          <div className="space-y-4">
-            <div className="aspect-square bg-secondary rounded-xl overflow-hidden">
-              {product.images && product.images.length > 0 ? (
-                <img 
-                  src={product.images[selectedImage]} 
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+        <div className="grid items-start gap-10 md:grid-cols-2">
+          <div className="rounded-[12px] border border-default bg-surface p-4 shadow-[var(--shadow-soft)]">
+            <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+              {product.image ? (
+                <Image src={product.image} alt={product.name} fill className="object-cover" priority />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-6xl">
-                  🧸
+                <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
+                  <span className="font-display text-7xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>
                 </div>
               )}
             </div>
-            {product.images && product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {product.images.map((img, i) => (
+          </div>
+
+          <section className="rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">{product.category?.name || 'Product'}</p>
+            <h1 className="font-display mt-2 text-[40px] text-[var(--text-primary)]">{product.name}</h1>
+
+            <div className="mt-5 flex items-end gap-2">
+              <p className="text-3xl font-semibold text-[var(--text-primary)]">KES {parsedPrice.toLocaleString()}</p>
+            </div>
+
+            <p className="mt-2 text-sm font-medium text-[var(--text-secondary)]">
+              {product.stock > 0 ? `In stock (${product.stock} available)` : 'Out of stock'}
+            </p>
+
+            <p className="mt-6 whitespace-pre-line text-[16px] text-[var(--text-secondary)]">
+              {product.description || 'No description available for this product yet.'}
+            </p>
+
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end">
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                Quantity
+                <div className="mt-2 flex items-center gap-2">
                   <button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
-                    className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-colors ${
-                      i === selectedImage ? 'border-accent' : 'border-transparent'
-                    }`}
+                    type="button"
+                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                    className="btn-secondary w-11 px-0"
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    -
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
+                  <span className="inline-flex h-11 min-w-12 items-center justify-center rounded-[12px] border border-default bg-[var(--bg-primary)] text-[var(--text-primary)]">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((prev) => Math.min(product.stock || 1, prev + 1))}
+                    className="btn-secondary w-11 px-0"
+                    disabled={product.stock <= 0}
+                  >
+                    +
+                  </button>
+                </div>
+              </label>
 
-          {/* Details */}
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-text">{product.name}</h1>
-            
-            {product.category && (
-              <Link 
-                href={`/?category=${product.category.slug}`}
-                className="text-accent hover:underline text-sm mt-1 inline-block"
-              >
-                {product.category.name}
-              </Link>
-            )}
-
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-text">Ksh {price.toLocaleString()}</span>
-            </div>
-
-            <div className="mt-2 text-sm">
-              {product.stock > 0 ? (
-                <span className="text-green-600 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  In Stock ({product.stock} available)
-                </span>
-              ) : (
-                <span className="text-red-500">Out of Stock</span>
-              )}
-            </div>
-
-            {/* Quantity */}
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-text mb-2">Quantity</label>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 border border-secondary rounded-lg flex items-center justify-center hover:bg-secondary transition-colors"
-                >
-                  -
-                </button>
-                <span className="w-12 text-center font-medium">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  className="w-10 h-10 border border-secondary rounded-lg flex items-center justify-center hover:bg-secondary transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Add to Cart */}
-            <div className="mt-6 flex gap-4">
               <button
-                onClick={handleAddToCart}
-                disabled={product.stock === 0 || addingToCart}
-                className="flex-1 py-4 bg-cta hover:bg-cta-hover disabled:bg-gray-300 text-white font-semibold rounded-lg transition-colors"
+                type="button"
+                onClick={addToCart}
+                disabled={product.stock <= 0 || adding}
+                className="btn-primary inline-flex flex-1 items-center justify-center gap-2 px-6"
               >
-                {addingToCart ? 'Adding...' : `Add to Cart - Ksh ${total.toLocaleString()}`}
-              </button>
-              <button className="w-14 h-14 border border-secondary rounded-lg flex items-center justify-center hover:bg-secondary transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
+                <ShoppingBag size={16} />
+                {adding ? 'Adding...' : `Add to Cart - KES ${total.toLocaleString()}`}
               </button>
             </div>
 
-            {/* Description */}
-            <div className="mt-8">
-              <h3 className="font-semibold text-text mb-2">Description</h3>
-              <p className="text-gray-600 whitespace-pre-line">
-                {product.description || 'No description available.'}
-              </p>
+            <div className="mt-8 grid gap-3 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
+              <p className="inline-flex items-center gap-2"><Truck size={16} /> Fast delivery options</p>
+              <p className="inline-flex items-center gap-2"><ShieldCheck size={16} /> Secure checkout</p>
+              <p className="inline-flex items-center gap-2"><CheckCircle2 size={16} /> Quality assurance</p>
+              <p className="inline-flex items-center gap-2"><CheckCircle2 size={16} /> Parent-approved picks</p>
             </div>
-
-            {/* Trust badges */}
-            <div className="mt-8 grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="text-xl">🚚</span>
-                <span>Free delivery over KSH 5,000</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="text-xl">↩️</span>
-                <span>30-day returns</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="text-xl">🔒</span>
-                <span>Secure M-Pesa payment</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="text-xl">✅</span>
-                <span>Quality guaranteed</span>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>

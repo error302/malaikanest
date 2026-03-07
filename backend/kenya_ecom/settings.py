@@ -5,9 +5,22 @@ from datetime import timedelta
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_env_files():
+    """Load readable env files only to avoid permission errors for non-root shells."""
+    candidates = [BASE_DIR / ".env.production", BASE_DIR / ".env"]
+    for env_path in candidates:
+        try:
+            if env_path.exists() and os.access(env_path, os.R_OK):
+                load_dotenv(dotenv_path=env_path, override=False)
+        except OSError:
+            # Ignore unreadable env files; systemd EnvironmentFile may already supply vars.
+            continue
+
+
+_load_env_files()
 
 
 def _to_bool(value):
@@ -57,6 +70,7 @@ DEBUG = _to_bool(os.getenv("DEBUG", "False"))
 
 def validate_production_env(env):
     errors = []
+    warnings = []
 
     env_name = str(env.get("ENVIRONMENT", "development")).strip().lower()
     is_production = env_name in {"production", "prod", "live"} or _to_bool(env.get("DJANGO_PRODUCTION", "False"))
@@ -73,19 +87,26 @@ def validate_production_env(env):
         "FRONTEND_URL",
         "CORS_ALLOWED_ORIGINS",
         "CSRF_TRUSTED_ORIGINS",
-        "MPESA_CALLBACK_URL",
-        "MPESA_CONSUMER_KEY",
-        "MPESA_CONSUMER_SECRET",
-        "MPESA_PASSKEY",
-        "EMAIL_HOST_USER",
-        "EMAIL_HOST_PASSWORD",
-        "CLOUDINARY_CLOUD_NAME",
-        "CLOUDINARY_API_KEY",
-        "CLOUDINARY_API_SECRET",
     ]
     missing = [var for var in required_secure_vars if not env.get(var)]
     if missing:
         errors.append(f"Missing required production env vars: {', '.join(missing)}")
+
+    # Integration vars are enforced only if that integration is configured/enabled.
+    mpesa_vars = ["MPESA_CALLBACK_URL", "MPESA_CONSUMER_KEY", "MPESA_CONSUMER_SECRET", "MPESA_PASSKEY"]
+    mpesa_present = [var for var in mpesa_vars if env.get(var)]
+    if mpesa_present and len(mpesa_present) != len(mpesa_vars):
+        warnings.append("Incomplete M-Pesa configuration. MPESA features may be unavailable until all MPESA_* vars are set.")
+
+    email_vars = ["EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD", "DEFAULT_FROM_EMAIL"]
+    email_present = [var for var in email_vars if env.get(var)]
+    if email_present and len(email_present) != len(email_vars):
+        warnings.append("Incomplete email configuration. Email sending may fail until EMAIL_* vars and DEFAULT_FROM_EMAIL are set.")
+
+    cloudinary_vars = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]
+    cloudinary_present = [var for var in cloudinary_vars if env.get(var)]
+    if cloudinary_present and len(cloudinary_present) != len(cloudinary_vars):
+        warnings.append("Incomplete Cloudinary configuration. Media uploads may fail until all CLOUDINARY_* vars are set.")
 
     secret_key = env.get("SECRET_KEY", "")
     if len(secret_key) < 32:
@@ -123,6 +144,9 @@ def validate_production_env(env):
     if errors:
         joined = "\n- ".join(errors)
         raise RuntimeError(f"Production environment validation failed:\n- {joined}")
+    if warnings:
+        for warning_message in warnings:
+            print(f"[WARNING] {warning_message}")
 
 
 validate_production_env(os.environ)
@@ -260,6 +284,8 @@ if database_url:
             }
         }
 else:
+    if IS_PRODUCTION:
+        raise RuntimeError("DATABASE_URL must be set in production.")
     print("[WARNING] DATABASE_URL is NOT set, falling back to SQLite")
     DATABASES = {
         "default": {
@@ -424,7 +450,7 @@ CSRF_TRUSTED_ORIGINS = [validate_origin(u) for u in CSRF_TRUSTED_ORIGINS]
 # SECURITY HEADERS
 # ============================================================================
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = not DEBUG
+SECURE_SSL_REDIRECT = IS_PRODUCTION
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -442,7 +468,6 @@ CSRF_COOKIE_SAMESITE = "Lax"
 X_FRAME_OPTIONS = "DENY"
 
 # Additional security headers
-SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
@@ -508,14 +533,23 @@ LOGGING = {
 }
 
 # ============================================================================
-# CACHE - Redis Configuration
+# CACHE - Redis in configured environments, local memory fallback otherwise
 # ============================================================================
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+redis_cache_url = os.getenv("REDIS_URL", "").strip()
+if redis_cache_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": redis_cache_url,
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "malaikanest-local-cache",
+        }
+    }
 
 # ============================================================================
 # CHANNELS - Redis for WebSockets
@@ -542,6 +576,14 @@ else:
 # ============================================================================
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = "default"
+
+# CAPTCHA (Turnstile/Recaptcha)
+CAPTCHA_PROVIDER = os.getenv("CAPTCHA_PROVIDER", "turnstile")
+CAPTCHA_SECRET_KEY = os.getenv("CAPTCHA_SECRET_KEY", "")
+CAPTCHA_VERIFY_URL = os.getenv("CAPTCHA_VERIFY_URL", "")
+CAPTCHA_TIMEOUT_SECONDS = int(os.getenv("CAPTCHA_TIMEOUT_SECONDS", "8"))
+CAPTCHA_ENFORCE_LOGIN = _to_bool(os.getenv("CAPTCHA_ENFORCE_LOGIN", "True" if IS_PRODUCTION else "False"))
+CAPTCHA_ENFORCE_REGISTER = _to_bool(os.getenv("CAPTCHA_ENFORCE_REGISTER", "True" if IS_PRODUCTION else "False"))
 
 # ============================================================================
 # MISC
@@ -574,6 +616,16 @@ if os.getenv("CREATE_SUPERUSER", "false").lower() == "true" and not DEBUG:
     if superuser_email and superuser_password:
         if not User.objects.filter(is_superuser=True).exists():
             User.objects.create_superuser(superuser_email, superuser_password)
+
+
+
+
+
+
+
+
+
+
 
 
 

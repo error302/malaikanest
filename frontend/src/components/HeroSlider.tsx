@@ -1,5 +1,6 @@
 "use client"
 import React from 'react'
+import Image from 'next/image'
 
 const slides = [
   { 
@@ -49,7 +50,7 @@ export default function HeroSlider() {
             }`}
           >
             <div className="w-full h-full relative">
-              <img 
+              <Image width={1200} height={800} 
                 src={slide.image} 
                 alt={slide.title} 
                 className="w-full h-full object-cover"

@@ -1,15 +1,18 @@
 "use client"
-import React, { useState, useEffect, Suspense } from 'react'
+
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams, useRouter } from 'next/navigation'
-import api from '../../lib/api'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { CheckCircle2 } from 'lucide-react'
+
+import api from '@/lib/api'
 
 function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
   const email = searchParams.get('email')
-  
+
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,9 +20,7 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    if (!token || !email) {
-      setError('Invalid reset link')
-    }
+    if (!token || !email) setError('Invalid reset link.')
   }, [token, email])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,12 +28,12 @@ function ResetPasswordForm() {
     setError('')
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError('Passwords do not match.')
       return
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError('Password must be at least 8 characters.')
       return
     }
 
@@ -42,14 +43,12 @@ function ResetPasswordForm() {
       await api.post('/api/accounts/password/reset/confirm/', {
         token,
         email,
-        new_password: password
+        new_password: password,
       })
       setSuccess(true)
-      setTimeout(() => {
-        router.push('/login')
-      }, 3000)
+      setTimeout(() => router.push('/login'), 2500)
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to reset password')
+      setError(err?.response?.data?.detail || 'Failed to reset password.')
     } finally {
       setLoading(false)
     }
@@ -57,21 +56,15 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-secondary/30 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-text mb-2">Password Reset!</h2>
-            <p className="text-gray-600 mb-6">
-              Your password has been reset successfully. Redirecting to login...
-            </p>
-            <Link href="/login" className="text-cta hover:underline">
-              Go to Login
-            </Link>
+      <div className="pb-20 pt-10">
+        <div className="container-shell">
+          <div className="card-soft mx-auto max-w-xl p-8 text-center">
+            <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-secondary)] text-[var(--text-primary)]">
+              <CheckCircle2 size={26} />
+            </span>
+            <h1 className="font-display mt-4 text-[36px] text-[var(--text-primary)]">Password Updated</h1>
+            <p className="mt-3 text-[16px] text-[var(--text-secondary)]">Your password has been reset successfully. Redirecting to login.</p>
+            <Link href="/login" className="btn-primary mt-7 inline-flex px-7">Go to Login</Link>
           </div>
         </div>
       </div>
@@ -79,64 +72,47 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <Link href="/" className="inline-block">
-              <img src="/logo.svg" alt="Malaika Nest" className="h-10 w-auto mx-auto" />
-            </Link>
-            <h2 className="text-2xl font-bold text-text mt-6">Reset Password</h2>
-            <p className="text-gray-500 mt-2">Enter your new password</p>
-          </div>
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <div className="card-soft mx-auto max-w-md p-6 md:p-8">
+          <h1 className="font-display text-[36px] text-[var(--text-primary)]">Reset Password</h1>
+          <p className="mt-2 text-[16px] text-[var(--text-secondary)]">Enter your new password below.</p>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm">
-              {error}
-            </div>
-          )}
+          {error && <p className="mt-4 rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">New Password</label>
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              New Password
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="Min. 8 characters"
+                className="input-soft mt-2"
                 minLength={8}
                 required
               />
-            </div>
+            </label>
 
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Confirm Password</label>
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Confirm Password
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="Confirm your password"
+                className="input-soft mt-2"
                 minLength={8}
                 required
               />
-            </div>
+            </label>
 
-            <button
-              type="submit"
-              disabled={loading || !token || !email}
-              className="w-full py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading || !token || !email} className="btn-primary w-full disabled:opacity-60">
               {loading ? 'Resetting...' : 'Reset Password'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link href="/login" className="text-accent hover:underline">
-              Back to Login
-            </Link>
-          </div>
+          <p className="mt-5 text-sm text-[var(--text-secondary)]">
+            <Link href="/login" className="font-semibold text-[var(--text-primary)] underline">Back to login</Link>
+          </p>
         </div>
       </div>
     </div>
@@ -145,7 +121,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-secondary/30 flex items-center justify-center"><div className="text-text">Loading...</div></div>}>
+    <Suspense fallback={<div className="pb-20 pt-10"><div className="container-shell text-center text-[var(--text-secondary)]">Loading...</div></div>}>
       <ResetPasswordForm />
     </Suspense>
   )

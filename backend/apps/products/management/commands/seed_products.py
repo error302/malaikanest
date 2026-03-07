@@ -1,27 +1,18 @@
+import os
 from django.core.management.base import BaseCommand
 from apps.products.models import Product, Category
+
 
 class Command(BaseCommand):
     help = 'Seeds the database with sample baby products'
 
     def handle(self, *args, **kwargs):
-        from django.utils.text import slugify
+        env = os.getenv("ENVIRONMENT", "development").strip().lower()
+        if env in {"production", "prod", "live"}:
+            self.stdout.write(self.style.WARNING("Skipping seed_products in production environment."))
+            return
 
-        categories = {
-            'Newborn (0-3 Months)': 'newborn-0-3-months',
-            'Infant (3-12 Months)': 'infant-3-12-months',
-            'Toddler (1-3 Years)': 'toddler-1-3-years',
-            'Diapers': 'diapers',
-            'Bottle Feeding': 'bottle-feeding',
-            'Strollers': 'strollers',
-            'Car Seats': 'car-seats',
-            'Baby Carriers': 'baby-carriers',
-            'Nursery Furniture': 'nursery-furniture',
-            'Nursery Bedding': 'nursery-bedding',
-            'Baby Skin Care': 'baby-skin-care',
-            'Infant Toys': 'infant-toys',
-            'Maternity Clothing': 'maternity-clothing',
-        }
+        from django.utils.text import slugify
 
         products_data = [
             {'name': 'Soft Cotton Onesies Pack', 'price': '1500', 'category': 'Newborn (0-3 Months)', 'description': 'Pack of 3 soft cotton onesies for newborns'},
@@ -53,8 +44,8 @@ class Command(BaseCommand):
                 while Product.objects.filter(slug=slug).exists():
                     slug = f"{base_slug}-{counter}"
                     counter += 1
-                
-                product = Product.objects.create(
+
+                Product.objects.create(
                     name=prod['name'],
                     slug=slug,
                     price=prod['price'],

@@ -1,11 +1,12 @@
 "use client"
-import React, { useState } from 'react'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import api from '../../lib/api'
+import { CheckCircle2 } from 'lucide-react'
+
+import api from '@/lib/api'
 
 export default function ForgotPasswordPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -20,7 +21,7 @@ export default function ForgotPasswordPage() {
       await api.post('/api/accounts/password/reset/', { email })
       setSent(true)
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to send reset email')
+      setError(err?.response?.data?.detail || 'Failed to send reset email')
     } finally {
       setLoading(false)
     }
@@ -28,21 +29,15 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen bg-secondary/30 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-text mb-2">Check Your Email</h2>
-            <p className="text-gray-600 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>
-            </p>
-            <Link href="/login" className="text-cta hover:underline">
-              Back to Login
-            </Link>
+      <div className="pb-20 pt-10">
+        <div className="container-shell">
+          <div className="card-soft mx-auto max-w-xl p-8 text-center">
+            <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-secondary)] text-[var(--text-primary)]">
+              <CheckCircle2 size={26} />
+            </span>
+            <h1 className="font-display mt-4 text-[36px] text-[var(--text-primary)]">Check Your Email</h1>
+            <p className="mt-3 text-[16px] text-[var(--text-secondary)]">Password reset instructions were sent to <strong>{email}</strong>.</p>
+            <Link href="/login" className="btn-primary mt-7 inline-flex px-7">Back to Login</Link>
           </div>
         </div>
       </div>
@@ -50,53 +45,35 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <Link href="/" className="inline-block">
-              <img src="/logo.svg" alt="Malaika Nest" className="h-10 w-auto mx-auto" />
-            </Link>
-            <h2 className="text-2xl font-bold text-text mt-6">Forgot Password?</h2>
-            <p className="text-gray-500 mt-2">Enter your email to reset your password</p>
-          </div>
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <div className="card-soft mx-auto max-w-md p-6 md:p-8">
+          <h1 className="font-display text-[36px] text-[var(--text-primary)]">Forgot Password</h1>
+          <p className="mt-2 text-[16px] text-[var(--text-secondary)]">Enter your account email and we will send reset instructions.</p>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm">
-              {error}
-            </div>
-          )}
+          {error && <p className="mt-4 rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Email Address</label>
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Email Address
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                className="input-soft mt-2"
                 placeholder="you@example.com"
                 required
               />
-            </div>
+            </label>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
               {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Remember your password?{' '}
-              <Link href="/login" className="text-accent font-medium hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </div>
+          <p className="mt-5 text-sm text-[var(--text-secondary)]">
+            Remembered your password? <Link href="/login" className="font-semibold text-[var(--text-primary)] underline">Sign in</Link>
+          </p>
         </div>
       </div>
     </div>

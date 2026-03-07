@@ -167,6 +167,8 @@ class MpesaSTKPushView(APIView):
         consumer_key = os.getenv("MPESA_CONSUMER_KEY")
         consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
         business_short_code = os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
+        till_number = os.getenv("MPESA_TILL_NUMBER", business_short_code)
+        store_number = os.getenv("MPESA_STORE_NUMBER", business_short_code)
         passkey = os.getenv("MPESA_PASSKEY")
         callback_url = os.getenv("MPESA_CALLBACK_URL")
         mpesa_env = os.getenv("MPESA_ENV", "sandbox")
@@ -211,17 +213,17 @@ class MpesaSTKPushView(APIView):
         )
 
         payload = {
-            "BusinessShortCode": business_short_code,
+            "BusinessShortCode": store_number,
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
+            "TransactionType": "CustomerBuyGoodsOnline",
             "Amount": format_mpesa_amount(payment.amount),
             "PartyA": phone,
-            "PartyB": business_short_code,
+            "PartyB": till_number,
             "PhoneNumber": phone,
             "CallBackURL": callback_url,
-            "AccountReference": f"ORDER{payment.order.id}",
-            "TransactionDesc": f"Payment for Order {payment.order.id}",
+            "AccountReference": f"MalaikaNest-{payment.order.id}",
+            "TransactionDesc": "Malaika Nest Order Payment",
         }
 
         try:
@@ -298,6 +300,8 @@ class MpesaInitiateAndPushView(APIView):
         consumer_key = os.getenv("MPESA_CONSUMER_KEY")
         consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
         business_short_code = os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
+        till_number = os.getenv("MPESA_TILL_NUMBER", business_short_code)
+        store_number = os.getenv("MPESA_STORE_NUMBER", business_short_code)
         passkey = os.getenv("MPESA_PASSKEY")
         callback_url = os.getenv("MPESA_CALLBACK_URL")
         mpesa_env = os.getenv("MPESA_ENV", "sandbox")
@@ -338,17 +342,17 @@ class MpesaInitiateAndPushView(APIView):
         )
 
         stk_payload = {
-            "BusinessShortCode": business_short_code,
+            "BusinessShortCode": store_number,
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
+            "TransactionType": "CustomerBuyGoodsOnline",
             "Amount": format_mpesa_amount(payment.amount),
             "PartyA": phone_norm,
-            "PartyB": business_short_code,
+            "PartyB": till_number,
             "PhoneNumber": phone_norm,
             "CallBackURL": callback_url,
-            "AccountReference": f"ORDER{order.id}",
-            "TransactionDesc": f"Malaika Nest Order {order.id}",
+            "AccountReference": f"MalaikaNest-{order.id}",
+            "TransactionDesc": "Malaika Nest Order Payment",
         }
 
         try:
@@ -397,11 +401,11 @@ class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        client_ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.META.get("REMOTE_ADDR")
+        # Trust only Nginx-overwritten X-Real-IP (or REMOTE_ADDR fallback), never user-controlled X-Forwarded-For.
+        client_ip = request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR")
 
         is_safaricom = is_valid_mpesa_ip(client_ip)
-        if (not settings.DEBUG) and not is_safaricom:
+        if not is_safaricom:
             _audit_log(event_type="callback_blocked", payload=request.data, request_ip=client_ip, notes="Blocked non-Safaricom callback in production")
             return JsonResponse({"ResultCode": 1, "ResultDesc": "Unauthorized"}, status=200)
 
@@ -459,6 +463,10 @@ class MpesaCallbackView(APIView):
                     payment.save(update_fields=["status", "raw_callback", "updated_at"])
                     _audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="PHONE_MISMATCH")
                     return JsonResponse({"ResultCode": 1, "ResultDesc": "Phone mismatch"}, status=200)
+
+                if receipt and Payment.objects.filter(mpesa_receipt_number=receipt).exclude(pk=payment.pk).exists():
+                    _audit_log(event_type="callback_duplicate_receipt", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes="Receipt already processed")
+                    return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"}, status=200)
 
                 payment.mpesa_receipt_number = receipt
                 payment.phone = callback_phone
@@ -564,4 +572,5 @@ class CardCallbackView(APIView):
     def post(self, request):
         logger.info("Card callback received but card payments are not yet implemented: %s", request.data)
         return JsonResponse({"detail": "Card payments are not currently supported"}, status=501)
+
 

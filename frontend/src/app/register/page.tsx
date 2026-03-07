@@ -1,22 +1,21 @@
-"use client"
-import React, { useState } from 'react'
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import api from '../../lib/api'
-import Logo from '../../components/Logo'
+
+import api from '@/lib/api'
+import Turnstile from '@/components/Turnstile'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    phone: '',
-    first_name: '',
-    last_name: '',
-  })
+  const [formData, setFormData] = useState({ email: '', password: '', phone: '', first_name: '', last_name: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+
+  const captchaSiteKey = process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY || ''
+  const captchaRequired = Boolean(captchaSiteKey)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -27,24 +26,25 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    // Format phone - remove any non-digit characters
-    const formattedPhone = formData.phone.replace(/\D/g, '')
-    const phoneToSend = formattedPhone.startsWith('254') ? formattedPhone : '254' + formattedPhone
-
     try {
-      await api.post('/api/accounts/register/', {
-        ...formData,
-        phone: phoneToSend
+      const payload: Record<string, string> = { ...formData }
+      if (captchaRequired) payload.captcha_token = captchaToken
+
+      await api.post('/api/accounts/register/', payload)
+      await api.post('/api/accounts/token/', {
+        email: formData.email,
+        password: formData.password,
+        ...(captchaRequired ? { captcha_token: captchaToken } : {}),
       })
-      setSuccess(true)
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
+
+      router.push('/')
+      router.refresh()
     } catch (err: any) {
-      const errors = err.response?.data
-      if (errors) {
-        const firstError = Object.values(errors).flat()[0]
-        setError(String(firstError))
+      const data = err?.response?.data
+      if (data && typeof data === 'object') {
+        const key = Object.keys(data)[0]
+        const val = key ? data[key] : 'Registration failed'
+        setError(Array.isArray(val) ? String(val[0]) : String(val))
       } else {
         setError('Registration failed. Please try again.')
       }
@@ -53,129 +53,55 @@ export default function RegisterPage() {
     }
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-secondary/30 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-text">Account Created!</h2>
-          <p className="text-gray-600 mt-2">Redirecting to login...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-secondary/30 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="flex justify-center">
-              <Logo variant="large" linkWrapper={false} />
-            </div>
-            <h2 className="text-2xl font-bold text-text mt-6">Create Account</h2>
-            <p className="text-gray-500 mt-2">Join Malaika Nest for the best baby products</p>
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <div className="mx-auto max-w-xl rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:p-8">
+          <div className="mb-6 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Account</p>
+            <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Create Account</h1>
+            <p className="mt-2 text-[16px] text-[var(--text-secondary)]">Join Malaika Nest to track orders and checkout faster.</p>
           </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-text mb-1">First Name</label>
-                <input
-                  type="text"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  placeholder="John"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text mb-1">Last Name</label>
-                <input
-                  type="text"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  placeholder="Doe"
-                  required
-                />
-              </div>
+            {error && <p className="rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                First Name
+                <input className="input-soft mt-2" name="first_name" value={formData.first_name} onChange={handleChange} required />
+              </label>
+              <label className="text-sm font-medium text-[var(--text-primary)]">
+                Last Name
+                <input className="input-soft mt-2" name="last_name" value={formData.last_name} onChange={handleChange} required />
+              </label>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Phone Number</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="0726771321"
-                required
-              />
-            </div>
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Phone Number
+              <input className="input-soft mt-2" name="phone" placeholder="2547..." value={formData.phone} onChange={handleChange} required />
+            </label>
 
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Email
+              <input className="input-soft mt-2" type="email" name="email" value={formData.email} onChange={handleChange} required />
+            </label>
 
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="Min. 8 characters"
-                minLength={8}
-                required
-              />
-            </div>
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Password
+              <input className="input-soft mt-2" type="password" name="password" value={formData.password} onChange={handleChange} required />
+            </label>
 
-            <div className="text-sm text-gray-600">
-              <p>By creating an account, you agree to our Terms of Service and Privacy Policy.</p>
-            </div>
+            {captchaRequired && <Turnstile siteKey={captchaSiteKey} action="register" onToken={setCaptchaToken} />}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-cta hover:bg-cta-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Creating Account...' : 'Create Account'}
+            <button className="btn-primary w-full" type="submit" disabled={loading || (captchaRequired && !captchaToken)}>
+              {loading ? 'Creating...' : 'Create account'}
             </button>
-          </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Already have an account?{' '}
-              <Link href="/login" className="text-accent font-medium hover:underline">
-                Sign in
-              </Link>
+            <p className="text-center text-sm text-[var(--text-secondary)]">
+              Already have an account? <Link href="/login" className="font-semibold text-[var(--text-primary)] underline">Sign in</Link>
             </p>
-          </div>
+          </form>
         </div>
       </div>
     </div>

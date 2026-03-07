@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Product {
   id: number
@@ -63,7 +64,7 @@ export default function AIRecommendations({ productId, title = 'You May Also Lik
   return (
     <div className="py-8">
       <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <span className="text-amber-600">✨</span> {title}
+        {title}
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {products.slice(0, 4).map((product) => (
@@ -75,7 +76,7 @@ export default function AIRecommendations({ productId, title = 'You May Also Lik
             <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
               <div className="aspect-square relative bg-gray-100">
                 {product.images?.[0]?.image ? (
-                  <img 
+                  <Image width={600} height={600} 
                     src={product.images[0].image} 
                     alt={product.name}
                     className="object-cover w-full h-full group-hover:scale-105 transition-transform"

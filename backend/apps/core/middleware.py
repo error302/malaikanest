@@ -29,6 +29,7 @@ class RateLimitMiddleware:
     # Endpoints that require special rate limiting
     SENSITIVE_ENDPOINTS = [
         '/api/accounts/token/',
+        '/api/accounts/admin/login/',
         '/api/accounts/register/',
         '/api/accounts/resend-verification/',
         '/api/accounts/password/reset/',
@@ -119,7 +120,11 @@ class RateLimitMiddleware:
         """Get remaining requests in current period"""
         limit, period = self._parse_rate_limit(rate_limit)
         cache_key = f"ratelimit:{key}"
-        current = cache.get(cache_key, 0)
+        try:
+            current = cache.get(cache_key, 0)
+        except Exception:
+            logger.error("Rate limit cache unavailable while reading remaining for %s", key)
+            return 0
         return max(0, limit - current)
     
     def _get_retry_after(self, key):

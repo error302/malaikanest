@@ -97,13 +97,25 @@ class CartViewSet(viewsets.ViewSet):
         receipt = get_random_string(32)
         delivery_region = request.data.get('delivery_region', 'nairobi')
         try:
-            order = create_order_from_cart(
-                request.user,
-                cart,
-                coupon=coupon,
-                receipt_number=receipt,
-                delivery_region=delivery_region,
-            )
+            try:
+                order = create_order_from_cart(
+                    request.user,
+                    cart,
+                    coupon=coupon,
+                    receipt_number=receipt,
+                    delivery_region=delivery_region,
+                )
+            except TypeError:
+                # Backward compatibility for deployments where helper signature lacks delivery_region.
+                order = create_order_from_cart(
+                    request.user,
+                    cart,
+                    coupon=coupon,
+                    receipt_number=receipt,
+                )
+                if hasattr(order, "delivery_region"):
+                    order.delivery_region = delivery_region
+                    order.save(update_fields=["delivery_region", "updated_at"])
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         serializer = OrderSerializer(order)
@@ -208,8 +220,7 @@ class CartViewSet(viewsets.ViewSet):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
-    def update(self, request):
+    def update_item(self, request):
         """Update quantity of a cart item"""
         product_id = request.data.get('product_id')
         quantity = int(request.data.get('quantity', 1))
@@ -235,8 +246,7 @@ class CartViewSet(viewsets.ViewSet):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
-    def clear(self, request):
+    def clear_cart(self, request):
         """Clear all items from the cart"""
         if request.user.is_authenticated:
             cart = get_object_or_404(Cart, user=request.user)
@@ -330,3 +340,4 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
             'detail': 'Order reset to pending. You can now retry payment.',
             'order_id': order.id,
         })
+

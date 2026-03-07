@@ -20,6 +20,7 @@ class AuthCookieLoginTests(APITestCase):
             "/api/accounts/token/",
             {"email": "customer@example.com", "password": password},
             format="json",
+            secure=True,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -30,7 +31,7 @@ class AuthCookieLoginTests(APITestCase):
         self.assertTrue(response.cookies["access_token"]["httponly"])
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
 
-        profile = self.client.get("/api/accounts/profile/")
+        profile = self.client.get("/api/accounts/profile/", secure=True)
         self.assertEqual(profile.status_code, status.HTTP_200_OK)
         self.assertEqual(profile.data["email"], "customer@example.com")
         self.assertEqual(profile.data["role"], "customer")
@@ -47,14 +48,15 @@ class AuthCookieLoginTests(APITestCase):
             "/api/accounts/token/",
             {"email": admin.email, "password": password},
             format="json",
+            secure=True,
         )
         self.assertEqual(login.status_code, status.HTTP_200_OK)
         self.assertIn("access_token", login.cookies)
         self.assertIn("refresh_token", login.cookies)
 
-        profile = self.client.get("/api/accounts/profile/")
+        profile = self.client.get("/api/accounts/profile/", secure=True)
         self.assertEqual(profile.status_code, status.HTTP_200_OK)
         self.assertEqual(profile.data["role"], "admin")
 
-        reconcile = self.client.get("/api/payments/admin/reconcile/candidates/")
+        reconcile = self.client.get("/api/payments/admin/reconcile/candidates/", secure=True)
         self.assertEqual(reconcile.status_code, status.HTTP_200_OK)

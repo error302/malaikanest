@@ -1,0 +1,13 @@
+[Unit]
+Description=Malaika Nest Daily Backup
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/etc/malaikanest/backup.env
+ExecStart=/bin/bash /home/mohameddosho20/malaikanest/deployment/backup.sh
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

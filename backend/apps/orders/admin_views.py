@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 import csv
 import datetime
@@ -31,14 +32,14 @@ class AdminAnalyticsView(APIView):
         six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
         monthly = (
             Order.objects.filter(status="paid", created_at__date__gte=six_months_ago)
-            .extra({"month": "date_trunc('month', created_at)"})
+            .annotate(month=TruncMonth("created_at"))
             .values("month")
             .annotate(revenue=Sum("total"), orders=Count("id"))
             .order_by("month")
         )
         monthly_data = [
             {
-                "month": m["month"].strftime("%Y-%m"),
+                "month": m["month"].strftime("%Y-%m") if m["month"] else None,
                 "revenue": float(m["revenue"] or 0),
                 "orders": m["orders"],
             }
@@ -139,13 +140,14 @@ class AdminReportsView(APIView):
         six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
         monthly = (
             Order.objects.filter(status="paid", created_at__date__gte=six_months_ago)
-            .extra({"month": "strftime('%Y-%m', created_at)"})
+            .annotate(month=TruncMonth("created_at"))
             .values("month")
             .annotate(revenue=Sum("total"))
             .order_by("month")
         )
         revenue_by_month = [
-            {"month": m["month"], "revenue": float(m["revenue"] or 0)} for m in monthly
+            {"month": m["month"].strftime("%Y-%m") if m["month"] else None, "revenue": float(m["revenue"] or 0)}
+            for m in monthly
         ]
 
         return Response(

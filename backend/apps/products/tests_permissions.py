@@ -34,3 +34,7 @@ class ProductPermissionBoundaryTests(APITestCase):
         response = self.client.post("/api/products/categories/", {"name": "Admin Cat"}, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Category.objects.filter(name="Admin Cat").exists())
+
+    def test_anonymous_user_cannot_access_admin_products_endpoint(self):
+        response = self.client.get("/api/products/admin/products/", format="json")
+        self.assertIn(response.status_code, [401, 403])

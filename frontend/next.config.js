@@ -12,18 +12,25 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.cloudinary.com',
-      },
-      {
-        protocol: 'https',
         hostname: 'images.unsplash.com',
       },
       {
         protocol: 'https',
         hostname: 'storage.googleapis.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'malaikanest.duckdns.org',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+      },
     ],
-    domains: ['localhost', '127.0.0.1'],
   },
 }
 

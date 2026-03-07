@@ -1,0 +1,8 @@
+[Unit]
+Description=Malaika Nest Auth Failure Monitor
+After=network.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/malaikanest/monitor.env
+ExecStart=/bin/bash /home/mohameddosho20/malaikanest/deployment/log-monitor.sh

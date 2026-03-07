@@ -26,25 +26,26 @@ from .serializers import (
 from .models import Banner
 
 
-class IsAdminUserOrReadOnly(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return bool(request.user and request.user.is_staff)
-
-
 class BrandViewSet(viewsets.ModelViewSet):
     queryset = Brand.objects.filter(is_active=True)
     serializer_class = BrandSerializer
-    permission_classes = [IsAdminUserOrReadOnly]
     search_fields = ["name", "description"]
     filterset_fields = ["is_active"]
 
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().prefetch_related("products")
     serializer_class = CategorySerializer
-    permission_classes = [IsAdminUserOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -54,7 +55,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         .prefetch_related("category__children")
     )
     serializer_class = ProductSerializer
-    permission_classes = [IsAdminUserOrReadOnly]
     filter_backends = [
         filters.SearchFilter,
         DjangoFilterBackend,
@@ -71,6 +71,11 @@ class ProductViewSet(viewsets.ModelViewSet):
     }
     ordering_fields = ["price", "name", "created_at", "stock"]
     ordering = ["-created_at"]
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -128,9 +133,15 @@ class InventoryViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
+    queryset = Review.objects.select_related("user", "product").order_by("-created_at")
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ["create"]:
+            return [permissions.IsAuthenticated()]
+        if self.action in ["update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
 
 
 class WishlistViewSet(viewsets.ModelViewSet):
@@ -146,9 +157,16 @@ class WishlistViewSet(viewsets.ModelViewSet):
 
 
 class BannerViewSet(viewsets.ModelViewSet):
-    queryset = Banner.objects.all()
+    queryset = Banner.objects.all().order_by("position", "-created_at")
     serializer_class = BannerSerializer
-    permission_classes = [permissions.AllowAny]
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
 
     def get_queryset(self):
-        return Banner.objects.filter(is_active=True)
+        queryset = Banner.objects.all().order_by("position", "-created_at")
+        if self.action == "list":
+            return queryset.filter(is_active=True)
+        return queryset

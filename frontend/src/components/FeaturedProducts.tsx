@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react'
+import Image from 'next/image'
 import api from '../lib/api'
 import { LoadingGrid } from './Loading'
 
@@ -66,7 +67,7 @@ export default function FeaturedProducts() {
       <div className="mb-6 bg-secondary rounded-xl p-4 md:flex items-center justify-between border border-[#EDE6DC]">
         <div>
           <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-            <span>📏</span> Smart Size Recommender
+            Smart Size Recommender
           </h3>
           <p className="text-sm text-gray-600 mt-1">Select the age to find perfect fitting clothes or maternity essentials.</p>
         </div>
@@ -95,7 +96,7 @@ export default function FeaturedProducts() {
             <div key={p.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
               <div className="aspect-square bg-gray-100 relative">
                 {p.image ? (
-                  <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  <Image src={p.image} alt={p.name} fill className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

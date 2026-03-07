@@ -1,10 +1,11 @@
-"use client"
-import React, { useState } from 'react'
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import api from '../../lib/api'
-import { showToast } from '../../components/Toast'
-import Logo from '../../components/Logo'
+
+import api from '@/lib/api'
+import Turnstile from '@/components/Turnstile'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,6 +13,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+
+  const captchaSiteKey = process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY || ''
+  const captchaRequired = Boolean(captchaSiteKey)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -19,91 +24,60 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // Use withCredentials — backend sets httpOnly cookies on login
-      await api.post('/api/accounts/token/', { email, password })
-      showToast('Login successful!', 'success')
-      const redirect = new URLSearchParams(window.location.search).get('redirect')
-      router.push(redirect || '/dashboard')
+      const payload: Record<string, string> = { email, password }
+      if (captchaRequired) payload.captcha_token = captchaToken
+
+      await api.post('/api/accounts/token/', payload)
+      router.push('/')
+      router.refresh()
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid credentials')
+      setError(err?.response?.data?.detail || 'Invalid credentials')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#1C1C2E] flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-[#252538] rounded-2xl shadow-xl p-8 border border-[#3A3A55]">
-          <div className="text-center mb-8">
-            <div className="flex justify-center">
-              <Logo variant="large" linkWrapper={false} />
-            </div>
-            <h2 className="text-2xl font-bold text-white mt-6">Welcome Back</h2>
-            <p className="text-[#A0A0B8] mt-2">Sign in to your account</p>
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <div className="mx-auto max-w-md rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:p-8">
+          <div className="mb-6 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Account</p>
+            <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Sign In</h1>
+            <p className="mt-2 text-[16px] text-[var(--text-secondary)]">Welcome back to Malaika Nest.</p>
           </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-white mb-1">Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-[#1C1C2E] border border-[#3A3A55] text-white placeholder-[#A0A0B8] rounded-lg focus:outline-none focus:border-[#C8963E] focus:ring-1 focus:ring-[#C8963E]"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
+            {error && <p className="rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-            <div>
-              <label className="block text-sm font-medium text-white mb-1">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-[#1C1C2E] border border-[#3A3A55] text-white placeholder-[#A0A0B8] rounded-lg focus:outline-none focus:border-[#C8963E] focus:ring-1 focus:ring-[#C8963E]"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Email
+              <input className="input-soft mt-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </label>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded border-[#3A3A55]" />
-                <span className="text-[#A0A0B8]">Remember me</span>
-              </label>
-              <Link href="/forgot-password" className="text-[#C8963E] hover:text-[#E0A83F]">
-                Forgot password?
-              </Link>
-            </div>
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Password
+              <input className="input-soft mt-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </label>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-[#C8963E] hover:bg-[#E0A83F] text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
+            {captchaRequired && <Turnstile siteKey={captchaSiteKey} action="login" onToken={setCaptchaToken} />}
+
+            <button className="btn-primary w-full" type="submit" disabled={loading || (captchaRequired && !captchaToken)}>
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
-          </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-[#A0A0B8]">
-              Don't have an account?{' '}
-              <Link href="/register" className="text-[#C8963E] font-medium hover:text-[#E0A83F]">
-                Sign Up
-              </Link>
-            </p>
-          </div>
+            <div className="flex items-center justify-between text-sm text-[var(--text-secondary)]">
+              <Link href="/forgot-password" className="underline">Forgot password?</Link>
+              <span>
+                No account?{' '}
+                <Link href="/register" className="font-semibold text-[var(--text-primary)] underline">
+                  Register
+                </Link>
+              </span>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   )
 }
-
