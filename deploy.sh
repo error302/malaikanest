@@ -1,88 +1,83 @@
 #!/bin/bash
 
-# Production Deployment Script for Malaika Nest
-# Run this script on your Google Cloud VM
+# ============================================
+# MALAIKA NEST - AUTOMATIC DEPLOYMENT SCRIPT
+# ============================================
 
 set -e
 
-echo "🚀 Starting Malaika Nest deployment..."
+echo "========================================"
+echo "🚀 Starting Malaika Nest Deployment"
+echo "========================================"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Navigate to project directory
+PROJECT_DIR="/home/mohameddosho20/malaikanest"
+cd "$PROJECT_DIR"
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-
-# Check if we're in the right directory
-if [ ! -d "frontend" ] || [ ! -d "backend" ]; then
-    echo -e "${RED}Error: This script must be run from the malaika nest directory${NC}"
-    exit 1
-fi
-
-# Pull latest code from git
-echo -e "${YELLOW}📥 Pulling latest code from git...${NC}"
+# Pull latest code
+echo "📥 Pulling latest code from GitHub..."
 git pull origin main
 
-# Install and build frontend
-echo -e "${YELLOW}🏗 Building frontend...${NC}"
-cd "$SCRIPT_DIR/frontend"
-
-# Check if .env.production exists
-if [ ! -f ".env.production" ]; then
-    echo -e "${RED}Warning: .env.production not found in frontend directory${NC}"
-    echo "Creating from template..."
-    cp .env.example .env.production 2>/dev/null || true
-fi
-
+# Frontend deployment
+echo "📦 Installing frontend dependencies..."
+cd "$PROJECT_DIR/frontend"
 npm install
+
+echo "🔨 Building frontend..."
 npm run build
 
-# Restart frontend with PM2
-echo -e "${YELLOW}🔄 Restarting frontend...${NC}"
-pm2 restart frontend || pm2 start npm --name frontend -- start
+# Stop old frontend process
+echo "🛑 Stopping old frontend..."
+pkill -f "next-server" || true
+pkill -f "npm start" || true
+sleep 1
 
-# Install and restart backend
-echo -e "${YELLOW}🐍 Setting up backend...${NC}"
-cd "$SCRIPT_DIR/backend"
+# Start new frontend
+echo "▶️ Starting frontend..."
+cd "$PROJECT_DIR/frontend"
+nohup npm start > /tmp/frontend.log 2>&1 &
 
-# Check if .env exists
-if [ ! -f ".env" ]; then
-    echo -e "${RED}Warning: .env not found in backend directory${NC}"
-    echo "Creating from template..."
-    cp .env.example .env 2>/dev/null || true
-fi
+# Backend deployment
+echo "🐍 Setting up backend..."
+cd "$PROJECT_DIR/backend"
 
-# Install Python dependencies if needed
-if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt
-fi
+# Activate virtual environment
+source "$PROJECT_DIR/venv/bin/activate"
 
 # Run migrations
-echo -e "${YELLOW}🗄️ Running database migrations...${NC}"
+echo "🗄️ Running database migrations..."
 python manage.py migrate --noinput
 
 # Collect static files
-echo -e "${YELLOW}📁 Collecting static files...${NC}"
-python manage.py collectstatic --noinput
+echo "📁 Collecting static files..."
+python manage.py collectstatic --noinput -q 2>/dev/null || true
 
-# Restart backend with PM2
-echo -e "${YELLOW}🔄 Restarting backend...${NC}"
-pm2 restart backend || pm2 start gunicorn --name backend -- kenya_ecom.wsgi:application --bind 0.0.0.0:8000 --workers 4
+# Restart backend
+echo "🛑 Restarting backend..."
+sudo systemctl restart malaika-gunicorn
 
-# Save PM2 configuration
-pm2 save
+echo "========================================"
+echo "✅ Deployment completed successfully!"
+echo "========================================"
 
-# Show status
-echo -e "${GREEN}✅ Deployment complete!${NC}"
+# Wait for services to start
+sleep 5
+
+# Verify services
+echo "🔍 Verifying services..."
+if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+    echo "✅ Frontend is running"
+else
+    echo "⚠️ Frontend may not be running properly"
+    echo "Check log: tail /tmp/frontend.log"
+fi
+
+if curl -sf http://127.0.0.1:8000/api/health/ > /dev/null 2>&1; then
+    echo "✅ Backend is running"
+else
+    echo "⚠️ Backend may not be running properly"
+    echo "Check: sudo systemctl status malaika-gunicorn"
+fi
+
 echo ""
-echo "Frontend status:"
-pm2 status | grep frontend
-echo ""
-echo "Backend status:"
-pm2 status | grep backend
-echo ""
-echo -e "${GREEN}🌐 Your site should now be live!${NC}"
+echo "🌐 Website should be live at: https://malaikanest.duckdns.org"

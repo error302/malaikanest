@@ -1,8 +1,9 @@
-name: Deploy to Google Cloud VM
+name: Deploy to Production
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -12,35 +13,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "Host ${{ secrets.VM_HOST }}
-             HostName ${{ secrets.VM_HOST }}
-             User ${{ secrets.VM_USER }}
-             StrictHostKeyChecking no" > ~/.ssh/config
-
       - name: Deploy to VM
-        run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-            cd /var/www/malaikanest
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/mohameddosho20/malaikanest
             
             # Pull latest code
             git pull origin main
             
-            # Backend
-            cd backend
-            source ../venv/bin/activate
-            pip install -r requirements.txt
-            python manage.py migrate
-            python manage.py collectstatic --noinput
-            sudo systemctl restart malaika-gunicorn
-            
-            # Frontend
-            cd ../frontend
+            # Deploy frontend
+            cd frontend
             npm install
             npm run build
-            pm2 restart malaika-frontend
-          EOF
+            
+            # Restart frontend
+            pkill -f "next-server" || true
+            pkill -f "npm start" || true
+            sleep 1
+            nohup npm start > /tmp/frontend.log 2>&1 &
+            
+            # Deploy backend
+            cd ../backend
+            source ../venv/bin/activate
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput -q || true
+            
+            # Restart backend
+            sudo systemctl restart malaika-gunicorn
+            
+            echo "Deployment completed!"
