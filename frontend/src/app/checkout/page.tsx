@@ -321,6 +321,10 @@ function CheckoutContent() {
                     <span>Subtotal</span>
                     <span>KES {formatKsh(cart.subtotal)}</span>
                   </div>
+                  <div className="flex items-center justify-between text-[var(--text-secondary)] text-sm">
+                    <span>VAT (16% incl.)</span>
+                    <span>KES {formatKsh(toMoneyNumber(cart.subtotal) - (toMoneyNumber(cart.subtotal) / 1.16))}</span>
+                  </div>
                   <div className="flex items-center justify-between text-[var(--text-secondary)]">
                     <span>Shipping</span>
                     <span>By region</span>

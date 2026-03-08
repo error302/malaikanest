@@ -27,15 +27,13 @@ echo "🔨 Building frontend..."
 npm run build
 
 # Stop old frontend process
-echo "🛑 Stopping old frontend..."
-pkill -f "next-server" || true
-pkill -f "npm start" || true
-sleep 1
+echo "🛑 Check/Stop frontend..."
+pm2 stop frontend || true
 
 # Start new frontend
 echo "▶️ Starting frontend..."
 cd "$PROJECT_DIR/frontend"
-nohup npm start > /tmp/frontend.log 2>&1 &
+pm2 start ecosystem.config.js || pm2 restart ecosystem.config.js
 
 # Backend deployment
 echo "🐍 Setting up backend..."

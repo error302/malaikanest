@@ -244,6 +244,93 @@ class ProductVariant(models.Model):
             parts.append(self.color)
         return " - ".join(parts)
 
+    @property
+    def effective_price(self):
+        return self.product.price + self.price_modifier
+
+    @property
+    def in_stock(self):
+        try:
+            return self.variant_inventory.available() > 0
+        except Exception:
+            return False
+
+    @property
+    def available_stock(self):
+        try:
+            return self.variant_inventory.available()
+        except Exception:
+            return 0
+
+    @property
+    def label(self):
+        """Human-readable variant label for order snapshots."""
+        parts = []
+        if self.size:
+            parts.append(self.get_size_display())
+        if self.color:
+            parts.append(self.get_color_display())
+        return " / ".join(parts) if parts else "Default"
+
+
+class ProductImage(models.Model):
+    """Multi-image gallery per product. Replaces the single image field on Product."""
+    product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="products/gallery/")
+    alt_text = models.CharField(max_length=255, blank=True)
+    position = models.PositiveSmallIntegerField(default=0, help_text="Display order")
+    is_primary = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        indexes = [
+            models.Index(fields=["product", "is_primary"]),
+        ]
+
+    def __str__(self):
+        return f"{self.product.name} image {self.id}"
+
+    def save(self, *args, **kwargs):
+        # Ensure only one primary image per product
+        if self.is_primary:
+            ProductImage.objects.filter(product=self.product, is_primary=True).exclude(
+                pk=self.pk
+            ).update(is_primary=False)
+        super().save(*args, **kwargs)
+
+
+class VariantInventory(models.Model):
+    """
+    Per-variant stock tracking. This is the canonical inventory source.
+    Each ProductVariant gets exactly one VariantInventory record.
+    CartItem and OrderItem must lock this table (select_for_update) during checkout.
+    """
+    variant = models.OneToOneField(
+        ProductVariant,
+        related_name="variant_inventory",
+        on_delete=models.CASCADE,
+    )
+    quantity = models.PositiveIntegerField(default=0)
+    reserved = models.PositiveIntegerField(default=0)
+    low_stock_threshold = models.PositiveIntegerField(default=5)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["variant"]),
+        ]
+
+    def available(self):
+        return max(self.quantity - self.reserved, 0)
+
+    @property
+    def is_low_stock(self):
+        return 0 < self.available() <= self.low_stock_threshold
+
+    def __str__(self):
+        return f"{self.variant} inventory: {self.quantity} (reserved: {self.reserved})"
+
 
 class Review(models.Model):
     product = models.ForeignKey(
