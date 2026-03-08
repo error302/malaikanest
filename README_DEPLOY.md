@@ -93,8 +93,8 @@ SECRET_KEY=your-very-long-secret-key-here
 DEBUG=False
 ALLOWED_HOSTS=104.154.161.10,localhost
 
-# Database (use SQLite for now, or set up PostgreSQL)
-DATABASE_URL=db.sqlite3
+# Database (PostgreSQL only - SQLite not allowed)
+DATABASE_URL=postgresql://user:password@localhost:5432/malaikanest
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
