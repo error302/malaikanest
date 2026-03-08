@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import api from '@/lib/api'
-import DarkModeToggle from '@/components/DarkModeToggle'
 
 const navItems = [
   { href: '/admin', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', label: 'Dashboard', exact: true },
@@ -145,9 +144,6 @@ function AdminHeader() {
           </svg>
           <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[var(--accent)] rounded-full border-2 border-[var(--bg-card)]"></span>
         </button>
-        
-        {/* Dark Mode Toggle */}
-        <DarkModeToggle />
         
         <div className="h-8 w-px bg-[var(--border)]"></div>
         
