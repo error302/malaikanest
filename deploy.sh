@@ -59,9 +59,10 @@ npm install
 echo "🔨 Building frontend..."
 npm run build
 
-# Stop and restart frontend
+# Stop and restart frontend - delete first to avoid port conflicts
 echo "🛑 Check/Stop frontend..."
-pm2 stop frontend 2>/dev/null || true
+pm2 delete frontend 2>/dev/null || true
+lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 echo "▶️ Starting frontend..."
 pm2 start ecosystem.config.js || pm2 restart frontend
 
@@ -72,25 +73,33 @@ cd ~/malaikanest/backend
 # Check for virtual environment and set PYTHON_CMD
 PYTHON_CMD="python3"
 GUNICORN_CMD="gunicorn"
+VENV_ACTIVATED=false
 
 if [ -d "../.venv" ]; then
     echo "✅ Using .venv"
     source ../.venv/bin/activate
     PYTHON_CMD="../.venv/bin/python"
     GUNICORN_CMD="../.venv/bin/gunicorn"
+    VENV_ACTIVATED=true
 elif [ -d "venv" ]; then
     echo "✅ Using venv"
     source venv/bin/activate
     PYTHON_CMD="venv/bin/python"
     GUNICORN_CMD="venv/bin/gunicorn"
+    VENV_ACTIVATED=true
 elif [ -d ".venv" ]; then
     echo "✅ Using .venv"
     source .venv/bin/activate
     PYTHON_CMD=".venv/bin/python"
     GUNICORN_CMD=".venv/bin/gunicorn"
+    VENV_ACTIVATED=true
 else
     echo "⚠️ Virtual environment not found, using system Python"
 fi
+
+# Install Python dependencies
+echo "📦 Installing Python dependencies..."
+pip install -r requirements.txt || echo "⚠️ pip install failed, continuing..."
 
 # Run migrations
 echo "🗄️ Running database migrations..."
@@ -103,10 +112,12 @@ $PYTHON_CMD manage.py collectstatic --noinput || echo "⚠️ Collectstatic fail
 # Restart backend using PM2
 echo "🔄 Restarting backend with PM2..."
 
+# Delete existing backend process and restart cleanly
+pm2 delete backend 2>/dev/null || true
+lsof -ti:8000 | xargs kill -9 2>/dev/null || true
 
-# Try to restart existing PM2 backend process, or start new one
-pm2 restart backend 2>/dev/null || \
-pm2 start "$GUNICORN_CMD --name backend --bind 0.0.0.0:8000 --workers 2 kenya_ecom.wsgi:application"
+# Use ecosystem.config.js for proper backend startup with venv
+pm2 start ./ecosystem.config.js || pm2 restart backend
 
 # Save PM2 state for automatic restart on reboot
 pm2 save 2>/dev/null || true
