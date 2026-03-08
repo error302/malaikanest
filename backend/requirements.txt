@@ -22,5 +22,3 @@ cryptography==46.0.5
 xhtml2pdf==0.2.11
 weasyprint==62.3
 python-dateutil==2.9.0
-reportlab==4.2.5
-cssselect2==0.7.0
