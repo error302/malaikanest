@@ -7,6 +7,7 @@ import sys
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
+from django.conf import settings
 
 logger = logging.getLogger('security')
 
@@ -102,8 +103,6 @@ def _sanitize_error_message(error_data):
     
     return error_data
 
-
-from django.conf import settings
 
 
 class SecurityError(Exception):

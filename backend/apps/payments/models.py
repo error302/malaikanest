@@ -16,7 +16,7 @@ class Payment(models.Model):
     ]
 
     order = models.OneToOneField(
-        "orders.Order", related_name="payment", on_delete=models.CASCADE
+        "orders.Order", related_name="payment", on_delete=models.PROTECT
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_method = models.CharField(

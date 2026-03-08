@@ -210,3 +210,54 @@ class RequestValidationMiddleware:
                             # Could be legitimate content
         
         return self.get_response(request)
+
+
+import uuid
+
+request_logger = logging.getLogger('apps')
+
+
+class RequestLoggingMiddleware:
+    """
+    Structured request/response logging middleware.
+    Logs every request with: timestamp, request_id, method, path, status_code,
+    duration_ms, and user identity.
+    Also injects X-Request-ID header for client-side traceability.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request_id = str(uuid.uuid4())
+        start_time = time.monotonic()
+
+        # Attach request_id to the request object so views can reference it
+        request.request_id = request_id
+
+        response = self.get_response(request)
+
+        duration_ms = round((time.monotonic() - start_time) * 1000)
+
+        user = 'anonymous'
+        if hasattr(request, 'user') and request.user and request.user.is_authenticated:
+            user = str(request.user.pk)
+
+        log_level = logging.WARNING if response.status_code >= 400 else logging.INFO
+
+        request_logger.log(
+            log_level,
+            'request '
+            'request_id=%s method=%s path=%s status=%s duration_ms=%s user=%s ip=%s',
+            request_id,
+            request.method,
+            request.path,
+            response.status_code,
+            duration_ms,
+            user,
+            request.META.get('REMOTE_ADDR', 'unknown'),
+        )
+
+        response['X-Request-ID'] = request_id
+        return response
+

@@ -12,6 +12,9 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from apps.orders.models import Order, Cart
+from apps.products.models import Inventory
+from django.db import transaction
+from django.db.models import F
 import logging
 
 logger = logging.getLogger("apps.orders")
@@ -119,3 +122,31 @@ def cleanup_old_guest_carts():
 
     logger.info(f"Cleaned up {deleted_count} old guest carts")
     return f"Cleaned up {deleted_count} guest carts"
+
+@shared_task
+def cancel_stale_pending_orders():
+    """
+    Cancel pending orders older than 24 hours and restore their inventory.
+    Runs periodically via Celery Beat.
+    """
+    cutoff_time = timezone.now() - timedelta(hours=24)
+    stale_orders = Order.objects.filter(
+        status='pending',
+        created_at__lt=cutoff_time
+    ).prefetch_related('items')
+
+    cancelled_count = 0
+    for order in stale_orders:
+        with transaction.atomic():
+            for item in order.items.all():
+                Inventory.objects.filter(product_id=item.product_id).update(
+                    quantity=F('quantity') + item.quantity,
+                    reserved=F('reserved') - item.quantity  # if reserved is tracked, otherwise just quantity
+                )
+            order.status = 'cancelled'
+            order.save(update_fields=['status'])
+            cancelled_count += 1
+
+    if cancelled_count > 0:
+        logger.info(f"Cancelled {cancelled_count} stale pending orders and restored inventory.")
+    return f"Cancelled {cancelled_count} orders"

@@ -92,36 +92,36 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     const cacheKey = getCacheKey(response.config.method || 'GET', response.config.url || '', response.config.params, response.config.data)
-    
+
     if (response.config.method === 'GET' && isCacheableEndpoint(response.config.url)) {
       responseCache.set(cacheKey, {
         data: response.data,
         timestamp: Date.now(),
       })
     }
-    
+
     return response
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean; metadata?: { startTime: number } }
-    
+
     if (originalRequest?.metadata?.startTime) {
       const duration = Date.now() - originalRequest.metadata.startTime
-      console.log(`API ${originalRequest.method} ${originalRequest.url} failed in ${duration}ms:`, error.message)
+      // console.log intentionally removed for production security
     }
-    
+
     const shouldRetry = !originalRequest?._retry && (
       error.code === 'ECONNABORTED' ||
       error.code === 'ERR_NETWORK' ||
       (error.response?.status !== undefined && error.response.status >= 500) ||
       error.response?.status === 429
     )
-    
+
     if (shouldRetry && originalRequest) {
       originalRequest._retry = true
       return retryWithBackoff(() => api(originalRequest))
     }
-    
+
     const shouldAttemptRefresh = error.response?.status === 401 &&
       !originalRequest?._retry &&
       !isAuthEndpoint(originalRequest?.url)
@@ -150,7 +150,7 @@ export const apiGet = async <T>(
   }
 ): Promise<T> => {
   const { params, useCache = true, cacheDuration } = options || {}
-  
+
   if (useCache) {
     const cacheKey = getCacheKey('GET', url, params)
     const cached = responseCache.get(cacheKey)
@@ -161,14 +161,14 @@ export const apiGet = async <T>(
       }
     }
   }
-  
+
   const response = await api.get<T>(url, { params })
-  
+
   if (useCache && isCacheableEndpoint(url)) {
     const cacheKey = getCacheKey('GET', url, params)
     responseCache.set(cacheKey, { data: response.data, timestamp: Date.now() })
   }
-  
+
   return response.data
 }
 
@@ -188,7 +188,7 @@ export default api
 // Enhanced error handler
 export const handleApiError = (error: unknown, fallback = 'An error occurred. Please try again.') => {
   const e = error as any
-  
+
   if (e.code === 'ECONNABORTED') return 'Request timed out. Please check your connection.'
   if (e.code === 'ERR_NETWORK') return 'Network error. Please check your internet connection.'
   if (e.response?.status === 401) return 'Session expired. Please log in again.'
@@ -196,12 +196,12 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
   if (e.response?.status === 404) return 'Resource not found.'
   if (e.response?.status === 429) return 'Too many requests. Please wait and try again.'
   if (e.response?.status >= 500) return 'Server error. We are working on it.'
-  
+
   const detail = e?.response?.data?.detail
   const message = e?.response?.data?.message
   if (detail) return Array.isArray(detail) ? detail[0] : detail
   if (message) return message
-  
+
   return fallback
 }
 

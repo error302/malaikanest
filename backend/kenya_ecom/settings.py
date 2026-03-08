@@ -207,7 +207,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "apps.core.middleware.RateLimitMiddleware",  # Custom rate limiting
+    "apps.core.middleware.RateLimitMiddleware",
+    "apps.core.middleware.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "kenya_ecom.urls"
@@ -368,8 +369,10 @@ REST_FRAMEWORK = {
         "user": "200/hour",
         "password_reset": "3/hour",
     },
-    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    "DEFAULT_RENDERER_CLASSES": ("apps.core.renderers.StandardJSONRenderer",),
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 24,
 }
 
 # JWT Configuration - SHORT access token, long refresh with rotation

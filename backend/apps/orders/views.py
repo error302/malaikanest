@@ -21,11 +21,15 @@ class OrderPagination(pagination.PageNumberPagination):
 class CartViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def _get_prefetched_cart(self, cart_id):
+        return Cart.objects.prefetch_related('items__product__category', 'items__product__brand').get(id=cart_id)
+
     def list(self, request):
         if request.user.is_authenticated:
             cart, _ = Cart.objects.get_or_create(user=request.user)
         else:
             cart = self._get_or_create_guest_cart(request)
+        cart = self._get_prefetched_cart(cart.id)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
@@ -75,136 +79,68 @@ class CartViewSet(viewsets.ViewSet):
                 )
             ci.quantity = new_qty
             ci.save()
-        return Response({'detail': 'added'})
+        cart = self._get_prefetched_cart(cart.id)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
     def checkout(self, request):
+        from .services import OrderService
+        
         is_guest = request.data.get('is_guest', False)
         guest_email = request.data.get('guest_email')
         guest_phone = request.data.get('guest_phone')
+        coupon_code = request.data.get('coupon')
+        delivery_region = request.data.get('delivery_region', 'nairobi')
+
+        coupon = None
+        if coupon_code:
+            coupon = get_object_or_404(Coupon, code=coupon_code, active=True)
 
         if is_guest and guest_email:
-            return self._guest_checkout(request, guest_email, guest_phone)
+            session_key = request.session.session_key
+            if not session_key:
+                request.session.create()
+                session_key = request.session.session_key
+            cart = get_object_or_404(Cart, session_key=session_key, user=None)
+            
+            user = None
+            try:
+                user = User.objects.get(email=guest_email)
+            except User.DoesNotExist:
+                pass
+            
+            try:
+                order = OrderService.process_checkout(
+                    cart=cart, 
+                    user=user, 
+                    guest_email=guest_email, 
+                    guest_phone=guest_phone, 
+                    coupon=coupon, 
+                    delivery_region=delivery_region
+                )
+            except ValueError as e:
+                return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+            serializer = OrderSerializer(order)
+            return Response({**serializer.data, 'is_guest': True, 'guest_checkout': True})
 
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
-
+            
         cart = get_object_or_404(Cart, user=request.user)
-        coupon_code = request.data.get('coupon')
-        coupon = None
-        if coupon_code:
-            coupon = get_object_or_404(Coupon, code=coupon_code, active=True)
-        receipt = get_random_string(32)
-        delivery_region = request.data.get('delivery_region', 'nairobi')
         try:
-            try:
-                order = create_order_from_cart(
-                    request.user,
-                    cart,
-                    coupon=coupon,
-                    receipt_number=receipt,
-                    delivery_region=delivery_region,
-                )
-            except TypeError:
-                # Backward compatibility for deployments where helper signature lacks delivery_region.
-                order = create_order_from_cart(
-                    request.user,
-                    cart,
-                    coupon=coupon,
-                    receipt_number=receipt,
-                )
-                if hasattr(order, "delivery_region"):
-                    order.delivery_region = delivery_region
-                    order.save(update_fields=["delivery_region", "updated_at"])
+            order = OrderService.process_checkout(
+                cart=cart, 
+                user=request.user, 
+                coupon=coupon, 
+                delivery_region=delivery_region
+            )
         except ValueError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = OrderSerializer(order)
         return Response(serializer.data)
-
-    def _guest_checkout(self, request, guest_email, guest_phone):
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
-
-        cart = get_object_or_404(Cart, session_key=session_key, user=None)
-
-        if not cart.items.exists():
-            return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
-
-        user = None
-        try:
-            user = User.objects.get(email=guest_email)
-        except User.DoesNotExist:
-            pass
-
-        coupon_code = request.data.get('coupon')
-        coupon = None
-        if coupon_code:
-            coupon = get_object_or_404(Coupon, code=coupon_code, active=True)
-
-        receipt = get_random_string(32)
-
-        try:
-            with transaction.atomic():
-                total = 0
-                items = []
-                cart_items = cart.items.select_related('product').all()
-                product_ids = [ci.product_id for ci in cart_items]
-
-                # CRIT-09: Lock all inventory rows at once (same pattern as create_order_from_cart)
-                inventories = {
-                    inv.product_id: inv
-                    for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
-                }
-
-                for ci in cart_items:
-                    inv = inventories.get(ci.product_id)
-                    if inv is None:
-                        raise ValueError(f'No inventory record found for {ci.product.name}')
-                    if inv.available() < ci.quantity:
-                        raise ValueError(f'Product {ci.product.name} out of stock. Available: {inv.available()}')
-                    total += ci.product.price * ci.quantity
-                    items.append((ci.product, ci.quantity, ci.product.price, inv))
-
-                if coupon and coupon.active:
-                    total = max(total - coupon.amount, 0)
-
-                from .models import DELIVERY_FEES
-                delivery_region = request.data.get('delivery_region', 'nairobi')
-                delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
-                total += delivery_fee
-
-                order = Order.objects.create(
-                    user=user,
-                    total=total,
-                    status='pending',
-                    coupon=coupon,
-                    receipt_number=receipt,
-                    guest_email=guest_email,
-                    guest_phone=guest_phone,
-                    delivery_region=delivery_region,
-                )
-
-                for product, qty, price, inv in items:
-                    # CRIT-09: Use F() expressions for atomic inventory deduction
-                    Inventory.objects.filter(pk=inv.pk).update(
-                        quantity=F('quantity') - qty,
-                        reserved=F('reserved') - qty,
-                    )
-                    OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
-
-                cart.items.all().delete()
-
-        except ValueError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = OrderSerializer(order)
-        return Response({
-            **serializer.data,
-            'is_guest': True,
-            'guest_checkout': True,
-        })
 
     @action(detail=False, methods=['post'], url_path='remove/(?P<product_id>[^/.]+)')
     def remove(self, request, product_id=None):
@@ -217,6 +153,7 @@ class CartViewSet(viewsets.ViewSet):
             cart = get_object_or_404(Cart, session_key=session_key, user=None)
 
         CartItem.objects.filter(cart=cart, product_id=product_id).delete()
+        cart = self._get_prefetched_cart(cart.id)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
@@ -243,6 +180,7 @@ class CartViewSet(viewsets.ViewSet):
         except CartItem.DoesNotExist:
             return Response({'detail': 'Item not found in cart'}, status=status.HTTP_404_NOT_FOUND)
 
+        cart = self._get_prefetched_cart(cart.id)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
@@ -257,6 +195,7 @@ class CartViewSet(viewsets.ViewSet):
             cart = get_object_or_404(Cart, session_key=session_key, user=None)
 
         CartItem.objects.filter(cart=cart).delete()
+        cart = self._get_prefetched_cart(cart.id)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
@@ -295,22 +234,13 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
+        from .services import OrderService
         order = self.get_object()
 
-        if order.status in ['paid', 'initiated', 'processing', 'shipped']:
-            return Response({'detail': 'Cannot cancel this order in its current state'}, status=400)
-
-        if order.status == 'cancelled':
-            return Response({'detail': 'Order is already cancelled'}, status=400)
-
-        # MED-01: Restore inventory when order is cancelled
-        with transaction.atomic():
-            for item in order.items.select_related('product').all():
-                Inventory.objects.filter(product=item.product).update(
-                    quantity=F('quantity') + item.quantity,
-                )
-            order.status = 'cancelled'
-            order.save()
+        try:
+            OrderService.cancel_order(order)
+        except ValueError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'detail': 'cancelled'})
 
@@ -320,21 +250,13 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         MED-02: Allow customers to retry payment after payment_failed status.
         Resets order to pending so a new payment can be initiated.
         """
+        from .services import OrderService
         order = self.get_object()
 
-        if order.status != 'payment_failed':
-            return Response(
-                {'detail': 'Can only retry payment for orders with payment_failed status'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Reset order to pending and clear the failed payment
-        with transaction.atomic():
-            # Delete failed payment to allow new one
-            if hasattr(order, 'payment') and order.payment.status == 'failed':
-                order.payment.delete()
-            order.status = 'pending'
-            order.save()
+        try:
+            OrderService.retry_payment(order)
+        except ValueError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({
             'detail': 'Order reset to pending. You can now retry payment.',

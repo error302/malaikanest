@@ -1,14 +1,18 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import api from '../lib/api'
 import { LoadingGrid } from './Loading'
+import { useCart } from '../lib/cartContext'
 
 interface Product {
   id: number
   name: string
+  slug: string
   price: string
   image: string | null
+  stock?: number
   category: { name: string }
 }
 
@@ -17,13 +21,16 @@ export default function FeaturedProducts() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [ageFilter, setAgeFilter] = useState('all')
+  const { add } = useCart()
 
   useEffect(() => {
     let mounted = true
     api.get('/api/products/products/')
       .then(res => {
         if (mounted) {
-          setProducts(res.data)
+          const data = res.data
+          const rows = Array.isArray(data) ? data : (data?.results ?? [])
+          setProducts(rows)
           setLoading(false)
         }
       })
@@ -111,8 +118,12 @@ export default function FeaturedProducts() {
                 <h3 className="font-semibold text-gray-800 mt-1 line-clamp-2">{p.name}</h3>
                 <p className="text-lg font-bold text-gray-800 mt-2">KSH {parseFloat(p.price).toLocaleString()}</p>
                 <div className="flex gap-2 w-full mt-3">
-                  <button className="flex-1 bg-cta text-white hover:bg-cta-hover text-gray-800 font-medium py-2 rounded transition-colors text-sm">
-                    Add to Cart
+                  <button
+                    className="flex-1 bg-cta text-white hover:bg-cta-hover font-medium py-2 rounded transition-colors text-sm disabled:opacity-50"
+                    disabled={(p.stock ?? 0) === 0}
+                    onClick={() => add({ id: p.id, name: p.name, price: Number(p.price), image: p.image || '', qty: 1, slug: p.slug })}
+                  >
+                    {(p.stock ?? 1) > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </button>
                   <div className="flex flex-col gap-1 w-auto">
                     <a

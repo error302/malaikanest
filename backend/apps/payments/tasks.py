@@ -24,30 +24,7 @@ except ImportError:
 
         return decorator
 
-
-def _payload_hash(payload):
-    serialized = json.dumps(payload, sort_keys=True, default=str, separators=(",", ":"))
-    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-
-
-def _audit_log(payment=None, event_type="reconcile_query", payload=None, **extra):
-    from .models import PaymentAuditLog
-
-    safe_payload = payload or {}
-    try:
-        PaymentAuditLog.objects.create(
-            payment=payment,
-            event_type=event_type,
-            source="celery",
-            checkout_request_id=extra.get("checkout_request_id"),
-            merchant_request_id=extra.get("merchant_request_id"),
-            result_code=extra.get("result_code"),
-            payload_hash=_payload_hash(safe_payload),
-            payload=safe_payload,
-            notes=extra.get("notes", ""),
-        )
-    except Exception as exc:
-        logger.warning("payment audit log write skipped: %s", exc)
+from .services import audit_log
 
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
@@ -67,11 +44,12 @@ def verify_mpesa_payment_async(self, payment_id):
         return "already completed"
 
     if not payment.checkout_request_id:
-        _audit_log(
+        audit_log(
             payment=payment,
             event_type="reconcile_query",
             payload={"reason": "missing_checkout_request_id", "payment_id": payment.id},
             notes="Cannot reconcile payment without checkout_request_id",
+            source="celery"
         )
         return "no checkout_request_id"
 
@@ -82,11 +60,12 @@ def verify_mpesa_payment_async(self, payment_id):
     mpesa_env = os.getenv("MPESA_ENV", "sandbox")
 
     if not all([consumer_key, consumer_secret, shortcode, passkey]):
-        _audit_log(
+        audit_log(
             payment=payment,
             event_type="reconcile_query",
             payload={"reason": "missing_mpesa_config", "payment_id": payment.id},
             notes="M-Pesa credentials not fully configured",
+            source="celery"
         )
         return "not configured"
 
@@ -106,12 +85,13 @@ def verify_mpesa_payment_async(self, payment_id):
         token_resp.raise_for_status()
         access_token = token_resp.json().get("access_token")
     except requests.exceptions.RequestException as exc:
-        _audit_log(
+        audit_log(
             payment=payment,
             event_type="reconcile_query",
             payload={"stage": "token", "error": str(exc)},
             checkout_request_id=payment.checkout_request_id,
             notes="Token fetch failed",
+            source="celery"
         )
         raise self.retry(exc=exc)
 
@@ -136,12 +116,13 @@ def verify_mpesa_payment_async(self, payment_id):
         data = resp.json()
         result_code = data.get("ResultCode")
 
-        _audit_log(
+        audit_log(
             payment=payment,
             event_type="reconcile_query",
             payload={"request": {**payload, "Password": "***"}, "response": data},
             checkout_request_id=payment.checkout_request_id,
             result_code=str(result_code) if result_code is not None else None,
+            source="celery"
         )
 
         if result_code == "0" or result_code == 0:
@@ -159,25 +140,27 @@ def verify_mpesa_payment_async(self, payment_id):
                         else:
                             order.save(update_fields=["status", "updated_at"])
 
-                    _audit_log(
+                    audit_log(
                         payment=p,
                         event_type="reconcile_completed",
                         payload={"payment_id": p.id, "order_id": p.order_id},
                         checkout_request_id=p.checkout_request_id,
                         result_code="0",
                         notes="Recovered payment via STK query reconciliation",
+                        source="celery"
                     )
             return "completed"
 
         raise self.retry()
 
     except requests.exceptions.RequestException as exc:
-        _audit_log(
+        audit_log(
             payment=payment,
             event_type="reconcile_query",
             payload={"stage": "query", "error": str(exc)},
             checkout_request_id=payment.checkout_request_id,
             notes="STK query failed",
+            source="celery"
         )
         raise self.retry(exc=exc)
     except Payment.DoesNotExist:
@@ -201,12 +184,13 @@ def reconcile_payments_task(stale_minutes=30, limit=200):
         try:
             verify_mpesa_payment_async.delay(p.id)
             queued += 1
-            _audit_log(
+            audit_log(
                 payment=p,
                 event_type="reconcile_queued",
                 payload={"payment_id": p.id, "stale_minutes": stale_minutes},
                 checkout_request_id=p.checkout_request_id,
                 notes="Queued by reconcile_payments_task",
+                source="celery"
             )
         except Exception as exc:
             logger.error("reconcile_payments_task: failed to queue payment %s: %s", p.id, exc)
