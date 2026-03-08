@@ -263,3 +263,51 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
             'order_id': order.id,
         })
 
+    @action(detail=True, methods=['get'])
+    def invoice(self, request, pk=None):
+        """
+        Get invoice for an order.
+        Returns the invoice PDF or generates one if not exists.
+        """
+        from .invoice import generate_invoice_pdf, get_invoice_pdf_url
+        from django.http import HttpResponse
+        
+        order = self.get_object()
+        
+        # Check if invoice exists
+        try:
+            invoice = order.invoice
+        except Order.invoice.RelatedObjectDoesNotExist:
+            # Generate invoice if not exists
+            pdf_result, invoice_number = generate_invoice_pdf(order)
+            if pdf_result:
+                return HttpResponse(pdf_result, content_type='application/pdf')
+            else:
+                return Response(
+                    {'detail': 'Failed to generate invoice'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
+        # If invoice has PDF, serve it
+        if invoice.pdf_file:
+            pdf_path = invoice.pdf_file.path
+            with open(pdf_path, 'rb') as f:
+                pdf_content = f.read()
+            invoice.download_count += 1
+            invoice.save(update_fields=['download_count'])
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+            return response
+        
+        # Generate PDF if no file exists
+        pdf_result, invoice_number = generate_invoice_pdf(order, invoice.invoice_number)
+        if pdf_result:
+            response = HttpResponse(pdf_result, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="invoice_{invoice_number}.pdf"'
+            return response
+        
+        return Response(
+            {'detail': 'Invoice not available'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+

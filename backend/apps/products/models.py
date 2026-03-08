@@ -301,6 +301,12 @@ class VariantInventory(models.Model):
     quantity = models.PositiveIntegerField(default=0)
     reserved = models.PositiveIntegerField(default=0)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["quantity"]),
+            models.Index(fields=["variant"]),
+        ]
+
     def available(self):
         return max(self.quantity - self.reserved, 0)
 

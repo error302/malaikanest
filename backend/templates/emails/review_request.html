@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body { font-family: Arial, sans-serif; color: #111827; margin: 0; padding: 0; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background: #fce7f3; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+      .header h2 { margin: 0; color: #be185d; }
+      .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+      .review-badge { background: #fce7f3; color: #be185d; padding: 8px 16px; border-radius: 20px; display: inline-block; margin-bottom: 20px; font-weight: bold; }
+      .order-details { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+      .order-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+      .order-row:last-child { border-bottom: none; }
+      .order-row .label { color: #6b7280; }
+      .order-row .value { font-weight: 600; }
+      .items-list { margin: 20px 0; }
+      .item-card { display: flex; align-items: center; padding: 15px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 10px; }
+      .item-image { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; background: #f3f4f6; margin-right: 15px; }
+      .item-info { flex: 1; }
+      .item-name { font-weight: 600; margin-bottom: 4px; }
+      .item-price { color: #6b7280; }
+      .stars { color: #f59e0b; font-size: 20px; letter-spacing: 2px; }
+      .review-cta { text-align: center; margin: 30px 0; }
+      .btn { display: inline-block; background: #be185d; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; }
+      .btn:hover { background: #9d174d; }
+      .testimonial { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; font-style: italic; }
+      .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>💝 How was your experience?</h2>
+      </div>
+      <div class="content">
+        <div class="review-badge">We'd Love Your Feedback!</div>
+        
+        <p>Hi {{ customer_name }},</p>
+        
+        <p>Thank you for shopping with Malaika Nest! We hope you're enjoying your purchase.</p>
+        
+        <p>We'd love to hear about your experience! Your feedback helps us improve and helps other customers make informed decisions.</p>
+        
+        <div class="order-details">
+          <div class="order-row">
+            <span class="label">Order Number:</span>
+            <span class="value">#{{ order.id }}</span>
+          </div>
+          <div class="order-row">
+            <span class="label">Order Date:</span>
+            <span class="value">{{ order.created_at|date:"F j, Y" }}</span>
+          </div>
+        </div>
+        
+        <h4>Products You Purchased</h4>
+        <div class="items-list">
+          {% for item in order.items.all %}
+          <div class="item-card">
+            {% if item.product.image %}
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="item-image" />
+            {% else %}
+            <div class="item-image"></div>
+            {% endif %}
+            <div class="item-info">
+              <div class="item-name">{{ item.product.name }}</div>
+              <div class="item-price">KSH {{ item.price }} × {{ item.quantity }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        <div class="review-cta">
+          <p class="stars">★★★★★</p>
+          <p>Rate your experience and share your thoughts!</p>
+          <a href="https://malaikanest.com/reviews/order/{{ order.id }}" class="btn">Write a Review</a>
+        </div>
+        
+        <div class="testimonial">
+          <p>"I had a wonderful shopping experience at Malaika Nest. The products were exactly as described and the delivery was fast!"</p>
+          <p>— A Happy Customer</p>
+        </div>
+        
+        <p>Thank you for taking the time to share your feedback. It means the world to us!</p>
+        
+        <p>Warm regards,<br/><strong>The Malaika Nest Team</strong></p>
+        
+        <div class="footer">
+          <p>Malaika Nest - Premium Products in Kenya</p>
+          <p>{{ company_email }}</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+

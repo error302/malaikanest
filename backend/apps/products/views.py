@@ -69,6 +69,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         "featured": ["exact"],
         "gender": ["exact"],
     }
+    # Additional filter fields for variants
+    variant_filterset_fields = ["size", "color"]
     ordering_fields = ["price", "name", "created_at", "stock"]
     ordering = ["-created_at"]
 
@@ -111,6 +113,23 @@ class ProductViewSet(viewsets.ModelViewSet):
         status = self.request.query_params.get("status")
         if status:
             queryset = queryset.filter(status=status)
+        
+        # Variant filtering - filter products that have variants matching size/color
+        size = self.request.query_params.get("size")
+        color = self.request.query_params.get("color")
+        
+        if size or color:
+            from django.db.models import Exists, OuterRef
+            from .models import ProductVariant
+            
+            variant_qs = ProductVariant.objects.filter(product=OuterRef('pk'))
+            
+            if size:
+                variant_qs = variant_qs.filter(size=size)
+            if color:
+                variant_qs = variant_qs.filter(color=color)
+            
+            queryset = queryset.filter(Exists(variant_qs))
 
         return queryset
 
@@ -124,6 +143,29 @@ class ProductViewSet(viewsets.ModelViewSet):
                 "low_stock": product.is_low_stock,
             }
         )
+    
+    @action(detail=True, methods=["get"])
+    def variants(self, request, pk=None):
+        """
+        Get available variants for a product (sizes and colors).
+        """
+        product = get_object_or_404(Product, pk=pk)
+        variants = product.variants.filter(is_active=True)
+        
+        sizes = set()
+        colors = set()
+        
+        for variant in variants:
+            if variant.size:
+                sizes.add(variant.size)
+            if variant.color:
+                colors.add(variant.color)
+        
+        return Response({
+            "sizes": sorted(list(sizes)),
+            "colors": sorted(list(colors)),
+            "has_variants": bool(sizes or colors),
+        })
 
 
 class InventoryViewSet(viewsets.ModelViewSet):
