@@ -13,6 +13,44 @@ echo "📥 Pulling latest code from GitHub..."
 git checkout -- deploy.sh
 git pull origin main
 
+# Create .env file if it doesn't exist
+echo "⚙️ Setting up environment variables..."
+if [ ! -f backend/.env ]; then
+    echo "📝 Creating .env file..."
+    cat > backend/.env << 'EOF'
+# Django Settings
+SECRET_KEY=changeme-generate-new-secret-key
+DEBUG=False
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+
+# Database (update with your PostgreSQL credentials)
+DATABASE_URL=postgres://username:password@localhost:5432/malaikanest
+
+# Cloudinary (for image uploads)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Email Settings
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=malaikanest7@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=Malaika Nest <malaikanest7@gmail.com>
+
+# M-Pesa Payment Settings
+MPESA_CONSUMER_KEY=your-consumer-key
+MPESA_CONSUMER_SECRET=your-consumer-secret
+MPESA_SHORTCODE=your-shortcode
+MPESA_PASSKEY=your-passkey
+
+# CORS
+CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+EOF
+    echo "⚠️ Please edit backend/.env with your actual values!"
+fi
+
 # Install frontend dependencies and build
 echo "📦 Installing frontend dependencies..."
 cd ~/malaikanest/frontend
