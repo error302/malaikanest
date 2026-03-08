@@ -5,9 +5,12 @@ import json
 import logging
 import os
 import ipaddress
+from uuid import uuid4
+
 import requests
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from apps.orders.models import Order
@@ -95,11 +98,65 @@ def pick(data, *keys):
 
 class PaymentService:
     @staticmethod
+    def should_use_mock_mpesa():
+        explicit = os.getenv("MPESA_MOCK_MODE")
+        if explicit is not None:
+            return explicit.strip().lower() in {"1", "true", "yes", "on"}
+        return bool(settings.DEBUG)
+
+    @staticmethod
+    def enqueue_task(task, *args, **kwargs):
+        try:
+            return task.delay(*args, **kwargs)
+        except Exception as exc:
+            logger.warning("Falling back to synchronous task execution for %s: %s", getattr(task, "__name__", task), exc)
+            return task(*args, **kwargs)
+
+    @staticmethod
+    def trigger_post_payment_tasks(order_id):
+        try:
+            from apps.orders.tasks import generate_invoice, send_payment_confirmation
+
+            PaymentService.enqueue_task(generate_invoice, order_id)
+            PaymentService.enqueue_task(send_payment_confirmation, order_id)
+        except Exception as exc:
+            logger.error("Failed to trigger invoice/email tasks for order %s: %s", order_id, exc)
+
+    @staticmethod
+    def complete_mock_mpesa_payment(payment, phone):
+        receipt = f"MOCK{uuid4().hex[:10].upper()}"
+        checkout_request_id = payment.checkout_request_id or f"mock-{uuid4().hex}"
+
+        with transaction.atomic():
+            p = Payment.objects.select_for_update().get(pk=payment.pk)
+            p.phone = phone
+            p.checkout_request_id = checkout_request_id
+            p.mpesa_receipt_number = receipt
+            p.status = "completed"
+            p.raw_callback = {"mock": True, "receipt": receipt}
+            p.save(update_fields=["phone", "checkout_request_id", "mpesa_receipt_number", "status", "raw_callback", "updated_at"])
+
+            order = p.order
+            order.status = "paid"
+            order.payment_method = "mpesa"
+            order.mpesa_receipt_number = receipt
+            order.transaction_id = receipt
+            order.paid_at = timezone.now()
+            order.save(update_fields=["status", "payment_method", "mpesa_receipt_number", "transaction_id", "paid_at", "updated_at"])
+
+        audit_log(
+            event_type="reconcile_completed",
+            payload={"mock": True, "payment_id": payment.id, "order_id": payment.order_id},
+            payment=payment,
+            checkout_request_id=checkout_request_id,
+            result_code="0",
+            notes="Mock M-Pesa payment completed in development mode",
+        )
+        PaymentService.trigger_post_payment_tasks(payment.order_id)
+        return checkout_request_id
+
+    @staticmethod
     def initiate_mpesa_stk(payment, phone):
-        """
-        Initiates the Safaricom M-Pesa STK Push sequence.
-        Raises ValueError if misconfigured or payment failed.
-        """
         consumer_key = os.getenv("MPESA_CONSUMER_KEY")
         consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
         business_short_code = os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
@@ -110,6 +167,8 @@ class PaymentService:
         mpesa_env = os.getenv("MPESA_ENV", "sandbox")
 
         if not all([consumer_key, consumer_secret, passkey, callback_url]):
+            if PaymentService.should_use_mock_mpesa():
+                return PaymentService.complete_mock_mpesa_payment(payment, phone)
             payment.status = "failed"
             payment.save(update_fields=["status", "updated_at"])
             raise ValueError("M-Pesa not configured")
@@ -176,7 +235,7 @@ class PaymentService:
                     checkout_request_id=checkout_request_id,
                     notes="STK push initiated successfully",
                 )
-                verify_mpesa_payment_async.delay(payment.id)
+                PaymentService.enqueue_task(verify_mpesa_payment_async, payment.id)
                 return checkout_request_id
 
             payment.status = "failed"
@@ -205,7 +264,6 @@ class PaymentService:
 
     @staticmethod
     def process_callback(raw, client_ip):
-        """Processes the M-Pesa callback and updates orders accordingly."""
         body = pick(raw, "Body", "body") or {}
         callback_result = pick(body, "stkCallback", "stkcallback", "stk_callback") or {}
         checkout_id = pick(callback_result, "CheckoutRequestID", "checkoutRequestID", "checkout_request_id")
@@ -277,23 +335,14 @@ class PaymentService:
                 else:
                     order.save(update_fields=["status", "updated_at"])
 
-                # PHASE 7: Automatic Invoice Generation - Generate invoice and send email on payment success
                 try:
-                    from apps.orders.tasks import send_payment_confirmation, generate_invoice
-                    # Generate invoice asynchronously
-                    generate_invoice.delay(order.id)
-                    # Send payment confirmation email with invoice attached
-                    send_payment_confirmation.delay(order.id)
+                    PaymentService.trigger_post_payment_tasks(order.id)
                 except Exception as e:
-                    # Log error but don't fail the payment callback
-                    import logging
-                    logger = logging.getLogger('apps.payments')
                     logger.error(f"Failed to trigger invoice/email tasks for order {order.id}: {e}")
 
                 audit_log(event_type="callback_completed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
                 return {"ResultCode": 0, "ResultDesc": "Accepted"}
 
-            # Failed Callback
             result_desc = callback_result.get("ResultDesc", "Unknown error")
             payment.status = "failed"
             payment.save(update_fields=["status", "raw_callback", "updated_at"])
@@ -301,3 +350,7 @@ class PaymentService:
             payment.order.save(update_fields=["status", "updated_at"])
             audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes=result_desc)
             return {"ResultCode": 0, "ResultDesc": "Accepted"}
+
+
+
+

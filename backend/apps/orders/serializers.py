@@ -42,7 +42,8 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = (
-            'id', 'user', 'total', 'status', 'items', 'created_at',
+            'id', 'user', 'subtotal', 'delivery_fee', 'tax_amount', 'discount_amount',
+            'total', 'status', 'items', 'created_at',
             'receipt_number', 'delivery_region', 'is_gift', 'gift_message',
             'guest_email',
         )
@@ -52,3 +53,4 @@ class CouponSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coupon
         fields = ('id', 'code', 'amount', 'active')
+

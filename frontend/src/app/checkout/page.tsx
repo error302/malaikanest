@@ -18,6 +18,12 @@ type CartData = {
   total: string
 }
 
+const DELIVERY_FEES: Record<string, number> = {
+  mombasa: 0,
+  nairobi: 300,
+  upcountry: 500,
+}
+
 const toMoneyNumber = (value: string | number): number => {
   const num = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(num) ? num : 0
@@ -142,6 +148,10 @@ function CheckoutContent() {
 
   const phoneValue = useMemo(() => toMpesaPhone(phone), [phone])
   const phoneLooksValid = /^254\d{9}$/.test(phoneValue)
+  const subtotal = useMemo(() => toMoneyNumber(cart?.subtotal || '0'), [cart?.subtotal])
+  const deliveryFee = useMemo(() => DELIVERY_FEES[deliveryRegion] ?? 0, [deliveryRegion])
+  const payableTotal = useMemo(() => subtotal + deliveryFee, [subtotal, deliveryFee])
+  const includedVat = useMemo(() => subtotal - subtotal / 1.16, [subtotal])
 
   const handleCheckout = async () => {
     setError('')
@@ -293,7 +303,7 @@ function CheckoutContent() {
                   disabled={processing || !phoneLooksValid}
                   className="btn-primary mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {processing ? 'Processing...' : `Pay KES ${formatKsh(cart.total)} with M-Pesa`}
+                  {processing ? 'Processing...' : `Pay KES ${formatKsh(payableTotal)} with M-Pesa`}
                 </button>
               </article>
             </section>
@@ -319,46 +329,48 @@ function CheckoutContent() {
                 <div className="mt-5 space-y-3 text-[16px]">
                   <div className="flex items-center justify-between text-[var(--text-secondary)]">
                     <span>Subtotal</span>
-                    <span>KES {formatKsh(cart.subtotal)}</span>
+                    <span>KES {formatKsh(subtotal)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[var(--text-secondary)] text-sm">
                     <span>VAT (16% incl.)</span>
-                    <span>KES {formatKsh(toMoneyNumber(cart.subtotal) - (toMoneyNumber(cart.subtotal) / 1.16))}</span>
+                    <span>KES {formatKsh(includedVat)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[var(--text-secondary)]">
                     <span>Shipping</span>
-                    <span>By region</span>
+                    <span>KES {formatKsh(deliveryFee)}</span>
                   </div>
                   <div className="border-t border-default pt-3 text-[var(--text-primary)]">
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-semibold">Total</span>
-                      <span className="text-[24px] font-semibold">KES {formatKsh(cart.total)}</span>
+                      <span className="text-[24px] font-semibold">KES {formatKsh(payableTotal)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-5 flex items-start gap-2 rounded-[12px] border border-default bg-[var(--bg-soft)] p-3 text-sm text-[var(--text-secondary)]">
-                  <ShieldCheck size={16} className="mt-0.5 shrink-0" />
-                  Protected checkout and secure payment processing.
+                  <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[var(--text-primary)]" />
+                  <p>Your payment is secured and your order will only be confirmed after payment succeeds.</p>
                 </div>
               </div>
             </aside>
           </div>
         ) : (
-          <section className="card-soft mx-auto max-w-2xl p-10 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-secondary)] text-[var(--text-primary)]">
-              <CheckCircle2 size={30} />
+          <div className="card-soft mx-auto max-w-2xl p-10 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
+              {processing ? <Loader2 className="animate-spin" size={30} /> : <CheckCircle2 size={30} />}
             </div>
-            <h2 className="font-display mt-5 text-[36px] text-[var(--text-primary)]">Payment Initiated</h2>
-            <p className="mx-auto mt-3 max-w-lg text-[18px] text-[var(--text-secondary)]">
-              Check your phone and approve the M-Pesa prompt to complete your order.
+            <h2 className="mt-5 font-display text-[32px] text-[var(--text-primary)]">
+              {processing ? 'Awaiting Payment Confirmation' : 'Payment Confirmed'}
+            </h2>
+            <p className="mt-3 text-[18px] text-[var(--text-secondary)]">
+              {processing
+                ? 'Check your phone and approve the M-Pesa prompt. We will confirm your order automatically.'
+                : 'Your payment has been confirmed. Redirecting to your success page.'}
             </p>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">Order #{orderId}</p>
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-default bg-[var(--bg-soft)] px-4 py-2 text-sm text-[var(--text-secondary)]">
-              <Loader2 size={16} className="animate-spin" />
-              Waiting for payment confirmation...
-            </div>
-          </section>
+            {orderId && (
+              <p className="mt-4 text-sm font-medium text-[var(--text-secondary)]">Order reference: #{orderId}</p>
+            )}
+          </div>
         )}
       </div>
     </div>

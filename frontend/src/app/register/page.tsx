@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({ email: '', password: '', phone: '', first_name: '', last_name: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
 
   const captchaSiteKey = process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY || ''
@@ -25,20 +26,17 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccessMessage('')
 
     try {
       const payload: Record<string, string> = { ...formData }
       if (captchaRequired) payload.captcha_token = captchaToken
 
-      await api.post('/api/accounts/register/', payload)
-      await api.post('/api/accounts/token/', {
-        email: formData.email,
-        password: formData.password,
-        ...(captchaRequired ? { captcha_token: captchaToken } : {}),
-      })
-
-      router.push('/')
-      router.refresh()
+      const response = await api.post('/api/accounts/register/', payload)
+      setSuccessMessage(
+        response.data?.warning || 'Account created successfully. Please check your email and verify your address before signing in.'
+      )
+      router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`)
     } catch (err: any) {
       const data = err?.response?.data
       if (data && typeof data === 'object') {
@@ -65,6 +63,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <p className="rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+            {successMessage && <p className="rounded-[12px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{successMessage}</p>}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">

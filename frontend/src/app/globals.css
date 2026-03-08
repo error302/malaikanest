@@ -18,8 +18,8 @@
   --color-error: #EF4444;
   
   /* Typography */
-  --font-heading: 'Poppins', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-heading: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   
   /* Spacing - 8px grid */
   --space-1: 8px;
@@ -30,9 +30,10 @@
   --space-8: 64px;
   
   /* Font families */
-  --font-space-grotesk: 'Space Grotesk', sans-serif;
-  --font-inter: 'Inter', sans-serif;
-  --font-playfair: 'Playfair Display', serif;
+  --font-space-grotesk: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-inter: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-playfair: Georgia, 'Times New Roman', serif;
+  --font-display: Georgia, 'Times New Roman', serif;
   
   /* Legacy variables */
   --bg-primary: #FFFFFF;
@@ -305,3 +306,4 @@ select {
     width: calc(100% - 1.25rem);
   }
 }
+

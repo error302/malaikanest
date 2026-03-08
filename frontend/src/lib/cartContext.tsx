@@ -22,10 +22,28 @@ type CartItem = {
   product_id?: number
 }
 
+type ApiCartItem = {
+  id: number
+  product: {
+    id: number
+    name: string
+    slug?: string
+    price: string | number
+    image?: string | null
+  }
+  quantity: number
+}
+
 type CartData = {
   items: CartItem[]
   subtotal: string
   total: string
+}
+
+type ApiCartData = {
+  items?: ApiCartItem[]
+  subtotal?: string | number
+  total?: string | number
 }
 
 type State = {
@@ -42,10 +60,34 @@ type Action =
 
 const STORAGE_KEY = 'malaika_cart_v1'
 
+function normalizeCartItem(item: ApiCartItem): CartItem {
+  const price = typeof item.product?.price === 'number' ? item.product.price : Number(item.product?.price || 0)
+
+  return {
+    id: item.product?.id ?? item.id,
+    product_id: item.product?.id,
+    name: item.product?.name || 'Product',
+    price: Number.isFinite(price) ? price : 0,
+    image: item.product?.image || '',
+    qty: item.quantity || 0,
+    slug: item.product?.slug,
+  }
+}
+
+function normalizeCartData(cartData: ApiCartData | null | undefined): CartData {
+  const items = Array.isArray(cartData?.items) ? cartData.items.map(normalizeCartItem) : []
+
+  return {
+    items,
+    subtotal: String(cartData?.subtotal ?? '0'),
+    total: String(cartData?.total ?? '0'),
+  }
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'HYDRATE':
-      return { ...state, cartData: action.cartData, items: action.cartData?.items || [] }
+      return { ...state, cartData: action.cartData, items: action.cartData.items }
     case 'ADD': {
       const exists = state.items.find((i) => i.id === action.item.id)
       if (exists) {
@@ -68,7 +110,7 @@ function reducer(state: State, action: Action): State {
         ),
       }
     case 'CLEAR':
-      return { ...state, items: [], cartData: null }
+      return { ...state, items: [], cartData: { items: [], subtotal: '0', total: '0' } }
     default:
       return state
   }
@@ -94,7 +136,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const fetchCart = useCallback(async () => {
     try {
       const res = await api.get('/api/orders/cart/', { headers: { 'Cache-Control': 'no-store' } })
-      dispatch({ type: 'HYDRATE', cartData: res.data })
+      dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
       setSynced(true)
     } catch (e) {
       console.error('Failed to fetch cart', e)
@@ -120,77 +162,71 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true)
     try {
-      await api.post('/api/orders/cart/add/', {
+      const res = await api.post('/api/orders/cart/add/', {
         product_id: item.id,
         quantity: fullItem.qty,
       })
+      dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
     } catch (e) {
-      dispatch({ type: 'REMOVE', id: item.id })
       console.error('Failed to add to cart', e)
+      await fetchCart()
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fetchCart])
 
   const remove = useCallback(async (id: string | number) => {
-    const itemToRemove = state.items.find((i) => i.id === id)
     dispatch({ type: 'REMOVE', id })
 
     setLoading(true)
     try {
-      await api.post(`/api/orders/cart/remove/${id}/`)
+      const res = await api.post(`/api/orders/cart/remove/${id}/`)
+      dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
     } catch (e) {
-      if (itemToRemove) {
-        dispatch({ type: 'ADD', item: itemToRemove })
-      }
       console.error('Failed to remove from cart', e)
+      await fetchCart()
     } finally {
       setLoading(false)
     }
-  }, [state.items])
+  }, [fetchCart])
 
   const updateQty = useCallback(async (id: string | number, qty: number) => {
     if (qty < 1) {
       return remove(id)
     }
 
-    const oldItem = state.items.find((i) => i.id === id)
-    const oldQty = oldItem?.qty
     dispatch({ type: 'UPDATE', id, qty })
 
     setLoading(true)
     try {
-      await api.post('/api/orders/cart/update/', {
+      const res = await api.post('/api/orders/cart/update/', {
         product_id: id,
         quantity: qty,
       })
+      dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
     } catch (e) {
-      if (oldQty !== undefined) {
-        dispatch({ type: 'UPDATE', id, qty: oldQty })
-      }
       console.error('Failed to update cart', e)
+      await fetchCart()
     } finally {
       setLoading(false)
     }
-  }, [state.items, remove])
+  }, [fetchCart, remove])
 
   const clear = useCallback(async () => {
-    const currentItems = [...state.items]
     dispatch({ type: 'CLEAR' })
 
     setLoading(true)
     try {
       await api.post('/api/orders/cart/clear/')
       localStorage.removeItem(STORAGE_KEY)
+      dispatch({ type: 'HYDRATE', cartData: { items: [], subtotal: '0', total: '0' } })
     } catch (e) {
-      currentItems.forEach((item) => {
-        dispatch({ type: 'ADD', item })
-      })
       console.error('Failed to clear cart', e)
+      await fetchCart()
     } finally {
       setLoading(false)
     }
-  }, [state.items])
+  }, [fetchCart])
 
   const value = useMemo(
     () => ({

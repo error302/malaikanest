@@ -20,8 +20,6 @@ export default function LoginPage() {
 
   const captchaSiteKey = process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY || ''
   const captchaRequired = Boolean(captchaSiteKey)
-  
-  // Get redirect URL from query params or default to home
   const redirect = searchParams.get('redirect') || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,13 +28,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const payload: Record<string, string> = { email, password }
-      if (captchaRequired) payload.captcha_token = captchaToken
-
-      // Use AuthContext login to handle API call and update global state
-      await login(email, password)
-      
-      // Redirect to intended page
+      await login(email, password, captchaRequired ? captchaToken : undefined)
       router.push(redirect)
       router.refresh()
     } catch (err: any) {

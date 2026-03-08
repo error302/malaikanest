@@ -1,1 +1,0 @@
-[WARNING] DATABASE_URL is NOT set, falling back to SQLite

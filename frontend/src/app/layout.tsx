@@ -4,19 +4,6 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Providers } from '../lib/providers'
 import { ToastContainer } from '../components/Toast'
-import { Inter, Playfair_Display } from 'next/font/google'
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-body',
-  display: 'swap',
-})
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-})
 
 export const metadata = {
   metadataBase: new URL('https://malaikanest.duckdns.org'),
@@ -29,7 +16,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon.svg" />

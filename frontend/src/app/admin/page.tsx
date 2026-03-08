@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import api from '@/lib/api'
 
@@ -8,28 +8,35 @@ interface Stats {
   pendingOrders: number
   totalProducts: number
   totalCustomers: number
-  totalRevenue?: number
+  totalRevenue: number
 }
 
 interface RecentOrder {
   id: number
   order_number: string
   customer_name: string
+  customer_email?: string
   total: string
   status: string
   created_at: string
 }
 
-interface ChartData {
-  labels: string[]
-  data: number[]
+interface MonthlyPoint {
+  month: string | null
+  revenue: number
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({ totalOrders: 0, pendingOrders: 0, totalProducts: 0, totalCustomers: 0, totalRevenue: 0 })
+  const [stats, setStats] = useState<Stats>({
+    totalOrders: 0,
+    pendingOrders: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+    totalRevenue: 0,
+  })
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
+  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyPoint[]>([])
   const [loading, setLoading] = useState(true)
-  const [salesChartData, setSalesChartData] = useState<ChartData>({ labels: [], data: [] })
 
   useEffect(() => {
     fetchData()
@@ -37,49 +44,26 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes, usersRes] = await Promise.all([
-        api.get('/api/orders/orders/'),
-        api.get('/api/products/products/'),
-        api.get('/api/accounts/users/')
-      ])
-      
-      const orders = ordersRes.data
-      const totalRevenue = orders.reduce((sum: number, o: any) => sum + parseFloat(o.total || 0), 0)
-      
-      setStats({
-        totalOrders: orders.length,
-        pendingOrders: orders.filter((o: any) => o.status === 'pending').length,
-        totalProducts: productsRes.data.length,
-        totalCustomers: usersRes.data.length,
-        totalRevenue
-      })
-      setRecentOrders(orders.slice(0, 6))
+      const res = await api.get('/api/orders/admin/analytics/')
+      const data = res.data || {}
 
-      const last7Days = getLast7Days()
-      const salesByDay = last7Days.map(day => {
-        return orders
-          .filter((o: any) => o.created_at?.startsWith(day))
-          .reduce((sum: number, o: any) => sum + parseFloat(o.total || 0), 0)
+      setStats({
+        totalOrders: Number(data.total_orders || 0),
+        pendingOrders: Number(data.pending_orders || 0),
+        totalProducts: Number(data.total_products || 0),
+        totalCustomers: Number(data.total_users || 0),
+        totalRevenue: Number(data.total_revenue || 0),
       })
-      setSalesChartData({
-        labels: last7Days.map(d => new Date(d).toLocaleDateString('en-KE', { weekday: 'short' })),
-        data: salesByDay
-      })
+      setRecentOrders(data.recent_orders || [])
+      setMonthlyRevenue(data.monthly || [])
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error fetching admin analytics:', error)
+      setStats({ totalOrders: 0, pendingOrders: 0, totalProducts: 0, totalCustomers: 0, totalRevenue: 0 })
+      setRecentOrders([])
+      setMonthlyRevenue([])
     } finally {
       setLoading(false)
     }
-  }
-
-  const getLast7Days = (): string[] => {
-    const days: string[] = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      days.push(d.toISOString().split('T')[0])
-    }
-    return days
   }
 
   const formatDate = (dateStr: string) => {
@@ -93,13 +77,28 @@ export default function AdminDashboard() {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-amber-100 text-amber-700 border-amber-200',
+      initiated: 'bg-sky-100 text-sky-700 border-sky-200',
+      paid: 'bg-emerald-100 text-emerald-700 border-emerald-200',
       processing: 'bg-blue-100 text-blue-700 border-blue-200',
       shipped: 'bg-purple-100 text-purple-700 border-purple-200',
       delivered: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-      cancelled: 'bg-rose-100 text-rose-700 border-rose-200'
+      cancelled: 'bg-rose-100 text-rose-700 border-rose-200',
+      payment_failed: 'bg-rose-100 text-rose-700 border-rose-200',
+      failed: 'bg-rose-100 text-rose-700 border-rose-200',
     }
     return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200'
   }
+
+  const salesChartData = useMemo(() => {
+    const points = monthlyRevenue.length > 0 ? monthlyRevenue : [{ month: null, revenue: 0 }]
+    return {
+      labels: points.map((point) => {
+        if (!point.month) return 'N/A'
+        return new Date(`${point.month}-01`).toLocaleDateString('en-KE', { month: 'short' })
+      }),
+      data: points.map((point) => Number(point.revenue || 0)),
+    }
+  }, [monthlyRevenue])
 
   const maxChartValue = Math.max(...salesChartData.data, 1)
 
@@ -115,9 +114,9 @@ export default function AdminDashboard() {
   }
 
   const kpiCards = [
-    { 
-      label: 'Total Revenue', 
-      value: formatCurrency(stats.totalRevenue), 
+    {
+      label: 'Total Revenue',
+      value: formatCurrency(stats.totalRevenue),
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -125,12 +124,12 @@ export default function AdminDashboard() {
       ),
       bg: 'linear-gradient(135deg, #E6F2FF 0%, #DBEAFE 100%)',
       iconBg: 'bg-blue-500',
-      trend: '+12.5%',
-      trendUp: true
+      trend: 'Live',
+      trendUp: true,
     },
-    { 
-      label: 'Total Orders', 
-      value: stats.totalOrders, 
+    {
+      label: 'Total Orders',
+      value: stats.totalOrders,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -138,12 +137,12 @@ export default function AdminDashboard() {
       ),
       bg: 'linear-gradient(135deg, #FCE4EC 0%, #F8BBD9 100%)',
       iconBg: 'bg-rose-500',
-      trend: '+8.2%',
-      trendUp: true
+      trend: 'Live',
+      trendUp: true,
     },
-    { 
-      label: 'Pending Orders', 
-      value: stats.pendingOrders, 
+    {
+      label: 'Pending Orders',
+      value: stats.pendingOrders,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -151,12 +150,12 @@ export default function AdminDashboard() {
       ),
       bg: 'linear-gradient(135deg, #FFF8E7 0%, #FEF3C7 100%)',
       iconBg: 'bg-amber-500',
-      trend: '-3.1%',
-      trendUp: false
+      trend: 'Live',
+      trendUp: false,
     },
-    { 
-      label: 'Total Products', 
-      value: stats.totalProducts, 
+    {
+      label: 'Total Products',
+      value: stats.totalProducts,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -164,14 +163,14 @@ export default function AdminDashboard() {
       ),
       bg: 'linear-gradient(135deg, #E8F8F5 0%, #A7F3D0 100%)',
       iconBg: 'bg-emerald-500',
-      trend: '+5.4%',
-      trendUp: true
+      trend: 'Live',
+      trendUp: true,
     },
   ]
 
   const quickActions = [
-    { 
-      label: 'Add Product', 
+    {
+      label: 'Add Product',
       desc: 'Create new listing',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,10 +178,10 @@ export default function AdminDashboard() {
         </svg>
       ),
       href: '/admin/products/new',
-      gradient: 'from-amber-600 to-amber-700'
+      gradient: 'from-amber-600 to-amber-700',
     },
-    { 
-      label: 'View Orders', 
+    {
+      label: 'View Orders',
       desc: 'Process pending orders',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,10 +189,10 @@ export default function AdminDashboard() {
         </svg>
       ),
       href: '/admin/orders',
-      gradient: 'from-slate-600 to-slate-700'
+      gradient: 'from-slate-600 to-slate-700',
     },
-    { 
-      label: 'Customers', 
+    {
+      label: 'Customers',
       desc: 'Manage customers',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +200,7 @@ export default function AdminDashboard() {
         </svg>
       ),
       href: '/admin/customers',
-      gradient: 'from-violet-600 to-violet-700'
+      gradient: 'from-violet-600 to-violet-700',
     },
   ]
 
@@ -221,20 +220,14 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {kpiCards.map((kpi, idx) => (
-          <div 
-            key={idx}
-            className="relative overflow-hidden rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group"
-            style={{ background: kpi.bg }}
-          >
+          <div key={idx} className="relative overflow-hidden rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group" style={{ background: kpi.bg }}>
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-slate-600 mb-1">{kpi.label}</p>
                 <p className="text-3xl font-bold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>{kpi.value}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <span className={`text-xs font-semibold ${kpi.trendUp ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {kpi.trend}
-                  </span>
-                  <span className="text-xs text-slate-400">vs last week</span>
+                  <span className={`text-xs font-semibold ${kpi.trendUp ? 'text-emerald-600' : 'text-rose-600'}`}>{kpi.trend}</span>
+                  <span className="text-xs text-slate-400">analytics</span>
                 </div>
               </div>
               <div className={`${kpi.iconBg} p-3 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
@@ -250,18 +243,14 @@ export default function AdminDashboard() {
         <div className="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>Sales Overview</h3>
-            <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
-              <option>Last 7 days</option>
-              <option>Last 30 days</option>
-              <option>Last 90 days</option>
-            </select>
+            <span className="text-sm text-slate-500">Last 6 months</span>
           </div>
           <div className="h-64 flex items-end justify-between gap-3">
             {salesChartData.data.map((value, idx) => (
               <div key={idx} className="flex-1 flex flex-col items-center gap-2">
                 <div className="w-full flex flex-col items-center gap-1">
                   <span className="text-xs font-medium text-slate-500">{formatCurrency(value)}</span>
-                  <div 
+                  <div
                     className="w-full max-w-[40px] bg-gradient-to-t from-amber-500 to-amber-400 rounded-t-lg transition-all duration-500 hover:from-amber-600 hover:to-amber-500"
                     style={{ height: `${(value / maxChartValue) * 160}px`, minHeight: value > 0 ? '8px' : '0' }}
                   ></div>
@@ -276,11 +265,7 @@ export default function AdminDashboard() {
           <h3 className="text-lg font-semibold text-slate-800 mb-6" style={{ fontFamily: 'Montserrat, sans-serif' }}>Quick Actions</h3>
           <div className="space-y-3">
             {quickActions.map((action, idx) => (
-              <Link
-                key={idx}
-                href={action.href}
-                className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200 group"
-              >
+              <Link key={idx} href={action.href} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200 group">
                 <div className={`p-2.5 rounded-xl text-white shadow-lg ${action.gradient} group-hover:scale-110 transition-transform duration-200`}>
                   {action.icon}
                 </div>
@@ -303,17 +288,14 @@ export default function AdminDashboard() {
             <h3 className="text-lg font-semibold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>Recent Orders</h3>
             <p className="text-sm text-slate-500 mt-0.5">Latest transactions from your store</p>
           </div>
-          <Link 
-            href="/admin/orders" 
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-xl font-medium text-sm hover:bg-amber-100 transition-colors focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-          >
+          <Link href="/admin/orders" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-xl font-medium text-sm hover:bg-amber-100 transition-colors focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
             View All
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
-        
+
         {recentOrders.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-50 flex items-center justify-center">
@@ -347,7 +329,10 @@ export default function AdminDashboard() {
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-semibold">
                           {order.customer_name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
-                        <span className="text-sm text-slate-600">{order.customer_name}</span>
+                        <div>
+                          <span className="text-sm text-slate-600 block">{order.customer_name}</span>
+                          {order.customer_email && <span className="text-xs text-slate-400">{order.customer_email}</span>}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">

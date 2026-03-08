@@ -32,7 +32,7 @@
   <body>
     <div class="container">
       <div class="header">
-        <h2>💝 How was your experience?</h2>
+        <h2> How was your experience?</h2>
       </div>
       <div class="content">
         <div class="review-badge">We'd Love Your Feedback!</div>
@@ -65,21 +65,21 @@
             {% endif %}
             <div class="item-info">
               <div class="item-name">{{ item.product.name }}</div>
-              <div class="item-price">KSH {{ item.price }} × {{ item.quantity }}</div>
+              <div class="item-price">KSH {{ item.price }} x {{ item.quantity }}</div>
             </div>
           </div>
           {% endfor %}
         </div>
         
         <div class="review-cta">
-          <p class="stars">★★★★★</p>
+          <p class="stars">5/5</p>
           <p>Rate your experience and share your thoughts!</p>
           <a href="https://malaikanest.com/reviews/order/{{ order.id }}" class="btn">Write a Review</a>
         </div>
         
         <div class="testimonial">
           <p>"I had a wonderful shopping experience at Malaika Nest. The products were exactly as described and the delivery was fast!"</p>
-          <p>— A Happy Customer</p>
+          <p>- A Happy Customer</p>
         </div>
         
         <p>Thank you for taking the time to share your feedback. It means the world to us!</p>
@@ -94,4 +94,5 @@
     </div>
   </body>
 </html>
+
 

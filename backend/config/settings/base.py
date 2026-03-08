@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 env_path = Path(__file__).resolve().parent.parent.parent / '.env'
 load_dotenv(env_path)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 _SECRET_KEY = os.getenv("SECRET_KEY")
 if not _SECRET_KEY:
@@ -220,3 +220,4 @@ try:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
     pass
+

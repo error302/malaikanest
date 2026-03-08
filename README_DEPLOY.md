@@ -93,7 +93,7 @@ SECRET_KEY=your-very-long-secret-key-here
 DEBUG=False
 ALLOWED_HOSTS=104.154.161.10,localhost
 
-# Database (PostgreSQL only - SQLite not allowed)
+# Database (PostgreSQL only)
 DATABASE_URL=postgresql://user:password@localhost:5432/malaikanest
 
 # Redis
@@ -283,8 +283,9 @@ docker-compose -f docker-compose.prod.yml up -d --build
 
 ### Database issues
 
-- Check SQLite file exists: `ls -la backend/db.sqlite3`
-- Or check PostgreSQL if using it
+- Confirm PostgreSQL is running and reachable with the credentials in `backend/.env`
+- Re-run migrations: `python manage.py migrate --noinput`
+- Check backend logs for connection or migration errors
 
 ## Quick Commands for Managing Deployment
 
@@ -304,8 +305,8 @@ cd /var/www/malaikanest
 git pull origin main
 pm2 restart all
 
-# Backup database
-cp backend/db.sqlite3 backup_$(date +%Y%m%d).sqlite3
+# Backup PostgreSQL database
+pg_dump "$DATABASE_URL" > backup_$(date +%Y%m%d).sql
 ```
 
 ---
@@ -319,3 +320,8 @@ cp backend/db.sqlite3 backup_$(date +%Y%m%d).sqlite3
 - `docker-compose.prod.yml` - Docker deployment (alternative)
 - `frontend/.env.production.example` - Frontend env template
 - `backend/.env.example` - Backend env template
+
+
+
+
+

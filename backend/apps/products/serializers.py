@@ -142,16 +142,31 @@ class InventorySerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    user = serializers.IntegerField(source="user_id", read_only=True)
     user_email_masked = serializers.SerializerMethodField()
     user_name = serializers.SerializerMethodField()
     comment = serializers.CharField(source="body", read_only=True)
     location = serializers.SerializerMethodField()
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        product = attrs.get("product") or getattr(self.instance, "product", None)
+
+        if request and request.user.is_authenticated and product:
+            existing = Review.objects.filter(product=product, user=request.user)
+            if self.instance:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise serializers.ValidationError({"detail": "You have already reviewed this product."})
+
+        return attrs
 
     class Meta:
         model = Review
         fields = (
             "id",
             "product",
+            "user",
             "user_email",
             "user_email_masked",
             "user_name",
@@ -160,6 +175,15 @@ class ReviewSerializer(serializers.ModelSerializer):
             "title",
             "body",
             "comment",
+            "created_at",
+        )
+        read_only_fields = (
+            "user",
+            "user_email",
+            "user_email_masked",
+            "user_name",
+            "comment",
+            "location",
             "created_at",
         )
 
@@ -216,3 +240,4 @@ class BannerSerializer(serializers.ModelSerializer):
         if obj.image:
             return obj.image.url
         return None
+

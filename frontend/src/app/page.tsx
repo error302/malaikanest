@@ -88,13 +88,16 @@ export default function HomePage() {
 
     api
       .get('/api/products/products/?ordering=-created_at')
-      .then((res) => setProducts((Array.isArray(res.data) ? res.data : []).slice(0, 8)))
+      .then((res) => {
+        const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
+        setProducts(rows.slice(0, 8))
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoadingProducts(false))
 
     api
       .get('/api/products/reviews/?featured=true')
-      .then((res) => setReviews(Array.isArray(res.data) ? res.data : []))
+      .then((res) => setReviews(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setReviews([]))
       .finally(() => setLoadingReviews(false))
   }, [])
@@ -356,3 +359,4 @@ export default function HomePage() {
     </div>
   )
 }
+

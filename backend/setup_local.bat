@@ -86,11 +86,8 @@ echo OK - PostgreSQL is running
 
 REM Create database (drop first if exists to handle inconsistent migration state)
 echo [2/5] Creating database...
-"%PSQL_PATH%\psql.exe" -U postgres -c "DROP DATABASE IF EXISTS kenya_ecom;" 2>nul
-"%PSQL_PATH%\psql.exe" -U postgres -c "DROP USER IF EXISTS kenya_user;" 2>nul
-"%PSQL_PATH%\psql.exe" -U postgres -c "CREATE USER kenya_user WITH PASSWORD 'kenya2024';" 2>nul
-"%PSQL_PATH%\psql.exe" -U postgres -c "CREATE DATABASE kenya_ecom OWNER kenya_user;" 2>nul
-"%PSQL_PATH%\psql.exe" -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE kenya_ecom TO kenya_user;" 2>nul
+"%PSQL_PATH%\psql.exe" -U postgres -c "DROP DATABASE IF EXISTS malaika_nest;" 2>nul
+"%PSQL_PATH%\psql.exe" -U postgres -c "CREATE DATABASE malaika_nest OWNER postgres;" 2>nul
 echo OK - Database created (fresh)
 
 REM Create .env file
@@ -99,9 +96,9 @@ echo [3/5] Creating environment file...
 echo DEBUG=True
 echo SECRET_KEY=django-insecure-ksjdfhkjshdfkjshdfkjshdfkjshdfkjshdfkjshdfk
 echo SIMPLE_JWT_SECRET=jwt-secret-key-here-change-in-production
-echo DB_NAME=kenya_ecom
-echo DB_USER=kenya_user
-echo DB_PASSWORD=kenya2024
+echo DB_NAME=malaika_nest
+echo DB_USER=postgres
+echo DB_PASSWORD=postgres
 echo DB_HOST=localhost
 echo DB_PORT=5432
 echo ALLOWED_HOSTS=localhost,127.0.0.1
@@ -146,3 +143,6 @@ echo Admin URL: http://localhost:8000/admin
 echo.
 
 pause
+
+
+

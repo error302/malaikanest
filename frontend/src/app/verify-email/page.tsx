@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -10,6 +10,7 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get('token')
+  const email = searchParams.get('email')
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('Verifying your email...')
@@ -63,11 +64,17 @@ export default function VerifyEmailPage() {
               <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600">
                 <XCircle size={26} />
               </span>
-              <h1 className="font-display mt-4 text-[36px] text-[var(--text-primary)]">Verification Failed</h1>
+              <h1 className="font-display mt-4 text-[36px] text-[var(--text-primary)]">Verification Required</h1>
             </>
           )}
 
           <p className="mt-3 text-[16px] text-[var(--text-secondary)]">{message}</p>
+
+          {!token && email && status === 'error' && (
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+              We created your account for <strong>{email}</strong>. Open the verification email we sent, then return here to sign in.
+            </p>
+          )}
 
           <button onClick={() => router.push('/login')} className="btn-primary mt-7 inline-flex px-7">
             Go to Login

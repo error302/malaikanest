@@ -42,3 +42,6 @@ skills-lock.json
 backend/temp_script*.py
 backend/dump_phase_*.py
 frontend/tsc_errors.txt
+backend/media/
+backend/config/media/
+

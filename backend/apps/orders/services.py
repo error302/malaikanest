@@ -2,7 +2,8 @@ from django.db import transaction
 from django.db.models import F
 from django.utils.crypto import get_random_string
 from apps.products.models import Inventory
-from .models import Order, OrderItem, DELIVERY_FEES
+from .models import DELIVERY_FEES
+
 
 class OrderService:
     @staticmethod
@@ -25,7 +26,7 @@ class OrderService:
                 for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
             }
 
-            total = 0
+            subtotal = 0
             items = []
 
             for ci in cart_items:
@@ -34,17 +35,22 @@ class OrderService:
                     raise ValueError(f'No inventory record found for {ci.product.name}')
                 if inv.available() < ci.quantity:
                     raise ValueError(f'Product {ci.product.name} out of stock. Available: {inv.available()}')
-                total += ci.product.price * ci.quantity
+                line_total = ci.product.price * ci.quantity
+                subtotal += line_total
                 items.append((ci.product, ci.quantity, ci.product.price, inv))
 
-            if coupon and coupon.active:
-                total = max(total - coupon.amount, 0)
-
+            discount_amount = coupon.calculate_discount(subtotal) if coupon and coupon.active else 0
             delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
-            total += delivery_fee
+            total = max(subtotal - discount_amount, 0) + delivery_fee
+
+            from .models import Order, OrderItem
 
             order = Order.objects.create(
                 user=user,
+                subtotal=subtotal,
+                discount_amount=discount_amount,
+                delivery_fee=delivery_fee,
+                tax_amount=0,
                 total=total,
                 status='pending',
                 coupon=coupon,
@@ -55,10 +61,7 @@ class OrderService:
             )
 
             for product, qty, price, inv in items:
-                Inventory.objects.filter(pk=inv.pk).update(
-                    quantity=F('quantity') - qty,
-                    reserved=F('reserved') - qty,
-                )
+                Inventory.objects.filter(pk=inv.pk).update(quantity=F('quantity') - qty)
                 OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
 
             cart.items.all().delete()
@@ -82,9 +85,9 @@ class OrderService:
                 )
             order.status = 'cancelled'
             order.save(update_fields=['status'])
-        
+
         return order
-        
+
     @staticmethod
     def retry_payment(order):
         """
@@ -95,11 +98,9 @@ class OrderService:
             raise ValueError('Can only retry payment for orders with payment_failed status')
 
         with transaction.atomic():
-            # Delete failed payment to allow new one
             if hasattr(order, 'payment') and order.payment.status == 'failed':
                 order.payment.delete()
             order.status = 'pending'
             order.save(update_fields=['status'])
-            
-        return order
 
+        return order

@@ -87,7 +87,7 @@ export default function Navbar() {
               <Search size={18} />
             </button>
             <Link
-              href={isAuthenticated ? "/account" : "/login"}
+              href={isAuthenticated ? "/account/orders" : "/login"}
               aria-label="Account"
               className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
             >
@@ -191,3 +191,4 @@ export default function Navbar() {
     </header>
   )
 }
+

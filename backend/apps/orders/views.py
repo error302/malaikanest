@@ -185,14 +185,15 @@ class CartViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def clear_cart(self, request):
-        """Clear all items from the cart"""
+        """Clear all items from the cart."""
         if request.user.is_authenticated:
-            cart = get_object_or_404(Cart, user=request.user)
+            cart, _ = Cart.objects.get_or_create(user=request.user)
         else:
             session_key = request.session.session_key
             if not session_key:
-                return Response({'detail': 'No cart found'}, status=status.HTTP_400_BAD_REQUEST)
-            cart = get_object_or_404(Cart, session_key=session_key, user=None)
+                request.session.create()
+                session_key = request.session.session_key
+            cart, _ = Cart.objects.get_or_create(session_key=session_key, user=None)
 
         CartItem.objects.filter(cart=cart).delete()
         cart = self._get_prefetched_cart(cart.id)
@@ -310,4 +311,5 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
             {'detail': 'Invoice not available'},
             status=status.HTTP_404_NOT_FOUND
         )
+
 

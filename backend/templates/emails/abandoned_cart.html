@@ -24,12 +24,12 @@
                 <img src="{{ item.image }}" alt="{{ item.name }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px; border-radius: 4px;">
                 {% else %}
                 <div style="width: 60px; height: 60px; background-color: #eee; margin-right: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-                    🧸
+                    Malaika Nest
                 </div>
                 {% endif %}
                 <div>
                     <strong>{{ item.name }}</strong><br>
-                    <small>Qty: {{ item.quantity }} × KSH {{ item.price }}</small>
+                    <small>Qty: {{ item.quantity }} x KSH {{ item.price }}</small>
                 </div>
             </div>
             {% endfor %}
@@ -51,7 +51,7 @@
     </div>
     
     <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-        <p>© {{ cart_age_hours|date:"Y" }} Malaika Nest. All rights reserved.</p>
+        <p>(c) {{ cart_age_hours|date:"Y" }} Malaika Nest. All rights reserved.</p>
         <p>
             <a href="https://malaikanest.shop" style="color: #BFA46F;">Shop</a> | 
             <a href="https://malaikanest.shop/contact" style="color: #BFA46F;">Contact</a> | 
@@ -60,3 +60,4 @@
     </div>
 </body>
 </html>
+

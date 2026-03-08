@@ -179,7 +179,7 @@ export default function OrdersPage() {
                     {order.status === 'paid' && (
                       <div className="mt-4 pt-3 border-t border-default">
                         <a
-                          href={`/api/orders/orders/${order.id}/invoice/`}
+                          href={`${process.env.NEXT_PUBLIC_API_URL || ''}/api/orders/orders/${order.id}/invoice/`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)] hover:underline"
@@ -199,3 +199,5 @@ export default function OrdersPage() {
     </div>
   )
 }
+
+
