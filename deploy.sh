@@ -45,8 +45,13 @@ pm2 start ecosystem.config.js || pm2 restart ecosystem.config.js || (PORT=3000 n
 echo "🐍 Setting up backend..."
 cd "$PROJECT_DIR/backend"
 
-# Activate virtual environment
-source "$PROJECT_DIR/venv/bin/activate"
+# Use system Python instead of venv (more reliable for deployment)
+# Activate virtual environment if it exists
+if [ -f "$PROJECT_DIR/venv/bin/activate" ]; then
+    source "$PROJECT_DIR/venv/bin/activate"
+else
+    echo "⚠️ Virtual environment not found, using system Python"
+fi
 
 # Run migrations
 echo "🗄️ Running database migrations..."
