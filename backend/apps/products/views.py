@@ -177,6 +177,11 @@ class InventoryViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related("user", "product").order_by("-created_at")
     serializer_class = ReviewSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["product", "rating"]
+    search_fields = ["title", "body"]
+    ordering_fields = ["created_at", "rating"]
+    ordering = ["-created_at"]
 
     def get_permissions(self):
         if self.action in ["create"]:
@@ -184,6 +189,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if self.action in ["update", "partial_update", "destroy"]:
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by product if provided
+        product_id = self.request.query_params.get("product")
+        if product_id:
+            queryset = queryset.filter(product_id=product_id)
+        
+        return queryset
 
 
 class WishlistViewSet(viewsets.ModelViewSet):

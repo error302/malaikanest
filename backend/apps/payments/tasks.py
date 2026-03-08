@@ -24,12 +24,11 @@ except ImportError:
 
         return decorator
 
-from .services import audit_log
-
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
 def verify_mpesa_payment_async(self, payment_id):
     from .models import Payment
+    from .services import audit_log
 
     try:
         payment = Payment.objects.get(pk=payment_id)
@@ -170,6 +169,7 @@ def verify_mpesa_payment_async(self, payment_id):
 @shared_task
 def reconcile_payments_task(stale_minutes=30, limit=200):
     from .models import Payment
+    from .services import audit_log
 
     cutoff = timezone.now() - datetime.timedelta(minutes=stale_minutes)
     payments = (

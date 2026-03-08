@@ -277,6 +277,19 @@ class PaymentService:
                 else:
                     order.save(update_fields=["status", "updated_at"])
 
+                # PHASE 7: Automatic Invoice Generation - Generate invoice and send email on payment success
+                try:
+                    from apps.orders.tasks import send_payment_confirmation, generate_invoice
+                    # Generate invoice asynchronously
+                    generate_invoice.delay(order.id)
+                    # Send payment confirmation email with invoice attached
+                    send_payment_confirmation.delay(order.id)
+                except Exception as e:
+                    # Log error but don't fail the payment callback
+                    import logging
+                    logger = logging.getLogger('apps.payments')
+                    logger.error(f"Failed to trigger invoice/email tasks for order {order.id}: {e}")
+
                 audit_log(event_type="callback_completed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
                 return {"ResultCode": 0, "ResultDesc": "Accepted"}
 

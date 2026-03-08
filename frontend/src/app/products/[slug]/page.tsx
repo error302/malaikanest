@@ -8,6 +8,7 @@ import { CheckCircle2, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
 
 import api from '../../../lib/api'
 import { useCart } from '../../../lib/cartContext'
+import ReviewSection from '@/components/ReviewSection'
 
 interface Product {
   id: number
@@ -195,6 +196,9 @@ export default function ProductDetailPage() {
             </div>
           </section>
         </div>
+
+        {/* Reviews Section */}
+        {product && <ReviewSection productId={product.id} />}
       </div>
     </div>
   )

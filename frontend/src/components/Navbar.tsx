@@ -7,6 +7,7 @@ import { Menu, Search, ShoppingBag, User, X } from 'lucide-react'
 
 import api from '../lib/api'
 import { useCart } from '../lib/cartContext'
+import { useAuth } from '../lib/authContext'
 import MiniCart from './MiniCart'
 import Logo from './Logo'
 
@@ -33,6 +34,7 @@ export default function Navbar() {
   const [categories, setCategories] = useState<Category[]>([])
 
   const { items, remove, updateQty } = useCart()
+  const { user, isAuthenticated, logout } = useAuth()
 
   const cartCount = useMemo(() => items.reduce((sum, item) => sum + (item.qty || 1), 0), [items])
 
@@ -85,11 +87,15 @@ export default function Navbar() {
               <Search size={18} />
             </button>
             <Link
-              href="/login"
+              href={isAuthenticated ? "/account" : "/login"}
               aria-label="Account"
               className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
             >
-              <User size={18} />
+              {isAuthenticated && user ? (
+                <span className="text-sm font-semibold">{user.name?.charAt(0).toUpperCase()}</span>
+              ) : (
+                <User size={18} />
+              )}
             </Link>
 
             <button

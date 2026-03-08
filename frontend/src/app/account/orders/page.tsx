@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Download, FileText } from 'lucide-react'
 
 import api, { handleApiError } from '@/lib/api'
 
@@ -171,6 +172,21 @@ export default function OrdersPage() {
                       <div className="mt-3 rounded-[12px] border border-default bg-surface p-3 text-sm text-[var(--text-secondary)]">
                         <p className="font-semibold text-[var(--text-primary)]">Gift Order</p>
                         {order.gift_message && <p className="mt-1 italic">"{order.gift_message}"</p>}
+                      </div>
+                    )}
+
+                    {/* Download Invoice Button - Only for paid orders */}
+                    {order.status === 'paid' && (
+                      <div className="mt-4 pt-3 border-t border-default">
+                        <a
+                          href={`/api/orders/orders/${order.id}/invoice/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)] hover:underline"
+                        >
+                          <Download size={16} />
+                          Download Invoice
+                        </a>
                       </div>
                     )}
                   </div>

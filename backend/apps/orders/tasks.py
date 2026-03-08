@@ -91,7 +91,7 @@ def send_payment_confirmation(self, order_id):
         from apps.orders.invoice import save_invoice_pdf
         invoice = save_invoice_pdf(order)
         
-        subject = f"Payment Confirmed - Invoice #{invoice.invoice_number if invoice else order.id}"
+        subject = f"Your Order Invoice {invoice.invoice_number if invoice else order.id}"
         to = [order.customer_email]
         
         context = {
@@ -177,7 +177,7 @@ def send_order_shipped(self, order_id):
 Great news! Your order has been shipped.
 
 Order Number: {order.id}
-{% if order.tracking_number %}Tracking Number: {order.tracking_number}{% endif %}
+Tracking Number: {order.tracking_number or 'N/A'}
 Shipping Carrier: {order.shipping_carrier or 'Standard Delivery'}
 
 You can expect delivery within the next 1-3 business days depending on your location.

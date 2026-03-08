@@ -14,11 +14,13 @@
             font-size: 14px;
             line-height: 1.5;
             color: #333;
+            background-color: #f5f5f5;
         }
         .invoice-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 40px;
+            background-color: #fff;
         }
         .header {
             display: flex;
@@ -31,10 +33,12 @@
             color: #BFA46F;
             font-size: 28px;
             margin-bottom: 10px;
+            font-weight: 700;
         }
         .company-info p {
             color: #666;
             font-size: 12px;
+            margin: 2px 0;
         }
         .invoice-details {
             text-align: right;
@@ -43,28 +47,41 @@
             font-size: 24px;
             color: #333;
             margin-bottom: 10px;
+            font-weight: 700;
         }
         .invoice-details p {
             color: #666;
             font-size: 12px;
+            margin: 2px 0;
         }
-        .billing-info {
+        .invoice-details .invoice-number {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .info-section {
             margin-bottom: 30px;
         }
-        .billing-info h3, .shipping-info h3 {
+        .info-section h3 {
             font-size: 14px;
             color: #BFA46F;
             margin-bottom: 10px;
             text-transform: uppercase;
+            font-weight: 600;
         }
-        .billing-info p, .shipping-info p {
+        .info-section p {
             font-size: 13px;
             color: #555;
+            margin: 2px 0;
         }
         .info-grid {
             display: flex;
             justify-content: space-between;
             margin-bottom: 30px;
+            gap: 40px;
+        }
+        .billing-info, .shipping-info {
+            flex: 1;
         }
         table {
             width: 100%;
@@ -78,7 +95,8 @@
             text-align: left;
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
         }
         th:last-child {
             text-align: right;
@@ -87,9 +105,22 @@
             padding: 12px;
             border-bottom: 1px solid #eee;
             font-size: 13px;
+            vertical-align: top;
         }
         td:last-child {
             text-align: right;
+        }
+        .product-name {
+            font-weight: 600;
+            color: #333;
+        }
+        .product-variant {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .item-price {
+            color: #666;
         }
         .totals {
             margin-left: auto;
@@ -100,14 +131,82 @@
             justify-content: space-between;
             padding: 8px 0;
             border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        .totals-row label {
+            color: #666;
+        }
+        .totals-row span:last-child {
+            font-weight: 500;
+        }
+        .totals-row.discount label {
+            color: #28a745;
+        }
+        .totals-row.discount span:last-child {
+            color: #28a745;
         }
         .totals-row.total {
             border-top: 2px solid #BFA46F;
             border-bottom: none;
-            font-weight: bold;
+            font-weight: 700;
             font-size: 18px;
             padding-top: 15px;
             color: #BFA46F;
+            margin-top: 5px;
+        }
+        .totals-row.total label {
+            color: #333;
+        }
+        .payment-info {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border-left: 4px solid #BFA46F;
+        }
+        .payment-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .payment-info p {
+            color: #666;
+            font-size: 12px;
+            margin: 4px 0;
+        }
+        .payment-info .payment-value {
+            font-weight: 500;
+            color: #333;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-processing {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        .status-shipped {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        .status-delivered {
+            background-color: #d4edda;
+            color: #155724;
         }
         .footer {
             margin-top: 50px;
@@ -117,35 +216,27 @@
             color: #888;
             font-size: 12px;
         }
-        .payment-info {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-        }
-        .payment-info h3 {
-            color: #333;
+        .footer .thank-you {
+            font-size: 16px;
+            color: #BFA46F;
+            font-weight: 600;
             margin-bottom: 10px;
         }
-        .payment-info p {
-            color: #666;
-            font-size: 12px;
+        .footer p {
+            margin: 4px 0;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+        .order-id {
             font-weight: 600;
-            text-transform: uppercase;
+            color: #333;
         }
-        .status-paid {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
+        @media print {
+            body {
+                background-color: #fff;
+            }
+            .invoice-container {
+                box-shadow: none;
+                padding: 0;
+            }
         }
     </style>
 </head>
@@ -160,51 +251,88 @@
             </div>
             <div class="invoice-details">
                 <h2>INVOICE</h2>
-                <p><strong>Invoice #:</strong> {{ invoice_number }}</p>
+                <p class="invoice-number">{{ invoice_number }}</p>
                 <p><strong>Date:</strong> {{ invoice_date }}</p>
-                <p>
-                    <span class="status-badge {% if order.status == 'paid' %}status-paid{% else %}status-pending{% endif %}">
-                        {{ order.status|upper }}
+                <p><strong>Order ID:</strong> #{{ order_id }}</p>
+                <p><strong>Receipt:</strong> {{ receipt_number }}</p>
+                <p style="margin-top: 8px;">
+                    <span class="status-badge 
+                        {% if status == 'PAID' %}status-paid
+                        {% elif status == 'PENDING' %}status-pending
+                        {% elif status == 'PROCESSING' %}status-processing
+                        {% elif status == 'SHIPPED' %}status-shipped
+                        {% elif status == 'DELIVERED' %}status-delivered
+                        {% else %}status-pending{% endif %}">
+                        {{ status }}
                     </span>
                 </p>
             </div>
         </div>
 
         <div class="info-grid">
-            <div class="billing-info">
+            <div class="billing-info info-section">
                 <h3>Bill To</h3>
-                <p><strong>{{ order.user.first_name }} {{ order.user.last_name }}</strong></p>
-                <p>{{ order.user.email }}</p>
-                <p>{{ order.user.phone }}</p>
+                <p><strong>{{ billing_name }}</strong></p>
+                <p>{{ customer_email }}</p>
+                <p>{{ billing_phone }}</p>
+                {% if billing_address %}
+                <p>{{ billing_address }}</p>
+                {% endif %}
+                {% if billing_city or billing_region %}
+                <p>{{ billing_city }}{% if billing_city and billing_region %}, {% endif %}{{ billing_region }}</p>
+                {% endif %}
+                {% if billing_postal_code %}
+                <p>{{ billing_postal_code }}</p>
+                {% endif %}
             </div>
-            {% if order.delivery_address %}
-            <div class="shipping-info">
+            
+            <div class="shipping-info info-section">
                 <h3>Ship To</h3>
-                <p>{{ order.delivery_address }}</p>
+                <p><strong>{{ shipping_name }}</strong></p>
+                <p>{{ shipping_phone }}</p>
+                {% if shipping_address %}
+                <p>{{ shipping_address }}</p>
+                {% endif %}
+                {% if shipping_city or shipping_region %}
+                <p>{{ shipping_city }}{% if shipping_city and shipping_region %}, {% endif %}{{ shipping_region }}</p>
+                {% endif %}
+                {% if shipping_postal_code %}
+                <p>{{ shipping_postal_code }}</p>
+                {% endif %}
+                {% if delivery_region %}
+                <p style="margin-top: 8px;"><strong>Delivery:</strong> {{ delivery_region }}</p>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
         <table>
             <thead>
                 <tr>
-                    <th>Item</th>
-                    <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Total</th>
+                    <th style="width: 45%">Item</th>
+                    <th style="width: 15%">Variant</th>
+                    <th style="width: 15%">Quantity</th>
+                    <th style="width: 12%">Unit Price</th>
+                    <th style="width: 13%">Total</th>
                 </tr>
             </thead>
             <tbody>
-                {% for item in order.items.all %}
+                {% for item in items %}
                 <tr>
                     <td>
-                        <strong>{{ item.product.name }}</strong>
+                        <span class="product-name">{{ item.product.name }}</span>
+                        {% if item.product.sku %}
+                        <br><small style="color: #888;">SKU: {{ item.product.sku }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if item.variant %}
-                        <br><small>{{ item.variant.size|default:'' }} {{ item.variant.color|default:'' }}</small>
+                        <span class="product-variant">{{ item.variant.size|default:'' }} {{ item.variant.color|default:'' }}</span>
+                        {% else %}
+                        -
                         {% endif %}
                     </td>
                     <td>{{ item.quantity }}</td>
-                    <td>KSH {{ item.price|floatformat:2 }}</td>
+                    <td class="item-price">KSH {{ item.price|floatformat:2 }}</td>
                     <td>KSH {{ item.price|multiply:item.quantity|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
@@ -213,37 +341,45 @@
 
         <div class="totals">
             <div class="totals-row">
-                <span>Subtotal</span>
-                <span>KSH {{ order.total|floatformat:2 }}</span>
+                <label>Subtotal</label>
+                <span>KSH {{ subtotal|floatformat:2 }}</span>
             </div>
-            {% if order.coupon %}
-            <div class="totals-row">
-                <span>Discount ({{ order.coupon.code }})</span>
-                <span>-KSH {{ order.coupon.amount|floatformat:2 }}</span>
+            {% if discount > 0 %}
+            <div class="totals-row discount">
+                <label>Discount</label>
+                <span>-KSH {{ discount|floatformat:2 }}</span>
             </div>
             {% endif %}
             <div class="totals-row">
-                <span>Shipping</span>
-                <span>KSH 0.00</span>
+                <label>Shipping</label>
+                <span>KSH {{ shipping|floatformat:2 }}</span>
             </div>
+            {% if tax > 0 %}
+            <div class="totals-row">
+                <label>Tax</label>
+                <span>KSH {{ tax|floatformat:2 }}</span>
+            </div>
+            {% endif %}
             <div class="totals-row total">
-                <span>Total</span>
-                <span>KSH {{ order.total|floatformat:2 }}</span>
+                <label>Total</label>
+                <span>KSH {{ total|floatformat:2 }}</span>
             </div>
         </div>
 
         <div class="payment-info">
             <h3>Payment Information</h3>
-            <p>Payment Method: M-Pesa</p>
-            <p>Transaction ID: {{ order.payment.mpesa_receipt_number|default:'Pending' }}</p>
-            <p>Receipt Number: {{ order.receipt_number }}</p>
+            <p><strong>Payment Method:</strong> <span class="payment-value">{{ payment_method }}</span></p>
+            <p><strong>Transaction ID:</strong> <span class="payment-value">{{ transaction_id }}</span></p>
+            <p><strong>Receipt Number:</strong> <span class="payment-value">{{ receipt_number }}</span></p>
         </div>
 
         <div class="footer">
-            <p>Thank you for shopping with {{ company_name }}!</p>
+            <p class="thank-you">Thank you for shopping with {{ company_name }}!</p>
             <p>For any queries, contact us at {{ company_email }}</p>
+            <p>Order ID: <span class="order-id">#{{ order_id }}</span></p>
             <p>&copy; {{ company_name }} - {{ invoice_date }}</p>
         </div>
     </div>
 </body>
 </html>
+

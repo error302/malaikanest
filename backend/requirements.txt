@@ -13,8 +13,12 @@ cloudinary==1.41.0
 django-cloudinary-storage==0.2.0
 redis==5.2.1
 celery==5.4.0
+celery-beat==2.2.1
 dj-database-url==2.2.0
 channels==4.2.0
 channels-redis==4.2.0
 daphne==4.1.0
 cryptography==46.0.5
+xhtml2pdf==0.2.11
+weasyprint==62.3
+python-dateutil==2.9.0
