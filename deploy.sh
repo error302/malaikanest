@@ -21,34 +21,34 @@ if [ ! -f backend/.env ]; then
 # Django Settings
 SECRET_KEY=e2a21026e2884093da2eefd5d4986583e4eab71bf89a943198947255b7b6ffb7ddbd3f88eeef1ecb99f97854ecd83a1718cc
 DEBUG=False
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+ALLOWED_HOSTS=104.154.161.10,malaikanest.duckdns.org,www.malaikanest.duckdns.org
 
-# Database (update with your PostgreSQL credentials)
-DATABASE_URL=postgres://username:password@localhost:5432/malaikanest
+# Database (PostgreSQL on GCP)
+DATABASE_URL=postgres://malaika_user:Dosho10701$@10.128.0.2:5432/malaika_db
 
 # Cloudinary (for image uploads)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+CLOUDINARY_CLOUD_NAME=dnnr5zo0w
+CLOUDINARY_API_KEY=934211243173844
+CLOUDINARY_API_SECRET=QyzDcE1u1LtUqyaIM3-0gub7oCc
 
 # Email Settings
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_HOST_USER=malaikanest7@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
+EMAIL_HOST_PASSWORD=bevk znlp jwyg kbqj
 EMAIL_USE_TLS=True
 DEFAULT_FROM_EMAIL=Malaika Nest <malaikanest7@gmail.com>
 
-# M-Pesa Payment Settings
+# M-Pesa Payment Settings (update with your credentials)
 MPESA_CONSUMER_KEY=your-consumer-key
 MPESA_CONSUMER_SECRET=your-consumer-secret
 MPESA_SHORTCODE=your-shortcode
 MPESA_PASSKEY=your-passkey
 
 # CORS
-CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+CORS_ALLOWED_ORIGINS=https://malaikanest.duckdns.org,https://www.malaikanest.duckdns.org,http://localhost:3000
 EOF
-    echo "⚠️ Please edit backend/.env with your actual values!"
+    echo "✅ .env file created with credentials!"
 fi
 
 # Install frontend dependencies and build
@@ -102,6 +102,7 @@ $PYTHON_CMD manage.py collectstatic --noinput || echo "⚠️ Collectstatic fail
 
 # Restart backend using PM2
 echo "🔄 Restarting backend with PM2..."
+
 
 # Try to restart existing PM2 backend process, or start new one
 pm2 restart backend 2>/dev/null || \
