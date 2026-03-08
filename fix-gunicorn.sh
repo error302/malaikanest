@@ -1,30 +1,38 @@
 #!/bin/bash
+# Fix Gunicorn socket permission issues
 
-# Fix gunicorn socket permission issue
+echo "🔧 Fixing Gunicorn socket..."
 
-echo "Fixing gunicorn socket permissions..."
-
-# Stop gunicorn
-sudo systemctl stop malaika-gunicorn
+# Stop gunicorn service
+echo "🛑 Stopping gunicorn..."
+sudo systemctl stop malaika-gunicorn 2>/dev/null || true
 
 # Remove old socket
+echo "🗑️ Removing old socket..."
+sudo rm -f /run/gunicorn.sock
 sudo rm -f /home/mohameddosho20/malaikanest/gunicorn.sock
 
-# Recreate with proper permissions
+# Create new socket directory
+echo "📁 Creating socket directory..."
+sudo mkdir -p /home/mohameddosho20/malaikanest
+
+# Create socket file
+echo "🔨 Creating socket file..."
 sudo touch /home/mohameddosho20/malaikanest/gunicorn.sock
 sudo chmod 775 /home/mohameddosho20/malaikanest/gunicorn.sock
 sudo chown mohameddosho20:mohameddosho20 /home/mohameddosho20/malaikanest/gunicorn.sock
 
-# Check gunicorn service file
-echo "Checking gunicorn service file..."
-cat /etc/systemd/system/malaika-gunicorn.service
-
 # Reload systemd
+echo "🔄 Reloading systemd..."
 sudo systemctl daemon-reload
 
 # Start gunicorn
+echo "▶️ Starting gunicorn..."
 sudo systemctl start malaika-gunicorn
 
 # Check status
-sudo systemctl status malaika-gunicorn
+echo "📊 Checking status..."
+sudo systemctl status malaika-gunicorn --no-pager || pm2 status gunicorn
+
+echo "✅ Gunicorn fix complete!"
 

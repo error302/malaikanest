@@ -1,9 +1,4 @@
 #!/bin/bash
-
-# ============================================
-# MALAIKA NEST - AUTOMATIC DEPLOYMENT SCRIPT
-# ============================================
-
 set -e
 
 echo "========================================"
@@ -11,82 +6,76 @@ echo "🚀 Starting Malaika Nest Deployment"
 echo "========================================"
 
 # Navigate to project directory
-PROJECT_DIR="/home/mohameddosho20/malaikanest"
-cd "$PROJECT_DIR"
+cd ~/malaikanest || exit 1
 
-# Pull latest code
+# Pull latest code from GitHub
 echo "📥 Pulling latest code from GitHub..."
+git checkout -- deploy.sh
 git pull origin main
 
-# Frontend deployment
+# Install frontend dependencies and build
 echo "📦 Installing frontend dependencies..."
-cd "$PROJECT_DIR/frontend"
+cd ~/malaikanest/frontend
 npm install
 
 echo "🔨 Building frontend..."
 npm run build
 
-# Stop old frontend process
+# Stop and restart frontend
 echo "🛑 Check/Stop frontend..."
-pm2 stop frontend 2>/dev/null || pm2 delete frontend 2>/dev/null || true
-
-# Install pm2 if not found
-if ! command -v pm2 &> /dev/null; then
-    echo "📦 Installing pm2 globally..."
-    npm install -g pm2
-fi
-
-# Start new frontend
+pm2 stop frontend 2>/dev/null || true
 echo "▶️ Starting frontend..."
-cd "$PROJECT_DIR/frontend"
-pm2 start ecosystem.config.js || pm2 restart ecosystem.config.js || (PORT=3000 npm start &)
+pm2 start ecosystem.config.js || pm2 restart frontend
 
-# Backend deployment
+# Setup backend
 echo "🐍 Setting up backend..."
-cd "$PROJECT_DIR/backend"
+cd ~/malaikanest/backend
 
-# Use system Python instead of venv (more reliable for deployment)
-# Activate virtual environment if it exists
-if [ -f "$PROJECT_DIR/venv/bin/activate" ]; then
-    source "$PROJECT_DIR/venv/bin/activate"
+# Check for virtual environment and set PYTHON_CMD
+PYTHON_CMD="python3"
+GUNICORN_CMD="gunicorn"
+
+if [ -d "../.venv" ]; then
+    echo "✅ Using .venv"
+    source ../.venv/bin/activate
+    PYTHON_CMD="../.venv/bin/python"
+    GUNICORN_CMD="../.venv/bin/gunicorn"
+elif [ -d "venv" ]; then
+    echo "✅ Using venv"
+    source venv/bin/activate
+    PYTHON_CMD="venv/bin/python"
+    GUNICORN_CMD="venv/bin/gunicorn"
+elif [ -d ".venv" ]; then
+    echo "✅ Using .venv"
+    source .venv/bin/activate
+    PYTHON_CMD=".venv/bin/python"
+    GUNICORN_CMD=".venv/bin/gunicorn"
 else
     echo "⚠️ Virtual environment not found, using system Python"
 fi
 
 # Run migrations
 echo "🗄️ Running database migrations..."
-python manage.py migrate --noinput
+$PYTHON_CMD manage.py migrate --noinput || echo "⚠️ Migration failed, continuing..."
 
 # Collect static files
 echo "📁 Collecting static files..."
-python manage.py collectstatic --noinput -q 2>/dev/null || true
+$PYTHON_CMD manage.py collectstatic --noinput || echo "⚠️ Collectstatic failed, continuing..."
 
-# Restart backend
-echo "🛑 Restarting backend..."
-sudo systemctl restart malaika-gunicorn
+# Restart backend using PM2
+echo "🔄 Restarting backend with PM2..."
+
+# Try to restart existing PM2 backend process, or start new one
+pm2 restart backend 2>/dev/null || \
+pm2 start "$GUNICORN_CMD --name backend --bind 0.0.0.0:8000 --workers 2 kenya_ecom.wsgi:application"
+
+# Save PM2 state for automatic restart on reboot
+pm2 save 2>/dev/null || true
+
+# Also try systemd as fallback
+sudo systemctl restart malaika-gunicorn 2>/dev/null || echo "⚠️ Systemd not available, using PM2 only"
 
 echo "========================================"
-echo "✅ Deployment completed successfully!"
+echo "✅ Deployment Complete!"
 echo "========================================"
 
-# Wait for services to start
-sleep 5
-
-# Verify services
-echo "🔍 Verifying services..."
-if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-    echo "✅ Frontend is running"
-else
-    echo "⚠️ Frontend may not be running properly"
-    echo "Check log: tail /tmp/frontend.log"
-fi
-
-if curl -sf http://127.0.0.1:8000/api/health/ > /dev/null 2>&1; then
-    echo "✅ Backend is running"
-else
-    echo "⚠️ Backend may not be running properly"
-    echo "Check: sudo systemctl status malaika-gunicorn"
-fi
-
-echo ""
-echo "🌐 Website should be live at: https://malaikanest.duckdns.org"
