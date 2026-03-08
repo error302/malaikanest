@@ -6,7 +6,7 @@ After=network.target
 User=mohameddosho20
 Group=mohameddosho20
 WorkingDirectory=/home/mohameddosho20/malaikanest/backend
-ExecStart=/usr/bin/python3 -m gunicorn --access-logfile - --workers 4 --bind unix:/run/gunicorn.sock config.wsgi:application
+ExecStart=/usr/bin/python3 -m gunicorn --access-logfile - --workers 4 --bind unix:/home/mohameddosho20/malaikanest/gunicorn.sock config.wsgi:application
 Restart=always
 
 [Install]
