@@ -5,7 +5,11 @@ from datetime import datetime
 from django.template.loader import render_to_string
 from django.conf import settings
 from xhtml2pdf import pisa
-import magic
+# magic is optional - used for file type detection but not required
+try:
+    import magic
+except ImportError:
+    magic = None
 
 logger = logging.getLogger('apps.orders')
 
