@@ -3,6 +3,11 @@ from pathlib import Path
 from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+env_path = Path(__file__).resolve().parent.parent.parent / '.env'
+load_dotenv(env_path)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 _SECRET_KEY = os.getenv("SECRET_KEY")
