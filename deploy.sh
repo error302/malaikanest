@@ -28,12 +28,18 @@ npm run build
 
 # Stop old frontend process
 echo "🛑 Check/Stop frontend..."
-pm2 stop frontend || true
+pm2 stop frontend 2>/dev/null || pm2 delete frontend 2>/dev/null || true
+
+# Install pm2 if not found
+if ! command -v pm2 &> /dev/null; then
+    echo "📦 Installing pm2 globally..."
+    npm install -g pm2
+fi
 
 # Start new frontend
 echo "▶️ Starting frontend..."
 cd "$PROJECT_DIR/frontend"
-pm2 start ecosystem.config.js || pm2 restart ecosystem.config.js
+pm2 start ecosystem.config.js || pm2 restart ecosystem.config.js || (PORT=3000 npm start &)
 
 # Backend deployment
 echo "🐍 Setting up backend..."
