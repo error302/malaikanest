@@ -3,18 +3,16 @@
 ## CRITICAL ISSUES
 
 ### 1. Backend Not Running (Gunicorn Socket Permission Error)
-**Status:** ❌ CRITICAL
+**Status:** ✅ FIXED
 **Problem:** Gunicorn cannot start due to socket permission error at `/run/gunicorn.sock`
 **Symptom:** All API calls fail, registration/login doesn't work
-**Fix:**
+**Fix:** Changed gunicorn.service to use custom socket path at `/home/mohameddosho20/malaikanest/gunicorn.sock` instead of `/run/gunicorn.sock`
+
+Run on server:
 ```bash
-sudo systemctl stop malaika-gunicorn
-sudo rm -f /run/gunicorn.sock
-sudo touch /run/gunicorn.sock
-sudo chmod 775 /run/gunicorn.sock
-sudo chown www-data:www-data /run/gunicorn.sock
+sudo cp /home/mohameddosho20/malaikanest/deployment/gunicorn.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl start malaika-gunicorn
+sudo systemctl restart malaika-gunicorn
 ```
 
 ---
@@ -22,27 +20,11 @@ sudo systemctl start malaika-gunicorn
 ## UI STYLING ISSUES
 
 ### 2. CSS Variables Mismatch
-**Status:** ❌ CRITICAL
+**Status:** ✅ FIXED
 **Problem:** `tailwind.config.js` uses CSS variables that are NOT defined in `globals.css`
 **Symptom:** Login page looks different from main website (missing colors, wrong styles)
 
-**Missing CSS variables in globals.css:**
-- `--bg-secondary` (used in tailwind)
-- `--bg-card` 
-- `--bg-card-hover`
-- `--bg-section`
-- `--accent` (but `--accent-primary` exists)
-- `--accent-hover`
-- `--accent-dark`
-- `--primary`, `--primary-hover`
-- `--purple`, `--purple-hover`
-- `--text-muted`
-- `--text-inverse`
-- `--status-success`, `--status-warning`, `--status-error`, `--status-info`
-- `--pastel-pink`, `--pastel-mint`, `--pastel-beige`, `--pastel-cream`, `--pastel-lavender`, `--pastel-peach`
-- Various font and shadow variables
-
-**Fix:** Add all missing CSS variables to `globals.css`
+**Fix:** All CSS variables now exist in globals.css (both light and dark mode)
 
 ---
 
@@ -61,9 +43,9 @@ sudo systemctl start malaika-gunicorn
 ---
 
 ### 4. Admin Dashboard Broken
-**Status:** ⚠️ MEDIUM
+**Status:** ✅ LIKELY FIXED
 **Problem:** Admin layout uses CSS variables that aren't defined (bg-secondary, bg-card, etc.)
-**Fix:** After fixing CSS variables, admin dashboard should work
+**Fix:** CSS variables are now properly defined in globals.css. After deploying the updated service, admin dashboard should work correctly.
 
 ---
 
