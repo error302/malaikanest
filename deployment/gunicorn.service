@@ -3,12 +3,14 @@ Description=gunicorn daemon for Malaika Nest
 After=network.target
 
 [Service]
-User=mohameddosho20
-Group=mohameddosho20
-WorkingDirectory=/home/mohameddosho20/malaikanest/backend
-ExecStart=/usr/bin/python3 -m gunicorn --access-logfile - --workers 4 --bind unix:/home/mohameddosho20/malaikanest/gunicorn.sock config.wsgi:application
+User=appuser
+Group=appuser
+WorkingDirectory=/var/www/malaikanest/backend
+Environment=DJANGO_ENV=prod
+EnvironmentFile=-/var/www/malaikanest/backend/.env.production
+ExecStart=/var/www/malaikanest/venv/bin/gunicorn --access-logfile - --workers 4 --bind 127.0.0.1:8000 config.wsgi:application
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-

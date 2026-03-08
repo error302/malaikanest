@@ -1,0 +1,16 @@
+[Unit]
+Description=Malaika Nest Frontend (Next.js)
+After=network.target
+
+[Service]
+User=appuser
+Group=appuser
+WorkingDirectory=/var/www/malaikanest/frontend
+Environment=NODE_ENV=production
+EnvironmentFile=-/var/www/malaikanest/frontend/.env.production
+ExecStart=/usr/bin/node /var/www/malaikanest/frontend/node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -40,12 +40,13 @@ sudo -u deploy -H bash -lc "cd /opt/kenya_baby_ecommerce/backend && /opt/venv/bi
 
 7. Setup systemd services
 
-Copy `deployment/gunicorn.service`, `deployment/celery.service`, `deployment/celerybeat.service` to `/etc/systemd/system/` and reload systemd
+Copy `deployment/gunicorn.service`, `deployment/frontend.service`, `deployment/celery.service`, and `deployment/celerybeat.service` to `/etc/systemd/system/` and reload systemd
 
 ```bash
 sudo cp deployment/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now gunicorn
+sudo systemctl enable --now frontend
 sudo systemctl enable --now celery
 sudo systemctl enable --now celerybeat
 ```
