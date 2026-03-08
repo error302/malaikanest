@@ -8,7 +8,7 @@ python-dotenv==1.0.1
 django-cors-headers==4.6.0
 requests==2.32.3
 pytz==2024.2
-Pillow==10.4.0
+Pillow==12.1.1
 cloudinary==1.41.0
 django-cloudinary-storage==0.2.0
 redis==5.2.1
@@ -17,3 +17,4 @@ dj-database-url==2.2.0
 channels==4.2.0
 channels-redis==4.2.0
 daphne==4.1.0
+cryptography==46.0.5
