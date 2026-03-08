@@ -1,5 +1,7 @@
 'use client'
+
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import Turnstile from '@/components/Turnstile'
@@ -29,7 +31,6 @@ export default function AdminLogin() {
     } catch (err: any) {
       const responseData = err?.response?.data
       if (responseData?.detail) {
-        // Parse specific error messages from backend
         const detail = responseData.detail
         if (detail.includes('No active account found')) {
           setError('Invalid email or password')
@@ -49,39 +50,64 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#FDF8F5] dark:bg-[#0F0F0F]">
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white dark:bg-[#1A1A1A] rounded-2xl shadow p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-[#8B4513] dark:text-[#FF7A59]">Admin Login</h1>
-        {error && (
-          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+    <div className="pb-20 pt-10">
+      <div className="container-shell">
+        <div className="mx-auto max-w-md rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:p-8">
+          <div className="mb-6 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Admin Access</p>
+            <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Admin Login</h1>
+            <p className="mt-2 text-[16px] text-[var(--text-secondary)]">Welcome to Malaika Nest Admin.</p>
           </div>
-        )}
-        <input 
-          className="w-full border border-[#E5E5E5] dark:border-[#333333] rounded-lg px-3 py-2 bg-white dark:bg-[#262626] text-[#111111] dark:text-[#F5F5F5]" 
-          type="email" 
-          placeholder="Email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
-          required 
-        />
-        <input 
-          className="w-full border border-[#E5E5E5] dark:border-[#333333] rounded-lg px-3 py-2 bg-white dark:bg-[#262626] text-[#111111] dark:text-[#F5F5F5]" 
-          type="password" 
-          placeholder="Password" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-          required 
-        />
-        {captchaRequired && <Turnstile siteKey={captchaSiteKey} action="login" onToken={setCaptchaToken} />}
-        <button 
-          className="w-full bg-[#8B4513] dark:bg-[#FF7A59] text-white rounded-lg py-2 disabled:opacity-50" 
-          type="submit" 
-          disabled={loading || (captchaRequired && !captchaToken)}
-        >
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
-      </form>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Email
+              <input
+                className="input-soft mt-2"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </label>
+
+            <label className="block text-sm font-medium text-[var(--text-primary)]">
+              Password
+              <input
+                className="input-soft mt-2"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </label>
+
+            {captchaRequired && (
+              <Turnstile siteKey={captchaSiteKey} action="admin_login" onToken={setCaptchaToken} />
+            )}
+
+            <button
+              className="btn-primary w-full"
+              type="submit"
+              disabled={loading || (captchaRequired && !captchaToken)}
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+
+            <div className="text-center text-sm text-[var(--text-secondary)]">
+              <Link href="/login" className="underline hover:text-[var(--text-primary)]">
+                Back to Customer Login
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }

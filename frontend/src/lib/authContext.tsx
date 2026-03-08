@@ -8,11 +8,13 @@ type User = {
   email: string
   name: string
   role?: string
+  is_staff?: boolean
 }
 
 type AuthContextType = {
   user: User | null
   isAuthenticated: boolean
+  isAdmin: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
@@ -45,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: res.data.email,
           name: res.data.name || res.data.email,
           role: res.data.role,
+          is_staff: res.data.is_staff,
         }
         setUser(userData)
         localStorage.setItem(USER_KEY, JSON.stringify(userData))
@@ -108,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       isAuthenticated: !!user,
+      isAdmin: !!(user && (user.role === 'admin' || user.is_staff)),
       isLoading,
       login,
       logout,

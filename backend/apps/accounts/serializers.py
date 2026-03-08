@@ -6,7 +6,7 @@ from .models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'phone', 'first_name', 'last_name', 'role', 'date_joined')
+        fields = ('id', 'email', 'phone', 'first_name', 'last_name', 'role', 'is_staff', 'date_joined')
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -42,6 +42,7 @@ class TokenObtainPairWithUserSerializer(TokenObtainPairSerializer):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'role': user.role,
+            'is_staff': user.is_staff,
         }
         
         return data
