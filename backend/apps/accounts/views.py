@@ -11,7 +11,7 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.contrib.auth import authenticate
-from .serializers import UserSerializer, RegisterSerializer
+from .serializers import UserSerializer, RegisterSerializer, TokenObtainPairWithUserSerializer
 from .models import User
 from .services import AuthService
 from .security import (
@@ -31,6 +31,7 @@ logger = logging.getLogger("apps.accounts")
 
 class CookieTokenObtainPairView(TokenObtainPairView):
     """Returns access token in body and sets refresh and access tokens in httpOnly secure cookies"""
+    serializer_class = TokenObtainPairWithUserSerializer
 
     def finalize_response(self, request, response, *args, **kwargs):
         return super().finalize_response(request, response, *args, **kwargs)
