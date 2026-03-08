@@ -19,7 +19,7 @@ if [ ! -f backend/.env ]; then
     echo "📝 Creating .env file..."
     cat > backend/.env << 'EOF'
 # Django Settings
-SECRET_KEY=changeme-generate-new-secret-key
+SECRET_KEY=e2a21026e2884093da2eefd5d4986583e4eab71bf89a943198947255b7b6ffb7ddbd3f88eeef1ecb99f97854ecd83a1718cc
 DEBUG=False
 ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
 
