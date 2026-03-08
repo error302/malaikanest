@@ -1,3 +1,26 @@
+import os
+import mimetypes
+from django.core.exceptions import ValidationError
+
+
+def validate_image_file(image):
+    """Validate image file type and size."""
+    ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
+    MAX_SIZE = 5 * 1024 * 1024  # 5MB
+    
+    if image:
+        ext = os.path.splitext(image.name)[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            raise ValidationError(f'Unsupported format. Allowed: JPG, PNG, WEBP')
+        
+        if image.size > MAX_SIZE:
+            raise ValidationError('Image too large. Maximum size is 5MB')
+        
+        mime_type, _ = mimetypes.guess_type(image.name)
+        if mime_type not in ['image/jpeg', 'image/png', 'image/webp']:
+            raise ValidationError('Invalid image format')
+
+
 from django.db import models
 from django.utils.text import slugify
 from django.conf import settings
@@ -23,7 +46,7 @@ class Brand(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
-    image = models.ImageField(upload_to='categories/', blank=True, null=True)
+    image = models.ImageField(upload_to='categories/', blank=True, null=True, validators=[validate_image_file])
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -55,7 +78,7 @@ class Banner(models.Model):
     subtitle = models.CharField(max_length=300, blank=True)
     button_text = models.CharField(max_length=50, blank=True)
     button_link = models.URLField(blank=True, null=True)
-    image = models.ImageField(upload_to='banners/')
+    image = models.ImageField(upload_to='banners/', validators=[validate_image_file])
     mobile_image = models.ImageField(upload_to='banners/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     start_date = models.DateTimeField(null=True, blank=True)
@@ -115,7 +138,7 @@ class Product(models.Model):
     seo_description = models.CharField(max_length=160, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image = models.ImageField(upload_to='products/', blank=True, null=True, validators=[validate_image_file])
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -244,93 +267,45 @@ class ProductVariant(models.Model):
             parts.append(self.color)
         return " - ".join(parts)
 
-    @property
-    def effective_price(self):
-        return self.product.price + self.price_modifier
 
-    @property
-    def in_stock(self):
-        try:
-            return self.variant_inventory.available() > 0
-        except Exception:
-            return False
-
-    @property
-    def available_stock(self):
-        try:
-            return self.variant_inventory.available()
-        except Exception:
-            return 0
-
-    @property
-    def label(self):
-        """Human-readable variant label for order snapshots."""
-        parts = []
-        if self.size:
-            parts.append(self.get_size_display())
-        if self.color:
-            parts.append(self.get_color_display())
-        return " / ".join(parts) if parts else "Default"
 
 
 class ProductImage(models.Model):
-    """Multi-image gallery per product. Replaces the single image field on Product."""
-    product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="products/gallery/")
-    alt_text = models.CharField(max_length=255, blank=True)
-    position = models.PositiveSmallIntegerField(default=0, help_text="Display order")
-    is_primary = models.BooleanField(default=False)
+    product = models.ForeignKey(
+        Product, 
+        related_name='images', 
+        on_delete=models.CASCADE
+    )
+    image = models.ImageField(
+        upload_to='products/gallery/', 
+        validators=[validate_image_file]
+    )
+    alt_text = models.CharField(max_length=200, blank=True)
+    position = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["position", "id"]
-        indexes = [
-            models.Index(fields=["product", "is_primary"]),
-        ]
+        ordering = ['position', '-created_at']
+        unique_together = ('product', 'position')
 
     def __str__(self):
-        return f"{self.product.name} image {self.id}"
-
-    def save(self, *args, **kwargs):
-        # Ensure only one primary image per product
-        if self.is_primary:
-            ProductImage.objects.filter(product=self.product, is_primary=True).exclude(
-                pk=self.pk
-            ).update(is_primary=False)
-        super().save(*args, **kwargs)
+        return f'{self.product.name} - Image {self.position}'
 
 
 class VariantInventory(models.Model):
-    """
-    Per-variant stock tracking. This is the canonical inventory source.
-    Each ProductVariant gets exactly one VariantInventory record.
-    CartItem and OrderItem must lock this table (select_for_update) during checkout.
-    """
     variant = models.OneToOneField(
-        ProductVariant,
-        related_name="variant_inventory",
-        on_delete=models.CASCADE,
+        ProductVariant, 
+        related_name='inventory', 
+        on_delete=models.CASCADE
     )
     quantity = models.PositiveIntegerField(default=0)
     reserved = models.PositiveIntegerField(default=0)
-    low_stock_threshold = models.PositiveIntegerField(default=5)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["variant"]),
-        ]
 
     def available(self):
         return max(self.quantity - self.reserved, 0)
 
-    @property
-    def is_low_stock(self):
-        return 0 < self.available() <= self.low_stock_threshold
-
     def __str__(self):
-        return f"{self.variant} inventory: {self.quantity} (reserved: {self.reserved})"
-
+        return f'{self.variant} inventory: {self.quantity}'
 
 class Review(models.Model):
     product = models.ForeignKey(

@@ -56,38 +56,29 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class UserAddress(models.Model):
-    """Structured delivery address per user. Supports multiple saved addresses."""
+    LABEL_CHOICES = [
+        ('home', 'Home'),
+        ('work', 'Work'),
+        ('other', 'Other'),
+    ]
+
     user = models.ForeignKey(
-        "User",
-        on_delete=models.CASCADE,
-        related_name="addresses",
+        User, 
+        related_name='addresses', 
+        on_delete=models.CASCADE
     )
-    label = models.CharField(max_length=50, default="Home", help_text="e.g. Home, Work, Other")
-    full_name = models.CharField(max_length=200)
-    phone = models.CharField(max_length=20, blank=True)
+    label = models.CharField(max_length=20, choices=LABEL_CHOICES, default='home')
     street = models.CharField(max_length=255)
-    apartment = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100)
-    county = models.CharField(max_length=100, blank=True, help_text="e.g. Mombasa, Nairobi")
+    county = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=20, blank=True)
-    country = models.CharField(max_length=100, default="Kenya")
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-is_default", "-created_at"]
-        indexes = [
-            models.Index(fields=["user", "is_default"]),
-        ]
-
-    def save(self, *args, **kwargs):
-        # Ensure only one default address per user
-        if self.is_default:
-            UserAddress.objects.filter(user=self.user, is_default=True).exclude(
-                pk=self.pk
-            ).update(is_default=False)
-        super().save(*args, **kwargs)
+        ordering = ['-is_default', '-created_at']
 
     def __str__(self):
-        return f"{self.user.email} — {self.label}: {self.street}, {self.city}"
+        return f'{self.label} - {self.street}, {self.city}'
 

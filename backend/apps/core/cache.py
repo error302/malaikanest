@@ -1,129 +1,224 @@
 """
-apps/core/cache.py
-
-Production-grade Redis caching utilities for the Malaika Nest backend.
-
-Cache TTLs:
-  - Product list:       300  seconds (5 min)
-  - Product detail:     300  seconds (5 min)
-  - Category list:      1800 seconds (30 min)
-  - Featured products:  300  seconds (5 min)
-  - Banners:            600  seconds (10 min)
-
-Cache keys are namespaced so invalidation is surgical (no full-cache flush).
-
-NEVER cache user-specific data: carts, orders, authentication, checkout.
+Redis Caching Layer for E-commerce API
+Caches public product/category data to improve performance.
 """
-import hashlib
+import os
 import json
-import logging
+import hashlib
+from typing import Any, Optional, Callable
 from functools import wraps
 
+import redis
+from django.conf import settings
 from django.core.cache import cache
 
-logger = logging.getLogger("apps.core")
 
-# ─── TTL constants ─────────────────────────────────────────────────────────────
-PRODUCT_LIST_TTL = 300
-PRODUCT_DETAIL_TTL = 300
-CATEGORY_LIST_TTL = 1800
-FEATURED_TTL = 300
-BANNER_TTL = 600
-
-# ─── Key builders ──────────────────────────────────────────────────────────────
-
-def _make_key(prefix: str, *parts) -> str:
-    """Build a cache key from a prefix and variable parts."""
-    raw = ":".join(str(p) for p in parts)
-    return f"malaika:{prefix}:{raw}"
+# Cache TTL constants (in seconds)
+TTL_PRODUCTS_LIST = 60 * 10      # 10 minutes
+TTL_PRODUCT_DETAIL = 60 * 30      # 30 minutes
+TTL_CATEGORIES = 60 * 60          # 1 hour
+TTL_BANNERS = 60 * 15             # 15 minutes
+TTL_HOME_PAGE = 60 * 5            # 5 minutes
 
 
-def product_list_key(params: dict) -> str:
-    """Unique cache key for a paginated + filtered product list request."""
-    serialized = json.dumps(params, sort_keys=True)
-    digest = hashlib.md5(serialized.encode()).hexdigest()[:12]
-    return _make_key("products:list", digest)
-
-
-def product_detail_key(slug: str) -> str:
-    return _make_key("products:detail", slug)
-
-
-def category_list_key() -> str:
-    return _make_key("categories", "all")
-
-
-def featured_products_key() -> str:
-    return _make_key("products", "featured")
-
-
-def banner_list_key() -> str:
-    return _make_key("banners", "all")
-
-
-# ─── Helpers ───────────────────────────────────────────────────────────────────
-
-def cache_get(key: str):
-    """Return cached value or None."""
+def get_redis_client():
+    """Get Redis client from Django settings or environment."""
+    redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     try:
-        return cache.get(key)
-    except Exception as exc:
-        logger.warning("Cache GET failed for key %s: %s", key, exc)
+        return redis.from_url(redis_url, decode_responses=True)
+    except Exception:
         return None
 
 
-def cache_set(key: str, value, ttl: int):
-    """Set a cache value, swallowing errors so a Redis outage never breaks the API."""
-    try:
-        cache.set(key, value, timeout=ttl)
-    except Exception as exc:
-        logger.warning("Cache SET failed for key %s: %s", key, exc)
+_redis_client = None
 
 
-def cache_delete(key: str):
-    """Delete a single cache key."""
-    try:
+def get_redis():
+    """Lazy initialization of Redis client."""
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = get_redis_client()
+    return _redis_client
+
+
+def _make_cache_key(prefix: str, *args, **kwargs) -> str:
+    """Generate a consistent cache key."""
+    key_parts = [prefix]
+    key_parts.extend(str(arg) for arg in args)
+    if kwargs:
+        sorted_kwargs = sorted(kwargs.items())
+        kwargs_str = json.dumps(sorted_kwargs, sort_keys=True)
+        kwargs_hash = hashlib.md5(kwargs_str.encode()).hexdigest()[:8]
+        key_parts.append(kwargs_hash)
+    return ':'.join(key_parts)
+
+
+def cache_key_products_list(page: int = 1, per_page: int = 20, category: str = None, search: str = None) -> str:
+    """Generate cache key for products list."""
+    return _make_cache_key('products', 'list', page, per_page, category=category, search=search)
+
+
+def cache_key_product_detail(slug: str) -> str:
+    """Generate cache key for product detail."""
+    return _make_cache_key('products', 'detail', slug)
+
+
+def cache_key_categories() -> str:
+    """Generate cache key for categories list."""
+    return 'categories:list:all'
+
+
+def cache_key_banners() -> str:
+    """Generate cache key for banners."""
+    return 'banners:list:active'
+
+
+def cache_key_homepage() -> str:
+    """Generate cache key for homepage data."""
+    return 'homepage:data'
+
+
+class CacheService:
+    """High-level caching service with fallback to Django cache."""
+    
+    def __init__(self):
+        self.redis = get_redis()
+    
+    def get(self, key: str) -> Optional[Any]:
+        """Get value from cache."""
+        if self.redis:
+            try:
+                value = self.redis.get(key)
+                if value:
+                    return json.loads(value)
+            except Exception:
+                pass
+        
+        # Fallback to Django cache
+        return cache.get(key)
+    
+    def set(self, key: str, value: Any, ttl: int = 300) -> bool:
+        """Set value in cache with TTL."""
+        serialized = json.dumps(value)
+        
+        if self.redis:
+            try:
+                self.redis.setex(key, ttl, serialized)
+                return True
+            except Exception:
+                pass
+        
+        # Fallback to Django cache
+        cache.set(key, value, ttl)
+        return True
+    
+    def delete(self, key: str) -> bool:
+        """Delete key from cache."""
+        if self.redis:
+            try:
+                self.redis.delete(key)
+            except Exception:
+                pass
+        
         cache.delete(key)
-    except Exception as exc:
-        logger.warning("Cache DELETE failed for key %s: %s", key, exc)
+        return True
+    
+    def delete_pattern(self, pattern: str) -> int:
+        """Delete all keys matching pattern."""
+        count = 0
+        if self.redis:
+            try:
+                keys = self.redis.keys(pattern)
+                if keys:
+                    count = self.redis.delete(*keys)
+            except Exception:
+                pass
+        return count
 
 
-def cache_delete_pattern(pattern: str):
+# Singleton instance
+cache_service = CacheService()
+
+
+def cached(ttl: int = 300, key_func: Callable = None):
     """
-    Delete all keys matching a pattern (requires django-redis).
-    Falls back gracefully if the backend doesn't support delete_pattern.
+    Decorator to cache function results.
+    
+    Usage:
+        @cached(ttl=600, key_func=lambda self, slug: f'product:{slug}')
+        def get_product(self, slug):
+            ...
     """
-    try:
-        if hasattr(cache, "delete_pattern"):
-            cache.delete_pattern(pattern)
-        else:
-            logger.info("Cache backend does not support delete_pattern; skipping pattern %s", pattern)
-    except Exception as exc:
-        logger.warning("Cache DELETE PATTERN failed for %s: %s", pattern, exc)
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Generate cache key
+            if key_func:
+                cache_key = key_func(*args, **kwargs)
+            else:
+                # Default key based on function name and args
+                cache_key = _make_cache_key(func.__name__, *args, **kwargs)
+            
+            # Try to get from cache
+            cached_value = cache_service.get(cache_key)
+            if cached_value is not None:
+                return cached_value
+            
+            # Execute function and cache result
+            result = func(*args, **kwargs)
+            cache_service.set(cache_key, result, ttl)
+            return result
+        
+        return wrapper
+    return decorator
 
 
-# ─── Invalidation helpers ──────────────────────────────────────────────────────
-
-def invalidate_product_cache(slug: str = None):
-    """
-    Called after admin creates/updates/deletes a product.
-    Clears product list caches (all variants) and the specific product detail.
-    """
-    cache_delete_pattern("malaika:products:list:*")
-    cache_delete(featured_products_key())
-    if slug:
-        cache_delete(product_detail_key(slug))
-    logger.info("Product cache invalidated (slug=%s)", slug)
+def invalidate_products():
+    """Invalidate all product-related caches."""
+    cache_service.delete_pattern('products:*')
+    cache_service.delete(cache_key_homepage())
 
 
-def invalidate_category_cache():
-    """Called after admin creates/updates/deletes a category."""
-    cache_delete(category_list_key())
-    cache_delete_pattern("malaika:products:list:*")
-    logger.info("Category cache invalidated")
+def invalidate_categories():
+    """Invalidate category caches."""
+    cache_service.delete(cache_key_categories())
 
 
-def invalidate_banner_cache():
-    """Called after admin creates/updates/deletes a banner."""
-    cache_delete(banner_list_key())
-    logger.info("Banner cache invalidated")
+def invalidate_banners():
+    """Invalidate banner caches."""
+    cache_service.delete(cache_key_banners())
+
+
+def invalidate_homepage():
+    """Invalidate homepage cache."""
+    cache_service.delete(cache_key_homepage())
+
+
+# Cache invalidation signals for model changes
+def setup_cache_signals():
+    """Setup Django signals to auto-invalidate cache on model changes."""
+    from django.db.models import signals
+    from apps.products.models import Product, Category, Banner
+    
+    def invalidate_on_save(sender, instance, **kwargs):
+        if sender == Product:
+            invalidate_products()
+        elif sender == Category:
+            invalidate_categories()
+        elif sender == Banner:
+            invalidate_banners()
+    
+    def invalidate_on_delete(sender, instance, **kwargs):
+        if sender == Product:
+            invalidate_products()
+        elif sender == Category:
+            invalidate_categories()
+        elif sender == Banner:
+            invalidate_banners()
+    
+    signals.post_save.connect(invalidate_on_save, sender=Product)
+    signals.post_save.connect(invalidate_on_save, sender=Category)
+    signals.post_save.connect(invalidate_on_save, sender=Banner)
+    signals.post_delete.connect(invalidate_on_delete, sender=Product)
+    signals.post_delete.connect(invalidate_on_delete, sender=Category)
+    signals.post_delete.connect(invalidate_on_delete, sender=Banner)
