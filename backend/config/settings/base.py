@@ -4,12 +4,26 @@ from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
 from corsheaders.defaults import default_headers
 
-# Load environment variables from .env file
+# Load environment variables from the environment-specific dotenv file.
 from dotenv import load_dotenv
-env_path = Path(__file__).resolve().parent.parent.parent / '.env'
-load_dotenv(env_path)
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+settings_module = os.getenv("DJANGO_SETTINGS_MODULE", "")
+production_env_requested = (
+    os.getenv("DJANGO_ENV", "").lower() == "prod"
+    or os.getenv("ENVIRONMENT", "").lower() == "production"
+    or os.getenv("DJANGO_PRODUCTION", "").lower() in {"1", "true", "yes"}
+    or settings_module.endswith(".prod")
+)
+
+env_files = [BASE_DIR / '.env']
+if production_env_requested:
+    env_files = [BASE_DIR / '.env.production', *env_files]
+
+for env_file in env_files:
+    if env_file.exists():
+        load_dotenv(env_file, override=False)
 
 _SECRET_KEY = os.getenv("SECRET_KEY")
 if not _SECRET_KEY:
