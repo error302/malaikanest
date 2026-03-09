@@ -81,13 +81,17 @@ export default function Navbar() {
                   onMouseEnter={() => setShopOpen(true)}
                   onMouseLeave={() => setShopOpen(false)}
                 >
-                  <Link href={item.href} className="inline-flex items-center gap-1 text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                  <button
+                    type="button"
+                    onClick={() => setShopOpen((prev) => !prev)}
+                    className="inline-flex min-h-0 items-center gap-1 text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]"
+                  >
                     {item.label}
-                    <ChevronDown size={16} />
-                  </Link>
+                    <ChevronDown size={16} className={`transition-transform ${shopOpen ? "rotate-180" : ""}`} />
+                  </button>
                   {shopOpen && rootCategories.length > 0 && (
-                    <div className="absolute left-1/2 top-full z-50 mt-4 w-[min(90vw,54rem)] -translate-x-1/2 rounded-[16px] border border-default bg-surface p-5 shadow-[var(--shadow-hover)]">
-                      <div className="grid gap-5 md:grid-cols-3">
+                    <div className="absolute left-1/2 top-full z-50 w-[min(90vw,54rem)] -translate-x-1/2 pt-2">
+                      <div className="grid gap-5 rounded-[16px] border border-default bg-surface p-5 shadow-[var(--shadow-hover)] md:grid-cols-3">
                         {rootCategories.map((category) => (
                           <div key={category.id}>
                             <Link href={buildCategoryHref(category)} className="text-base font-semibold text-[var(--text-primary)] hover:text-[#8f6a65]">
