@@ -46,6 +46,7 @@ function toMpesaPhone(raw: string): string {
 function CheckoutContent() {
   const [cart, setCart] = useState<CartData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [requiresAuth, setRequiresAuth] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [phone, setPhone] = useState('')
   const [deliveryRegion, setDeliveryRegion] = useState('nairobi')
@@ -65,19 +66,20 @@ function CheckoutContent() {
       await api.get('/api/accounts/profile/')
       const res = await api.get('/api/orders/cart/')
       setCart(res.data)
+      setRequiresAuth(false)
       setError('')
     } catch (err: unknown) {
       const msg = handleApiError(err)
       if (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid refresh token')) {
-        router.push('/login?redirect=/checkout')
-        return
+        setRequiresAuth(true)
+        setError('')
       } else {
         setError(msg)
       }
     } finally {
       setLoading(false)
     }
-  }, [router])
+  }, [])
 
   const pollPaymentStatus = useCallback(
     async (oid: number) => {
@@ -199,6 +201,27 @@ function CheckoutContent() {
             <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
               <div className="h-[520px] rounded-[12px] border border-default bg-surface" />
               <div className="h-[420px] rounded-[12px] border border-default bg-surface" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  if (requiresAuth) {
+    return (
+      <div className="pb-20 pt-10">
+        <div className="container-shell">
+          <div className="card-soft mx-auto max-w-2xl p-10 text-center">
+            <h1 className="font-display text-[36px] text-[var(--text-primary)]">Create an account to continue checkout</h1>
+            <p className="mt-3 text-[18px] text-[var(--text-secondary)]">
+              Guests need an account to complete payment, track orders, and receive updates.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link href="/register?redirect=/checkout" className="btn-primary inline-flex px-7">Create Account</Link>
+              <Link href="/login?redirect=/checkout" className="btn-secondary inline-flex px-7">Sign In</Link>
+            </div>
+            <div className="mt-4">
+              <Link href="/cart" className="text-sm font-medium text-[var(--text-secondary)] underline">Back to Cart</Link>
             </div>
           </div>
         </div>
@@ -402,4 +425,8 @@ export default function CheckoutPage() {
     </Suspense>
   )
 }
+
+
+
+
 

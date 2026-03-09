@@ -82,32 +82,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [checkAuth])
 
-  const login = async (email: string, password: string, captchaToken?: string) => {
+  const login = useCallback(async (email: string, password: string, captchaToken?: string) => {
     const payload: Record<string, string> = { email, password }
     if (captchaToken) payload.captcha_token = captchaToken
-    
-    // Backend sets httponly secure cookies automatically
-    await api.post('/api/accounts/token/', payload)
-    
-    // Check auth again to ensure user session is fully instantiated
-    await checkAuth()
-  }
 
-  const logout = async () => {
+    // Backend sets httponly secure cookies automatically.
+    await api.post('/api/accounts/token/', payload)
+
+    // Check auth again to ensure user session is fully instantiated.
+    await checkAuth()
+  }, [checkAuth])
+
+  const logout = useCallback(async () => {
     try {
-      // Tells backend to blacklist the token and clear the httponly cookies
+      // Tells backend to blacklist the token and clear the httponly cookies.
       await api.post('/api/accounts/logout/')
     } catch {
-      // Proceed with local logout regardless of network failure
+      // Proceed with local logout regardless of network failure.
     } finally {
       localStorage.removeItem(USER_KEY)
       setUser(null)
     }
-  }
+  }, [])
 
-  const register = async (data: RegisterData) => {
+  const register = useCallback(async (data: RegisterData) => {
     await api.post('/api/accounts/register/', data)
-  }
+  }, [])
 
   const value = useMemo(
     () => ({
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       checkAuth,
     }),
-    [user, isLoading, checkAuth]
+    [checkAuth, isLoading, login, logout, register, user]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -136,4 +136,3 @@ export function isLoggedIn(): boolean {
   if (typeof window === 'undefined') return false
   return !!localStorage.getItem(USER_KEY)
 }
-

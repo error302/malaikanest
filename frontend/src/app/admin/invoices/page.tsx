@@ -1,20 +1,15 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { 
-  Download, 
-  Eye, 
-  Mail, 
-  CheckCircle2, 
-  XCircle, 
-  RefreshCw, 
+import { useCallback, useEffect, useState } from 'react'
+import {
+  Download,
+  Mail,
+  RefreshCw,
   Search,
   Filter,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
 } from 'lucide-react'
 import api from '@/lib/api'
 
@@ -43,28 +38,24 @@ interface Invoice {
 }
 
 export default function AdminInvoicesPage() {
-  const router = useRouter()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPayment, setFilterPayment] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
 
-  useEffect(() => {
-    fetchInvoices()
-  }, [page, filterStatus, filterPayment])
-
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     setLoading(true)
     try {
       const params: Record<string, string> = { page: page.toString() }
-      if (search) params.search = search
+      if (searchQuery) params.search = searchQuery
       if (filterStatus) params.invoice_status = filterStatus
       if (filterPayment) params.payment_status = filterPayment
-      
+
       const res = await api.get('/api/orders/admin/invoices/', { params })
       setInvoices(res.data.results || res.data || [])
       setTotalPages(Math.ceil((res.data.count || res.data.length || 1) / 25))
@@ -73,19 +64,35 @@ export default function AdminInvoicesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterPayment, filterStatus, page, searchQuery])
+
+  useEffect(() => {
+    fetchInvoices()
+  }, [fetchInvoices])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setPage(1)
-    fetchInvoices()
+    const nextQuery = searchInput.trim()
+
+    if (page !== 1) {
+      setPage(1)
+    }
+
+    if (nextQuery !== searchQuery) {
+      setSearchQuery(nextQuery)
+      return
+    }
+
+    if (page === 1) {
+      fetchInvoices()
+    }
   }
 
   const handleDownload = async (invoice: Invoice) => {
     setActionLoading(invoice.id)
     try {
       const res = await api.get(`/api/orders/admin/invoices/${invoice.id}/download/`, {
-        responseType: 'blob'
+        responseType: 'blob',
       })
       const url = window.URL.createObjectURL(new Blob([res.data]))
       const link = document.createElement('a')
@@ -119,7 +126,7 @@ export default function AdminInvoicesPage() {
     try {
       await api.post(`/api/orders/admin/invoices/${invoice.id}/regenerate/`)
       alert('Invoice regenerated successfully!')
-      fetchInvoices()
+      await fetchInvoices()
     } catch (error) {
       console.error('Failed to regenerate invoice:', error)
       alert('Failed to regenerate invoice')
@@ -171,8 +178,8 @@ export default function AdminInvoicesPage() {
                 <input
                   type="text"
                   placeholder="Search by invoice number or customer..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                 />
               </div>
@@ -251,14 +258,10 @@ export default function AdminInvoicesPage() {
                   {invoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          {invoice.invoice_number}
-                        </span>
+                        <span className="text-sm font-medium text-gray-900">{invoice.invoice_number}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-500">
-                          #{invoice.order?.id || 'N/A'}
-                        </span>
+                        <span className="text-sm text-gray-500">#{invoice.order?.id || 'N/A'}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{invoice.order?.customer_name || 'Guest'}</div>

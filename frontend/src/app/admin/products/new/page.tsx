@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 import api from '@/lib/api'
 
@@ -169,7 +170,14 @@ export default function NewProduct() {
         {imagePreview && (
           <div className="mt-2">
             <p className="text-xs text-slate-500 mb-2">Preview:</p>
-            <img src={imagePreview} alt="Preview" className="w-48 h-48 object-cover rounded-lg border" />
+            <Image
+              src={imagePreview}
+              alt="Preview"
+              width={192}
+              height={192}
+              unoptimized
+              className="h-48 w-48 rounded-lg border object-cover"
+            />
           </div>
         )}
 

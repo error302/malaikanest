@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
-import { Star, StarOff } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Star } from 'lucide-react'
 
 import api from '@/lib/api'
 import { useAuth } from '@/lib/authContext'
@@ -40,9 +39,8 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [stats, setStats] = useState<ReviewStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  
+
   // Form state
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
@@ -52,41 +50,40 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
   const [submitSuccess, setSubmitSuccess] = useState(false)
 
   const { isAuthenticated, user } = useAuth()
-  const userHasReviewed = user ? reviews.some(r => r.user === user.id) : false
+  const userHasReviewed = user ? reviews.some((r) => r.user === user.id) : false
 
-  useEffect(() => {
-    fetchReviews()
-  }, [productId])
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
       const res = await api.get(`/api/products/reviews/?product=${productId}`)
-      setReviews(res.data.results || res.data || [])
-      
-      // Calculate stats from reviews
-      if (res.data.results || res.data) {
-        const reviewList = res.data.results || res.data
-        if (reviewList.length > 0) {
-          const total = reviewList.reduce((sum: number, r: Review) => sum + r.rating, 0)
-          const avg = total / reviewList.length
-          const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-          reviewList.forEach((r: Review) => {
-            distribution[r.rating as keyof typeof distribution]++
-          })
-          setStats({
-            average_rating: avg,
-            total_reviews: reviewList.length,
-            rating_distribution: distribution
-          })
-        }
+      const reviewList = res.data.results || res.data || []
+      setReviews(reviewList)
+
+      if (reviewList.length > 0) {
+        const total = reviewList.reduce((sum: number, r: Review) => sum + r.rating, 0)
+        const avg = total / reviewList.length
+        const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+        reviewList.forEach((r: Review) => {
+          distribution[r.rating as keyof typeof distribution] += 1
+        })
+        setStats({
+          average_rating: avg,
+          total_reviews: reviewList.length,
+          rating_distribution: distribution,
+        })
+      } else {
+        setStats(null)
       }
     } catch (err) {
       console.error('Failed to fetch reviews:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [productId])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -112,13 +109,13 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
         product: productId,
         rating,
         title: title.trim(),
-        body: comment.trim()
+        body: comment.trim(),
       })
       setSubmitSuccess(true)
       setRating(0)
       setTitle('')
       setComment('')
-      fetchReviews() // Refresh reviews
+      await fetchReviews()
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } }
       setSubmitError(error.response?.data?.detail || 'Failed to submit review. Please try again.')
@@ -131,7 +128,7 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
     return new Date(dateString).toLocaleDateString('en-KE', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -175,7 +172,7 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
                 <div key={star} className="flex items-center gap-2">
                   <span className="w-8 text-sm text-[var(--text-secondary)]">{star} star</span>
                   <div className="flex-1 h-2 rounded-full bg-gray-200 overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-yellow-400 rounded-full transition-all"
                       style={{ width: `${percentage}%` }}
                     />
@@ -209,84 +206,84 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
         </div>
       ) : (
         <div className="mt-8">
-        <h3 className="font-display text-xl text-[var(--text-primary)]">Write a Review</h3>
-        
-        {submitSuccess && (
-          <div className="mt-4 rounded-[12px] border border-green-200 bg-green-50 p-4 text-green-700">
-            Thank you for your review! It will appear after moderation.
-          </div>
-        )}
+          <h3 className="font-display text-xl text-[var(--text-primary)]">Write a Review</h3>
 
-        {submitError && (
-          <div className="mt-4 rounded-[12px] border border-red-200 bg-red-50 p-4 text-red-700">
-            {submitError}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          {/* Star Rating */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)]">
-              Your Rating <span className="text-red-500">*</span>
-            </label>
-            <div className="mt-2 flex gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="p-1 transition-transform hover:scale-110"
-                >
-                  {(hoverRating || rating) >= star ? (
-                    <Star size={28} className="fill-yellow-400 text-yellow-400" />
-                  ) : (
-                    <Star size={28} className="text-gray-300" />
-                  )}
-                </button>
-              ))}
+          {submitSuccess && (
+            <div className="mt-4 rounded-[12px] border border-green-200 bg-green-50 p-4 text-green-700">
+              Thank you for your review! It will appear after moderation.
             </div>
-          </div>
+          )}
 
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)]">
-              Review Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Summarize your review"
-              className="input-soft mt-2 w-full"
-              maxLength={200}
-            />
-          </div>
+          {submitError && (
+            <div className="mt-4 rounded-[12px] border border-red-200 bg-red-50 p-4 text-red-700">
+              {submitError}
+            </div>
+          )}
 
-          {/* Comment */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)]">
-              Your Review <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your experience with this product"
-              rows={4}
-              className="input-soft mt-2 w-full resize-y"
-              maxLength={1000}
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            {/* Star Rating */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-primary)]">
+                Your Rating <span className="text-red-500">*</span>
+              </label>
+              <div className="mt-2 flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 transition-transform hover:scale-110"
+                  >
+                    {(hoverRating || rating) >= star ? (
+                      <Star size={28} className="fill-yellow-400 text-yellow-400" />
+                    ) : (
+                      <Star size={28} className="text-gray-300" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="btn-primary px-6 disabled:opacity-50"
-          >
-            {submitting ? 'Submitting...' : 'Submit Review'}
-          </button>
-        </form>
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-primary)]">
+                Review Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Summarize your review"
+                className="input-soft mt-2 w-full"
+                maxLength={200}
+              />
+            </div>
+
+            {/* Comment */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-primary)]">
+                Your Review <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your experience with this product"
+                rows={4}
+                className="input-soft mt-2 w-full resize-y"
+                maxLength={1000}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn-primary px-6 disabled:opacity-50"
+            >
+              {submitting ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </form>
         </div>
       )}
 
@@ -342,4 +339,3 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
     </div>
   )
 }
-

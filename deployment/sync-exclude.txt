@@ -1,0 +1,30 @@
+# Keep VM-only secrets and runtime state safe during syncs.
+
+# Env files
+.env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+
+# Secret material
+*.pem
+*.key
+*.crt
+*.p12
+MalaikaNestKey
+MalaikaNestKey.pub
+
+# Build/runtime artifacts
+frontend/.next/
+frontend/node_modules/
+backend/.venv/
+backend/venv/
+**/__pycache__/
+**/*.pyc
+logs/
+
+# User data and collected assets on VM
+media/
+staticfiles/

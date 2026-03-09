@@ -287,6 +287,24 @@ docker-compose -f docker-compose.prod.yml up -d --build
 - Re-run migrations: `python manage.py migrate --noinput`
 - Check backend logs for connection or migration errors
 
+## Safe Code Sync (Preserve VM Secrets)
+
+Use the code-only sync helper so VM-only files like `backend/.env.production` and `frontend/.env.production` are never overwritten.
+
+```bash
+# Preview what will sync
+DRY_RUN=1 ./deployment/sync-code-only.sh
+
+# Perform sync
+./deployment/sync-code-only.sh
+```
+
+You can override defaults when needed:
+
+```bash
+REMOTE_HOST="admin@104.154.161.10" REMOTE_DIR="/var/www/malaikanest" SSH_KEY="$HOME/.ssh/MalaikaNestKey" ./deployment/sync-code-only.sh
+```
+
 ## Quick Commands for Managing Deployment
 
 ```
@@ -320,6 +338,7 @@ pg_dump "$DATABASE_URL" > backup_$(date +%Y%m%d).sql
 - `docker-compose.prod.yml` - Docker deployment (alternative)
 - `frontend/.env.production.example` - Frontend env template
 - `backend/.env.example` - Backend env template
+
 
 
 

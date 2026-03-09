@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import api from '@/lib/api'
 
 interface ReportData {
@@ -27,11 +27,7 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState('30') // days
   const [exporting, setExporting] = useState(false)
 
-  useEffect(() => {
-    fetchReportData()
-  }, [dateRange])
-
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await api.get(`/api/orders/admin/reports/?days=${dateRange}`)
@@ -42,7 +38,11 @@ export default function ReportsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateRange])
+
+  useEffect(() => {
+    fetchReportData()
+  }, [fetchReportData])
 
   const exportToCSV = async () => {
     setExporting(true)
@@ -64,14 +64,6 @@ export default function ReportsPage() {
     }
   }
 
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    paid: 'bg-green-100 text-green-800',
-    shipped: 'bg-purple-100 text-purple-800',
-    delivered: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -85,7 +77,7 @@ export default function ReportsPage() {
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
         <p className="text-lg">Unable to load report data</p>
         <p className="text-sm">Please ensure the backend API is running</p>
-        <button 
+        <button
           onClick={fetchReportData}
           className="mt-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
         >
@@ -125,26 +117,22 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl shadow-md p-6">
           <p className="text-gray-500 text-sm">Total Revenue</p>
           <p className="text-3xl font-bold text-green-600 mt-2">
-            KES {reportData?.totalRevenue.toLocaleString() || 0}
+            KES {reportData.totalRevenue.toLocaleString() || 0}
           </p>
         </div>
         <div className="bg-white rounded-xl shadow-md p-6">
           <p className="text-gray-500 text-sm">Total Orders</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">
-            {reportData?.totalOrders || 0}
-          </p>
+          <p className="text-3xl font-bold text-blue-600 mt-2">{reportData.totalOrders || 0}</p>
         </div>
         <div className="bg-white rounded-xl shadow-md p-6">
           <p className="text-gray-500 text-sm">Average Order Value</p>
           <p className="text-3xl font-bold text-amber-600 mt-2">
-            KES {reportData?.averageOrderValue.toLocaleString() || 0}
+            KES {reportData.averageOrderValue.toLocaleString() || 0}
           </p>
         </div>
         <div className="bg-white rounded-xl shadow-md p-6">
           <p className="text-gray-500 text-sm">Total Customers</p>
-          <p className="text-3xl font-bold text-purple-600 mt-2">
-            {reportData?.totalCustomers || 0}
-          </p>
+          <p className="text-3xl font-bold text-purple-600 mt-2">{reportData.totalCustomers || 0}</p>
         </div>
       </div>
 
@@ -153,7 +141,7 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Top Products</h2>
           <div className="space-y-4">
-            {reportData?.topProducts.map((product, index) => (
+            {reportData.topProducts.map((product, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="w-6 h-6 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center text-sm font-medium">
@@ -174,9 +162,9 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Orders by Status</h2>
           <div className="space-y-4">
-            {reportData?.ordersByStatus.map((item, index) => {
-              const percentage = reportData.totalOrders > 0 
-                ? Math.round((item.count / reportData.totalOrders) * 100) 
+            {reportData.ordersByStatus.map((item, index) => {
+              const percentage = reportData.totalOrders > 0
+                ? Math.round((item.count / reportData.totalOrders) * 100)
                 : 0
               return (
                 <div key={index}>
@@ -187,10 +175,10 @@ export default function ReportsPage() {
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        item.status === 'delivered' ? 'bg-green-500' :
-                        item.status === 'shipped' ? 'bg-purple-500' :
-                        item.status === 'pending' ? 'bg-yellow-500' :
-                        'bg-red-500'
+                        item.status === 'delivered' ? 'bg-green-500'
+                          : item.status === 'shipped' ? 'bg-purple-500'
+                            : item.status === 'pending' ? 'bg-yellow-500'
+                              : 'bg-red-500'
                       }`}
                       style={{ width: `${percentage}%` }}
                     ></div>
@@ -206,8 +194,8 @@ export default function ReportsPage() {
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Revenue by Month</h2>
         <div className="h-64 flex items-end gap-4">
-          {reportData?.revenueByMonth.map((item, index) => {
-            const maxRevenue = Math.max(...(reportData.revenueByMonth.map(r => r.revenue)))
+          {reportData.revenueByMonth.map((item, index) => {
+            const maxRevenue = Math.max(...reportData.revenueByMonth.map(r => r.revenue))
             const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0
             return (
               <div key={index} className="flex-1 flex flex-col items-center">
@@ -226,25 +214,23 @@ export default function ReportsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <p className="text-2xl font-bold text-gray-800">
-              {reportData ? Math.round(reportData.totalOrders / (parseInt(dateRange) / 30)) : 0}
+              {Math.round(reportData.totalOrders / (parseInt(dateRange, 10) / 30)) || 0}
             </p>
             <p className="text-sm text-gray-500">Orders/Month</p>
           </div>
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-800">
-              {reportData?.topProducts[0]?.name || 'N/A'}
-            </p>
+            <p className="text-2xl font-bold text-gray-800">{reportData.topProducts[0]?.name || 'N/A'}</p>
             <p className="text-sm text-gray-500">Best Seller</p>
           </div>
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <p className="text-2xl font-bold text-gray-800">
-              {reportData?.ordersByStatus.find(o => o.status === 'delivered')?.count || 0}
+              {reportData.ordersByStatus.find(o => o.status === 'delivered')?.count || 0}
             </p>
             <p className="text-sm text-gray-500">Completed Orders</p>
           </div>
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <p className="text-2xl font-bold text-gray-800">
-              {reportData?.ordersByStatus.find(o => o.status === 'pending')?.count || 0}
+              {reportData.ordersByStatus.find(o => o.status === 'pending')?.count || 0}
             </p>
             <p className="text-sm text-gray-500">Pending Orders</p>
           </div>
@@ -253,4 +239,3 @@ export default function ReportsPage() {
     </div>
   )
 }
-

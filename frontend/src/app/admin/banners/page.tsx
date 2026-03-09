@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import api from '@/lib/api'
 
 interface Banner {
@@ -179,12 +180,30 @@ export default function BannersPage() {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Desktop Image *</label>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageChange(e, setImage, setImagePreview)} className="w-full px-4 py-3 rounded-xl border" required />
-              {imagePreview && <img src={imagePreview} alt="Preview" className="mt-4 w-48 h-32 object-cover rounded-lg" />}
+              {imagePreview && (
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  width={192}
+                  height={128}
+                  unoptimized
+                  className="mt-4 h-32 w-48 rounded-lg object-cover"
+                />
+              )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Mobile Image (optional)</label>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageChange(e, setMobileImage, setMobilePreview)} className="w-full px-4 py-3 rounded-xl border" />
-              {mobilePreview && <img src={mobilePreview} alt="Preview" className="mt-4 w-48 h-32 object-cover rounded-lg" />}
+              {mobilePreview && (
+                <Image
+                  src={mobilePreview}
+                  alt="Preview"
+                  width={192}
+                  height={128}
+                  unoptimized
+                  className="mt-4 h-32 w-48 rounded-lg object-cover"
+                />
+              )}
             </div>
           </div>
 
@@ -208,7 +227,13 @@ export default function BannersPage() {
             <div key={banner.id} className="bg-white rounded-2xl overflow-hidden border hover:shadow-md">
               <div className="relative h-48 bg-slate-100">
                 {banner.image ? (
-                  <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
+                  <Image
+                    src={banner.image}
+                    alt={banner.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-400">No Image</div>
                 )}
@@ -231,3 +256,4 @@ export default function BannersPage() {
     </div>
   )
 }
+
