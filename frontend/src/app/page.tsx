@@ -49,7 +49,7 @@ function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title:
   return (
     <div className="mb-8 text-center md:mb-10">
       {eyebrow && <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">{eyebrow}</p>}
-      <h2 className="font-display mt-3 text-[36px] text-[var(--text-primary)]">{title}</h2>
+      <h2 className="font-display mt-3 text-[28px] text-[var(--text-primary)] md:text-[32px]">{title}</h2>
       {subtitle && <p className="mx-auto mt-3 max-w-2xl text-[18px] text-[var(--text-secondary)]">{subtitle}</p>}
     </div>
   )
@@ -131,7 +131,7 @@ export default function HomePage() {
           <div className="grid items-center gap-8 rounded-[12px] border border-default bg-surface p-5 shadow-[var(--shadow-soft)] md:grid-cols-2 md:p-8">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Premium Baby & Kids Store</p>
-              <h1 className="font-display mt-4 text-[36px] leading-[1.05] text-[var(--text-primary)] md:text-[44px]">
+              <h1 className="font-display mt-4 text-[30px] leading-[1.08] text-[var(--text-primary)] md:text-[38px]">
                 {heroBanner?.title || "Carefully Chosen Essentials for Your Little One"}
               </h1>
               <p className="mt-4 max-w-xl text-[16px] text-[var(--text-secondary)] md:text-[17px]">
@@ -166,7 +166,7 @@ export default function HomePage() {
                   />
                 ) : (
                   <div className="flex h-[280px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] md:h-[400px]">
-                    <p className="font-display text-[36px] text-[var(--text-primary)]">Malaika Nest</p>
+                    <p className="font-display text-[28px] text-[var(--text-primary)] md:text-[32px]">Malaika Nest</p>
                   </div>
                 )}
               </div>
@@ -213,7 +213,7 @@ export default function HomePage() {
 
                   <div className="mt-4 flex flex-1 flex-col">
                     <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-[22px] font-semibold text-[var(--text-primary)]">{category.name}</h3>
+                      <h3 className="text-[20px] font-semibold text-[var(--text-primary)]">{category.name}</h3>
                       <span className="rounded-full bg-[var(--bg-soft)] px-3 py-1 text-sm text-[var(--text-secondary)]">
                         {category.product_count || 0} products
                       </span>
@@ -244,7 +244,7 @@ export default function HomePage() {
           <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Fresh Picks</p>
-              <h2 className="font-display mt-2 text-[36px] text-[var(--text-primary)]">New Arrivals</h2>
+              <h2 className="font-display mt-2 text-[30px] text-[var(--text-primary)] md:text-[34px]">New Arrivals</h2>
               <p className="mt-2 text-[18px] text-[var(--text-secondary)]">Latest additions from your product dashboard.</p>
             </div>
             <Link href="/categories" className="inline-flex items-center gap-2 text-base font-semibold text-[var(--text-primary)]">
@@ -286,7 +286,7 @@ export default function HomePage() {
 
                     <div className="mt-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">{product.category?.name || "Product"}</p>
-                      <h3 className="mt-2 line-clamp-2 text-[22px] font-semibold text-[var(--text-primary)]">{product.name}</h3>
+                      <h3 className="mt-2 line-clamp-2 text-[18px] font-semibold text-[var(--text-primary)]">{product.name}</h3>
 
                       <div className="mt-4 flex items-center justify-between gap-3">
                         <p className="text-lg font-semibold text-[var(--text-primary)]">KES {Number(product.price).toLocaleString()}</p>
