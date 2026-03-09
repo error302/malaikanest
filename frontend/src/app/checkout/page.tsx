@@ -59,7 +59,10 @@ function CheckoutContent() {
   const searchParams = useSearchParams()
 
   const fetchCart = useCallback(async () => {
+    setLoading(true)
     try {
+      // Checkout requires an authenticated session because payment APIs are protected.
+      await api.get('/api/accounts/profile/')
       const res = await api.get('/api/orders/cart/')
       setCart(res.data)
       setError('')
@@ -67,6 +70,7 @@ function CheckoutContent() {
       const msg = handleApiError(err)
       if (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid refresh token')) {
         router.push('/login?redirect=/checkout')
+        return
       } else {
         setError(msg)
       }
@@ -398,3 +402,4 @@ export default function CheckoutPage() {
     </Suspense>
   )
 }
+
