@@ -21,6 +21,7 @@ interface Order {
   payment_status: string
   created_at: string
   receipt_number?: string
+  mpesa_receipt_number?: string
   shipping_phone?: string
 }
 
@@ -29,18 +30,22 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [filter, setFilter] = useState('all')
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     fetchOrders()
   }, [])
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (): Promise<Order[]> => {
     try {
       const res = await api.get('/api/products/admin/orders/')
       const data = Array.isArray(res.data) ? res.data : res.data?.results || []
       setOrders(data)
+      return data
     } catch {
       setOrders([])
+      return []
     } finally {
       setLoading(false)
     }
@@ -48,10 +53,19 @@ export default function OrdersPage() {
 
   const handleStatusUpdate = async (newStatus: string) => {
     if (!selectedOrder) return
-    await api.patch(`/api/products/admin/orders/${selectedOrder.id}/update_status/`, { status: newStatus })
-    await fetchOrders()
-    const refreshed = orders.find((o) => o.id === selectedOrder.id)
-    setSelectedOrder(refreshed || null)
+    setActionLoading(true)
+    setActionError('')
+
+    try {
+      await api.patch(`/api/products/admin/orders/${selectedOrder.id}/update_status/`, { status: newStatus })
+      const latest = await fetchOrders()
+      const refreshed = latest.find((o) => o.id === selectedOrder.id)
+      setSelectedOrder(refreshed || null)
+    } catch (err: any) {
+      setActionError(err?.response?.data?.detail || 'Failed to update order status.')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const filteredOrders = filter === 'all' ? orders : orders.filter((o) => o.status === filter)
@@ -88,12 +102,12 @@ export default function OrdersPage() {
           <tbody>
             {filteredOrders.map((order) => (
               <tr key={order.id} className="border-t">
-                <td className="px-4 py-3 text-sm">{order.order_number}</td>
+                <td className="px-4 py-3 text-sm">{order.order_number || `#${order.id}`}</td>
                 <td className="px-4 py-3 text-sm">{order.customer_name || order.user_email}</td>
                 <td className="px-4 py-3 text-sm">KES {Number(order.total).toLocaleString()}</td>
                 <td className="px-4 py-3 text-sm">{order.status}</td>
                 <td className="px-4 py-3 text-sm">{new Date(order.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-sm">{order.receipt_number || '-'}</td>
+                <td className="px-4 py-3 text-sm">{order.mpesa_receipt_number || '-'}</td>
                 <td className="px-4 py-3"><button onClick={() => setSelectedOrder(order)} className="px-3 py-1 bg-slate-100 rounded text-xs">View</button></td>
               </tr>
             ))}
@@ -105,7 +119,7 @@ export default function OrdersPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Order {selectedOrder.order_number}</h3>
+              <h3 className="text-xl font-bold">Order {selectedOrder.order_number || `#${selectedOrder.id}`}</h3>
               <button onClick={() => setSelectedOrder(null)}>Close</button>
             </div>
 
@@ -113,7 +127,7 @@ export default function OrdersPage() {
               <p><strong>Customer:</strong> {selectedOrder.customer_name || selectedOrder.user_email}</p>
               <p><strong>Email:</strong> {selectedOrder.user_email}</p>
               <p><strong>Phone:</strong> {selectedOrder.shipping_phone || '-'}</p>
-              <p><strong>Payment:</strong> {selectedOrder.payment_status}</p>
+              <p><strong>Payment:</strong> {selectedOrder.payment_status || selectedOrder.status}</p>
             </div>
 
             <table className="w-full text-sm border">
@@ -127,9 +141,17 @@ export default function OrdersPage() {
               </tbody>
             </table>
 
+            {actionError && (
+              <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {actionError}
+              </div>
+            )}
+
             <div className="mt-6 flex flex-wrap gap-2">
               {statuses.map((status) => (
-                <button key={status} onClick={() => handleStatusUpdate(status)} className="px-3 py-2 bg-slate-100 rounded text-xs">Set {status}</button>
+                <button key={status} onClick={() => handleStatusUpdate(status)} disabled={actionLoading} className="px-3 py-2 bg-slate-100 rounded text-xs disabled:opacity-50">
+                  {actionLoading ? 'Updating...' : `Set ${status}`}
+                </button>
               ))}
             </div>
           </div>

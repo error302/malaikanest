@@ -29,7 +29,7 @@ export default function TermsOfServicePage() {
 
             <section>
               <h2 className="text-[24px] font-semibold text-[var(--text-primary)]">5. Contact</h2>
-              <p className="mt-2">For terms inquiries, email support@malaikanest7@gmail.com.</p>
+              <p className="mt-2">For terms inquiries, email malaikanest7@gmail.com.</p>
             </section>
           </div>
         </article>
@@ -37,3 +37,4 @@ export default function TermsOfServicePage() {
     </div>
   )
 }
+

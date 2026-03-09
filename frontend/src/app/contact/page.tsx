@@ -92,7 +92,7 @@ export default function ContactPage() {
             <article className="card-soft p-6">
               <h2 className="text-[22px] font-semibold text-[var(--text-primary)]">Contact Information</h2>
               <ul className="mt-4 space-y-4 text-[var(--text-secondary)]">
-                <li className="flex items-start gap-3"><Mail size={18} className="mt-0.5" /> support@malaikanest7@gmail.com</li>
+                <li className="flex items-start gap-3"><Mail size={18} className="mt-0.5" /> malaikanest7@gmail.com</li>
                 <li className="flex items-start gap-3"><Phone size={18} className="mt-0.5" /> +254 726 771 321</li>
                 <li className="flex items-start gap-3"><MapPin size={18} className="mt-0.5" /> Mombasa, Kenya</li>
               </ul>
@@ -108,3 +108,4 @@ export default function ContactPage() {
     </div>
   )
 }
+

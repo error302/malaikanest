@@ -341,7 +341,7 @@ export default function HomePage() {
                       ))}
                     </div>
                   </div>
-                  <p className="mt-4 text-[16px] text-[var(--text-secondary)]">"{review.comment}"</p>
+                  <p className="mt-4 text-[16px] text-[var(--text-secondary)]">&quot;{review.comment}&quot;</p>
                 </article>
               ))}
             </div>
@@ -359,4 +359,5 @@ export default function HomePage() {
     </div>
   )
 }
+
 

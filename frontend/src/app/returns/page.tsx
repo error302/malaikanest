@@ -34,7 +34,7 @@ export default function ReturnsPage() {
 
           <section>
             <h2 className="text-[22px] font-semibold text-[var(--text-primary)]">Contact</h2>
-            <p className="mt-2 text-[16px] text-[var(--text-secondary)]">Email: support@malaikanest7@gmail.com</p>
+            <p className="mt-2 text-[16px] text-[var(--text-secondary)]">Email: malaikanest7@gmail.com</p>
             <p className="text-[16px] text-[var(--text-secondary)]">Phone / WhatsApp: +254 726 771 321</p>
           </section>
         </div>
@@ -42,3 +42,4 @@ export default function ReturnsPage() {
     </div>
   )
 }
+

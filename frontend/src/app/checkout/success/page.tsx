@@ -30,7 +30,7 @@ function SuccessContent() {
           )}
 
           <p className="mt-6 text-sm text-[var(--text-secondary)]">
-            For assistance, contact support@malaikanest7@gmail.com or +254 726 771 321.
+            For assistance, contact malaikanest7@gmail.com or +254 726 771 321.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -50,3 +50,4 @@ export default function CheckoutSuccessPage() {
     </Suspense>
   )
 }
+

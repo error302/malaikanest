@@ -171,7 +171,7 @@ export default function OrdersPage() {
                     {order.is_gift && (
                       <div className="mt-3 rounded-[12px] border border-default bg-surface p-3 text-sm text-[var(--text-secondary)]">
                         <p className="font-semibold text-[var(--text-primary)]">Gift Order</p>
-                        {order.gift_message && <p className="mt-1 italic">"{order.gift_message}"</p>}
+                        {order.gift_message && <p className="mt-1 italic">&quot;{order.gift_message}&quot;</p>}
                       </div>
                     )}
 
@@ -199,5 +199,6 @@ export default function OrdersPage() {
     </div>
   )
 }
+
 
 

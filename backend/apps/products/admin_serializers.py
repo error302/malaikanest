@@ -11,12 +11,11 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             'id',
             'name',
             'slug',
-            'description',
+            'parent',
+            'group',
             'image',
-            'is_active',
-            'created_at',
-            'updated_at',
         ]
+        read_only_fields = ['id', 'slug']
 
 
 class AdminProductSerializer(serializers.ModelSerializer):
@@ -47,6 +46,9 @@ class AdminProductSerializer(serializers.ModelSerializer):
 
 
 class AdminBannerSerializer(serializers.ModelSerializer):
+    # Accept relative links such as /categories for in-site banner CTAs.
+    button_link = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Banner
         fields = [
@@ -54,12 +56,16 @@ class AdminBannerSerializer(serializers.ModelSerializer):
             'title',
             'subtitle',
             'image',
+            'mobile_image',
             'button_text',
             'button_link',
-            'order',
+            'position',
+            'start_date',
+            'end_date',
             'is_active',
             'created_at',
         ]
+        read_only_fields = ['id', 'created_at']
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -87,29 +93,42 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    price_at_purchase = serializers.DecimalField(
+        source='price',
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product_name', 'price', 'quantity']
+        fields = ['id', 'product_name', 'price_at_purchase', 'quantity']
 
 
 class AdminOrderSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source='user.email', read_only=True)
     customer_name = serializers.SerializerMethodField()
+    order_number = serializers.CharField(source='receipt_number', read_only=True)
+    payment_status = serializers.SerializerMethodField()
+    shipping_phone = serializers.SerializerMethodField()
     items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
         fields = [
             'id',
+            'order_number',
             'user',
             'user_email',
             'customer_name',
             'items',
             'total',
             'status',
+            'payment_status',
             'delivery_region',
             'receipt_number',
+            'shipping_phone',
+            'mpesa_receipt_number',
             'guest_email',
             'guest_phone',
             'created_at',
@@ -121,3 +140,16 @@ class AdminOrderSerializer(serializers.ModelSerializer):
             full_name = f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
             return full_name or obj.user.email
         return obj.guest_email or 'Guest'
+
+    def get_payment_status(self, obj):
+        payment = getattr(obj, 'payment', None)
+        if payment:
+            return payment.status
+        if obj.status == 'paid':
+            return 'completed'
+        if obj.status in {'payment_failed', 'failed', 'cancelled'}:
+            return 'failed'
+        return 'pending'
+
+    def get_shipping_phone(self, obj):
+        return obj.shipping_phone or obj.guest_phone or ''

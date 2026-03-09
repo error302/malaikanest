@@ -64,7 +64,7 @@ export default function Footer() {
         <section>
           <h3 className="font-body text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">Contact</h3>
           <ul className="mt-6 space-y-3 text-[18px] text-[var(--text-secondary)]">
-            <li>support@malaikanest7@gmail.com</li>
+            <li>malaikanest7@gmail.com</li>
             <li>+254 726 771 321</li>
             <li>Mombasa, Kenya</li>
             <li>M-Pesa Till: 3370347</li>
@@ -81,4 +81,5 @@ export default function Footer() {
     </footer>
   )
 }
+
 

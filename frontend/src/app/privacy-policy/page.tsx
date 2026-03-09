@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
 
             <section>
               <h2 className="text-[24px] font-semibold text-[var(--text-primary)]">5. Contact</h2>
-              <p className="mt-2">For privacy requests, contact support@malaikanest7@gmail.com.</p>
+              <p className="mt-2">For privacy requests, contact malaikanest7@gmail.com.</p>
             </section>
           </div>
         </article>
@@ -37,3 +37,4 @@ export default function PrivacyPolicyPage() {
     </div>
   )
 }
+

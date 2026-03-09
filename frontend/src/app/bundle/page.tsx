@@ -143,7 +143,7 @@ export default function BundleBuilderPage() {
               </div>
 
               <div>
-                <label className="mb-3 block text-sm font-medium text-[var(--text-primary)]">Baby's Age</label>
+                <label className="mb-3 block text-sm font-medium text-[var(--text-primary)]">Baby&apos;s Age</label>
                 <div className="flex flex-wrap gap-2">
                   {AGE_GROUPS.map((age) => (
                     <button
@@ -282,3 +282,5 @@ export default function BundleBuilderPage() {
     </div>
   )
 }
+
+
