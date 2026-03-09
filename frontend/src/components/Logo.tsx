@@ -13,14 +13,14 @@ export default function Logo({ compact = false, className = '' }: LogoProps) {
       <Image
         src="/images/logo.png"
         alt="Malaika Nest"
-        width={compact ? 38 : 46}
-        height={compact ? 38 : 46}
+        width={compact ? 34 : 40}
+        height={compact ? 34 : 40}
         className="rounded-md object-contain"
         priority={!compact}
       />
-      <div className="leading-tight">
-        <p className="font-display text-[26px] font-semibold text-[var(--text-primary)]">Malaika Nest</p>
-        <p className="tracking-[0.28em] text-[11px] uppercase text-[var(--text-secondary)]">Baby & Maternity</p>
+      <div className="min-w-0 leading-tight">
+        <p className="font-display whitespace-nowrap text-[20px] font-semibold text-[var(--text-primary)] md:text-[22px]">Malaika Nest</p>
+        <p className="whitespace-nowrap tracking-[0.24em] text-[10px] uppercase text-[var(--text-secondary)]">Baby & Maternity</p>
       </div>
     </div>
   )

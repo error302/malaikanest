@@ -125,19 +125,19 @@ export default function HomePage() {
 
   return (
     <div className="pb-20">
-      <section className="pt-12 md:pt-16">
+      <section className="pt-8 md:pt-12">
         <div className="container-shell">
-          <div className="grid items-center gap-10 rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:grid-cols-2 md:p-10">
+          <div className="grid items-center gap-8 rounded-[12px] border border-default bg-surface p-5 shadow-[var(--shadow-soft)] md:grid-cols-2 md:p-8">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Premium Baby & Kids Store</p>
-              <h1 className="font-display mt-4 text-[48px] text-[var(--text-primary)]">
+              <h1 className="font-display mt-4 text-[36px] leading-[1.05] text-[var(--text-primary)] md:text-[44px]">
                 {heroBanner?.title || "Carefully Chosen Essentials for Your Little One"}
               </h1>
-              <p className="mt-5 max-w-xl text-[18px] text-[var(--text-secondary)]">
+              <p className="mt-4 max-w-xl text-[16px] text-[var(--text-secondary)] md:text-[17px]">
                 {heroBanner?.subtitle || "Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience."}
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link href={heroBanner?.button_link || "/categories"} className="btn-primary inline-flex items-center justify-center gap-2">
                   {heroBanner?.button_text || "Shop Collection"}
                   <ArrowRight size={16} />
@@ -160,10 +160,10 @@ export default function HomePage() {
                     width={1200}
                     height={900}
                     priority
-                    className="h-[320px] w-full object-cover md:h-[460px]"
+                    className="h-[280px] w-full object-cover md:h-[400px]"
                   />
                 ) : (
-                  <div className="flex h-[320px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] md:h-[460px]">
+                  <div className="flex h-[280px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] md:h-[400px]">
                     <p className="font-display text-[36px] text-[var(--text-primary)]">Malaika Nest</p>
                   </div>
                 )}
@@ -211,7 +211,7 @@ export default function HomePage() {
 
                   <div className="mt-4 flex flex-1 flex-col">
                     <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-[26px] font-semibold text-[var(--text-primary)]">{category.name}</h3>
+                      <h3 className="text-[22px] font-semibold text-[var(--text-primary)]">{category.name}</h3>
                       <span className="rounded-full bg-[var(--bg-soft)] px-3 py-1 text-sm text-[var(--text-secondary)]">
                         {category.product_count || 0} products
                       </span>

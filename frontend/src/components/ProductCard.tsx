@@ -57,11 +57,11 @@ export default function ProductCard({ product }: Props) {
         </p>
 
         <Link href={`/products/${product.slug}`}>
-          <h3 className="mt-2 line-clamp-2 text-[22px] font-semibold text-[var(--text-primary)]">{product.name}</h3>
+          <h3 className="mt-2 line-clamp-2 text-[19px] font-semibold text-[var(--text-primary)]">{product.name}</h3>
         </Link>
 
         <div className="mt-4 flex items-center justify-between gap-3">
-          <p className="text-lg font-semibold text-[var(--text-primary)]">KES {parseFloat(product.price).toLocaleString()}</p>
+          <p className="text-base font-semibold text-[var(--text-primary)]">KES {parseFloat(product.price).toLocaleString()}</p>
 
           <button
             type="button"

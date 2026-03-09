@@ -11,6 +11,14 @@ const nextConfig = {
   
   // Image optimization
   images: {
+    localPatterns: [
+      {
+        pathname: '/media/**',
+      },
+      {
+        pathname: '/static/**',
+      },
+    ],
     remotePatterns: [
       {
         protocol: 'https',

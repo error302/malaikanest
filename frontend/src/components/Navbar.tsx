@@ -67,12 +67,12 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-default bg-[var(--bg-primary)]/95 backdrop-blur">
       <div className="container-shell relative">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4 xl:grid-cols-[minmax(220px,1fr)_auto_minmax(220px,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 xl:grid-cols-[minmax(220px,1fr)_auto_minmax(220px,1fr)]">
           <div className="min-w-0">
             <Logo className="max-w-full" />
           </div>
 
-          <nav className="hidden items-center justify-center gap-6 xl:flex" aria-label="Primary">
+          <nav className="hidden items-center justify-center gap-5 xl:flex" aria-label="Primary">
             {staticNav.slice(0, 2).map((item) => (
               item.label === "Shop" ? (
                 <div
@@ -86,7 +86,7 @@ export default function Navbar() {
                     <ChevronDown size={16} />
                   </Link>
                   {shopOpen && rootCategories.length > 0 && (
-                    <div className="absolute left-1/2 top-full z-50 mt-4 w-[min(90vw,58rem)] -translate-x-1/2 rounded-[16px] border border-default bg-surface p-5 shadow-[var(--shadow-hover)]">
+                    <div className="absolute left-1/2 top-full z-50 mt-4 w-[min(90vw,54rem)] -translate-x-1/2 rounded-[16px] border border-default bg-surface p-5 shadow-[var(--shadow-hover)]">
                       <div className="grid gap-5 md:grid-cols-3">
                         {rootCategories.map((category) => (
                           <div key={category.id}>
@@ -117,12 +117,6 @@ export default function Navbar() {
               )
             ))}
 
-            {categoryLinks.map((item) => (
-              <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
-                {item.label}
-              </Link>
-            ))}
-
             {staticNav.slice(2).map((item) => (
               <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
                 {item.label}
@@ -135,14 +129,14 @@ export default function Navbar() {
               type="button"
               aria-label="Search"
               onClick={() => setSearchOpen((prev) => !prev)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
             >
               <Search size={18} />
             </button>
             <Link
               href={isAuthenticated ? "/account/orders" : "/login"}
               aria-label="Account"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
             >
               {isAuthenticated && user ? (
                 <span className="text-sm font-semibold">{user.name?.charAt(0).toUpperCase()}</span>
@@ -160,7 +154,7 @@ export default function Navbar() {
                   router.push("/")
                   router.refresh()
                 }}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
                 title="Logout"
               >
                 <LogOut size={18} />
@@ -171,7 +165,7 @@ export default function Navbar() {
               <Link
                 href="/admin"
                 aria-label="Admin Dashboard"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-[var(--accent)] text-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-default bg-[var(--accent)] text-white"
                 title="Admin Dashboard"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +179,7 @@ export default function Navbar() {
               type="button"
               aria-label="Cart"
               onClick={() => setCartOpen((prev) => !prev)}
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
             >
               <ShoppingBag size={18} />
               {cartCount > 0 && (
@@ -199,7 +193,7 @@ export default function Navbar() {
               type="button"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)] xl:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)] xl:hidden"
             >
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
