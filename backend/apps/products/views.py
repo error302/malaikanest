@@ -1,7 +1,9 @@
-from rest_framework import viewsets, permissions, filters
+from django.db.models import Avg, Count, Exists, FloatField, IntegerField, OuterRef, Q, Sum, Value
+from django.db.models.functions import Coalesce
+from django.shortcuts import get_object_or_404
+from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 
 try:
     from django_filters.rest_framework import DjangoFilterBackend
@@ -12,18 +14,36 @@ except ModuleNotFoundError:
             return queryset
 
 
-from .models import Category, Product, Inventory, Review, Wishlist, Brand
+from .models import Banner, Brand, Category, Inventory, Product, ProductVariant, Review, Wishlist
 from .serializers import (
-    CategorySerializer,
-    ProductSerializer,
-    ProductListSerializer,
-    InventorySerializer,
-    ReviewSerializer,
-    WishlistSerializer,
     BannerSerializer,
     BrandSerializer,
+    CategorySerializer,
+    InventorySerializer,
+    ProductListSerializer,
+    ProductSerializer,
+    ReviewSerializer,
+    WishlistSerializer,
 )
-from .models import Banner
+
+
+def resolve_category_by_path(value):
+    if not value:
+        return None
+
+    normalized = str(value).strip("/")
+    if not normalized:
+        return None
+
+    segments = [segment for segment in normalized.split("/") if segment]
+    parent = None
+    category = None
+    for segment in segments:
+        category = Category.objects.filter(parent=parent, slug=segment).first()
+        if not category:
+            return None
+        parent = category
+    return category
 
 
 class BrandViewSet(viewsets.ModelViewSet):
@@ -39,56 +59,85 @@ class BrandViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all().prefetch_related("products")
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        queryset = Category.objects.select_related("parent", "parent__parent").prefetch_related(
+            "children",
+            "children__children",
+            "children__children__children",
+        )
+
+        if self.action != "list":
+            return queryset
+
+        if self.request.query_params.get("flat") in {"1", "true", "True"}:
+            return queryset.order_by("name")
+
+        parent_value = self.request.query_params.get("parent")
+        if parent_value:
+            if parent_value.isdigit():
+                return queryset.filter(parent_id=parent_value).order_by("name")
+            parent_category = resolve_category_by_path(parent_value)
+            if parent_category:
+                return queryset.filter(parent=parent_category).order_by("name")
+            return queryset.none()
+
+        path_value = self.request.query_params.get("path")
+        if path_value:
+            category = resolve_category_by_path(path_value)
+            if category:
+                return queryset.filter(pk=category.pk)
+            return queryset.none()
+
+        return queryset.filter(parent__isnull=True).order_by("name")
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
+
+    @action(detail=False, methods=["get"])
+    def resolve(self, request):
+        value = request.query_params.get("path") or request.query_params.get("slug")
+        category = resolve_category_by_path(value)
+        if not category and value:
+            category = Category.objects.filter(slug=value).first()
+        if not category:
+            return Response({"detail": "Category not found"}, status=404)
+        return Response(self.get_serializer(category).data)
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = (
-        Product.objects.filter(is_active=True)
-        .select_related("category", "brand")
-        .prefetch_related("category__children")
-    )
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    filter_backends = [
-        filters.SearchFilter,
-        DjangoFilterBackend,
-        filters.OrderingFilter,
-    ]
-    search_fields = ["name", "description", "sku"]
-    filterset_fields = {
-        "category__slug": ["exact"],
-        "brand__slug": ["exact"],
-        "price": ["gte", "lte"],
-        "status": ["exact"],
-        "featured": ["exact"],
-        "gender": ["exact"],
-    }
-    variant_filterset_fields = ["size", "color"]
-    ordering_fields = ["price", "name", "created_at", "stock"]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    search_fields = ["name", "description", "sku", "brand__name", "category__name"]
+    ordering_fields = ["price", "name", "created_at", "stock", "popularity", "avg_rating"]
     ordering = ["-created_at"]
 
-    def get_permissions(self):
-        if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [permissions.IsAdminUser()]
-        return [permissions.AllowAny()]
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            return ProductListSerializer
-        return ProductSerializer
-
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = (
+            Product.objects.filter(is_active=True)
+            .select_related("category", "category__parent", "category__parent__parent", "brand")
+            .prefetch_related("category__children")
+            .annotate(
+                avg_rating=Coalesce(Avg("reviews__rating"), Value(0.0), output_field=FloatField()),
+                review_count=Coalesce(Count("reviews", distinct=True), Value(0), output_field=IntegerField()),
+                popularity=Coalesce(Sum("orderitem__quantity"), Value(0), output_field=IntegerField()),
+            )
+        )
 
-        category_slug = self.request.query_params.get("category")
-        if category_slug:
-            queryset = queryset.filter(category__slug=category_slug)
+        category_value = self.request.query_params.get("category") or self.request.query_params.get("category_path")
+        if category_value:
+            category = resolve_category_by_path(category_value)
+            if not category:
+                category = Category.objects.filter(slug=category_value).first()
+            if category:
+                queryset = queryset.filter(category_id__in=category.descendant_ids(include_self=True))
+            else:
+                queryset = queryset.none()
 
         brand_slug = self.request.query_params.get("brand")
         if brand_slug:
@@ -103,34 +152,65 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         group = self.request.query_params.get("group")
         if group:
-            queryset = queryset.filter(category__group=group)
+            queryset = queryset.filter(category__group__iexact=group)
 
         featured = self.request.query_params.get("featured")
         if featured:
             queryset = queryset.filter(featured=featured.lower() == "true")
 
-        status = self.request.query_params.get("status")
-        if status:
-            queryset = queryset.filter(status=status)
+        status_value = self.request.query_params.get("status")
+        if status_value:
+            queryset = queryset.filter(status=status_value)
 
         slug = self.request.query_params.get("slug")
         if slug:
             queryset = queryset.filter(slug=slug)
 
+        gender = self.request.query_params.get("gender")
+        if gender:
+            queryset = queryset.filter(gender=gender)
+
+        age_group = self.request.query_params.get("age_group")
+        if age_group:
+            queryset = queryset.filter(age_group=age_group)
+
+        age_range = self.request.query_params.get("age_range")
+        if age_range:
+            queryset = queryset.filter(age_range=age_range)
+
+        rating_min = self.request.query_params.get("rating_min")
+        if rating_min:
+            queryset = queryset.filter(avg_rating__gte=rating_min)
+
+        availability = self.request.query_params.get("availability")
+        if availability == "in_stock":
+            queryset = queryset.filter(stock__gt=0)
+        elif availability == "out_of_stock":
+            queryset = queryset.filter(stock=0)
+
         size = self.request.query_params.get("size")
         color = self.request.query_params.get("color")
         if size or color:
-            from django.db.models import Exists, OuterRef
-            from .models import ProductVariant
-
-            variant_qs = ProductVariant.objects.filter(product=OuterRef('pk'))
+            variant_qs = ProductVariant.objects.filter(product=OuterRef("pk"), is_active=True)
             if size:
                 variant_qs = variant_qs.filter(size=size)
+                queryset = queryset.filter(Q(size_label=size) | Exists(variant_qs))
             if color:
                 variant_qs = variant_qs.filter(color=color)
-            queryset = queryset.filter(Exists(variant_qs))
+                queryset = queryset.filter(Exists(variant_qs))
+            queryset = queryset.distinct()
 
         return queryset
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ProductListSerializer
+        return ProductSerializer
 
     @action(detail=True, methods=["get"])
     def inventory(self, request, pk=None):
@@ -148,19 +228,16 @@ class ProductViewSet(viewsets.ModelViewSet):
         product = get_object_or_404(Product, pk=pk)
         variants = product.variants.filter(is_active=True)
 
-        sizes = set()
-        colors = set()
-        for variant in variants:
-            if variant.size:
-                sizes.add(variant.size)
-            if variant.color:
-                colors.add(variant.color)
+        sizes = {variant.size for variant in variants if variant.size}
+        colors = {variant.color for variant in variants if variant.color}
 
-        return Response({
-            "sizes": sorted(list(sizes)),
-            "colors": sorted(list(colors)),
-            "has_variants": bool(sizes or colors),
-        })
+        return Response(
+            {
+                "sizes": sorted(list(sizes)),
+                "colors": sorted(list(colors)),
+                "has_variants": bool(sizes or colors),
+            }
+        )
 
 
 class InventoryViewSet(viewsets.ModelViewSet):

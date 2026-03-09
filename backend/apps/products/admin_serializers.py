@@ -1,25 +1,35 @@
 from rest_framework import serializers
-from apps.products.models import Category, Product, Banner
+
 from apps.accounts.models import User
 from apps.orders.models import Order, OrderItem
+from apps.products.models import Banner, Category, Inventory, InventoryLog, Product
 
 
 class AdminCategorySerializer(serializers.ModelSerializer):
+    full_slug = serializers.CharField(read_only=True)
+    level = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Category
         fields = [
             'id',
             'name',
             'slug',
+            'full_slug',
+            'description',
             'parent',
             'group',
             'image',
+            'level',
         ]
-        read_only_fields = ['id', 'slug']
+        read_only_fields = ['id', 'slug', 'full_slug', 'level']
+        extra_kwargs = {
+            'parent': {'required': False, 'allow_null': True},
+        }
 
 
 class AdminProductSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_name = serializers.CharField(source='category.full_slug', read_only=True)
 
     class Meta:
         model = Product
@@ -29,6 +39,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             'slug',
             'description',
             'price',
+            'compare_price',
             'discount_price',
             'category',
             'category_name',
@@ -39,14 +50,45 @@ class AdminProductSerializer(serializers.ModelSerializer):
             'sku',
             'image',
             'gender',
+            'age_group',
+            'age_range',
+            'size_label',
+            'status',
             'created_at',
             'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
+    def create(self, validated_data):
+        stock = validated_data.get('stock', 0)
+        product = super().create(validated_data)
+        Inventory.objects.update_or_create(product=product, defaults={'quantity': stock})
+        if stock:
+            InventoryLog.objects.create(
+                product=product,
+                change_type='manual_adjustment',
+                quantity_change=stock,
+                reason='Initial stock set from admin product creation',
+            )
+        return product
+
+    def update(self, instance, validated_data):
+        previous_stock = instance.stock
+        product = super().update(instance, validated_data)
+        if 'stock' in validated_data:
+            Inventory.objects.update_or_create(product=product, defaults={'quantity': product.stock})
+            diff = product.stock - previous_stock
+            if diff:
+                InventoryLog.objects.create(
+                    product=product,
+                    change_type='manual_adjustment',
+                    quantity_change=diff,
+                    reason='Stock adjusted from admin product editor',
+                )
+        return product
+
 
 class AdminBannerSerializer(serializers.ModelSerializer):
-    # Accept relative links such as /categories for in-site banner CTAs.
     button_link = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
@@ -93,12 +135,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
-    price_at_purchase = serializers.DecimalField(
-        source='price',
-        max_digits=10,
-        decimal_places=2,
-        read_only=True,
-    )
+    price_at_purchase = serializers.DecimalField(source='price', max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = OrderItem

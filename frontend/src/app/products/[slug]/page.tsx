@@ -16,7 +16,7 @@ interface Product {
   slug: string
   price: string
   description: string
-  category?: { id: number; name: string; slug: string }
+  category?: { id: number; name: string; slug: string; full_slug?: string }
   image: string | null
   stock: number
 }
@@ -114,7 +114,7 @@ export default function ProductDetailPage() {
           {product.category?.slug && (
             <>
               <span className="mx-2">/</span>
-              <Link href={`/categories?category=${product.category.slug}`} className="hover:text-[var(--text-primary)]">
+              <Link href={product.category.full_slug ? `/${product.category.full_slug}` : `/categories?category=${product.category.slug}`} className="hover:text-[var(--text-primary)]">
                 {product.category.name}
               </Link>
             </>
@@ -203,3 +203,4 @@ export default function ProductDetailPage() {
     </div>
   )
 }
+

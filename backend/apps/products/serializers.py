@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import Category, Product, Inventory, Review, Wishlist, Brand
-from .models import Banner
+
+from apps.orders.models import Order
+
+from .models import Banner, Brand, Category, Inventory, Product, Review, Wishlist
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -22,6 +24,9 @@ class CategorySerializer(serializers.ModelSerializer):
     is_top_level = serializers.BooleanField(read_only=True)
     group = serializers.CharField(read_only=True)
     product_count = serializers.SerializerMethodField()
+    full_slug = serializers.CharField(read_only=True)
+    level = serializers.IntegerField(read_only=True)
+    breadcrumb = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Category
@@ -29,13 +34,30 @@ class CategorySerializer(serializers.ModelSerializer):
             "id",
             "name",
             "slug",
+            "full_slug",
+            "description",
             "image",
             "parent",
             "children",
             "is_top_level",
             "group",
+            "level",
+            "breadcrumb",
             "product_count",
         )
+        read_only_fields = (
+            "slug",
+            "children",
+            "is_top_level",
+            "group",
+            "product_count",
+            "full_slug",
+            "level",
+            "breadcrumb",
+        )
+        extra_kwargs = {
+            "parent": {"required": False, "allow_null": True},
+        }
 
     def get_image(self, obj):
         if obj.image:
@@ -43,11 +65,12 @@ class CategorySerializer(serializers.ModelSerializer):
         return None
 
     def get_children(self, obj):
-        children = obj.children.all()
-        return CategorySerializer(children, many=True).data if children else []
+        children = obj.children.all().order_by("name")
+        return CategorySerializer(children, many=True, context=self.context).data if children else []
 
     def get_product_count(self, obj):
-        return obj.products.filter(is_active=True).count()
+        descendant_ids = obj.descendant_ids(include_self=True)
+        return Product.objects.filter(category_id__in=descendant_ids, is_active=True).count()
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -56,6 +79,9 @@ class ProductSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     discount_percentage = serializers.ReadOnlyField()
     in_stock = serializers.ReadOnlyField()
+    available_stock = serializers.ReadOnlyField()
+    avg_rating = serializers.FloatField(read_only=True)
+    review_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product
@@ -68,20 +94,26 @@ class ProductSerializer(serializers.ModelSerializer):
             "category",
             "brand",
             "price",
+            "compare_price",
             "discount_price",
             "discount_percentage",
             "stock",
+            "available_stock",
             "low_stock_threshold",
             "in_stock",
             "weight",
             "gender",
+            "age_group",
             "age_range",
+            "size_label",
             "featured",
             "status",
             "seo_title",
             "seo_description",
             "image",
             "is_active",
+            "avg_rating",
+            "review_count",
             "created_at",
             "updated_at",
         )
@@ -95,6 +127,7 @@ class ProductSerializer(serializers.ModelSerializer):
                 image = files[0]
 
         product = Product.objects.create(**validated_data)
+        Inventory.objects.get_or_create(product=product, defaults={"quantity": product.stock})
         if image:
             product.image = image
             product.save(update_fields=["image"])
@@ -109,8 +142,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class ProductListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    brand = BrandSerializer(read_only=True)
     image = serializers.SerializerMethodField()
     discount_percentage = serializers.ReadOnlyField()
+    in_stock = serializers.ReadOnlyField()
+    available_stock = serializers.ReadOnlyField()
+    avg_rating = serializers.FloatField(read_only=True)
+    review_count = serializers.IntegerField(read_only=True)
+    popularity = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product
@@ -119,14 +158,25 @@ class ProductListSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "category",
+            "brand",
             "price",
+            "compare_price",
             "discount_price",
             "discount_percentage",
             "stock",
+            "available_stock",
             "featured",
             "status",
             "image",
+            "gender",
+            "age_group",
+            "age_range",
+            "size_label",
+            "in_stock",
             "is_active",
+            "avg_rating",
+            "review_count",
+            "popularity",
         )
 
     def get_image(self, obj):
@@ -158,6 +208,18 @@ class ReviewSerializer(serializers.ModelSerializer):
                 existing = existing.exclude(pk=self.instance.pk)
             if existing.exists():
                 raise serializers.ValidationError({"detail": "You have already reviewed this product."})
+
+            has_purchased = product.orderitem_set.filter(
+                order__user=request.user,
+                order__status__in=[
+                    Order.STATUS_PAID,
+                    Order.STATUS_PROCESSING,
+                    Order.STATUS_SHIPPED,
+                    Order.STATUS_DELIVERED,
+                ],
+            ).exists()
+            if not has_purchased:
+                raise serializers.ValidationError({"detail": "Only verified buyers can review this product."})
 
         return attrs
 
@@ -240,4 +302,3 @@ class BannerSerializer(serializers.ModelSerializer):
         if obj.image:
             return obj.image.url
         return None
-

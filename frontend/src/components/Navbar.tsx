@@ -1,27 +1,22 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { LogOut, Menu, Search, ShoppingBag, User, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { ChevronDown, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react"
 
-import api from '../lib/api'
-import { useCart } from '../lib/cartContext'
-import { useAuth } from '../lib/authContext'
-import MiniCart from './MiniCart'
-import Logo from './Logo'
+import api from "../lib/api"
+import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
+import { useCart } from "../lib/cartContext"
+import { useAuth } from "../lib/authContext"
+import MiniCart from "./MiniCart"
+import Logo from "./Logo"
 
-interface Category {
-  id: number
-  name: string
-  slug: string
-}
-
-const primaryNav = [
-  { label: 'Shop', href: '/categories' },
-  { label: 'New Arrivals', href: '/categories?sort=new' },
-  { label: 'Categories', href: '/categories' },
-  { label: 'Best Sellers', href: '/categories' },
+const staticNav = [
+  { label: "Home", href: "/" },
+  { label: "Shop", href: "/categories" },
+  { label: "Blog", href: "/blog" },
+  { label: "Contact", href: "/contact" },
 ]
 
 export default function Navbar() {
@@ -30,20 +25,21 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [categoriesOpen, setCategoriesOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [categories, setCategories] = useState<Category[]>([])
+  const [shopOpen, setShopOpen] = useState(false)
+  const [query, setQuery] = useState("")
+  const [categories, setCategories] = useState<CategoryNode[]>([])
 
   const { items, remove, updateQty } = useCart()
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
 
   const cartCount = useMemo(() => items.reduce((sum, item) => sum + (item.qty || 1), 0), [items])
+  const rootCategories = useMemo(() => orderRootCategories(categories), [categories])
 
   useEffect(() => {
-    if (pathname.startsWith('/admin')) return
+    if (pathname.startsWith("/admin")) return
     api
-      .get('/api/products/categories/')
-      .then((res) => setCategories(Array.isArray(res.data) ? res.data.slice(0, 8) : []))
+      .get("/api/products/categories/")
+      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
       .catch(() => setCategories([]))
   }, [pathname])
 
@@ -51,9 +47,10 @@ export default function Navbar() {
     setMobileOpen(false)
     setCartOpen(false)
     setSearchOpen(false)
+    setShopOpen(false)
   }, [pathname])
 
-  if (pathname.startsWith('/admin')) return null
+  if (pathname.startsWith("/admin")) return null
 
   const runSearch = (event: React.FormEvent) => {
     event.preventDefault()
@@ -62,50 +59,75 @@ export default function Navbar() {
     router.push(`/categories?search=${encodeURIComponent(value)}`)
   }
 
+  const categoryLinks = rootCategories.map((category) => ({
+    label: category.name,
+    href: buildCategoryHref(category),
+    category,
+  }))
+
   return (
     <header className="sticky top-0 z-50 border-b border-default bg-[var(--bg-primary)]/95 backdrop-blur">
       <div className="container-shell relative">
-        <div className="grid grid-cols-[1fr_auto] items-center gap-4 py-4 lg:grid-cols-[1fr_auto_1fr]">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4 xl:grid-cols-[minmax(220px,1fr)_auto_minmax(220px,1fr)]">
           <div className="min-w-0">
             <Logo className="max-w-full" />
           </div>
 
-          <nav className="hidden items-center justify-center gap-6 lg:flex" aria-label="Primary">
-            {primaryNav.map((item) => (
-              item.label === 'Categories' ? (
-                <div 
-                  key={item.label} 
-                  className="relative"
-                  onMouseEnter={() => setCategoriesOpen(true)}
-                  onMouseLeave={() => setCategoriesOpen(false)}
+          <nav className="hidden items-center justify-center gap-6 xl:flex" aria-label="Primary">
+            {staticNav.slice(0, 2).map((item) => (
+              item.label === "Shop" ? (
+                <div
+                  key={item.label}
+                  className="relative flex h-full items-center"
+                  onMouseEnter={() => setShopOpen(true)}
+                  onMouseLeave={() => setShopOpen(false)}
                 >
-                  <Link href={item.href} className="flex items-center gap-1 text-[15px] font-medium text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                  <Link href={item.href} className="inline-flex items-center gap-1 text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
                     {item.label}
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <ChevronDown size={16} />
                   </Link>
-                  {categoriesOpen && categories.length > 0 && (
-                    <div className="absolute left-0 top-full z-50 mt-2 w-56 rounded-xl border border-default bg-surface p-3 shadow-lg">
-                      <div className="flex flex-col gap-1">
-                        {categories.map((cat) => (
-                          <Link
-                            key={cat.id}
-                            href={`/categories?category=${cat.slug}`}
-                            className="rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-soft)]"
-                          >
-                            {cat.name}
-                          </Link>
+                  {shopOpen && rootCategories.length > 0 && (
+                    <div className="absolute left-1/2 top-full z-50 mt-4 w-[min(90vw,58rem)] -translate-x-1/2 rounded-[16px] border border-default bg-surface p-5 shadow-[var(--shadow-hover)]">
+                      <div className="grid gap-5 md:grid-cols-3">
+                        {rootCategories.map((category) => (
+                          <div key={category.id}>
+                            <Link href={buildCategoryHref(category)} className="text-base font-semibold text-[var(--text-primary)] hover:text-[#8f6a65]">
+                              {category.name}
+                            </Link>
+                            <div className="mt-3 space-y-2">
+                              {category.children?.slice(0, 6).map((child) => (
+                                <Link
+                                  key={child.id}
+                                  href={buildCategoryHref(child)}
+                                  className="block rounded-lg px-2 py-1 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]"
+                                >
+                                  {child.name}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <Link key={item.label} href={item.href} className="text-[15px] font-medium text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
                   {item.label}
                 </Link>
               )
+            ))}
+
+            {categoryLinks.map((item) => (
+              <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                {item.label}
+              </Link>
+            ))}
+
+            {staticNav.slice(2).map((item) => (
+              <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                {item.label}
+              </Link>
             ))}
           </nav>
 
@@ -136,7 +158,7 @@ export default function Navbar() {
                 aria-label="Logout"
                 onClick={async () => {
                   await logout()
-                  router.push('/')
+                  router.push("/")
                   router.refresh()
                 }}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
@@ -153,7 +175,7 @@ export default function Navbar() {
                 className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-[var(--accent)] text-white"
                 title="Admin Dashboard"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -176,9 +198,9 @@ export default function Navbar() {
 
             <button
               type="button"
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)] lg:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)] xl:hidden"
             >
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -200,9 +222,9 @@ export default function Navbar() {
         )}
 
         {mobileOpen && (
-          <div className="mb-4 rounded-xl border border-default bg-surface p-4 lg:hidden">
+          <div className="mb-4 rounded-xl border border-default bg-surface p-4 xl:hidden">
             <nav className="flex flex-col gap-1" aria-label="Mobile Primary">
-              {primaryNav.map((item) => (
+              {[...staticNav.slice(0, 2), ...categoryLinks, ...staticNav.slice(2)].map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
@@ -214,16 +236,21 @@ export default function Navbar() {
             </nav>
 
             <div className="mt-4 border-t border-default pt-3">
-              <p className="mb-2 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Popular Categories</p>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/categories?category=${cat.slug}`}
-                    className="rounded-full border border-default px-3 py-2 text-sm text-[var(--text-primary)]"
-                  >
-                    {cat.name}
-                  </Link>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">Shop Highlights</p>
+              <div className="space-y-2">
+                {rootCategories.map((category) => (
+                  <div key={category.id} className="rounded-xl border border-default bg-[var(--bg-primary)] p-3">
+                    <Link href={buildCategoryHref(category)} className="font-semibold text-[var(--text-primary)]">
+                      {category.name}
+                    </Link>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {category.children?.slice(0, 4).map((child) => (
+                        <Link key={child.id} href={buildCategoryHref(child)} className="rounded-full border border-default px-3 py-2 text-sm text-[var(--text-primary)]">
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -239,5 +266,3 @@ export default function Navbar() {
     </header>
   )
 }
-
-

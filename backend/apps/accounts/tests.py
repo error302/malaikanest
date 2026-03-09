@@ -60,3 +60,48 @@ class AuthCookieLoginTests(APITestCase):
 
         reconcile = self.client.get("/api/payments/admin/reconcile/candidates/", secure=True)
         self.assertEqual(reconcile.status_code, status.HTTP_200_OK)
+
+    def test_admin_login_endpoint_allows_admin_and_sets_http_only_cookies(self):
+        password = "AdminOnlyPass123!"
+        admin = User.objects.create_superuser(
+            email="owner@example.com",
+            phone="254700555666",
+            password=password,
+        )
+
+        response = self.client.post(
+            "/api/accounts/admin/login/",
+            {"email": admin.email, "password": password},
+            format="json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access_token", response.cookies)
+        self.assertIn("refresh_token", response.cookies)
+        self.assertTrue(response.cookies["access_token"]["httponly"])
+        self.assertTrue(response.cookies["refresh_token"]["httponly"])
+
+        session = self.client.get("/api/accounts/admin/session/", secure=True)
+        self.assertEqual(session.status_code, status.HTTP_200_OK)
+        self.assertEqual(session.data["email"], admin.email)
+        self.assertTrue(session.data["is_staff"])
+
+    def test_admin_login_endpoint_rejects_non_admin_users(self):
+        password = "CustomerPass123!"
+        customer = User.objects.create_user(
+            email="shopper@example.com",
+            phone="254700777888",
+            password=password,
+            role="customer",
+        )
+
+        response = self.client.post(
+            "/api/accounts/admin/login/",
+            {"email": customer.email, "password": password},
+            format="json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["detail"], "Admin access required")

@@ -1,7 +1,7 @@
 from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
-from apps.products.models import Product, ProductVariant, Inventory, VariantInventory
+from apps.products.models import Product, ProductVariant, Inventory, InventoryLog, VariantInventory
 import uuid
 import random
 from datetime import datetime
@@ -406,3 +406,4 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None, deliver
             OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
 
         return order
+

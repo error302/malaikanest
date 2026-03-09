@@ -1,20 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck } from 'lucide-react'
+import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck } from "lucide-react"
 
-import api from '../lib/api'
-import { useCart } from '../lib/cartContext'
-
-interface Category {
-  id: number
-  name: string
-  slug: string
-  image: string | null
-  product_count?: number
-}
+import api from "../lib/api"
+import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
+import { useCart } from "../lib/cartContext"
 
 interface Product {
   id: number
@@ -22,7 +15,7 @@ interface Product {
   slug: string
   price: string
   image: string | null
-  category?: { name?: string }
+  category?: { name?: string; full_slug?: string }
   featured?: boolean
   stock?: number
 }
@@ -45,10 +38,10 @@ interface Review {
 }
 
 const trustItems = [
-  { title: 'Safe Materials', subtitle: 'Tested quality essentials', icon: Leaf },
-  { title: 'Fast Delivery', subtitle: 'Reliable nationwide dispatch', icon: Truck },
-  { title: 'Parent Approved', subtitle: 'Loved by Kenyan families', icon: CheckCircle2 },
-  { title: 'Secure Checkout', subtitle: 'Protected payment flow', icon: ShieldCheck },
+  { title: "Safe Materials", subtitle: "Tested quality essentials", icon: Leaf },
+  { title: "Fast Delivery", subtitle: "Reliable nationwide dispatch", icon: Truck },
+  { title: "Parent Approved", subtitle: "Loved by Kenyan families", icon: CheckCircle2 },
+  { title: "Secure Checkout", subtitle: "Protected payment flow", icon: ShieldCheck },
 ]
 
 function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
@@ -64,7 +57,7 @@ function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title:
 export default function HomePage() {
   const { add } = useCart()
 
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<CategoryNode[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [banners, setBanners] = useState<Banner[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
@@ -76,18 +69,18 @@ export default function HomePage() {
 
   useEffect(() => {
     api
-      .get('/api/products/banners/')
+      .get("/api/products/banners/")
       .then((res) => setBanners(Array.isArray(res.data) ? res.data : []))
       .catch(() => setBanners([]))
 
     api
-      .get('/api/products/categories/')
+      .get("/api/products/categories/")
       .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
       .catch(() => setCategories([]))
       .finally(() => setLoadingCategories(false))
 
     api
-      .get('/api/products/products/?ordering=-created_at')
+      .get("/api/products/products/?ordering=-created_at")
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
         setProducts(rows.slice(0, 8))
@@ -96,7 +89,7 @@ export default function HomePage() {
       .finally(() => setLoadingProducts(false))
 
     api
-      .get('/api/products/reviews/?featured=true')
+      .get("/api/products/reviews/?featured=true")
       .then((res) => setReviews(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setReviews([]))
       .finally(() => setLoadingReviews(false))
@@ -109,10 +102,11 @@ export default function HomePage() {
   }, [banners.length])
 
   const heroBanner = banners[bannerIndex]
+  const rootCategories = useMemo(() => orderRootCategories(categories), [categories])
 
   const heroImage = useMemo(
-    () => heroBanner?.image || products.find((p) => p.image)?.image || categories.find((c) => c.image)?.image || null,
-    [heroBanner, products, categories]
+    () => heroBanner?.image || products.find((p) => p.image)?.image || rootCategories.find((c) => c.image)?.image || null,
+    [heroBanner, products, rootCategories]
   )
 
   const featuredProducts = useMemo(() => {
@@ -123,7 +117,7 @@ export default function HomePage() {
 
   const addToCart = async (product: Product) => {
     if ((product.stock ?? 0) <= 0) return
-    await add({ id: product.id, name: product.name, price: Number(product.price), image: product.image || '', qty: 1, slug: product.slug })
+    await add({ id: product.id, name: product.name, price: Number(product.price), image: product.image || "", qty: 1, slug: product.slug })
   }
 
   return (
@@ -132,20 +126,20 @@ export default function HomePage() {
         <div className="container-shell">
           <div className="grid items-center gap-10 rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:grid-cols-2 md:p-10">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Premium Baby & Maternity</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Premium Baby & Kids Store</p>
               <h1 className="font-display mt-4 text-[48px] text-[var(--text-primary)]">
                 Carefully Chosen Essentials for Your Little One
               </h1>
               <p className="mt-5 max-w-xl text-[18px] text-[var(--text-secondary)]">
-                Premium baby products designed for comfort, safety, and style. Built for real families and everyday routines.
+                Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href={heroBanner?.button_link || '/categories'} className="btn-primary inline-flex items-center justify-center gap-2">
+                <Link href={heroBanner?.button_link || "/categories"} className="btn-primary inline-flex items-center justify-center gap-2">
                   Shop Collection
                   <ArrowRight size={16} />
                 </Link>
-                <Link href="/categories" className="btn-secondary inline-flex items-center justify-center">
+                <Link href="/clothing" className="btn-secondary inline-flex items-center justify-center">
                   Browse Categories
                 </Link>
               </div>
@@ -159,7 +153,7 @@ export default function HomePage() {
                 {heroImage ? (
                   <Image
                     src={heroImage}
-                    alt={heroBanner?.title || 'Malaika Nest collection'}
+                    alt={heroBanner?.title || "Malaika Nest collection"}
                     width={1200}
                     height={900}
                     priority
@@ -181,27 +175,28 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="Collections"
             title="Shop by Category"
-            subtitle="Curated groups to help parents find essentials quickly and confidently."
+            subtitle="A scalable storefront built around the six main shopping areas parents use most."
           />
 
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {loadingCategories &&
-              Array.from({ length: 10 }).map((_, idx) => (
-                <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-3">
-                  <div className="aspect-square rounded-[12px] bg-[var(--bg-soft)]" />
-                  <div className="mx-auto mt-3 h-4 w-3/4 rounded bg-[var(--bg-soft)]" />
-                  <div className="mx-auto mt-2 h-3 w-1/2 rounded bg-[var(--bg-soft)]" />
+              Array.from({ length: 6 }).map((_, idx) => (
+                <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-5">
+                  <div className="aspect-[4/3] rounded-[12px] bg-[var(--bg-soft)]" />
+                  <div className="mt-4 h-5 w-1/2 rounded bg-[var(--bg-soft)]" />
+                  <div className="mt-3 h-4 w-full rounded bg-[var(--bg-soft)]" />
+                  <div className="mt-2 h-4 w-3/4 rounded bg-[var(--bg-soft)]" />
                 </div>
               ))}
 
             {!loadingCategories &&
-              categories.map((category) => (
+              rootCategories.map((category) => (
                 <Link
                   key={category.id}
-                  href={`/categories?category=${category.slug}`}
-                  className="group rounded-[12px] border border-default bg-surface p-3 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
+                  href={buildCategoryHref(category)}
+                  className="group flex h-full flex-col rounded-[12px] border border-default bg-surface p-5 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
                 >
-                  <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
                     {category.image ? (
                       <Image src={category.image} alt={category.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
                     ) : (
@@ -210,8 +205,29 @@ export default function HomePage() {
                       </div>
                     )}
                   </div>
-                  <p className="mt-3 line-clamp-2 text-center text-[20px] font-semibold text-[var(--text-primary)]">{category.name}</p>
-                  <p className="text-center text-sm text-[var(--text-secondary)]">{category.product_count || 0} products</p>
+
+                  <div className="mt-4 flex flex-1 flex-col">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="text-[26px] font-semibold text-[var(--text-primary)]">{category.name}</h3>
+                      <span className="rounded-full bg-[var(--bg-soft)] px-3 py-1 text-sm text-[var(--text-secondary)]">
+                        {category.product_count || 0} products
+                      </span>
+                    </div>
+                    <p className="mt-3 text-[16px] text-[var(--text-secondary)]">
+                      {category.description || "Browse curated products in this collection."}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {category.children?.slice(0, 5).map((child) => (
+                        <span key={child.id} className="rounded-full border border-default px-3 py-2 text-sm text-[var(--text-primary)]">
+                          {child.name}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+                      Explore {category.name}
+                      <ArrowRight size={16} />
+                    </span>
+                  </div>
                 </Link>
               ))}
           </div>
@@ -264,7 +280,7 @@ export default function HomePage() {
                     </Link>
 
                     <div className="mt-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">{product.category?.name || 'Product'}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">{product.category?.name || "Product"}</p>
                       <h3 className="mt-2 line-clamp-2 text-[22px] font-semibold text-[var(--text-primary)]">{product.name}</h3>
 
                       <div className="mt-4 flex items-center justify-between gap-3">
@@ -273,9 +289,9 @@ export default function HomePage() {
                           type="button"
                           onClick={() => addToCart(product)}
                           disabled={!inStock}
-                          className={inStock ? 'btn-primary px-4' : 'btn-secondary cursor-not-allowed px-4 opacity-60'}
+                          className={inStock ? "btn-primary px-4" : "btn-secondary cursor-not-allowed px-4 opacity-60"}
                         >
-                          {inStock ? 'Add to Cart' : 'Out of Stock'}
+                          {inStock ? "Add to Cart" : "Out of Stock"}
                         </button>
                       </div>
                     </div>
@@ -333,11 +349,11 @@ export default function HomePage() {
                     </span>
                     <div>
                       <p className="font-semibold text-[var(--text-primary)]">{review.user_name}</p>
-                      <p className="text-sm text-[var(--text-secondary)]">{review.location || 'Kenya'}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">{review.location || "Kenya"}</p>
                     </div>
                     <div className="ml-auto flex">
                       {Array.from({ length: 5 }).map((_, idx) => (
-                        <Star key={idx} size={16} className={idx < review.rating ? 'fill-[#b08a3d] text-[#b08a3d]' : 'text-[#d9d1cd]'} />
+                        <Star key={idx} size={16} className={idx < review.rating ? "fill-[#b08a3d] text-[#b08a3d]" : "text-[#d9d1cd]"} />
                       ))}
                     </div>
                   </div>
@@ -359,5 +375,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-
