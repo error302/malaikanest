@@ -76,33 +76,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string, captchaToken?: string) => {
     const payload: Record<string, string> = { email, password }
     if (captchaToken) payload.captcha_token = captchaToken
-
-    const res = await api.post('/api/accounts/token/', payload)
-    const responseUser = res.data?.user
-
-    if (responseUser) {
-      const fullName = [responseUser.first_name, responseUser.last_name].filter(Boolean).join(' ').trim()
-      const userData = {
-        id: responseUser.id,
-        email: responseUser.email,
-        name: fullName || responseUser.email,
-        role: responseUser.role,
-        is_staff: responseUser.is_staff,
-      }
-      setUser(userData)
-      localStorage.setItem(USER_KEY, JSON.stringify(userData))
-    }
-
+    
+    // Backend sets httponly secure cookies automatically
+    await api.post('/api/accounts/token/', payload)
+    
+    // Check auth again to ensure user session is fully instantiated
     await checkAuth()
   }
 
   const logout = async () => {
     try {
+      // Tells backend to blacklist the token and clear the httponly cookies
       await api.post('/api/accounts/logout/')
     } catch {
+      // Proceed with local logout regardless of network failure
     } finally {
-      localStorage.removeItem('malaika_token')
-      localStorage.removeItem('malaika_refresh')
       localStorage.removeItem(USER_KEY)
       setUser(null)
     }
