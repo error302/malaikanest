@@ -7,7 +7,7 @@ interface Banner {
   id: number
   title?: string
   image: string
-  link?: string
+  button_link?: string
 }
 
 export default function Banners() {
@@ -16,26 +16,33 @@ export default function Banners() {
   useEffect(() => {
     let mounted = true
     api.get('/api/products/banners/')
-      .then(res => {
-        if (mounted) setBanners(res.data || [])
+      .then((res) => {
+        const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
+        if (mounted) setBanners(rows)
       })
-      .catch(() => {})
-    return () => { mounted = false }
+      .catch(() => {
+        if (mounted) setBanners([])
+      })
+    return () => {
+      mounted = false
+    }
   }, [])
 
   if (!banners.length) return null
 
-  const b = banners[0]
+  const banner = banners[0]
+  const content = (
+    <Image src={banner.image} alt={banner.title || 'Banner'} width={1200} height={400} className="w-full h-auto rounded-lg" />
+  )
+
   return (
     <div className="w-full bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {b.link ? (
-          <a href={b.link} aria-label={b.title || 'Banner'}>
-            <Image src={b.image} alt={b.title || 'Banner'} width={1200} height={400} className="w-full h-auto rounded-lg" />
+        {banner.button_link ? (
+          <a href={banner.button_link} aria-label={banner.title || 'Banner'}>
+            {content}
           </a>
-        ) : (
-          <Image src={b.image} alt={b.title || 'Banner'} width={1200} height={400} className="w-full h-auto rounded-lg" />
-        )}
+        ) : content}
       </div>
     </div>
   )

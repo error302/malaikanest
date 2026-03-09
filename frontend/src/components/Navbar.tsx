@@ -15,7 +15,6 @@ import Logo from "./Logo"
 const staticNav = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/categories" },
-  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ]
 
@@ -39,7 +38,7 @@ export default function Navbar() {
     if (pathname.startsWith("/admin")) return
     api
       .get("/api/products/categories/")
-      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
+      .then((res) => setCategories(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setCategories([]))
   }, [pathname])
 

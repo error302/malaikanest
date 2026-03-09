@@ -70,12 +70,15 @@ export default function HomePage() {
   useEffect(() => {
     api
       .get("/api/products/banners/")
-      .then((res) => setBanners(Array.isArray(res.data) ? res.data : []))
+      .then((res) => {
+        const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
+        setBanners(rows)
+      })
       .catch(() => setBanners([]))
 
     api
       .get("/api/products/categories/")
-      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
+      .then((res) => setCategories(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setCategories([]))
       .finally(() => setLoadingCategories(false))
 
@@ -128,15 +131,15 @@ export default function HomePage() {
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Premium Baby & Kids Store</p>
               <h1 className="font-display mt-4 text-[48px] text-[var(--text-primary)]">
-                Carefully Chosen Essentials for Your Little One
+                {heroBanner?.title || "Carefully Chosen Essentials for Your Little One"}
               </h1>
               <p className="mt-5 max-w-xl text-[18px] text-[var(--text-secondary)]">
-                Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience.
+                {heroBanner?.subtitle || "Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience."}
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link href={heroBanner?.button_link || "/categories"} className="btn-primary inline-flex items-center justify-center gap-2">
-                  Shop Collection
+                  {heroBanner?.button_text || "Shop Collection"}
                   <ArrowRight size={16} />
                 </Link>
                 <Link href="/clothing" className="btn-secondary inline-flex items-center justify-center">

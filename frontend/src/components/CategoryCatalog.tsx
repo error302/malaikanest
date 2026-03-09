@@ -100,7 +100,7 @@ export default function CategoryCatalog({ initialCategoryPath = "" }: { initialC
   useEffect(() => {
     api
       .get("/api/products/categories/")
-      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
+      .then((res) => setCategories(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setCategories([]))
       .finally(() => setLoadingCategories(false))
 
