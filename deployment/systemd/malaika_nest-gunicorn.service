@@ -10,7 +10,7 @@ Environment=REPO_DIR=/home/ubuntu/malaika_nest
 Environment=VENV_PATH=/home/ubuntu/.virtualenvs/malaika_nest/bin
 WorkingDirectory=${REPO_DIR}
 # If you run via virtualenv (non-Docker), update the ExecStart below to point to your gunicorn binary
-ExecStart=${VENV_PATH}/gunicorn --chdir ${REPO_DIR} kenya_ecom.wsgi:application \
+ExecStart=${VENV_PATH}/gunicorn --chdir ${REPO_DIR} config.wsgi:application \
   --bind 0.0.0.0:8000 --workers 3 --log-level=info
 Restart=on-failure
 LimitNOFILE=65536

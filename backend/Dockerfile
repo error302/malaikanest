@@ -23,8 +23,9 @@ RUN set -ex && \
 COPY . /code
 
 ENV SECRET_KEY "BhAZuNDGwqHvfiFM4oz0vEecVCLGzD2aOSrSLwxGPHX7sEbzfr"
+ENV DJANGO_SETTINGS_MODULE "config.settings"
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-CMD ["gunicorn","--bind",":8000","--workers","2","kenya_ecom.wsgi"]
+CMD ["gunicorn","--bind",":8000","--workers","2","config.wsgi:application"]

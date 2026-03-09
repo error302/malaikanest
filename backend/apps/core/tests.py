@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from django.test import SimpleTestCase
 
-from kenya_ecom.settings import validate_production_env
+from config.settings.guards import validate_production_env
 
 
 class ProductionEnvGuardrailTests(SimpleTestCase):

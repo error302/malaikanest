@@ -31,7 +31,7 @@ def main():
     load_env(project_root / '.env')
 
     # ensure DJANGO settings
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.dev')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
     try:
         import django

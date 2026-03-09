@@ -75,7 +75,7 @@ echo -e "${YELLOW}🔄 Restarting services...${NC}"
 if command -v pm2 &> /dev/null; then
     # Restart backend
     pm2 restart backend 2>/dev/null || \
-    pm2 start gunicorn --name backend -- kenya_ecom.wsgi:application --bind 0.0.0.0:8000 --workers 2
+    pm2 start gunicorn --name backend -- config.wsgi:application --bind 0.0.0.0:8000 --workers 2
 
     # Restart frontend
     pm2 restart frontend 2>/dev/null || \
@@ -88,7 +88,7 @@ if command -v pm2 &> /dev/null; then
     pm2 status
 else
     echo -e "${YELLOW}⚠️ PM2 not found. Please start services manually:${NC}"
-    echo "  Backend: cd $PROJECT_DIR/backend && source venv/bin/activate && gunicorn kenya_ecom.wsgi:application --bind 0.0.0.0:8000"
+    echo "  Backend: cd $PROJECT_DIR/backend && source venv/bin/activate && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
     echo "  Frontend: cd $PROJECT_DIR/frontend && npm start"
 fi
 

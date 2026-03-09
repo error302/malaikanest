@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 import os
-import sys
+
 import django
 
-# Try different settings modules
-for settings_module in ['kenya_ecom.settings', 'config.settings.base', 'config.settings.dev']:
-    try:
-        os.environ['DJANGO_SETTINGS_MODULE'] = settings_module
-        django.setup()
-        print(f"Using Django settings: {settings_module}")
-        break
-    except Exception as e:
-        print(f"Failed with {settings_module}: {e}", file=sys.stderr)
-        continue
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
+print(f"Using Django settings: {os.environ['DJANGO_SETTINGS_MODULE']}")
 
 from django.contrib.auth import get_user_model
 User = get_user_model()

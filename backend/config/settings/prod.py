@@ -1,6 +1,8 @@
 from .base import *
 import urllib.parse
 
+from .guards import validate_production_env
+
 DEBUG = False
 
 ALLOWED_HOSTS = [
@@ -55,5 +57,7 @@ X_FRAME_OPTIONS = "DENY"
 
 LOGGING["handlers"]["file"]["level"] = "WARNING"
 LOGGING["loggers"]["django"]["level"] = "WARNING"
+
+validate_production_env(os.environ)
 
 print("Running in PRODUCTION mode")
