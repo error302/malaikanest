@@ -1,8 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
-import api from '@/lib/api'
+import api, { handleApiError } from '@/lib/api'
+import { shouldUseUnoptimizedImage } from '@/lib/media'
 
 interface Category {
   id: number
@@ -12,18 +14,23 @@ interface Category {
   level: number
   parent: number | null
   description?: string
+  image?: string | null
 }
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingId, setUploadingId] = useState<number | null>(null)
   const [form, setForm] = useState({
     name: '',
     parent: '',
     description: '',
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   const sortedCategories = useMemo(
     () => [...categories].sort((a, b) => a.full_slug.localeCompare(b.full_slug)),
@@ -32,6 +39,7 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
+      setError('')
       const res = await api.get('/api/products/admin/categories/')
       setCategories(Array.isArray(res.data) ? res.data : [])
     } catch (fetchError) {
@@ -46,23 +54,35 @@ export default function CategoriesPage() {
     fetchCategories()
   }, [])
 
+  const resetCreateForm = () => {
+    setForm({ name: '', parent: '', description: '' })
+    setImageFile(null)
+    setImagePreview(null)
+  }
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) return
 
     setSubmitting(true)
     setError('')
+    setSuccess('')
+
     try {
-      const payload: Record<string, string | number | null> = {
-        name: form.name.trim(),
-        description: form.description.trim(),
-        parent: form.parent ? Number(form.parent) : null,
-      }
-      const res = await api.post('/api/products/admin/categories/', payload)
+      const payload = new FormData()
+      payload.append('name', form.name.trim())
+      payload.append('description', form.description.trim())
+      if (form.parent) payload.append('parent', form.parent)
+      if (imageFile) payload.append('image', imageFile)
+
+      const res = await api.post('/api/products/admin/categories/', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
       setCategories((current) => [...current, res.data])
-      setForm({ name: '', parent: '', description: '' })
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.response?.data?.name?.[0] || 'Error creating category')
+      resetCreateForm()
+      setSuccess('Category saved.')
+    } catch (err) {
+      setError(handleApiError(err, 'Error creating category'))
     } finally {
       setSubmitting(false)
     }
@@ -71,12 +91,50 @@ export default function CategoriesPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this category?')) return
 
+    setError('')
+    setSuccess('')
+
     try {
       await api.delete(`/api/products/admin/categories/${id}/`)
-      setCategories(categories.filter((category) => category.id !== id))
+      setCategories((current) => current.filter((category) => category.id !== id))
+      setSuccess('Category deleted.')
     } catch (deleteError) {
       console.error('Error deleting category:', deleteError)
       setError('Could not delete that category. Remove or reassign children/products first.')
+    }
+  }
+
+  const handleImageSelect = (file: File | null) => {
+    setImageFile(file)
+    if (!file) {
+      setImagePreview(null)
+      return
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => setImagePreview(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const handleCategoryImageUpload = async (category: Category, file: File | null) => {
+    if (!file) return
+
+    setUploadingId(category.id)
+    setError('')
+    setSuccess('')
+
+    try {
+      const payload = new FormData()
+      payload.append('image', file)
+      const res = await api.patch(`/api/products/admin/categories/${category.id}/`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setCategories((current) => current.map((item) => (item.id === category.id ? res.data : item)))
+      setSuccess(`Updated image for ${category.name}.`)
+    } catch (uploadError) {
+      console.error('Error uploading category image:', uploadError)
+      setError(handleApiError(uploadError, 'Could not upload category image.'))
+    } finally {
+      setUploadingId(null)
     }
   }
 
@@ -92,11 +150,11 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="mb-2 text-2xl font-bold text-gray-800">Categories</h1>
-        <p className="text-sm text-gray-500">Manage the 3-level storefront hierarchy and SEO-ready category paths.</p>
+        <p className="text-sm text-gray-500">Manage the 3-level storefront hierarchy, descriptions, and category images.</p>
       </div>
 
       <form onSubmit={handleAdd} className="rounded-xl bg-white p-6 shadow-md">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <label className="text-sm font-medium text-gray-700">
             Category Name
             <input
@@ -122,7 +180,7 @@ export default function CategoriesPage() {
             </select>
           </label>
 
-          <label className="text-sm font-medium text-gray-700 md:col-span-1">
+          <label className="text-sm font-medium text-gray-700">
             Description
             <textarea
               value={form.description}
@@ -131,13 +189,31 @@ export default function CategoriesPage() {
               className="mt-2 min-h-[52px] w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-amber-500"
             />
           </label>
+
+          <label className="text-sm font-medium text-gray-700">
+            Category Image
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => handleImageSelect(e.target.files?.[0] || null)}
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            />
+          </label>
         </div>
+
+        {imagePreview && (
+          <div className="mt-4">
+            <p className="mb-2 text-sm text-gray-500">Preview</p>
+            <Image src={imagePreview} alt="Category preview" width={112} height={112} unoptimized className="h-28 w-28 rounded-lg object-cover" />
+          </div>
+        )}
 
         <div className="mt-4 flex items-center gap-4">
           <button type="submit" disabled={submitting} className="rounded-lg bg-amber-700 px-6 py-3 text-white transition hover:bg-amber-800 disabled:opacity-60">
             {submitting ? 'Saving...' : 'Add Category'}
           </button>
           {error && <p className="text-sm text-red-600">{error}</p>}
+          {!error && success && <p className="text-sm text-emerald-600">{success}</p>}
         </div>
       </form>
 
@@ -145,6 +221,7 @@ export default function CategoriesPage() {
         <table className="w-full">
           <thead className="bg-amber-700 text-white">
             <tr>
+              <th className="px-6 py-4 text-left">Image</th>
               <th className="px-6 py-4 text-left">Category</th>
               <th className="px-6 py-4 text-left">SEO Path</th>
               <th className="px-6 py-4 text-left">Level</th>
@@ -154,6 +231,30 @@ export default function CategoriesPage() {
           <tbody>
             {sortedCategories.map((category, index) => (
               <tr key={category.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-gray-100">
+                      {category.image ? (
+                        <Image src={category.image} alt={category.name} fill className="object-cover" unoptimized={shouldUseUnoptimizedImage(category.image)} />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-gray-400">No image</div>
+                      )}
+                    </div>
+                    <label className="cursor-pointer rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                      {uploadingId === category.id ? 'Uploading...' : 'Upload'}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={uploadingId === category.id}
+                        onChange={(e) => {
+                          void handleCategoryImageUpload(category, e.target.files?.[0] || null)
+                          e.currentTarget.value = ''
+                        }}
+                      />
+                    </label>
+                  </div>
+                </td>
                 <td className="px-6 py-4 font-medium text-gray-800">{`${'— '.repeat(category.level)}${category.name}`}</td>
                 <td className="px-6 py-4 font-mono text-sm text-gray-500">/{category.full_slug}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">Level {category.level + 1}</td>

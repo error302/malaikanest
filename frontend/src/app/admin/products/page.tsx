@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import api, { handleApiError } from '@/lib/api'
-import { shouldUseUnoptimizedImage } from '@/lib/media'
 import Link from 'next/link'
 import Image from 'next/image'
+import { shouldUseUnoptimizedImage } from '@/lib/media'
 
 interface Product {
   id: number
@@ -14,7 +14,7 @@ interface Product {
   category_name?: string
   stock: number
   is_active: boolean
-  image?: string
+  image?: string | null
 }
 
 export default function ProductsPage() {
@@ -22,6 +22,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [uploadingId, setUploadingId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -71,6 +72,29 @@ export default function ProductsPage() {
     } catch (error) {
       console.error('Error updating product:', error)
       setError(handleApiError(error, 'Product status could not be updated.'))
+    }
+  }
+
+  const handleImageUpload = async (product: Product, file: File | null) => {
+    if (!file) return
+
+    setUploadingId(product.id)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const payload = new FormData()
+      payload.append('image', file)
+      const res = await api.patch(`/api/products/admin/products/${product.id}/`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setProducts((current) => current.map((item) => (item.id === product.id ? res.data : item)))
+      setSuccess(`Updated image for ${product.name}.`)
+    } catch (error) {
+      console.error('Error uploading product image:', error)
+      setError(handleApiError(error, 'Product image could not be updated.'))
+    } finally {
+      setUploadingId(null)
     }
   }
 
@@ -139,7 +163,20 @@ export default function ProductsPage() {
                   <td className="px-4 py-3 text-sm">{product.stock}</td>
                   <td className="px-4 py-3 text-sm">{product.is_active ? 'Active' : 'Inactive'}</td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <label className="cursor-pointer px-3 py-1 bg-amber-50 text-amber-700 rounded text-xs">
+                        {uploadingId === product.id ? 'Uploading...' : 'Upload Image'}
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          disabled={uploadingId === product.id}
+                          onChange={(e) => {
+                            void handleImageUpload(product, e.target.files?.[0] || null)
+                            e.currentTarget.value = ''
+                          }}
+                        />
+                      </label>
                       <button onClick={() => handleToggleActive(product)} className="px-3 py-1 bg-slate-100 rounded text-xs">{product.is_active ? 'Deactivate' : 'Activate'}</button>
                       <button onClick={() => handleDelete(product.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs">Delete</button>
                     </div>
