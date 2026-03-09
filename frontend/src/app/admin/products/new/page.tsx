@@ -15,6 +15,8 @@ export default function NewProduct() {
   const [loading, setLoading] = useState(false)
   const [image, setImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -33,13 +35,28 @@ export default function NewProduct() {
     api.get('/api/products/categories/').then((res) => setCategories(Array.isArray(res.data) ? res.data : [])).catch(() => setCategories([]))
   }, [])
 
+  // Auto-generate slug from name
+  useEffect(() => {
+    if (!slugManuallyEdited && formData.name) {
+      const autoSlug = formData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+      setFormData((prev) => ({ ...prev, slug: autoSlug }))
+    }
+  }, [formData.name, slugManuallyEdited])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
+    if (name === 'slug') setSlugManuallyEdited(true)
     setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
     setLoading(true)
 
     try {
@@ -57,10 +74,13 @@ export default function NewProduct() {
       form.append('status', formData.status)
       if (image) form.append('image', image)
 
-      await api.post('/api/products/admin/products/', form)
+      await api.post('/api/products/admin/products/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
       router.push('/admin/products')
-    } catch (error) {
-      console.error('Error creating product:', error)
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || err?.response?.data?.name?.[0] || err?.response?.data?.slug?.[0] || 'Failed to create product. Please check all fields.'
+      setError(Array.isArray(detail) ? detail[0] : String(detail))
     } finally {
       setLoading(false)
     }
@@ -70,58 +90,108 @@ export default function NewProduct() {
     <div className="max-w-3xl mx-auto bg-white rounded-xl border p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Add New Product</h2>
-        <Link href="/admin/products" className="text-sm text-slate-600">Back</Link>
+        <Link href="/admin/products" className="text-sm text-slate-600">← Back</Link>
       </div>
+
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
-          <input name="name" value={formData.name} onChange={handleChange} placeholder="Product name" className="px-4 py-3 border rounded-lg" required />
-          <input name="slug" value={formData.slug} onChange={handleChange} placeholder="product-slug" className="px-4 py-3 border rounded-lg" required />
-          <input name="price" type="number" value={formData.price} onChange={handleChange} placeholder="Price" className="px-4 py-3 border rounded-lg" required />
-          <input name="discount_price" type="number" value={formData.discount_price} onChange={handleChange} placeholder="Discount price" className="px-4 py-3 border rounded-lg" />
-          <input name="stock" type="number" value={formData.stock} onChange={handleChange} placeholder="Stock" className="px-4 py-3 border rounded-lg" required />
-          <select name="category" value={formData.category} onChange={handleChange} className="px-4 py-3 border rounded-lg" required>
-            <option value="">Select category</option>
-            {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-          </select>
-          <select name="gender" value={formData.gender} onChange={handleChange} className="px-4 py-3 border rounded-lg">
-            <option value="unisex">Unisex</option>
-            <option value="girl">Girl</option>
-            <option value="boy">Boy</option>
-          </select>
-          <select name="status" value={formData.status} onChange={handleChange} className="px-4 py-3 border rounded-lg">
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-          </select>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Product Name *</label>
+            <input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Baby Comfort Blanket" className="w-full px-4 py-3 border rounded-lg" required />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Slug (URL) — auto-generated</label>
+            <input name="slug" value={formData.slug} onChange={handleChange} placeholder="baby-comfort-blanket" className="w-full px-4 py-3 border rounded-lg font-mono text-sm" required />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Price (KES) *</label>
+            <input name="price" type="number" min="0" step="0.01" value={formData.price} onChange={handleChange} placeholder="0.00" className="w-full px-4 py-3 border rounded-lg" required />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Discount Price (KES)</label>
+            <input name="discount_price" type="number" min="0" step="0.01" value={formData.discount_price} onChange={handleChange} placeholder="Leave blank if none" className="w-full px-4 py-3 border rounded-lg" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Stock Quantity *</label>
+            <input name="stock" type="number" min="0" value={formData.stock} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 border rounded-lg" required />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Category *</label>
+            <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg" required>
+              <option value="">Select category</option>
+              {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Gender</label>
+            <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg">
+              <option value="unisex">Unisex</option>
+              <option value="girl">Girl</option>
+              <option value="boy">Boy</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Status</label>
+            <select name="status" value={formData.status} onChange={handleChange} className="w-full px-4 py-3 border rounded-lg">
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
         </div>
 
-        <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" className="w-full px-4 py-3 border rounded-lg" rows={4} />
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-slate-600">Description</label>
+          <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Describe the product..." className="w-full px-4 py-3 border rounded-lg" rows={4} />
+        </div>
 
-        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => {
-          const file = e.target.files?.[0] || null
-          setImage(file)
-          if (file) {
-            const reader = new FileReader()
-            reader.onloadend = () => setImagePreview(reader.result as string)
-            reader.readAsDataURL(file)
-          } else {
-            setImagePreview(null)
-          }
-        }} />
-        
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-slate-600">Product Image</label>
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => {
+            const file = e.target.files?.[0] || null
+            setImage(file)
+            if (file) {
+              const reader = new FileReader()
+              reader.onloadend = () => setImagePreview(reader.result as string)
+              reader.readAsDataURL(file)
+            } else {
+              setImagePreview(null)
+            }
+          }} className="w-full text-sm" />
+          <p className="text-xs text-slate-400">JPG, PNG, or WEBP — max 5 MB</p>
+        </div>
+
         {imagePreview && (
-          <div className="mt-4">
-            <p className="text-sm text-gray-600 mb-2">Image Preview:</p>
+          <div className="mt-2">
+            <p className="text-xs text-slate-500 mb-2">Preview:</p>
             <img src={imagePreview} alt="Preview" className="w-48 h-48 object-cover rounded-lg border" />
           </div>
         )}
 
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} /> Active</label>
-          <label className="flex items-center gap-2"><input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} /> Featured</label>
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} />
+            Active (visible to customers)
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} />
+            Featured (shown on homepage)
+          </label>
         </div>
 
-        <button type="submit" disabled={loading} className="px-6 py-3 bg-amber-700 text-white rounded-lg disabled:opacity-50">{loading ? 'Saving...' : 'Create Product'}</button>
+        <div className="flex gap-4 pt-2">
+          <button type="submit" disabled={loading} className="px-6 py-3 bg-amber-700 text-white rounded-lg disabled:opacity-50 font-medium">
+            {loading ? 'Creating product...' : 'Create Product'}
+          </button>
+          <Link href="/admin/products" className="px-6 py-3 border rounded-lg text-sm text-slate-600">
+            Cancel
+          </Link>
+        </div>
       </form>
     </div>
   )
