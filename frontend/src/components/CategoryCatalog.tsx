@@ -7,6 +7,7 @@ import { Filter, Search } from "lucide-react"
 
 import ProductCard from "./ProductCard"
 import api from "../lib/api"
+import { shouldUseUnoptimizedImage } from "../lib/media"
 import {
   AGE_FILTERS,
   AGE_GROUP_FILTERS,
@@ -376,7 +377,7 @@ export default function CategoryCatalog({ initialCategoryPath = "" }: { initialC
                   >
                     <div className="relative aspect-[4/3] overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
                       {item.image ? (
-                        <Image src={item.image} alt={item.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
+                        <Image src={item.image} alt={item.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(item.image)} />
                       ) : (
                         <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
                           <span className="font-display text-5xl text-[var(--text-primary)]">{item.name.charAt(0)}</span>

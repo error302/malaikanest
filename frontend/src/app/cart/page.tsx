@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, Minus, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 
 import api from '@/lib/api'
+import { shouldUseUnoptimizedImage } from '@/lib/media'
 
 type CartItem = {
   id: number
@@ -170,7 +171,7 @@ export default function CartPage() {
                     className="relative aspect-square w-full overflow-hidden rounded-[12px] border border-default bg-[var(--bg-soft)] sm:h-28 sm:w-28"
                   >
                     {item.product.image ? (
-                      <Image src={item.product.image} alt={item.product.name} fill sizes="112px" className="object-cover" />
+                      <Image src={item.product.image} alt={item.product.name} fill sizes="112px" className="object-cover" unoptimized={shouldUseUnoptimizedImage(item.product.image)} />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
                         <span className="font-display text-4xl text-[var(--text-primary)]">{item.product.name.charAt(0)}</span>

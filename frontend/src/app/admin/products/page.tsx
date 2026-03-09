@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import api, { handleApiError } from '@/lib/api'
+import { shouldUseUnoptimizedImage } from '@/lib/media'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -120,7 +121,7 @@ export default function ProductsPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden relative">
                         {product.image ? (
-                          <Image src={product.image} alt={product.name} fill className="object-cover" />
+                          <Image src={product.image} alt={product.name} fill className="object-cover" unoptimized={shouldUseUnoptimizedImage(product.image)} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#D4A853] to-[#8B4513] text-white font-semibold">
                             {product.name.charAt(0)}

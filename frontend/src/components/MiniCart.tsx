@@ -2,6 +2,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { shouldUseUnoptimizedImage } from '../lib/media'
 
 type Item = { id: string | number; image?: string; name: string; price: number; qty: number }
 
@@ -19,7 +20,7 @@ export default function MiniCart({ items = [], onRemove, onUpdateQty }: { items?
             <div key={it.id} className="flex items-center gap-3 p-2 bg-secondary/30 rounded-lg transition-all hover:bg-secondary/50">
               <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
                 {it.image ? (
-                  <Image src={it.image} className="object-cover" alt={it.name} fill />
+                  <Image src={it.image} className="object-cover" alt={it.name} fill unoptimized={shouldUseUnoptimizedImage(it.image)} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#D4A853] to-[#8B4513] text-white font-semibold">{it.name.charAt(0)}</div>
                 )}

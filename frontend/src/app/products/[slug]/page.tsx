@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { CheckCircle2, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
 
 import api from '../../../lib/api'
+import { shouldUseUnoptimizedImage } from '../../../lib/media'
 import { useCart } from '../../../lib/cartContext'
 import ReviewSection from '@/components/ReviewSection'
 
@@ -127,7 +128,7 @@ export default function ProductDetailPage() {
           <div className="rounded-[12px] border border-default bg-surface p-4 shadow-[var(--shadow-soft)]">
             <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
               {product.image ? (
-                <Image src={product.image} alt={product.name} fill className="object-cover" priority />
+                <Image src={product.image} alt={product.name} fill className="object-cover" priority unoptimized={shouldUseUnoptimizedImage(product.image)} />
               ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
                   <span className="font-display text-7xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>

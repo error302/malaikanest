@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { ShoppingBag } from 'lucide-react'
 
 import { useCart } from '../lib/cartContext'
+import { shouldUseUnoptimizedImage } from '../lib/media'
 
 interface Props {
   product: any
@@ -36,7 +37,7 @@ export default function ProductCard({ product }: Props) {
       <Link href={`/products/${product.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
           {imageSrc ? (
-            <Image src={imageSrc} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
+            <Image src={imageSrc} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(imageSrc)} />
           ) : (
             <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
               <span className="font-display text-5xl text-[var(--text-primary)]">{String(product.name || 'P').charAt(0)}</span>

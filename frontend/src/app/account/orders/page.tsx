@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Download, FileText } from 'lucide-react'
 
 import api, { handleApiError } from '@/lib/api'
+import { shouldUseUnoptimizedImage } from '@/lib/media'
 
 type Order = {
   id: number
@@ -138,7 +139,7 @@ export default function OrdersPage() {
                           <div key={item.id} className="flex items-center gap-3">
                             <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-default bg-surface">
                               {item.product.image ? (
-                                <Image src={item.product.image} alt={item.product.name} fill sizes="48px" className="object-cover" />
+                                <Image src={item.product.image} alt={item.product.name} fill sizes="48px" className="object-cover" unoptimized={shouldUseUnoptimizedImage(item.product.image)} />
                               ) : (
                                 <div className="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]">Item</div>
                               )}

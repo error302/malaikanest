@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 
 import api from '@/lib/api'
+import { shouldUseUnoptimizedImage } from '@/lib/media'
 
 interface BundleProduct {
   id: number
@@ -242,7 +243,7 @@ export default function BundleBuilderPage() {
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-secondary)] text-sm font-semibold text-[var(--text-primary)]">{index + 1}</span>
                   <div className="h-14 w-14 overflow-hidden rounded-lg border border-default bg-surface">
                     {product.images?.[0]?.image ? (
-                      <Image width={112} height={112} src={product.images[0].image} alt={product.name} className="h-full w-full object-cover" />
+                      <Image width={112} height={112} src={product.images[0].image} alt={product.name} className="h-full w-full object-cover" unoptimized={shouldUseUnoptimizedImage(product.images[0].image)} />
                     ) : (
                       <div className="h-full w-full bg-[var(--border)]" />
                     )}

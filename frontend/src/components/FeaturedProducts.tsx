@@ -5,6 +5,7 @@ import Link from 'next/link'
 import api from '../lib/api'
 import { LoadingGrid } from './Loading'
 import { useCart } from '../lib/cartContext'
+import { shouldUseUnoptimizedImage } from '../lib/media'
 
 interface Product {
   id: number
@@ -103,7 +104,7 @@ export default function FeaturedProducts() {
             <div key={p.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
               <div className="aspect-square bg-gray-100 relative">
                 {p.image ? (
-                  <Image src={p.image} alt={p.name} fill className="object-cover" />
+                  <Image src={p.image} alt={p.name} fill className="object-cover" unoptimized={shouldUseUnoptimizedImage(p.image)} />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -8,6 +8,7 @@ import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck } from 
 import api from "../lib/api"
 import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
 import { useCart } from "../lib/cartContext"
+import { shouldUseUnoptimizedImage } from "../lib/media"
 
 interface Product {
   id: number
@@ -161,6 +162,7 @@ export default function HomePage() {
                     height={900}
                     priority
                     className="h-[280px] w-full object-cover md:h-[400px]"
+                    unoptimized={shouldUseUnoptimizedImage(heroImage)}
                   />
                 ) : (
                   <div className="flex h-[280px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] md:h-[400px]">
@@ -201,7 +203,7 @@ export default function HomePage() {
                 >
                   <div className="relative aspect-[4/3] overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
                     {category.image ? (
-                      <Image src={category.image} alt={category.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
+                      <Image src={category.image} alt={category.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(category.image)} />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
                         <span className="font-display text-5xl text-[var(--text-primary)]">{category.name.charAt(0)}</span>
@@ -271,7 +273,7 @@ export default function HomePage() {
                   >
                     <Link href={`/products/${product.slug}`} className="relative block aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
                       {product.image ? (
-                        <Image src={product.image} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
+                        <Image src={product.image} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(product.image)} />
                       ) : (
                         <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
                           <span className="font-display text-5xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>
