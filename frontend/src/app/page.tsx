@@ -6,9 +6,9 @@ import Link from "next/link"
 import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck } from "lucide-react"
 
 import api from "../lib/api"
+import { shouldUseUnoptimizedImage } from "../lib/media"
 import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
 import { useCart } from "../lib/cartContext"
-import { shouldUseUnoptimizedImage } from "../lib/media"
 
 interface Product {
   id: number
@@ -155,14 +155,11 @@ export default function HomePage() {
 
               <div className="relative overflow-hidden rounded-[12px] border border-default bg-[var(--bg-soft)]">
                 {heroImage ? (
-                  <Image
-                    src={heroImage}
-                    alt={heroBanner?.title || "Malaika Nest collection"}
-                    width={1200}
-                    height={900}
-                    priority
-                    className="h-[280px] w-full object-cover md:h-[400px]"
-                    unoptimized={shouldUseUnoptimizedImage(heroImage)}
+                  <div
+                    role="img"
+                    aria-label={heroBanner?.title || "Malaika Nest collection"}
+                    className="h-[280px] w-full bg-cover bg-center bg-no-repeat md:h-[400px]"
+                    style={{ backgroundImage: `url(${heroImage})` }}
                   />
                 ) : (
                   <div className="flex h-[280px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] md:h-[400px]">
