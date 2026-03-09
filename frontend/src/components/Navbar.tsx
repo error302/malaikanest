@@ -30,6 +30,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
 
@@ -69,11 +70,42 @@ export default function Navbar() {
             <Logo className="max-w-full" />
           </div>
 
-          <nav className="hidden items-center justify-center gap-8 lg:flex" aria-label="Primary">
+          <nav className="hidden items-center justify-center gap-6 lg:flex" aria-label="Primary">
             {primaryNav.map((item) => (
-              <Link key={item.label} href={item.href} className="text-[15px] font-medium text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
-                {item.label}
-              </Link>
+              item.label === 'Categories' ? (
+                <div 
+                  key={item.label} 
+                  className="relative"
+                  onMouseEnter={() => setCategoriesOpen(true)}
+                  onMouseLeave={() => setCategoriesOpen(false)}
+                >
+                  <Link href={item.href} className="flex items-center gap-1 text-[15px] font-medium text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                    {item.label}
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Link>
+                  {categoriesOpen && categories.length > 0 && (
+                    <div className="absolute left-0 top-full z-50 mt-2 w-56 rounded-xl border border-default bg-surface p-3 shadow-lg">
+                      <div className="flex flex-col gap-1">
+                        {categories.map((cat) => (
+                          <Link
+                            key={cat.id}
+                            href={`/categories?category=${cat.slug}`}
+                            className="rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-soft)]"
+                          >
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link key={item.label} href={item.href} className="text-[15px] font-medium text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                  {item.label}
+                </Link>
+              )
             ))}
           </nav>
 

@@ -69,8 +69,7 @@ export default function ProductCard({ product }: Props) {
             disabled={!inStock}
             className={inStock ? 'btn-primary inline-flex items-center gap-2 px-4' : 'btn-secondary inline-flex cursor-not-allowed items-center gap-2 px-4 opacity-60'}
           >
-            <ShoppingBag size={16} />
-            <span className="text-sm">Add</span>
+            <span className="text-lg">🛒</span>
           </button>
         </div>
       </div>
