@@ -90,7 +90,11 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use((config) => {
   (config as any).metadata = { startTime: Date.now() }
-  
+
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
+
   // Add JWT token from localStorage if available
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('malaika_token')
@@ -98,7 +102,7 @@ api.interceptors.request.use((config) => {
       config.headers.Authorization = `Bearer ${token}`
     }
   }
-  
+
   return config
 })
 

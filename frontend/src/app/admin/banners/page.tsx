@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import api from '@/lib/api'
+import api, { clearCache, handleApiError } from '@/lib/api'
 
 interface Banner {
   id: number
@@ -23,6 +23,8 @@ export default function BannersPage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [form, setForm] = useState({
     title: '',
     subtitle: '',
@@ -44,23 +46,46 @@ export default function BannersPage() {
 
   const fetchBanners = async () => {
     try {
+      setError(null)
       const res = await api.get('/api/products/admin/banners/')
       setBanners(res.data || [])
     } catch (error) {
       console.error('Error fetching banners:', error)
+      setError(handleApiError(error, 'Could not load banners right now.'))
     } finally {
       setLoading(false)
     }
   }
 
+  const resetForm = () => {
+    setForm({
+      title: '',
+      subtitle: '',
+      button_text: '',
+      button_link: '',
+      is_active: true,
+      position: 1,
+      start_date: '',
+      end_date: '',
+    })
+    setImage(null)
+    setImagePreview(null)
+    setMobileImage(null)
+    setMobilePreview(null)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    setSuccess(null)
+
     if (!image) {
-      alert('Please select a desktop image')
+      setError('Please select a desktop image.')
       return
     }
+
     setUploading(true)
-    
+
     try {
       const formData = new FormData()
       formData.append('title', form.title)
@@ -69,29 +94,30 @@ export default function BannersPage() {
       formData.append('button_link', form.button_link)
       formData.append('is_active', form.is_active ? 'true' : 'false')
       formData.append('position', String(form.position))
-      
+
       if (form.start_date) {
         formData.append('start_date', `${form.start_date}T00:00:00Z`)
       }
       if (form.end_date) {
         formData.append('end_date', `${form.end_date}T23:59:59Z`)
       }
-      
+
       formData.append('image', image)
       if (mobileImage) {
         formData.append('mobile_image', mobileImage)
       }
 
-      await api.post('/api/products/admin/banners/', formData)
+      await api.post('/api/products/admin/banners/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      clearCache('/api/products/banners/')
       setShowForm(false)
-      setForm({ title: '', subtitle: '', button_text: '', button_link: '', is_active: true, position: 1, start_date: '', end_date: '' })
-      setImage(null)
-      setImagePreview(null)
-      setMobileImage(null)
-      setMobilePreview(null)
-      fetchBanners()
+      resetForm()
+      setSuccess('Banner saved successfully.')
+      await fetchBanners()
     } catch (error) {
       console.error('Error creating banner:', error)
+      setError(handleApiError(error, 'Banner could not be saved. Please review the fields and try again.'))
     } finally {
       setUploading(false)
     }
@@ -99,24 +125,40 @@ export default function BannersPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this banner?')) return
+    setError(null)
+    setSuccess(null)
+
     try {
       await api.delete(`/api/products/admin/banners/${id}/`)
-      setBanners(banners.filter(b => b.id !== id))
+      clearCache('/api/products/banners/')
+      setBanners((current) => current.filter((banner) => banner.id !== id))
+      setSuccess('Banner deleted.')
     } catch (error) {
       console.error('Error deleting banner:', error)
+      setError(handleApiError(error, 'Banner could not be deleted.'))
     }
   }
 
   const toggleActive = async (banner: Banner) => {
+    setError(null)
+    setSuccess(null)
+
     try {
       await api.patch(`/api/products/admin/banners/${banner.id}/`, { is_active: !banner.is_active })
-      fetchBanners()
+      clearCache('/api/products/banners/')
+      setSuccess(`Banner ${banner.is_active ? 'disabled' : 'enabled'}.`)
+      await fetchBanners()
     } catch (error) {
       console.error('Error updating banner:', error)
+      setError(handleApiError(error, 'Banner status could not be updated.'))
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (f: File | null) => void, setPreview: (p: string | null) => void) => {
+  const handleImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: (file: File | null) => void,
+    setPreview: (preview: string | null) => void
+  ) => {
     const file = e.target.files?.[0] || null
     setFile(file)
     if (file) {
@@ -139,10 +181,29 @@ export default function BannersPage() {
           <h2 className="text-3xl font-bold text-slate-800">Banners</h2>
           <p className="text-slate-500 mt-1">Manage your homepage banners</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700">
+        <button
+          onClick={() => {
+            setShowForm(!showForm)
+            setError(null)
+            setSuccess(null)
+          }}
+          className="px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700"
+        >
           {showForm ? 'Cancel' : 'Add Banner'}
         </button>
       </div>
+
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+          {success}
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border p-8 space-y-6">
@@ -161,11 +222,11 @@ export default function BannersPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Button Link</label>
-              <input type="text" value={form.button_link} onChange={(e) => setForm({ ...form, button_link: e.target.value })} placeholder="/categories" className="w-full px-4 py-3 rounded-xl border" required />
+              <input type="text" value={form.button_link} onChange={(e) => setForm({ ...form, button_link: e.target.value })} placeholder="/categories" className="w-full px-4 py-3 rounded-xl border" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Position</label>
-              <input type="number" value={form.position} onChange={(e) => setForm({ ...form, position: parseInt(e.target.value) })} className="w-full px-4 py-3 rounded-xl border" />
+              <input type="number" value={form.position} onChange={(e) => setForm({ ...form, position: Number(e.target.value) || 0 })} className="w-full px-4 py-3 rounded-xl border" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Active</label>
@@ -173,6 +234,14 @@ export default function BannersPage() {
                 <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-5 h-5" />
                 <span>Banner is active</span>
               </label>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Start Date</label>
+              <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="w-full px-4 py-3 rounded-xl border" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">End Date</label>
+              <input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="w-full px-4 py-3 rounded-xl border" />
             </div>
           </div>
 
@@ -211,7 +280,17 @@ export default function BannersPage() {
             <button type="submit" disabled={uploading} className="px-8 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 disabled:opacity-50">
               {uploading ? 'Saving...' : 'Save Banner'}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-8 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl">Cancel</button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowForm(false)
+                setError(null)
+                setSuccess(null)
+              }}
+              className="px-8 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
@@ -256,4 +335,3 @@ export default function BannersPage() {
     </div>
   )
 }
-
