@@ -57,10 +57,6 @@ def validate_production_env(env):
         "FRONTEND_URL",
         "CORS_ALLOWED_ORIGINS",
         "CSRF_TRUSTED_ORIGINS",
-        "MPESA_CALLBACK_URL",
-        "MPESA_CONSUMER_KEY",
-        "MPESA_CONSUMER_SECRET",
-        "MPESA_PASSKEY",
         "EMAIL_HOST_USER",
         "EMAIL_HOST_PASSWORD",
         "CLOUDINARY_CLOUD_NAME",
@@ -78,9 +74,6 @@ def validate_production_env(env):
         errors.append("SECRET_KEY appears to be a placeholder value.")
 
     for var in [
-        "MPESA_CONSUMER_KEY",
-        "MPESA_CONSUMER_SECRET",
-        "MPESA_PASSKEY",
         "EMAIL_HOST_PASSWORD",
         "CLOUDINARY_API_KEY",
         "CLOUDINARY_API_SECRET",
@@ -93,8 +86,15 @@ def validate_production_env(env):
     if "*" in {host.strip() for host in allowed_hosts_raw.split(",") if host.strip()}:
         errors.append("ALLOWED_HOSTS must not contain '*'.")
 
+    # M-Pesa can be intentionally unconfigured pre-launch; enforce strict validation only when all credentials are present.
+    mpesa_consumer_key = env.get("MPESA_CONSUMER_KEY", "")
+    mpesa_consumer_secret = env.get("MPESA_CONSUMER_SECRET", "")
+    mpesa_passkey = env.get("MPESA_PASSKEY", "")
     callback_url = env.get("MPESA_CALLBACK_URL", "")
-    if callback_url:
+    mpesa_values = [mpesa_consumer_key, mpesa_consumer_secret, mpesa_passkey, callback_url]
+    mpesa_fully_configured = all(mpesa_values) and not any(looks_placeholder(v) for v in mpesa_values)
+
+    if mpesa_fully_configured:
         if not callback_url.startswith("https://"):
             errors.append("MPESA_CALLBACK_URL must use https in production.")
         if is_localhost_url(callback_url):

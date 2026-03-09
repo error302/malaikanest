@@ -96,6 +96,29 @@ def pick(data, *keys):
     return None
 
 
+def is_placeholder_secret(value):
+    if value is None:
+        return True
+    normalized = str(value).strip().lower()
+    if not normalized:
+        return True
+    placeholder_tokens = (
+        "changeme",
+        "change-me",
+        "placeholder",
+        "replace_me",
+        "replace-me",
+        "example",
+        "dummy",
+        "your-",
+        "your_",
+        "default",
+        "sample",
+        "test",
+    )
+    return any(token in normalized for token in placeholder_tokens)
+
+
 class PaymentService:
     @staticmethod
     def should_use_mock_mpesa():
@@ -166,7 +189,12 @@ class PaymentService:
         callback_url = os.getenv("MPESA_CALLBACK_URL")
         mpesa_env = os.getenv("MPESA_ENV", "sandbox")
 
-        if not all([consumer_key, consumer_secret, passkey, callback_url]):
+        mpesa_values = [consumer_key, consumer_secret, passkey, callback_url]
+        mpesa_configured = all(mpesa_values) and not any(
+            is_placeholder_secret(value) for value in mpesa_values
+        )
+
+        if not mpesa_configured:
             if PaymentService.should_use_mock_mpesa():
                 return PaymentService.complete_mock_mpesa_payment(payment, phone)
             payment.status = "failed"
@@ -350,6 +378,8 @@ class PaymentService:
             payment.order.save(update_fields=["status", "updated_at"])
             audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes=result_desc)
             return {"ResultCode": 0, "ResultDesc": "Accepted"}
+
+
 
 
 
