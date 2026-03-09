@@ -60,7 +60,7 @@ export default function BundleBuilderPage() {
   const generateBundle = async () => {
     setLoading(true)
     try {
-      const res = await api.post('/api/ai/bundle/', {
+      const res = await api.post('/api/ai/bundle/generate/', {
         type: selections.bundleType || 'newborn_starter',
         budget: selections.budget,
         age_group: selections.ageGroup,

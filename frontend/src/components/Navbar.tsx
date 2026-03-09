@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, Search, ShoppingBag, User, X } from 'lucide-react'
+import { LogOut, Menu, Search, ShoppingBag, User, X } from 'lucide-react'
 
 import api from '../lib/api'
 import { useCart } from '../lib/cartContext'
@@ -130,6 +130,22 @@ export default function Navbar() {
               )}
             </Link>
 
+            {isAuthenticated && (
+              <button
+                type="button"
+                aria-label="Logout"
+                onClick={async () => {
+                  await logout()
+                  router.push('/')
+                  router.refresh()
+                }}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
+                title="Logout"
+              >
+                <LogOut size={18} />
+              </button>
+            )}
+
             {isAdmin && (
               <Link
                 href="/admin"
@@ -223,4 +239,5 @@ export default function Navbar() {
     </header>
   )
 }
+
 

@@ -7,15 +7,22 @@ import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from 'next-themes'
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const enableVercelAnalytics = process.env.NEXT_PUBLIC_ENABLE_VERCEL_ANALYTICS === 'true'
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <AuthProvider>
         <CartProvider>
-          <SpeedInsights />
-          <Analytics />
+          {enableVercelAnalytics && (
+            <>
+              <SpeedInsights />
+              <Analytics />
+            </>
+          )}
           {children}
         </CartProvider>
       </AuthProvider>
     </ThemeProvider>
   )
 }
+

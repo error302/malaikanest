@@ -17,9 +17,14 @@ test_phone = "+254700000000"
 
 # Check if user exists
 if not User.objects.filter(email=test_email).exists():
+    # Keep this utility idempotent even when phone numbers collide with existing fixtures.
+    candidate_phone = test_phone
+    if User.objects.filter(phone=candidate_phone).exclude(email=test_email).exists():
+        candidate_phone = "+2547" + str(abs(hash(test_email)) % 100000000).zfill(8)
+
     user = User.objects.create_user(
         email=test_email,
-        phone=test_phone,
+        phone=candidate_phone,
         password=test_password,
         first_name="Test",
         last_name="User",
@@ -34,6 +39,8 @@ else:
     user.set_password(test_password)
     user.email_verified = True
     user.is_active = True
+    if User.objects.filter(phone=test_phone).exclude(email=test_email).exists() and user.phone == test_phone:
+        user.phone = "+2547" + str(abs(hash(test_email)) % 100000000).zfill(8)
     user.save()
     print(f"Updated test user: {test_email}")
     print(f"Password: {test_password}")

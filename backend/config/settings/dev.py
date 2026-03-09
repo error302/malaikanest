@@ -21,11 +21,14 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-if not os.getenv('CORS_ALLOWED_ORIGINS'):
-    CORS_ALLOWED_ORIGINS = [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-    ]
+# Always allow both localhost variants in development to avoid CORS issues
+# when frontend is launched as http://localhost:3000 or http://127.0.0.1:3000.
+_dev_origins = {'http://localhost:3000', 'http://127.0.0.1:3000'}
+_existing_cors = set(globals().get('CORS_ALLOWED_ORIGINS', []))
+CORS_ALLOWED_ORIGINS = sorted(_existing_cors | _dev_origins)
+
+_existing_csrf = set(globals().get('CSRF_TRUSTED_ORIGINS', []))
+CSRF_TRUSTED_ORIGINS = sorted(_existing_csrf | _dev_origins)
 
 if not os.getenv('EMAIL_HOST'):
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -37,3 +40,4 @@ CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'true').strip()
 CELERY_TASK_EAGER_PROPAGATES = True
 
 print('Running in DEVELOPMENT mode with PostgreSQL')
+

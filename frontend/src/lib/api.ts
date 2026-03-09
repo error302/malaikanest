@@ -51,6 +51,11 @@ const getCacheKey = (method: string, url: string, params?: any, data?: any): str
   return `${method}:${url}:${JSON.stringify(params)}:${JSON.stringify(data)}`
 }
 
+const hasClientSessionHint = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return !!(localStorage.getItem('malaika_user_v1') || localStorage.getItem('malaika_token'))
+}
+
 // Exponential backoff retry
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -171,7 +176,8 @@ api.interceptors.response.use(
 
     const shouldAttemptRefresh = error.response?.status === 401 &&
       !originalRequest?._retry &&
-      !isAuthEndpoint(originalRequest?.url)
+      !isAuthEndpoint(originalRequest?.url) &&
+      hasClientSessionHint()
 
     if (shouldAttemptRefresh) {
       originalRequest._retry = true
@@ -255,3 +261,5 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
 export const isValidResponse = (data: any): boolean => {
   return data !== null && data !== undefined && (typeof data === 'object' ? Object.keys(data).length > 0 : true)
 }
+
+

@@ -33,6 +33,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 const USER_KEY = 'malaika_user_v1'
+const TOKEN_KEY = 'malaika_token'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -63,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(USER_KEY)
+    const hasSessionHint = !!(stored || localStorage.getItem(TOKEN_KEY))
+
     if (stored) {
       try {
         setUser(JSON.parse(stored))
@@ -70,7 +73,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem(USER_KEY)
       }
     }
-    checkAuth()
+
+    if (hasSessionHint) {
+      checkAuth()
+      return
+    }
+
+    setIsLoading(false)
   }, [checkAuth])
 
   const login = async (email: string, password: string, captchaToken?: string) => {
@@ -127,3 +136,4 @@ export function isLoggedIn(): boolean {
   if (typeof window === 'undefined') return false
   return !!localStorage.getItem(USER_KEY)
 }
+

@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
+from corsheaders.defaults import default_headers
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "cloudinary",
     "apps.accounts",
@@ -151,6 +153,13 @@ CORS_ALLOWED_ORIGINS = [u.strip() for u in _cors_env.split(",") if u.strip()]
 # Essential for session cookies (guest cart) and HTTPOnly JWTs to work across domains
 CORS_ALLOW_CREDENTIALS = True
 
+# Allow common cache headers sent by browsers/proxies during CORS preflight.
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "cache-control",
+    "pragma",
+    "expires",
+]
+
 _csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if _csrf_env:
     CSRF_TRUSTED_ORIGINS = [u.strip() for u in _csrf_env.split(",") if u.strip()]
@@ -220,4 +229,6 @@ try:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
     pass
+
+
 
