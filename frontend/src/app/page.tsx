@@ -177,7 +177,7 @@ export default function HomePage() {
 
               <div className="relative overflow-hidden rounded-[12px] border border-default bg-[var(--bg-soft)]">
               {heroImage ? (
-                <div className="relative h-[220px] w-full sm:h-[280px] md:h-[400px]">
+                <div className="relative aspect-[4/3] w-full sm:aspect-video md:aspect-[16/7] lg:aspect-[16/6]">
                   <Image
                     src={heroImage}
                     alt={heroBanner?.title || "Malaika Nest collection"}
@@ -187,7 +187,7 @@ export default function HomePage() {
                   />
                 </div>
               ) : (
-                <div className="flex h-[220px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] sm:h-[280px] md:h-[400px]">
+                <div className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] sm:aspect-video md:aspect-[16/7] lg:aspect-[16/6]">
                   <p className="font-display text-[28px] text-[var(--text-primary)] md:text-[32px]">Malaika Nest</p>
                 </div>
               )}
@@ -205,7 +205,7 @@ export default function HomePage() {
             subtitle="A scalable storefront built around the six main shopping areas parents use most."
           />
 
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             {loadingCategories &&
               Array.from({ length: 6 }).map((_, idx) => (
                 <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-5">
