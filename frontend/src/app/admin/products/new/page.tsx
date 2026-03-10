@@ -99,9 +99,7 @@ export default function NewProduct() {
       form.append('status', formData.status)
       if (image) form.append('image', image)
 
-      await api.post('/api/products/admin/products/', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      await api.post('/api/products/admin/products/', form)
       router.push('/admin/products')
     } catch (err: any) {
       const detail = err?.response?.data?.detail || err?.response?.data?.name?.[0] || err?.response?.data?.slug?.[0] || 'Failed to create product. Please check all fields.'

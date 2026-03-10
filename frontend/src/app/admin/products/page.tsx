@@ -85,9 +85,7 @@ export default function ProductsPage() {
     try {
       const payload = new FormData()
       payload.append('image', file)
-      const res = await api.patch(`/api/products/admin/products/${product.id}/`, payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const res = await api.patch(`/api/products/admin/products/${product.id}/`, payload)
       setProducts((current) => current.map((item) => (item.id === product.id ? res.data : item)))
       setSuccess(`Updated image for ${product.name}.`)
     } catch (error) {

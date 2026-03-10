@@ -107,9 +107,7 @@ export default function BannersPage() {
         formData.append('mobile_image', mobileImage)
       }
 
-      await api.post('/api/products/admin/banners/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      await api.post('/api/products/admin/banners/', formData)
       clearCache('/api/products/banners/')
       setShowForm(false)
       resetForm()

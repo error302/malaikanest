@@ -75,9 +75,7 @@ export default function CategoriesPage() {
       if (form.parent) payload.append('parent', form.parent)
       if (imageFile) payload.append('image', imageFile)
 
-      const res = await api.post('/api/products/admin/categories/', payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const res = await api.post('/api/products/admin/categories/', payload)
       setCategories((current) => [...current, res.data])
       resetCreateForm()
       setSuccess('Category saved.')
@@ -125,9 +123,7 @@ export default function CategoriesPage() {
     try {
       const payload = new FormData()
       payload.append('image', file)
-      const res = await api.patch(`/api/products/admin/categories/${category.id}/`, payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const res = await api.patch(`/api/products/admin/categories/${category.id}/`, payload)
       setCategories((current) => current.map((item) => (item.id === category.id ? res.data : item)))
       setSuccess(`Updated image for ${category.name}.`)
     } catch (uploadError) {
