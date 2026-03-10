@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck } from "lucide-react"
+import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck, ShoppingCart } from "lucide-react"
 
 import api from "../lib/api"
 import { getImageUrl, shouldUseUnoptimizedImage } from "../lib/media"
@@ -316,8 +316,9 @@ export default function HomePage() {
                           type="button"
                           onClick={() => addToCart(product)}
                           disabled={!inStock}
-                          className={inStock ? "btn-primary px-4" : "btn-secondary cursor-not-allowed px-4 opacity-60"}
+                          className={inStock ? "btn-primary px-4 flex items-center gap-2" : "btn-secondary cursor-not-allowed px-4 opacity-60 flex items-center gap-2"}
                         >
+                          <ShoppingCart size={16} />
                           {inStock ? "Add to Cart" : "Out of Stock"}
                         </button>
                       </div>

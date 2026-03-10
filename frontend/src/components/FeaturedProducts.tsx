@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { ShoppingCart } from 'lucide-react'
 import api from '../lib/api'
 import { LoadingGrid } from './Loading'
 import { useCart } from '../lib/cartContext'
@@ -120,10 +121,11 @@ export default function FeaturedProducts() {
                 <p className="text-lg font-bold text-gray-800 mt-2">KSH {parseFloat(p.price).toLocaleString()}</p>
                 <div className="flex gap-2 w-full mt-3">
                   <button
-                    className="flex-1 bg-cta text-white hover:bg-cta-hover font-medium py-2 rounded transition-colors text-sm disabled:opacity-50"
+                    className="flex-1 bg-cta text-white hover:bg-cta-hover font-medium py-2 rounded transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
                     disabled={(p.stock ?? 0) === 0}
                     onClick={() => add({ id: p.id, name: p.name, price: Number(p.price), image: p.image || '', qty: 1, slug: p.slug })}
                   >
+                    <ShoppingCart size={16} />
                     {(p.stock ?? 1) > 0 ? 'Add to Cart' : 'Out of Stock'}
                   </button>
                   <div className="flex flex-col gap-1 w-auto">
