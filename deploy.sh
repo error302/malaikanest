@@ -26,6 +26,7 @@ ALLOWED_HOSTS=104.154.161.10,malaikanest.duckdns.org,www.malaikanest.duckdns.org
 # Database (PostgreSQL on GCP)
 DATABASE_URL=postgres://malaika_user:Dosho10701$@10.128.0.2:5432/malaika_db
 
+
 # Cloudinary (for image uploads)
 CLOUDINARY_CLOUD_NAME=dnnr5zo0w
 CLOUDINARY_API_KEY=934211243173844

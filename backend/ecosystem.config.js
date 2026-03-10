@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'backend',
-      script: '/home/mohameddosho20/malaikanest/backend/.venv/bin/gunicorn',
+      script: '/home/mohameddosho20/malaikanest/backend/venv/bin/gunicorn',
       args: 'config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120',
       cwd: '/home/mohameddosho20/malaikanest/backend',
       interpreter: 'none',
@@ -13,7 +13,7 @@ module.exports = {
         DJANGO_ENV: 'prod',
         DJANGO_SETTINGS_MODULE: 'config.settings',
         PYTHONPATH: '/home/mohameddosho20/malaikanest/backend',
-        PATH: '/home/mohameddosho20/malaikanest/backend/.venv/bin:/usr/local/bin:/usr/bin:/bin'
+        PATH: '/home/mohameddosho20/malaikanest/backend/venv/bin:/usr/local/bin:/usr/bin:/bin'
       },
       error_file: '/var/log/malaikanest/backend-error.log',
       out_file: '/var/log/malaikanest/backend-out.log',
