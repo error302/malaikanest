@@ -148,6 +148,20 @@ class PublicSettingsView(APIView):
                 'minimum_order_amount': cached_settings.get('minimum_order_amount', '1000'),
             }
             return Response(public_settings)
+
+
+class Pm2LogsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        import os
+        log_path = os.path.expanduser("~/.pm2/logs/frontend-error.log")
+        try:
+            with open(log_path, "r") as f:
+                lines = f.readlines()
+                return Response({"logs": lines[-200:]})
+        except Exception as e:
+            return Response({"error": str(e)})
         
         # Return public defaults
         return Response({
