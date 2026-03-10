@@ -358,7 +358,7 @@ html, body {
   border-radius: var(--radius);
   border: 1px solid transparent;
   background: var(--text-primary);
-  color: #fff;
+  color: var(--text-inverse, #fff);
   padding: 0.75rem 1.25rem;
   font-weight: 600;
   transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
@@ -367,7 +367,7 @@ html, body {
 .btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-hover);
-  background: #1f1f1f;
+  background: var(--accent-primary);
 }
 
 .btn-secondary {
@@ -377,11 +377,12 @@ html, body {
   color: var(--text-primary);
   padding: 0.75rem 1.25rem;
   font-weight: 600;
-  transition: border-color 220ms ease, transform 220ms ease;
+  transition: border-color 220ms ease, transform 220ms ease, background-color 220ms ease;
 }
 
 .btn-secondary:hover {
   border-color: var(--accent-primary);
+  background: var(--bg-soft);
   transform: translateY(-1px);
 }
 
