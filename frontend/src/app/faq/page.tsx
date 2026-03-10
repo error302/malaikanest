@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type FAQItem = {
   question: string
@@ -149,9 +150,9 @@ export default function FAQPage() {
           <p className="mt-2 text-[18px] text-[var(--text-secondary)]">
             Reach the team for order help, product guidance, or delivery coordination.
           </p>
-          <a href="/contact" className="btn-primary mt-6 inline-flex px-7">
+          <Link href="/contact" className="btn-primary mt-6 inline-flex px-7">
             Contact Support
-          </a>
+          </Link>
         </section>
       </div>
     </div>

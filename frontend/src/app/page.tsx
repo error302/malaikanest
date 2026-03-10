@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck } from "lucide-react"
 
 import api from "../lib/api"
-import { shouldUseUnoptimizedImage } from "../lib/media"
+import { getImageUrl, shouldUseUnoptimizedImage } from "../lib/media"
 import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
 import { useCart } from "../lib/cartContext"
 
@@ -108,10 +108,16 @@ export default function HomePage() {
   const heroBanner = banners[bannerIndex]
   const rootCategories = useMemo(() => orderRootCategories(categories), [categories])
 
-  const heroImage = useMemo(
-    () => heroBanner?.image || products.find((p) => p.image)?.image || rootCategories.find((c) => c.image)?.image || null,
-    [heroBanner, products, rootCategories]
-  )
+  const heroImage = useMemo(() => {
+    const rawSrc =
+      heroBanner?.image ||
+      products.find((p) => p.image)?.image ||
+      rootCategories.find((c) => c.image)?.image ||
+      null
+    // Always pass through getImageUrl so relative paths like 'banners/x.jpg'
+    // become absolute URLs and render correctly in production.
+    return rawSrc ? getImageUrl(rawSrc) : null
+  }, [heroBanner, products, rootCategories])
 
   const featuredProducts = useMemo(() => {
     const featured = products.filter((product) => Boolean(product.featured))
@@ -158,11 +164,11 @@ export default function HomePage() {
                   <div
                     role="img"
                     aria-label={heroBanner?.title || "Malaika Nest collection"}
-                    className="h-[280px] w-full bg-cover bg-center bg-no-repeat md:h-[400px]"
+                    className="h-[220px] w-full bg-cover bg-center bg-no-repeat sm:h-[280px] md:h-[400px]"
                     style={{ backgroundImage: `url(${heroImage})` }}
                   />
                 ) : (
-                  <div className="flex h-[280px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] md:h-[400px]">
+                  <div className="flex h-[220px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] sm:h-[280px] md:h-[400px]">
                     <p className="font-display text-[28px] text-[var(--text-primary)] md:text-[32px]">Malaika Nest</p>
                   </div>
                 )}

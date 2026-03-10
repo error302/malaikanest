@@ -23,5 +23,9 @@ urlpatterns = [
     path(f'{admin_secret}/', admin.site.urls),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Always add media URL pattern — in production Nginx serves /media/ directly
+# before requests reach Django, so this adds zero overhead in prod.
+# In non-Nginx environments (staging, direct gunicorn) this ensures images load.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
+import Link from 'next/link'
 
 import api from '@/lib/api'
 import { useAuth } from '@/lib/authContext'
@@ -191,7 +192,7 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
           <h3 className="font-display text-xl text-[var(--text-primary)]">Write a Review</h3>
           <div className="mt-4 rounded-[12px] border border-default bg-[var(--bg-soft)] p-6 text-center">
             <p className="text-[var(--text-secondary)]">
-              Please <a href="/login" className="text-[var(--accent-primary)] hover:underline">sign in</a> to write a review.
+              Please <Link href="/login" className="text-[var(--accent-primary)] hover:underline">sign in</Link> to write a review.
             </p>
           </div>
         </div>

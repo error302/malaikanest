@@ -33,21 +33,23 @@ export default function Banners() {
 
   const banner = banners[0]
   const imageUrl = getImageUrl(banner.image)
-  
+
   const content = (
-    <Image 
-      src={imageUrl} 
-      alt={banner.title || 'Banner'} 
-      width={1200} 
-      height={400} 
-      className="w-full h-auto rounded-lg" 
-      unoptimized={shouldUseUnoptimizedImage(banner.image)} 
-    />
+    <div className="relative w-full h-[200px] sm:h-[280px] md:h-[380px] xl:h-[480px] overflow-hidden rounded-lg">
+      <Image
+        src={imageUrl}
+        alt={banner.title || 'Banner'}
+        fill
+        className="object-cover object-center"
+        unoptimized={shouldUseUnoptimizedImage(banner.image)}
+        priority
+      />
+    </div>
   )
 
   return (
     <div className="w-full bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
         {banner.button_link ? (
           <a href={banner.button_link} aria-label={banner.title || 'Banner'}>
             {content}
@@ -57,3 +59,4 @@ export default function Banners() {
     </div>
   )
 }
+
