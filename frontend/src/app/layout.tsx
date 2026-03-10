@@ -12,12 +12,14 @@ export const metadata = {
     template: '%s | Malaika Nest',
   },
   description: 'Shop premium baby products, accessories and toys in Kenya. Secure M-Pesa payments, fast delivery nationwide.',
+  viewport: 'width=device-width, initial-scale=1.0',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/logo-compact.svg" />

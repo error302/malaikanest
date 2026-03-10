@@ -69,9 +69,10 @@ export default function ProductCard({ product }: Props) {
             type="button"
             onClick={handleAddToCart}
             disabled={!inStock}
-            className={inStock ? 'btn-primary inline-flex items-center gap-2 px-4' : 'btn-secondary inline-flex cursor-not-allowed items-center gap-2 px-4 opacity-60'}
+            className={`${inStock ? 'btn-primary' : 'btn-secondary cursor-not-allowed opacity-60'} inline-flex items-center justify-center w-10 h-10 sm:w-auto sm:px-4 rounded-lg`}
           >
             <span className="text-lg">🛒</span>
+            <span className="hidden sm:inline ml-2">Add</span>
           </button>
         </div>
       </div>

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import api from '../lib/api'
-import { shouldUseUnoptimizedImage } from '../lib/media'
+import { getImageUrl, shouldUseUnoptimizedImage } from '../lib/media'
 
 interface Banner {
   id: number
@@ -32,8 +32,17 @@ export default function Banners() {
   if (!banners.length) return null
 
   const banner = banners[0]
+  const imageUrl = getImageUrl(banner.image)
+  
   const content = (
-    <Image src={banner.image} alt={banner.title || 'Banner'} width={1200} height={400} className="w-full h-auto rounded-lg" unoptimized={shouldUseUnoptimizedImage(banner.image)} />
+    <Image 
+      src={imageUrl} 
+      alt={banner.title || 'Banner'} 
+      width={1200} 
+      height={400} 
+      className="w-full h-auto rounded-lg" 
+      unoptimized={shouldUseUnoptimizedImage(banner.image)} 
+    />
   )
 
   return (
