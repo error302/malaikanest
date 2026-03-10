@@ -8,106 +8,116 @@ from apps.products.models import Banner, Category, Inventory, InventoryLog, Prod
 class AdminCategorySerializer(serializers.ModelSerializer):
     full_slug = serializers.CharField(read_only=True)
     level = serializers.IntegerField(read_only=True)
+    image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Category
         fields = [
-            'id',
-            'name',
-            'slug',
-            'full_slug',
-            'description',
-            'parent',
-            'group',
-            'image',
-            'level',
+            "id",
+            "name",
+            "slug",
+            "full_slug",
+            "description",
+            "parent",
+            "group",
+            "image",
+            "level",
         ]
-        read_only_fields = ['id', 'slug', 'full_slug', 'level']
+        read_only_fields = ["id", "slug", "full_slug", "level"]
         extra_kwargs = {
-            'parent': {'required': False, 'allow_null': True},
+            "parent": {"required": False, "allow_null": True},
         }
 
 
 class AdminProductSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.full_slug', read_only=True)
+    category_name = serializers.CharField(source="category.full_slug", read_only=True)
+    image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Product
         fields = [
-            'id',
-            'name',
-            'slug',
-            'description',
-            'price',
-            'compare_price',
-            'discount_price',
-            'category',
-            'category_name',
-            'brand',
-            'featured',
-            'is_active',
-            'stock',
-            'sku',
-            'image',
-            'gender',
-            'age_group',
-            'age_range',
-            'size_label',
-            'status',
-            'created_at',
-            'updated_at',
+            "id",
+            "name",
+            "slug",
+            "description",
+            "price",
+            "compare_price",
+            "discount_price",
+            "category",
+            "category_name",
+            "brand",
+            "featured",
+            "is_active",
+            "stock",
+            "sku",
+            "image",
+            "gender",
+            "age_group",
+            "age_range",
+            "size_label",
+            "status",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ["id", "created_at", "updated_at"]
 
     def create(self, validated_data):
-        stock = validated_data.get('stock', 0)
+        stock = validated_data.get("stock", 0)
         product = super().create(validated_data)
-        Inventory.objects.update_or_create(product=product, defaults={'quantity': stock})
+        Inventory.objects.update_or_create(
+            product=product, defaults={"quantity": stock}
+        )
         if stock:
             InventoryLog.objects.create(
                 product=product,
-                change_type='manual_adjustment',
+                change_type="manual_adjustment",
                 quantity_change=stock,
-                reason='Initial stock set from admin product creation',
+                reason="Initial stock set from admin product creation",
             )
         return product
 
     def update(self, instance, validated_data):
         previous_stock = instance.stock
         product = super().update(instance, validated_data)
-        if 'stock' in validated_data:
-            Inventory.objects.update_or_create(product=product, defaults={'quantity': product.stock})
+        if "stock" in validated_data:
+            Inventory.objects.update_or_create(
+                product=product, defaults={"quantity": product.stock}
+            )
             diff = product.stock - previous_stock
             if diff:
                 InventoryLog.objects.create(
                     product=product,
-                    change_type='manual_adjustment',
+                    change_type="manual_adjustment",
                     quantity_change=diff,
-                    reason='Stock adjusted from admin product editor',
+                    reason="Stock adjusted from admin product editor",
                 )
         return product
 
 
 class AdminBannerSerializer(serializers.ModelSerializer):
-    button_link = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    button_link = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
+    image = serializers.ImageField(required=False, allow_null=True)
+    mobile_image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Banner
         fields = [
-            'id',
-            'title',
-            'subtitle',
-            'image',
-            'mobile_image',
-            'button_text',
-            'button_link',
-            'position',
-            'start_date',
-            'end_date',
-            'is_active',
-            'created_at',
+            "id",
+            "title",
+            "subtitle",
+            "image",
+            "mobile_image",
+            "button_text",
+            "button_link",
+            "position",
+            "start_date",
+            "end_date",
+            "is_active",
+            "created_at",
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ["id", "created_at"]
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -116,17 +126,17 @@ class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id',
-            'email',
-            'first_name',
-            'last_name',
-            'phone',
-            'is_staff',
-            'is_superuser',
-            'is_active',
-            'role',
-            'date_joined',
-            'total_orders',
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "phone",
+            "is_staff",
+            "is_superuser",
+            "is_active",
+            "role",
+            "date_joined",
+            "total_orders",
         ]
 
     def get_total_orders(self, obj):
@@ -134,18 +144,20 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    price_at_purchase = serializers.DecimalField(source='price', max_digits=10, decimal_places=2, read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    price_at_purchase = serializers.DecimalField(
+        source="price", max_digits=10, decimal_places=2, read_only=True
+    )
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product_name', 'price_at_purchase', 'quantity']
+        fields = ["id", "product_name", "price_at_purchase", "quantity"]
 
 
 class AdminOrderSerializer(serializers.ModelSerializer):
-    user_email = serializers.CharField(source='user.email', read_only=True)
+    user_email = serializers.CharField(source="user.email", read_only=True)
     customer_name = serializers.SerializerMethodField()
-    order_number = serializers.CharField(source='receipt_number', read_only=True)
+    order_number = serializers.CharField(source="receipt_number", read_only=True)
     payment_status = serializers.SerializerMethodField()
     shipping_phone = serializers.SerializerMethodField()
     items = OrderItemSerializer(many=True, read_only=True)
@@ -153,40 +165,42 @@ class AdminOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id',
-            'order_number',
-            'user',
-            'user_email',
-            'customer_name',
-            'items',
-            'total',
-            'status',
-            'payment_status',
-            'delivery_region',
-            'receipt_number',
-            'shipping_phone',
-            'mpesa_receipt_number',
-            'guest_email',
-            'guest_phone',
-            'created_at',
-            'updated_at',
+            "id",
+            "order_number",
+            "user",
+            "user_email",
+            "customer_name",
+            "items",
+            "total",
+            "status",
+            "payment_status",
+            "delivery_region",
+            "receipt_number",
+            "shipping_phone",
+            "mpesa_receipt_number",
+            "guest_email",
+            "guest_phone",
+            "created_at",
+            "updated_at",
         ]
 
     def get_customer_name(self, obj):
         if obj.user:
-            full_name = f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
+            full_name = (
+                f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
+            )
             return full_name or obj.user.email
-        return obj.guest_email or 'Guest'
+        return obj.guest_email or "Guest"
 
     def get_payment_status(self, obj):
-        payment = getattr(obj, 'payment', None)
+        payment = getattr(obj, "payment", None)
         if payment:
             return payment.status
-        if obj.status == 'paid':
-            return 'completed'
-        if obj.status in {'payment_failed', 'failed', 'cancelled'}:
-            return 'failed'
-        return 'pending'
+        if obj.status == "paid":
+            return "completed"
+        if obj.status in {"payment_failed", "failed", "cancelled"}:
+            return "failed"
+        return "pending"
 
     def get_shipping_phone(self, obj):
-        return obj.shipping_phone or obj.guest_phone or ''
+        return obj.shipping_phone or obj.guest_phone or ""
