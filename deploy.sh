@@ -129,4 +129,7 @@ sudo systemctl restart malaika-gunicorn 2>/dev/null || echo "⚠️ Systemd not 
 echo "========================================"
 echo "✅ Deployment Complete!"
 echo "========================================"
-
+echo ""
+echo "⚠️ IMPORTANT: Please run this command to expose the logs:"
+echo "sudo cp ~/malaikanest/malaikanest-nginx.conf /etc/nginx/sites-available/malaikanest && sudo systemctl reload nginx"
+echo ""
