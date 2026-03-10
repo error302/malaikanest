@@ -34,14 +34,14 @@ export default function ProductCard({ product }: Props) {
   }
 
   return (
-    <article className={`group rounded-[12px] border border-default bg-surface p-4 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)] ${!inStock ? 'opacity-70' : ''}`}>
-      <Link href={`/products/${product.slug}`} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+    <article className={`group flex flex-col rounded-[12px] border border-default bg-surface p-3 sm:p-4 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)] ${!inStock ? 'opacity-70' : ''}`}>
+      <Link href={`/products/${product.slug}`} className="block w-full">
+        <div className="relative aspect-square w-full overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
           {imageUrl && imageUrl !== '/images/placeholder.png' ? (
-            <Image src={imageUrl} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(imageSrc)} />
+            <Image src={imageUrl} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" unoptimized={shouldUseUnoptimizedImage(imageSrc)} />
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
-              <span className="font-display text-5xl text-[var(--text-primary)]">{String(product.name || 'P').charAt(0)}</span>
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
+              <span className="font-display text-4xl sm:text-5xl text-[var(--text-primary)]">{String(product.name || 'P').charAt(0)}</span>
             </div>
           )}
 

@@ -1,6 +1,7 @@
 from django.db.models import Avg, Count, Exists, FloatField, IntegerField, OuterRef, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -297,5 +298,9 @@ class BannerViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Banner.objects.all().order_by("position", "-created_at")
         if self.action == "list":
-            return queryset.filter(is_active=True)
+            now = timezone.now()
+            return queryset.filter(
+                is_active=True,
+                start_date__lte=now,
+            ).filter(Q(end_date__gte=now) | Q(end_date__isnull=True))
         return queryset

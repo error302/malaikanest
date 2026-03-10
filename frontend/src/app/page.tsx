@@ -28,6 +28,7 @@ interface Banner {
   button_text: string
   button_link: string
   image: string
+  mobile_image?: string | null
 }
 
 interface Review {
@@ -67,6 +68,7 @@ export default function HomePage() {
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [loadingReviews, setLoadingReviews] = useState(true)
   const [bannerIndex, setBannerIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     api
@@ -105,19 +107,33 @@ export default function HomePage() {
     return () => clearInterval(timer)
   }, [banners.length])
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const mediaQuery = window.matchMedia("(max-width: 768px)")
+
+    const updateIsMobile = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(event.matches)
+    }
+
+    updateIsMobile(mediaQuery)
+    mediaQuery.addEventListener("change", updateIsMobile)
+    return () => mediaQuery.removeEventListener("change", updateIsMobile)
+  }, [])
+
   const heroBanner = banners[bannerIndex]
   const rootCategories = useMemo(() => orderRootCategories(categories), [categories])
 
   const heroImage = useMemo(() => {
+    const bannerImage = isMobile ? heroBanner?.mobile_image ?? heroBanner?.image : heroBanner?.image
     const rawSrc =
-      heroBanner?.image ||
+      bannerImage ||
       products.find((p) => p.image)?.image ||
       rootCategories.find((c) => c.image)?.image ||
       null
     // Always pass through getImageUrl so relative paths like 'banners/x.jpg'
     // become absolute URLs and render correctly in production.
     return rawSrc ? getImageUrl(rawSrc) : null
-  }, [heroBanner, products, rootCategories])
+  }, [heroBanner, isMobile, products, rootCategories])
 
   const featuredProducts = useMemo(() => {
     const featured = products.filter((product) => Boolean(product.featured))
@@ -160,19 +176,22 @@ export default function HomePage() {
               <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-[var(--accent-primary)] blur-2xl" />
 
               <div className="relative overflow-hidden rounded-[12px] border border-default bg-[var(--bg-soft)]">
-                {heroImage ? (
-                  <div
-                    role="img"
-                    aria-label={heroBanner?.title || "Malaika Nest collection"}
-                    className="h-[220px] w-full bg-cover bg-center bg-no-repeat sm:h-[280px] md:h-[400px]"
-                    style={{ backgroundImage: `url(${heroImage})` }}
+              {heroImage ? (
+                <div className="relative h-[220px] w-full sm:h-[280px] md:h-[400px]">
+                  <Image
+                    src={heroImage}
+                    alt={heroBanner?.title || "Malaika Nest collection"}
+                    fill
+                    className="object-cover"
+                    unoptimized={shouldUseUnoptimizedImage(heroImage)}
                   />
-                ) : (
-                  <div className="flex h-[220px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] sm:h-[280px] md:h-[400px]">
-                    <p className="font-display text-[28px] text-[var(--text-primary)] md:text-[32px]">Malaika Nest</p>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="flex h-[220px] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] sm:h-[280px] md:h-[400px]">
+                  <p className="font-display text-[28px] text-[var(--text-primary)] md:text-[32px]">Malaika Nest</p>
+                </div>
+              )}
+            </div>
             </div>
           </div>
         </div>
@@ -255,7 +274,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {loadingProducts &&
               Array.from({ length: 8 }).map((_, idx) => (
                 <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-4">

@@ -282,6 +282,7 @@ class WishlistSerializer(serializers.ModelSerializer):
 
 class BannerSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
+    mobile_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Banner
@@ -292,6 +293,7 @@ class BannerSerializer(serializers.ModelSerializer):
             "button_text",
             "button_link",
             "image",
+            "mobile_image",
             "is_active",
             "position",
             "start_date",
@@ -301,4 +303,9 @@ class BannerSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         if obj.image:
             return obj.image.url
+        return None
+
+    def get_mobile_image(self, obj):
+        if getattr(obj, "mobile_image", None):
+            return obj.mobile_image.url
         return None

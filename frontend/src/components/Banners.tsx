@@ -8,11 +8,13 @@ interface Banner {
   id: number
   title?: string
   image: string
+  mobile_image?: string | null
   button_link?: string
 }
 
 export default function Banners() {
   const [banners, setBanners] = useState<Banner[]>([])
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -29,10 +31,23 @@ export default function Banners() {
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mediaQuery = window.matchMedia('(max-width: 768px)')
+
+    const updateIsMobile = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(event.matches)
+    }
+
+    updateIsMobile(mediaQuery)
+    mediaQuery.addEventListener('change', updateIsMobile)
+    return () => mediaQuery.removeEventListener('change', updateIsMobile)
+  }, [])
+
   if (!banners.length) return null
 
   const banner = banners[0]
-  const imageUrl = getImageUrl(banner.image)
+  const imageUrl = getImageUrl(isMobile ? banner.mobile_image ?? banner.image : banner.image)
 
   const content = (
     <div className="relative w-full h-[200px] sm:h-[280px] md:h-[380px] xl:h-[480px] overflow-hidden rounded-lg">
@@ -41,7 +56,7 @@ export default function Banners() {
         alt={banner.title || 'Banner'}
         fill
         className="object-cover object-center"
-        unoptimized={shouldUseUnoptimizedImage(banner.image)}
+        unoptimized={shouldUseUnoptimizedImage(imageUrl)}
         priority
       />
     </div>

@@ -1,25 +1,33 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://malaikanest.duckdns.org'
+const FALLBACK_API_URL = 'https://malaikanest.duckdns.org'
+
+function getApiUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL
+  if (typeof window !== 'undefined') return window.location.origin
+  return FALLBACK_API_URL
+}
 
 export function getImageUrl(imageUrl: string | null | undefined): string {
   if (!imageUrl) return '/images/placeholder.png'
-  
+
   // Already a full URL (Cloudinary or external)
   if (imageUrl.startsWith('http')) {
     return imageUrl
   }
-  
+
+  const apiUrl = getApiUrl()
+
   // Local media path - prepend API URL
   if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/uploads/')) {
-    return `${API_URL}${imageUrl}`
+    return `${apiUrl}${imageUrl}`
   }
-  
+
   // Handle relative paths
   if (imageUrl.startsWith('media/') || imageUrl.startsWith('uploads/')) {
-    return `${API_URL}/${imageUrl}`
+    return `${apiUrl}/${imageUrl}`
   }
-  
+
   // Default: treat as relative path
-  return `${API_URL}/media/${imageUrl}`
+  return `${apiUrl}/media/${imageUrl}`
 }
 
 export function getBannerUrl(imageUrl: string | null | undefined): string {

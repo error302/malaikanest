@@ -220,8 +220,24 @@ select {
 }
 
 .container-shell {
-  width: min(1280px, 100% - 2rem);
+  width: min(1400px, 100%);
   margin-inline: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-shell {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-shell {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 .card-soft {
