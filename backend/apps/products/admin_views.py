@@ -1,11 +1,12 @@
 from django.db.models import Q
+from django.db import transaction
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from apps.accounts.models import User
-from apps.orders.models import Order
+from apps.orders.models import CartItem, OrderItem, Order
 from apps.products.models import Banner, Category, Product
 from .admin_serializers import (
     AdminBannerSerializer,
@@ -46,7 +47,10 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
-            self.perform_destroy(instance)
+            with transaction.atomic():
+                CartItem.objects.filter(product=instance).delete()
+                OrderItem.objects.filter(product=instance).delete()
+                self.perform_destroy(instance)
             return Response(
                 {"success": True, "message": "Product deleted successfully"},
                 status=status.HTTP_200_OK,
