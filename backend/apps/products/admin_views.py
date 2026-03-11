@@ -17,7 +17,11 @@ from .admin_serializers import (
 
 
 class AdminProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all().select_related("category", "brand").order_by("-created_at")
+    queryset = (
+        Product.objects.all()
+        .select_related("category", "brand")
+        .order_by("-created_at")
+    )
     serializer_class = AdminProductSerializer
     permission_classes = [IsAdminUser]
     pagination_class = None
@@ -29,7 +33,9 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         featured = self.request.query_params.get("featured")
 
         if search:
-            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
+            queryset = queryset.filter(
+                Q(name__icontains=search) | Q(description__icontains=search)
+            )
         if category:
             queryset = queryset.filter(category__slug=category)
         if featured:
@@ -37,12 +43,60 @@ class AdminProductViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(
+                {"success": True, "message": "Product deleted successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class AdminCategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.select_related("parent", "parent__parent").order_by("group", "parent__name", "name")
+    queryset = Category.objects.select_related("parent", "parent__parent").order_by(
+        "group", "parent__name", "name"
+    )
     serializer_class = AdminCategorySerializer
     permission_classes = [IsAdminUser]
     pagination_class = None
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(
+                {"success": True, "message": "Category deleted successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class AdminBannerViewSet(viewsets.ModelViewSet):
+    queryset = Banner.objects.all().order_by("position", "-created_at")
+    serializer_class = AdminBannerSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = None
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(
+                {"success": True, "message": "Banner deleted successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class AdminBannerViewSet(viewsets.ModelViewSet):
@@ -83,7 +137,10 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     def demote_to_customer(self, request, pk=None):
         user = self.get_object()
         if user.is_superuser:
-            return Response({"detail": "Cannot demote superuser"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Cannot demote superuser"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         user.is_staff = False
         user.role = "customer"
         user.save(update_fields=["is_staff", "role"])
@@ -93,7 +150,10 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     def deactivate(self, request, pk=None):
         user = self.get_object()
         if user.is_superuser:
-            return Response({"detail": "Cannot deactivate superuser"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Cannot deactivate superuser"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         user.is_active = False
         user.save(update_fields=["is_active"])
         return Response(self.get_serializer(user).data)
@@ -107,7 +167,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
 
 class AdminOrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all().select_related("user").prefetch_related("items__product")
+    queryset = (
+        Order.objects.all().select_related("user").prefetch_related("items__product")
+    )
     serializer_class = AdminOrderSerializer
     permission_classes = [permissions.IsAdminUser]
     pagination_class = None
@@ -126,8 +188,17 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
         order = self.get_object()
         new_status = request.data.get("status")
 
-        if new_status not in ["pending", "paid", "processing", "shipped", "delivered", "cancelled"]:
-            return Response({"detail": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+        if new_status not in [
+            "pending",
+            "paid",
+            "processing",
+            "shipped",
+            "delivered",
+            "cancelled",
+        ]:
+            return Response(
+                {"detail": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         order.status = new_status
         order.save(update_fields=["status", "updated_at"])
