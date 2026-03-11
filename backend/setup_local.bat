@@ -86,8 +86,8 @@ echo OK - PostgreSQL is running
 
 REM Create database (drop first if exists to handle inconsistent migration state)
 echo [2/5] Creating database...
-"%PSQL_PATH%\psql.exe" -U postgres -c "DROP DATABASE IF EXISTS malaika_nest;" 2>nul
-"%PSQL_PATH%\psql.exe" -U postgres -c "CREATE DATABASE malaika_nest OWNER postgres;" 2>nul
+"%PSQL_PATH%\psql.exe" -U postgres -c "DROP DATABASE IF EXISTS malaika_db;" 2>nul
+"%PSQL_PATH%\psql.exe" -U postgres -c "CREATE DATABASE malaika_db OWNER postgres;" 2>nul
 echo OK - Database created (fresh)
 
 REM Create .env file
@@ -96,7 +96,7 @@ echo [3/5] Creating environment file...
 echo DEBUG=True
 echo SECRET_KEY=django-insecure-ksjdfhkjshdfkjshdfkjshdfkjshdfkjshdfkjshdfk
 echo SIMPLE_JWT_SECRET=jwt-secret-key-here-change-in-production
-echo DB_NAME=malaika_nest
+echo DB_NAME=malaika_db
 echo DB_USER=postgres
 echo DB_PASSWORD=postgres
 echo DB_HOST=localhost

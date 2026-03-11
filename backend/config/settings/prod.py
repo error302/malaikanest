@@ -9,6 +9,17 @@ ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()
 ]
 
+# Cloudinary configuration for image uploads
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+
+# Use Cloudinary for media storage
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # Support both DATABASE_URL and individual DB_* variables
 database_url = os.getenv("DATABASE_URL")
 if database_url:
@@ -59,5 +70,8 @@ LOGGING["handlers"]["file"]["level"] = "WARNING"
 LOGGING["loggers"]["django"]["level"] = "WARNING"
 
 validate_production_env(os.environ)
+
+if DATABASES["default"]["NAME"] != "malaika_db":
+    raise Exception("Invalid database configuration. This project must use malaika_db.")
 
 print("Running in PRODUCTION mode")
