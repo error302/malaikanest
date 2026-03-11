@@ -1,0 +1,19 @@
+[Unit]
+Description=Malaika Nest Backend Gunicorn
+After=network.target
+
+[Service]
+Type=notify
+User=appuser
+Group=appuser
+WorkingDirectory=/var/www/backend
+Environment="PATH=/var/www/backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="VIRTUAL_ENV=/var/www/backend/venv"
+Environment="DJANGO_SETTINGS_MODULE=config.settings.prod"
+Environment="PYTHONPATH=/var/www/backend"
+ExecStart=/var/www/backend/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 4 --timeout 120 --access-logfile /var/log/malaikanest/gunicorn-access.log --error-logfile /var/log/malaikanest/gunicorn-error.log
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
