@@ -39,6 +39,8 @@ export default function BannersPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [mobileImage, setMobileImage] = useState<File | null>(null)
   const [mobilePreview, setMobilePreview] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState('')
+  const [mobileImageUrl, setMobileImageUrl] = useState('')
 
   useEffect(() => {
     fetchBanners()
@@ -72,6 +74,8 @@ export default function BannersPage() {
     setImagePreview(null)
     setMobileImage(null)
     setMobilePreview(null)
+    setImageUrl('')
+    setMobileImageUrl('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,8 +83,8 @@ export default function BannersPage() {
     setError(null)
     setSuccess(null)
 
-    if (!image) {
-      setError('Please select a desktop image.')
+    if (!image && !imageUrl && !imagePreview) {
+      setError('Please select or paste a desktop image.')
       return
     }
 
@@ -102,8 +106,16 @@ export default function BannersPage() {
         formData.append('end_date', `${form.end_date}T23:59:59Z`)
       }
 
-      formData.append('image', image)
-      if (mobileImage) {
+      // Use Cloudinary URL if provided, otherwise use file upload
+      if (imageUrl) {
+        formData.append('image_url', imageUrl)
+      } else if (image) {
+        formData.append('image', image)
+      }
+
+      if (mobileImageUrl) {
+        formData.append('mobile_image_url', mobileImageUrl)
+      } else if (mobileImage) {
         formData.append('mobile_image', mobileImage)
       }
 
@@ -245,8 +257,17 @@ export default function BannersPage() {
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Desktop Image *</label>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageChange(e, setImage, setImagePreview)} className="w-full px-4 py-3 rounded-xl border" required />
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Desktop Image * (File or URL)</label>
+              <input type="file" accept="image/jpeg,image/png,image/webp,video/*" onChange={(e) => handleImageChange(e, setImage, setImagePreview)} className="w-full px-4 py-3 rounded-xl border" />
+              <div className="mt-2">
+                <input 
+                  type="url" 
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Or paste Cloudinary URL here..."
+                  className="w-full px-4 py-2 rounded-xl border text-sm" 
+                />
+              </div>
               {imagePreview && (
                 <Image
                   src={imagePreview}
@@ -260,7 +281,16 @@ export default function BannersPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Mobile Image (optional)</label>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleImageChange(e, setMobileImage, setMobilePreview)} className="w-full px-4 py-3 rounded-xl border" />
+              <input type="file" accept="image/jpeg,image/png,image/webp,video/*" onChange={(e) => handleImageChange(e, setMobileImage, setMobilePreview)} className="w-full px-4 py-3 rounded-xl border" />
+              <div className="mt-2">
+                <input 
+                  type="url" 
+                  value={mobileImageUrl}
+                  onChange={(e) => setMobileImageUrl(e.target.value)}
+                  placeholder="Or paste Cloudinary URL..."
+                  className="w-full px-4 py-2 rounded-xl border text-sm" 
+                />
+              </div>
               {mobilePreview && (
                 <Image
                   src={mobilePreview}

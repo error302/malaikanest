@@ -177,6 +177,10 @@ class AdminBannerSerializer(serializers.ModelSerializer):
     )
     image = serializers.ImageField(required=False, allow_null=True)
     mobile_image = serializers.ImageField(required=False, allow_null=True)
+    image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    mobile_image_url = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True
+    )
 
     class Meta:
         model = Banner
@@ -185,7 +189,9 @@ class AdminBannerSerializer(serializers.ModelSerializer):
             "title",
             "subtitle",
             "image",
+            "image_url",
             "mobile_image",
+            "mobile_image_url",
             "button_text",
             "button_link",
             "position",
@@ -195,6 +201,46 @@ class AdminBannerSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def create(self, validated_data):
+        image_url = validated_data.pop("image_url", None)
+        mobile_image_url = validated_data.pop("mobile_image_url", None)
+
+        if image_url:
+            try:
+                import requests
+                from django.core.files.base import ContentFile
+
+                response = requests.get(image_url, timeout=10)
+                if response.status_code == 200:
+                    from urllib.parse import urlparse
+
+                    parsed = urlparse(image_url)
+                    filename = parsed.path.split("/")[-1] or "banner_image.jpg"
+                    validated_data["image"] = ContentFile(
+                        response.content, name=filename
+                    )
+            except Exception:
+                pass
+
+        if mobile_image_url:
+            try:
+                import requests
+                from django.core.files.base import ContentFile
+
+                response = requests.get(mobile_image_url, timeout=10)
+                if response.status_code == 200:
+                    from urllib.parse import urlparse
+
+                    parsed = urlparse(mobile_image_url)
+                    filename = parsed.path.split("/")[-1] or "mobile_banner.jpg"
+                    validated_data["mobile_image"] = ContentFile(
+                        response.content, name=filename
+                    )
+            except Exception:
+                pass
+
+        return super().create(validated_data)
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
