@@ -95,8 +95,10 @@ api.interceptors.request.use((config) => {
     delete config.headers['Content-Type']
   }
 
-  // Add JWT token from localStorage if available
+  // Add JWT token from localStorage if available (for compatibility)
+  // Also check for cookies - browser will send cookies automatically
   if (typeof window !== 'undefined') {
+    // Check for token in localStorage first (for backward compatibility)
     const token = localStorage.getItem('malaika_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`

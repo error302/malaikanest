@@ -33,6 +33,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 class AdminProductSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
     image = serializers.ImageField(required=False, allow_null=True)
+    image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = Product
@@ -52,6 +53,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "stock",
             "sku",
             "image",
+            "image_url",
             "gender",
             "age_group",
             "age_range",
@@ -67,7 +69,27 @@ class AdminProductSerializer(serializers.ModelSerializer):
         return getattr(category, "full_slug", "") or ""
 
     def create(self, validated_data):
+        image_url = validated_data.pop("image_url", None)
         stock = validated_data.get("stock", 0)
+
+        # If image_url is provided, download and save the image
+        if image_url:
+            try:
+                import requests
+                from django.core.files.base import ContentFile
+
+                response = requests.get(image_url, timeout=10)
+                if response.status_code == 200:
+                    from urllib.parse import urlparse
+
+                    parsed = urlparse(image_url)
+                    filename = parsed.path.split("/")[-1] or "product_image.jpg"
+                    validated_data["image"] = ContentFile(
+                        response.content, name=filename
+                    )
+            except Exception:
+                pass  # If image download fails, continue without image
+
         try:
             with transaction.atomic():
                 product = super().create(validated_data)
@@ -85,12 +107,38 @@ class AdminProductSerializer(serializers.ModelSerializer):
         except IntegrityError as exc:
             message = str(exc).lower()
             if "slug" in message:
-                raise serializers.ValidationError({"slug": ["This slug is already in use."]})
+                raise serializers.ValidationError(
+                    {"slug": ["This slug is already in use."]}
+                )
             if "sku" in message:
-                raise serializers.ValidationError({"sku": ["This SKU is already in use."]})
-            raise serializers.ValidationError({"detail": "Could not create product due to a database constraint."})
+                raise serializers.ValidationError(
+                    {"sku": ["This SKU is already in use."]}
+                )
+            raise serializers.ValidationError(
+                {"detail": "Could not create product due to a database constraint."}
+            )
 
     def update(self, instance, validated_data):
+        image_url = validated_data.pop("image_url", None)
+
+        # If image_url is provided, download and save the image
+        if image_url:
+            try:
+                import requests
+                from django.core.files.base import ContentFile
+
+                response = requests.get(image_url, timeout=10)
+                if response.status_code == 200:
+                    from urllib.parse import urlparse
+
+                    parsed = urlparse(image_url)
+                    filename = parsed.path.split("/")[-1] or "product_image.jpg"
+                    validated_data["image"] = ContentFile(
+                        response.content, name=filename
+                    )
+            except Exception:
+                pass  # If image download fails, continue without image
+
         previous_stock = instance.stock
         try:
             with transaction.atomic():
@@ -111,10 +159,16 @@ class AdminProductSerializer(serializers.ModelSerializer):
         except IntegrityError as exc:
             message = str(exc).lower()
             if "slug" in message:
-                raise serializers.ValidationError({"slug": ["This slug is already in use."]})
+                raise serializers.ValidationError(
+                    {"slug": ["This slug is already in use."]}
+                )
             if "sku" in message:
-                raise serializers.ValidationError({"sku": ["This SKU is already in use."]})
-            raise serializers.ValidationError({"detail": "Could not update product due to a database constraint."})
+                raise serializers.ValidationError(
+                    {"sku": ["This SKU is already in use."]}
+                )
+            raise serializers.ValidationError(
+                {"detail": "Could not update product due to a database constraint."}
+            )
 
 
 class AdminBannerSerializer(serializers.ModelSerializer):

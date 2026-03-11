@@ -46,6 +46,7 @@ export default function NewProduct() {
     age_range: '',
     size_label: '',
     status: 'published',
+    image_url: '',
   })
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function NewProduct() {
       if (formData.size_label) form.append('size_label', formData.size_label)
       form.append('status', formData.status)
       if (image) form.append('image', image)
+      if (formData.image_url) form.append('image_url', formData.image_url)
 
       await api.post('/api/products/admin/products/', form)
       router.push('/admin/products')
@@ -219,6 +221,19 @@ export default function NewProduct() {
             }
           }} className="w-full text-sm" />
           <p className="text-xs text-slate-400">JPG, PNG, or WEBP — max 5 MB</p>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-slate-600">Or Image URL (Cloudinary)</label>
+          <input 
+            type="url" 
+            name="image_url"
+            value={formData.image_url} 
+            onChange={handleChange}
+            placeholder="https://res.cloudinary.com/.../image.jpg"
+            className="w-full rounded-lg border px-4 py-3 text-sm" 
+          />
+          <p className="text-xs text-slate-400">Paste a Cloudinary or external image URL</p>
         </div>
 
         {imagePreview && (
