@@ -96,6 +96,25 @@ export default function ProductsPage() {
     }
   }
 
+  const handleImageUrlUpload = async (product: Product, url: string) => {
+    if (!url) return
+
+    setUploadingId(product.id)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const res = await api.patch(`/api/products/admin/products/${product.id}/`, { image_url: url })
+      setProducts((current) => current.map((item) => (item.id === product.id ? res.data : item)))
+      setSuccess(`Updated image for ${product.name}.`)
+    } catch (error) {
+      console.error('Error uploading product image URL:', error)
+      setError(handleApiError(error, 'Product image URL could not be updated.'))
+    } finally {
+      setUploadingId(null)
+    }
+  }
+
   if (loading) return <div className="p-6">Loading products...</div>
 
   return (
@@ -161,22 +180,38 @@ export default function ProductsPage() {
                   <td className="px-4 py-3 text-sm">{product.stock}</td>
                   <td className="px-4 py-3 text-sm">{product.is_active ? 'Active' : 'Inactive'}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <label className="cursor-pointer px-3 py-1 bg-amber-50 text-amber-700 rounded text-xs">
-                        {uploadingId === product.id ? 'Uploading...' : 'Upload Image'}
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          className="hidden"
-                          disabled={uploadingId === product.id}
-                          onChange={(e) => {
-                            void handleImageUpload(product, e.target.files?.[0] || null)
-                            e.currentTarget.value = ''
-                          }}
-                        />
-                      </label>
-                      <button onClick={() => handleToggleActive(product)} className="px-3 py-1 bg-slate-100 rounded text-xs">{product.is_active ? 'Deactivate' : 'Activate'}</button>
-                      <button onClick={() => handleDelete(product.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs">Delete</button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        <label className="cursor-pointer px-3 py-1 bg-amber-50 text-amber-700 rounded text-xs">
+                          {uploadingId === product.id ? 'Uploading...' : 'Upload'}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,video/*"
+                            className="hidden"
+                            disabled={uploadingId === product.id}
+                            onChange={(e) => {
+                              void handleImageUpload(product, e.target.files?.[0] || null)
+                              e.currentTarget.value = ''
+                            }}
+                          />
+                        </label>
+                        <button onClick={() => handleToggleActive(product)} className="px-3 py-1 bg-slate-100 rounded text-xs">{product.is_active ? 'Deactivate' : 'Activate'}</button>
+                        <button onClick={() => handleDelete(product.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs">Delete</button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Or paste Cloudinary URL..."
+                        className="text-xs border rounded px-2 py-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const url = e.currentTarget.value.trim()
+                            if (url) {
+                              void handleImageUrlUpload(product, url)
+                              e.currentTarget.value = ''
+                            }
+                          }
+                        }}
+                      />
                     </div>
                   </td>
                 </tr>

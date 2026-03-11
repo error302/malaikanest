@@ -209,7 +209,7 @@ export default function NewProduct() {
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-slate-600">Product Image</label>
-          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => {
+          <input type="file" accept="image/png,image/jpeg,image/webp,video/*" onChange={(e) => {
             const file = e.target.files?.[0] || null
             setImage(file)
             if (file) {
