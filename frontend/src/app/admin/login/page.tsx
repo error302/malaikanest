@@ -25,7 +25,13 @@ export default function AdminLogin() {
     try {
       const payload: Record<string, string> = { email, password }
       if (captchaRequired) payload.captcha_token = captchaToken
-      await api.post('/api/accounts/admin/login/', payload)
+      const response = await api.post('/api/accounts/admin/login/', payload)
+      
+      // Store token in localStorage as backup for API calls
+      if (response.data.access) {
+        localStorage.setItem('malaika_token', response.data.access)
+      }
+      
       router.push('/admin')
       router.refresh()
     } catch (err: any) {
