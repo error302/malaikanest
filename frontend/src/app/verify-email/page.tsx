@@ -27,7 +27,6 @@ export default function VerifyEmailPage() {
         const res = await api.post('/api/accounts/verify-email/', { token })
         setStatus('success')
         setMessage(res.data?.message || 'Email verified successfully.')
-        setTimeout(() => router.push('/login'), 2500)
       } catch (err: any) {
         setStatus('error')
         setMessage(err?.response?.data?.detail || 'Verification failed. Token may be invalid or expired.')
@@ -55,7 +54,11 @@ export default function VerifyEmailPage() {
               <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-secondary)] text-[var(--text-primary)]">
                 <CheckCircle2 size={26} />
               </span>
-              <h1 className="font-display mt-4 text-[36px] text-[var(--text-primary)]">Email Verified</h1>
+              <h1 className="font-display mt-4 text-[36px] text-[var(--text-primary)]">Email Verified!</h1>
+              <p className="mt-3 text-[16px] text-[var(--text-secondary)]">Your email has been verified successfully.</p>
+              <button onClick={() => router.push('/')} className="btn-primary mt-7 inline-flex px-7">
+                Go to Website
+              </button>
             </>
           )}
 
@@ -72,12 +75,12 @@ export default function VerifyEmailPage() {
 
           {!token && email && status === 'error' && (
             <p className="mt-3 text-sm text-[var(--text-secondary)]">
-              We created your account for <strong>{email}</strong>. Open the verification email we sent, then return here to sign in.
+              We created your account for <strong>{email}</strong>. Please check your email inbox and click the verification link.
             </p>
           )}
 
-          <button onClick={() => router.push('/login')} className="btn-primary mt-7 inline-flex px-7">
-            Go to Login
+          <button onClick={() => router.push('/')} className="btn-primary mt-7 inline-flex px-7">
+            Go to Website
           </button>
         </div>
       </div>
