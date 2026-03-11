@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
 from apps.accounts.models import User
@@ -30,7 +31,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 
 
 class AdminProductSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source="category.full_slug", read_only=True)
+    category_name = serializers.SerializerMethodField()
     image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
@@ -61,37 +62,59 @@ class AdminProductSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
+    def get_category_name(self, obj):
+        category = getattr(obj, "category", None)
+        return getattr(category, "full_slug", "") or ""
+
     def create(self, validated_data):
         stock = validated_data.get("stock", 0)
-        product = super().create(validated_data)
-        Inventory.objects.update_or_create(
-            product=product, defaults={"quantity": stock}
-        )
-        if stock:
-            InventoryLog.objects.create(
-                product=product,
-                change_type="manual_adjustment",
-                quantity_change=stock,
-                reason="Initial stock set from admin product creation",
-            )
-        return product
+        try:
+            with transaction.atomic():
+                product = super().create(validated_data)
+                Inventory.objects.update_or_create(
+                    product=product, defaults={"quantity": stock}
+                )
+                if stock:
+                    InventoryLog.objects.create(
+                        product=product,
+                        change_type="manual_adjustment",
+                        quantity_change=stock,
+                        reason="Initial stock set from admin product creation",
+                    )
+                return product
+        except IntegrityError as exc:
+            message = str(exc).lower()
+            if "slug" in message:
+                raise serializers.ValidationError({"slug": ["This slug is already in use."]})
+            if "sku" in message:
+                raise serializers.ValidationError({"sku": ["This SKU is already in use."]})
+            raise serializers.ValidationError({"detail": "Could not create product due to a database constraint."})
 
     def update(self, instance, validated_data):
         previous_stock = instance.stock
-        product = super().update(instance, validated_data)
-        if "stock" in validated_data:
-            Inventory.objects.update_or_create(
-                product=product, defaults={"quantity": product.stock}
-            )
-            diff = product.stock - previous_stock
-            if diff:
-                InventoryLog.objects.create(
-                    product=product,
-                    change_type="manual_adjustment",
-                    quantity_change=diff,
-                    reason="Stock adjusted from admin product editor",
-                )
-        return product
+        try:
+            with transaction.atomic():
+                product = super().update(instance, validated_data)
+                if "stock" in validated_data:
+                    Inventory.objects.update_or_create(
+                        product=product, defaults={"quantity": product.stock}
+                    )
+                    diff = product.stock - previous_stock
+                    if diff:
+                        InventoryLog.objects.create(
+                            product=product,
+                            change_type="manual_adjustment",
+                            quantity_change=diff,
+                            reason="Stock adjusted from admin product editor",
+                        )
+                return product
+        except IntegrityError as exc:
+            message = str(exc).lower()
+            if "slug" in message:
+                raise serializers.ValidationError({"slug": ["This slug is already in use."]})
+            if "sku" in message:
+                raise serializers.ValidationError({"sku": ["This SKU is already in use."]})
+            raise serializers.ValidationError({"detail": "Could not update product due to a database constraint."})
 
 
 class AdminBannerSerializer(serializers.ModelSerializer):

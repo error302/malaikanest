@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import api from '@/lib/api'
+import api, { handleApiError } from '@/lib/api'
 
 interface Category {
   id: number
@@ -102,8 +102,15 @@ export default function NewProduct() {
       await api.post('/api/products/admin/products/', form)
       router.push('/admin/products')
     } catch (err: any) {
-      const detail = err?.response?.data?.detail || err?.response?.data?.name?.[0] || err?.response?.data?.slug?.[0] || 'Failed to create product. Please check all fields.'
-      setError(Array.isArray(detail) ? detail[0] : String(detail))
+      const data = err?.response?.data
+      const candidate =
+        data?.detail ||
+        data?.message ||
+        data?.name?.[0] ||
+        data?.slug?.[0] ||
+        data?.sku?.[0] ||
+        handleApiError(err, 'Failed to create product. Please check all fields.')
+      setError(Array.isArray(candidate) ? candidate[0] : String(candidate))
     } finally {
       setLoading(false)
     }
