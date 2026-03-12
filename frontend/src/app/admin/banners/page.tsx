@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import api, { clearCache, handleApiError } from '@/lib/api'
+import { getImageUrl } from '@/lib/media'
 
 interface Banner {
   id: number
@@ -11,7 +12,11 @@ interface Banner {
   button_text: string
   button_link: string
   image: string
+  image_url?: string
+  image_full_url?: string
   mobile_image: string
+  mobile_image_url?: string
+  mobile_image_full_url?: string
   is_active: boolean
   position: number
   start_date: string
@@ -333,17 +338,25 @@ export default function BannersPage() {
           {banners.map((banner) => (
             <div key={banner.id} className="bg-white rounded-2xl overflow-hidden border hover:shadow-md">
               <div className="relative h-48 bg-slate-100">
-                {banner.image ? (
-                  <Image
-                    src={banner.image}
-                    alt={banner.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400">No Image</div>
-                )}
+                {(() => {
+                  const src =
+                    banner.image_full_url ||
+                    getImageUrl(banner.image || banner.image_url || null)
+
+                  return src ? (
+                    <Image
+                      src={src}
+                      alt={banner.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400">
+                      No Image
+                    </div>
+                  )
+                })()}
                 <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold ${banner.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                   {banner.is_active ? 'Active' : 'Inactive'}
                 </span>

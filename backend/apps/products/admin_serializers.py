@@ -252,43 +252,15 @@ class AdminBannerSerializer(serializers.ModelSerializer):
         return None
 
     def create(self, validated_data):
-        image_url = validated_data.pop("image_url", None)
-        mobile_image_url = validated_data.pop("mobile_image_url", None)
+        """
+        Store remote banner URLs directly in the image_url/mobile_image_url
+        fields instead of downloading them server-side.
 
-        if image_url:
-            try:
-                import requests
-                from django.core.files.base import ContentFile
-
-                response = requests.get(image_url, timeout=10)
-                if response.status_code == 200:
-                    from urllib.parse import urlparse
-
-                    parsed = urlparse(image_url)
-                    filename = parsed.path.split("/")[-1] or "banner_image.jpg"
-                    validated_data["image"] = ContentFile(
-                        response.content, name=filename
-                    )
-            except Exception:
-                pass
-
-        if mobile_image_url:
-            try:
-                import requests
-                from django.core.files.base import ContentFile
-
-                response = requests.get(mobile_image_url, timeout=10)
-                if response.status_code == 200:
-                    from urllib.parse import urlparse
-
-                    parsed = urlparse(mobile_image_url)
-                    filename = parsed.path.split("/")[-1] or "mobile_banner.jpg"
-                    validated_data["mobile_image"] = ContentFile(
-                        response.content, name=filename
-                    )
-            except Exception:
-                pass
-
+        - If the admin uploads a file, DRF will handle saving it to the
+          ImageField as usual.
+        - If the admin pastes a Cloudinary (or other CDN) URL, it will be
+          stored in the corresponding URL field and served directly.
+        """
         return super().create(validated_data)
 
 
