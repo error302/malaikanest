@@ -14,47 +14,29 @@ REDIS_URL = os.getenv(
     "REDIS_URL", os.getenv("REDIS_TLS_URL", "redis://127.0.0.1:6379/0")
 )
 
-# Use django-redis for proper connection pooling
+# Use Django's built-in Redis cache backend
 CACHES = {
     "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"max_connections": 50, "retry_on_timeout": True},
-            "SOCKET_CONNECT_TIMEOUT": 5,
-            "SOCKET_TIMEOUT": 5,
-        },
         "KEY_PREFIX": "malaika",
         "TIMEOUT": 300,
     },
     "banners": {
-        "BACKEND": "django_redis.cache.RedisCache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"max_connections": 20},
-        },
         "TIMEOUT": 3600,
         "KEY_PREFIX": "malaika_banners",
     },
     "categories": {
-        "BACKEND": "django_redis.cache.RedisCache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"max_connections": 20},
-        },
         "TIMEOUT": 3600,
         "KEY_PREFIX": "malaika_categories",
     },
     "products": {
-        "BACKEND": "django_redis.cache.RedisCache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"max_connections": 30},
-        },
         "TIMEOUT": 300,
         "KEY_PREFIX": "malaika_products",
     },
