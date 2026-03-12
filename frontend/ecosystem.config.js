@@ -4,7 +4,7 @@ module.exports = {
       name: 'frontend',
       script: 'npm',
       args: 'start',
-      cwd: '/var/www/malaikanest/frontend',
+      cwd: '/home/mohameddosho20/malaikanest/frontend',
       instances: 1,
       exec_mode: 'fork',
       env: {
