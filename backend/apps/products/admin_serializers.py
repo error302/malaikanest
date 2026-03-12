@@ -10,7 +10,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
     full_slug = serializers.CharField(read_only=True)
     level = serializers.IntegerField(read_only=True)
     image = serializers.ImageField(required=False, allow_null=True)
-    image_full_url = serializers.SerializerMethodField()
+    image_full_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Category
@@ -46,6 +46,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
     image = serializers.ImageField(required=False, allow_null=True)
     image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    image_full_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Product
@@ -205,8 +206,8 @@ class AdminBannerSerializer(serializers.ModelSerializer):
     mobile_image_url = serializers.URLField(
         required=False, allow_blank=True, allow_null=True
     )
-    image_full_url = serializers.SerializerMethodField()
-    mobile_image_full_url = serializers.SerializerMethodField()
+    image_full_url = serializers.SerializerMethodField(read_only=True)
+    mobile_image_full_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Banner
