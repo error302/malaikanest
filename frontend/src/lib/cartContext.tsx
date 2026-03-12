@@ -228,21 +228,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }, 300) // 300ms debounce
   }, [state.items, remove, fetchCart])
 
-    setLoading(true)
-    try {
-      const res = await api.post('/api/orders/cart/update/', {
-        product_id: id,
-        quantity: qty,
-      })
-      dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
-    } catch (e) {
-      console.error('Failed to update cart', e)
-      await fetchCart()
-    } finally {
-      setLoading(false)
-    }
-  }, [fetchCart, remove])
-
   const clear = useCallback(async () => {
     dispatch({ type: 'CLEAR' })
 
