@@ -10,20 +10,16 @@ module.exports = {
         'bg-secondary': 'var(--bg-secondary)',
         'bg-card': 'var(--bg-card)',
         'bg-card-hover': 'var(--bg-card-hover)',
-        'bg-section': 'var(--bg-section)',
+        'bg-section': 'var(--bg-secondary)',
         
         // Accents - Using CSS variables
         'accent': 'var(--accent)',
         'accent-hover': 'var(--accent-hover)',
-        'accent-dark': 'var(--accent-dark)',
+        'accent-dark': 'var(--accent-primary)',
         
         // Primary brand
         'primary': 'var(--primary)',
         'primary-hover': 'var(--primary-hover)',
-        
-        // Purple accent
-        'purple': 'var(--purple)',
-        'purple-hover': 'var(--purple-hover)',
         
         // Text - Using CSS variables
         'text-primary': 'var(--text-primary)',
@@ -36,24 +32,14 @@ module.exports = {
         
         // Status colors - Using CSS variables
         'status-success': 'var(--status-success)',
-        'status-warning': 'var(--status-warning)',
         'status-error': 'var(--status-error)',
-        'status-info': 'var(--status-info)',
-        
-        // Lulu Babe Pastel Palette - Using CSS variables
-        'pastel-pink': 'var(--pastel-pink)',
-        'pastel-mint': 'var(--pastel-mint)',
-        'pastel-beige': 'var(--pastel-beige)',
-        'pastel-cream': 'var(--pastel-cream)',
-        'pastel-lavender': 'var(--pastel-lavender)',
-        'pastel-peach': 'var(--pastel-peach)',
         
         // Legacy colors (fallback)
-        'cta': 'var(--accent)',
-        'cta-hover': 'var(--accent-hover)',
+        'cta': 'var(--primary)',
+        'cta-hover': 'var(--primary-hover)',
         'border-dark': 'var(--border)',
-        'badge-new': 'var(--accent)',
-        'star': '#FFB800',
+        'badge-new': 'var(--accent-primary)',
+        'star': '#D4A853',
         'out-of-stock': 'var(--text-muted)',
       },
       fontFamily: {

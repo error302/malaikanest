@@ -1,8 +1,7 @@
-"use client"
-
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingBag, ShoppingCart } from 'lucide-react'
+import { useState } from 'react'
+import { X } from 'lucide-react'
 
 import { useCart } from '../lib/cartContext'
 import { getImageUrl, shouldUseUnoptimizedImage } from '../lib/media'
@@ -13,6 +12,7 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const { add } = useCart()
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const inStock = product.stock === undefined || product.stock > 0
   const imageSrc = product.image || product.images?.[0] || null
@@ -33,58 +33,89 @@ export default function ProductCard({ product }: Props) {
     })
   }
 
+  const toggleFullscreen = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsFullscreen(!isFullscreen)
+  }
+
   return (
-    <article className={`product-card group rounded-[12px] border border-default bg-surface p-3 sm:p-4 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)] ${!inStock ? 'opacity-70' : ''}`}>
-      <Link href={`/products/${product.slug}`} className="block w-full">
-        <div className="aspect-square w-full">
+    <>
+      <article className="w-full flex flex-col bg-white rounded-lg border border-default overflow-hidden">
+        {/* Product Image */}
+        <div 
+          className="relative w-full h-48 cursor-zoom-in overflow-hidden" 
+          onClick={toggleFullscreen}
+        >
           {imageUrl && imageUrl !== '/images/placeholder.png' ? (
             <Image 
               src={imageUrl} 
               alt={product.name} 
               fill 
-              className="object-cover transition duration-500 group-hover:scale-105" 
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" 
+              className="object-cover" 
+              sizes="(max-width: 640px) 100vw, 300px" 
               unoptimized={shouldUseUnoptimizedImage(imageSrc)} 
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
-              <span className="font-display text-4xl sm:text-5xl text-[var(--text-primary)]">{String(product.name || 'P').charAt(0)}</span>
+            <div className="flex h-full w-full items-center justify-center bg-bg-secondary">
+              <span className="text-4xl text-text-muted">{String(product.name || 'P').charAt(0)}</span>
             </div>
           )}
-
+          
           {!inStock && (
-            <span className="absolute left-3 top-3 z-10 rounded-full border border-default bg-surface px-3 py-1 text-xs font-semibold text-[var(--text-secondary)]">
-              Out of Stock
-            </span>
+            <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+              <span className="bg-black text-white px-3 py-1 text-xs font-bold rounded">OUT OF STOCK</span>
+            </div>
           )}
         </div>
-      </Link>
 
-      <div className="mt-4 flex flex-1 flex-col justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-            {product.category?.name || 'Malaika Nest'}
-          </p>
-
-          <Link href={`/products/${product.slug}`}>
-            <h3 className="mt-2 line-clamp-2 text-[17px] font-semibold text-[var(--text-primary)] sm:text-[19px]">{product.name}</h3>
+        {/* Product Details */}
+        <div className="p-3 flex flex-col flex-1">
+          <Link href={`/products/${product.slug}`} className="hover:underline">
+            <h3 className="text-sm font-medium line-clamp-2 text-text-primary h-10">
+              {product.name}
+            </h3>
           </Link>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <p className="whitespace-nowrap text-[15px] font-semibold text-[var(--text-primary)] sm:text-base">KES {parseFloat(product.price).toLocaleString()}</p>
+          
+          <p className="mt-1 text-base font-semibold text-text-primary">
+            KES {parseFloat(product.price).toLocaleString()}
+          </p>
 
           <button
             type="button"
             onClick={handleAddToCart}
             disabled={!inStock}
-            className={`${inStock ? 'btn-primary' : 'btn-secondary cursor-not-allowed opacity-60'} inline-flex items-center justify-center p-2 rounded-lg sm:px-4`}
+            className={`mt-3 w-full bg-black text-white py-2 rounded-lg text-xl flex items-center justify-center min-h-[44px] transition-transform active:scale-95 ${!inStock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}`}
           >
-            <ShoppingCart size={18} />
-            <span className="hidden sm:inline ml-2">Add</span>
+            🛒
           </button>
         </div>
-      </div>
-    </article>
+      </article>
+
+      {/* Fullscreen Image Preview */}
+      {isFullscreen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsFullscreen(false)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+            onClick={() => setIsFullscreen(false)}
+          >
+            <X size={24} />
+          </button>
+          <div className="relative w-full h-full max-w-4xl max-h-[80vh]">
+            <Image 
+              src={imageUrl} 
+              alt={product.name} 
+              fill 
+              className="object-contain"
+              unoptimized={shouldUseUnoptimizedImage(imageSrc)}
+            />
+          </div>
+          <p className="absolute bottom-10 text-white text-lg font-medium">{product.name}</p>
+        </div>
+      )}
+    </>
   )
 }

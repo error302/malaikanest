@@ -167,113 +167,109 @@ export default function HomePage() {
   }
 
   return (
-    <div className="pb-20">
+    <div className="flex flex-col gap-6 pb-20 overflow-x-hidden">
       <JsonLd data={organizationSchema} />
-      <section className="pt-8 md:pt-12">
-        <div className="container-shell">
-          <div className="grid items-center gap-8 rounded-[12px] border border-default bg-surface p-5 shadow-[var(--shadow-soft)] md:grid-cols-2 md:p-8">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Premium Baby & Kids Store</p>
-              <h1 className="font-display mt-4 text-[30px] leading-[1.08] text-[var(--text-primary)] md:text-[38px]">
+      
+      {/* 1. Hero Banner */}
+      <section className="pt-8 md:pt-12 px-4">
+        <div className="container-shell p-0">
+          <div className="grid items-center gap-8 rounded-lg border border-default bg-surface p-5 shadow-soft md:grid-cols-2 lg:p-10">
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Premium Baby & Kids Store</p>
+              <h1 className="mt-4 text-[32px] leading-tight font-bold text-text-primary md:text-[42px] lg:text-[52px]">
                 {heroBanner?.title || "Carefully Chosen Essentials for Your Little One"}
               </h1>
-              <p className="mt-4 max-w-xl text-[16px] text-[var(--text-secondary)] md:text-[17px]">
+              <p className="mt-4 max-w-xl text-[16px] text-text-secondary md:text-[18px]">
                 {heroBanner?.subtitle || "Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience."}
               </p>
 
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link href={heroBanner?.button_link || "/categories"} className="btn-primary inline-flex items-center justify-center gap-2">
+              <div className="mt-8 flex flex-col w-full gap-3 sm:flex-row sm:w-auto">
+                <Link href={heroBanner?.button_link || "/categories"} className="btn-primary inline-flex items-center justify-center gap-2 min-h-[44px] px-6 rounded-lg bg-black text-white font-semibold">
                   {heroBanner?.button_text || "Shop Collection"}
-                  <ArrowRight size={16} />
+                  <ArrowRight size={18} />
                 </Link>
-                <Link href="/clothing" className="btn-secondary inline-flex items-center justify-center">
+                <Link href="/clothing" className="btn-secondary inline-flex items-center justify-center min-h-[44px] px-6 rounded-lg border border-default bg-white text-text-primary font-semibold hover:bg-bg-secondary">
                   Browse Categories
                 </Link>
               </div>
             </div>
 
-            <div className="relative">
-              <div className="absolute -left-4 -top-4 h-24 w-24 rounded-full bg-[var(--accent-secondary)] blur-2xl" />
-              <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-[var(--accent-primary)] blur-2xl" />
-
-              <div className="relative overflow-hidden rounded-[12px] border border-default bg-[var(--bg-soft)]">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-default bg-bg-secondary">
               {heroImage ? (
-                <div className="relative aspect-[4/3] w-full sm:aspect-video md:aspect-[16/7] lg:aspect-[16/6]">
-                  <Image
-                    src={heroImage}
-                    alt={heroBanner?.title || "Malaika Nest collection"}
-                    fill
-                    className="object-cover"
-                    unoptimized={shouldUseUnoptimizedImage(heroImage)}
-                  />
-                </div>
+                <Image
+                  src={heroImage}
+                  alt={heroBanner?.title || "Malaika Nest collection"}
+                  fill
+                  className="object-cover"
+                  unoptimized={shouldUseUnoptimizedImage(heroImage)}
+                />
               ) : (
-                <div className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] via-[#f6efec] to-[var(--accent-primary)] sm:aspect-video md:aspect-[16/7] lg:aspect-[16/6]">
-                  <p className="font-display text-[28px] text-[var(--text-primary)] md:text-[32px]">Malaika Nest</p>
+                <div className="flex h-full items-center justify-center bg-gradient-to-br from-accent-primary to-accent">
+                  <p className="text-[32px] font-bold text-text-primary">Malaika Nest</p>
                 </div>
               )}
-            </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="pt-20">
-        <div className="container-shell">
+      {/* 2. Trust Strip */}
+      <section className="py-6 px-4">
+        <div className="container-shell p-0">
+          <div className="grid grid-cols-2 gap-4 text-center text-sm md:grid-cols-4 bg-bg-surface p-6 rounded-lg border border-default">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">🚚</span>
+              <span className="font-medium text-text-primary">Fast Delivery</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">🛡</span>
+              <span className="font-medium text-text-primary">Secure Payments</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">👶</span>
+              <span className="font-medium text-text-primary">Baby Safe Products</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">↩</span>
+              <span className="font-medium text-text-primary">Easy Returns</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Categories */}
+      <section className="py-10 px-4">
+        <div className="container-shell p-0">
           <SectionHeading
-            eyebrow="Collections"
             title="Shop by Category"
-            subtitle="A scalable storefront built around the six main shopping areas parents use most."
+            subtitle="Explore our curated collections for every stage of your baby's growth."
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-            {loadingCategories &&
-              Array.from({ length: 6 }).map((_, idx) => (
-                <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-5">
-                  <div className="aspect-[4/3] rounded-[12px] bg-[var(--bg-soft)]" />
-                  <div className="mt-4 h-5 w-1/2 rounded bg-[var(--bg-soft)]" />
-                  <div className="mt-3 h-4 w-full rounded bg-[var(--bg-soft)]" />
-                  <div className="mt-2 h-4 w-3/4 rounded bg-[var(--bg-soft)]" />
-                </div>
-              ))}
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {!loadingCategories &&
               rootCategories.map((category) => (
                 <Link
                   key={category.id}
                   href={buildCategoryHref(category)}
-                  className="group flex h-full flex-col rounded-[12px] border border-default bg-surface p-5 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
+                  className="group flex flex-col bg-white rounded-lg border border-default overflow-hidden transition-transform hover:-translate-y-1"
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-bg-secondary">
                     {category.image ? (
-                      <Image src={category.image} alt={category.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(category.image)} />
+                      <Image src={category.image} alt={category.name} fill className="object-cover transition-transform group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(category.image)} />
                     ) : (
-                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
-                        <span className="font-display text-5xl text-[var(--text-primary)]">{category.name.charAt(0)}</span>
+                      <div className="flex h-full items-center justify-center bg-accent-primary/20">
+                        <span className="text-4xl font-bold text-text-primary">{category.name.charAt(0)}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-4 flex flex-1 flex-col">
-                    <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-[20px] font-semibold text-[var(--text-primary)]">{category.name}</h3>
-                      <span className="rounded-full bg-[var(--bg-soft)] px-3 py-1 text-sm text-[var(--text-secondary)]">
-                        {category.product_count || 0} products
-                      </span>
-                    </div>
-                    <p className="mt-3 text-[16px] text-[var(--text-secondary)]">
-                      {category.description || "Browse curated products in this collection."}
+                  <div className="p-5 flex flex-col flex-1">
+                    <h3 className="text-xl font-bold text-text-primary">{category.name}</h3>
+                    <p className="mt-2 text-sm text-text-secondary line-clamp-2">
+                      {category.description || "Beautiful and practical essentials for your little ones."}
                     </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {category.children?.slice(0, 5).map((child) => (
-                        <span key={child.id} className="rounded-full border border-default px-3 py-2 text-sm text-[var(--text-primary)]">
-                          {child.name}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-                      Explore {category.name}
-                      <ArrowRight size={16} />
+                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-black">
+                      Shop Now <ArrowRight size={16} />
                     </span>
                   </div>
                 </Link>
@@ -282,94 +278,70 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="pt-20">
-        <div className="container-shell">
-          <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Fresh Picks</p>
-              <h2 className="font-display mt-2 text-[30px] text-[var(--text-primary)] md:text-[34px]">New Arrivals</h2>
-              <p className="mt-2 text-[18px] text-[var(--text-secondary)]">Latest additions from your product dashboard.</p>
-            </div>
-            <Link href="/categories" className="inline-flex items-center gap-2 text-base font-semibold text-[var(--text-primary)]">
-              View All <ArrowRight size={16} />
+      {/* 4. Featured Products */}
+      <section className="py-10 px-4">
+        <div className="container-shell p-0">
+          <div className="mb-8 flex items-end justify-between">
+            <h2 className="text-[28px] font-bold text-text-primary md:text-[34px]">Featured Products</h2>
+            <Link href="/categories" className="text-sm font-semibold text-black hover:underline">
+              View All
             </Link>
           </div>
 
-          <div className="product-grid">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {!loadingProducts &&
               featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
           </div>
-
-          {!loadingProducts && featuredProducts.length === 0 && (
-            <div className="rounded-[12px] border border-default bg-surface p-10 text-center text-[var(--text-secondary)]">
-              No products yet. Add products from admin and they will appear here automatically.
-            </div>
-          )}
         </div>
       </section>
 
-      <section className="pt-20">
-        <div className="container-shell rounded-[12px] border border-default bg-surface p-6 md:p-8">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {trustItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <article key={item.title} className="rounded-[12px] border border-default bg-[var(--bg-primary)] p-4">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-secondary)] text-[var(--text-primary)]">
-                    <Icon size={20} />
-                  </span>
-                  <p className="mt-3 text-[20px] font-semibold text-[var(--text-primary)]">{item.title}</p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{item.subtitle}</p>
-                </article>
-              )
-            })}
+      {/* 5. Popular Products (New Arrivals) */}
+      <section className="py-10 px-4">
+        <div className="container-shell p-0">
+          <div className="mb-8 flex items-end justify-between">
+            <h2 className="text-[28px] font-bold text-text-primary md:text-[34px]">Popular Items</h2>
+            <Link href="/categories" className="text-sm font-semibold text-black hover:underline">
+              Browse More
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {!loadingProducts &&
+              products.slice(0, 10).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
           </div>
         </div>
       </section>
 
-      <section className="pt-20">
-        <div className="container-shell">
-          <SectionHeading eyebrow="Community" title="Customer Reviews" subtitle="Real feedback from families shopping with Malaika Nest." />
-
-          {loadingReviews && (
-            <div className="grid gap-8 md:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="h-44 animate-pulse rounded-[12px] border border-default bg-surface" />
-              ))}
-            </div>
-          )}
+      {/* 6. Why Shop With Us (Community) */}
+      <section className="py-10 px-4">
+        <div className="container-shell p-0">
+          <SectionHeading title="What Parents Say" subtitle="Real experiences from families in our community." />
 
           {!loadingReviews && reviews.length > 0 && (
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
               {reviews.slice(0, 3).map((review) => (
-                <article key={review.id} className="rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)]">
+                <article key={review.id} className="rounded-lg border border-default bg-white p-6 shadow-soft">
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-secondary)] font-semibold text-[var(--text-primary)]">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-primary/30 font-bold text-text-primary text-sm">
                       {review.user_name.charAt(0)}
                     </span>
                     <div>
-                      <p className="font-semibold text-[var(--text-primary)]">{review.user_name}</p>
-                      <p className="text-sm text-[var(--text-secondary)]">{review.location || "Kenya"}</p>
+                      <p className="font-bold text-text-primary text-sm">{review.user_name}</p>
+                      <p className="text-xs text-text-secondary">{review.location || "Kenya"}</p>
                     </div>
-                    <div className="ml-auto flex">
+                    <div className="ml-auto flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, idx) => (
-                        <Star key={idx} size={16} className={idx < review.rating ? "fill-[var(--star-filled)] text-[var(--star-filled)]" : "text-[var(--star-empty)]"} />
+                        <Star key={idx} size={14} className={idx < review.rating ? "fill-[#D4A853] text-[#D4A853]" : "text-gray-200"} />
                       ))}
                     </div>
                   </div>
-                  <p className="mt-4 text-[16px] text-[var(--text-secondary)]">&quot;{review.comment}&quot;</p>
+                  <p className="mt-4 text-sm text-text-secondary leading-relaxed">&quot;{review.comment}&quot;</p>
                 </article>
               ))}
-            </div>
-          )}
-
-          {!loadingReviews && reviews.length === 0 && (
-            <div className="rounded-[12px] border border-default bg-surface p-10 text-center">
-              <Star className="mx-auto text-[var(--star-filled)]" size={34} />
-              <p className="mt-3 text-[18px] text-[var(--text-secondary)]">No reviews yet - be the first.</p>
-              <Link href="/categories" className="btn-primary mt-5 inline-flex">Shop Now</Link>
             </div>
           )}
         </div>

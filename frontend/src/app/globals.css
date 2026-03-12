@@ -3,181 +3,60 @@
 @tailwind utilities;
 
 :root {
-  /* Design System Tokens */
-  /* Colors */
-  --color-primary: #FF7A59;
-  --color-primary-hover: #FF8F73;
-  --color-background: #FFFFFF;
-  --color-surface: #F8F8F8;
-  --color-text: #111111;
-  --color-text-secondary: #666666;
-  --color-neutral: #F3F3F3;
-  --color-border: #E5E5E5;
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  
-  /* Typography */
-  --font-heading: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-body: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  
-  /* Spacing - 8px grid */
-  --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 32px;
-  --space-6: 48px;
-  --space-8: 64px;
-  
-  /* Font families */
-  --font-space-grotesk: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-inter: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-playfair: Georgia, 'Times New Roman', serif;
-  --font-display: Georgia, 'Times New Roman', serif;
-  
-  /* Legacy variables */
+  /* Malaika Nest Brand Palette */
   --bg-primary: #FFFFFF;
-  --bg-secondary: #F3F3F3;
-  --bg-surface: #F8F8F8;
-  --bg-soft: #F3F3F3;
+  --bg-secondary: #FDFBF7; /* Soft beige */
+  --bg-surface: #FFF9F5;  /* Light peach */
+  --bg-soft: #FFFFFF;     /* Warm white */
   --bg-card: #FFFFFF;
-  --bg-card-hover: #FAFAFA;
-  --bg-section: #F8F8F8;
   
-  --accent-primary: #FF7A59;
-  --accent: #FF7A59;
-  --accent-hover: #FF8F73;
-  --accent-secondary: #FFE4D9;
-  --accent-dark: #E55A3A;
+  --accent-primary: #FFD1DC;   /* Pastel pink */
+  --accent: #FFDAB9;           /* Light peach */
+  --accent-hover: #FFC1CC;
+  --accent-secondary: #F5F5DC; /* Soft beige */
   
-  --primary: #FF7A59;
-  --primary-hover: #FF8F73;
+  --primary: #000000;
+  --primary-hover: #333333;
   
-  --purple: #8B5CF6;
-  --purple-hover: #7C3AED;
-  
-  --text-primary: #111111;
-  --text-secondary: #666666;
-  --text-muted: #999999;
+  --text-primary: #1A1A1A;
+  --text-secondary: #4A4A4A;
+  --text-muted: #7A7A7A;
   --text-inverse: #FFFFFF;
   
-  --border: #E5E5E5;
-  --border-default: #E5E5E5;
+  --border: #F0E6D2;
+  --border-default: #F0E6D2;
   
-  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.06);
-  --shadow-hover: 0 16px 38px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-accent: 0 4px 14px 0 rgba(255, 122, 89, 0.3);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.08);
   
   --radius: 12px;
   
-  /* Status colors */
-  --status-success: #22C55E;
-  --status-warning: #F59E0B;
-  --status-error: #EF4444;
-  --status-info: #3B82F6;
-  
-  /* Pastel palette */
-  --pastel-pink: #FFD1DC;
-  --pastel-mint: #C1E1C1;
-  --pastel-beige: #F5F5DC;
-  --pastel-cream: #FFFDD0;
-  --pastel-lavender: #E6E6FA;
-  --pastel-peach: #FFDAB9;
-  
-  /* Star rating colors */
-  --star-filled: #b08a3d;
-  --star-empty: #d9d1cd;
-  
-  /* Link hover color */
-  --link-hover: #8f6a65;
-  
-  /* Brand gradient colors */
-  --brand-gold: #D4A853;
-  --brand-brown: #8B4513;
+  /* Status symbols */
+  --status-success: #88B04B;
+  --status-error: #D23131;
 }
 
 .dark {
-  --color-background: #0F0F0F;
-  --color-surface: #1A1A1A;
-  --color-text: #F5F5F5;
-  --color-text-secondary: #A0A0A0;
-  --color-neutral: #262626;
-  --color-border: #333333;
-  
-  /* Legacy dark variables */
-  --bg-primary: #0F0F0F;
-  --bg-secondary: #1A1A1A;
-  --bg-surface: #1A1A1A;
-  --bg-soft: #262626;
-  --bg-card: #1A1A1A;
-  --bg-card-hover: #262626;
-  --bg-section: #1A1A1A;
-  
-  --accent-primary: #FF7A59;
-  --accent: #FF7A59;
-  --accent-hover: #FF8F73;
-  --accent-secondary: #4D3028;
-  --accent-dark: #CC4A2A;
-  
-  --primary: #FF7A59;
-  --primary-hover: #FF8F73;
-  
-  --purple: #8B5CF6;
-  --purple-hover: #A78BFA;
-  
-  --text-primary: #F5F5F5;
-  --text-secondary: #A0A0A0;
-  --text-muted: #666666;
-  --text-inverse: #0F0F0F;
-  
-  --border: #333333;
-  --border-default: #333333;
-  
-  --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.3);
-  --shadow-hover: 0 14px 36px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-  --shadow-accent: 0 4px 14px 0 rgba(255, 122, 89, 0.4);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
-  
-  /* Status colors */
-  --status-success: #22C55E;
-  --status-warning: #F59E0B;
-  --status-error: #EF4444;
-  --status-info: #3B82F6;
-  
-  /* Pastel palette */
-  --pastel-pink: #4D3028;
-  --pastel-mint: #2A3F2A;
-  --pastel-beige: #3A3A2A;
-  --pastel-cream: #3A3A20;
-  --pastel-lavender: #2F2F4A;
-  --pastel-peach: #4D3528;
-  
-  /* Star rating colors */
-  --star-filled: #d4a853;
-  --star-empty: #4a4a4a;
-  
-  /* Link hover color */
-  --link-hover: #b08a6b;
-  
-  /* Brand gradient colors */
-  --brand-gold: #D4A853;
-  --brand-brown: #8B4513;
+  /* Keep it light as per requirements for baby store */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FDFBF7;
+  --bg-surface: #FFF9F5;
+  --accent-primary: #FFD1DC;
+  --text-primary: #1A1A1A;
+  --border: #F0E6D2;
 }
 
 html,
-body,
-#__next {
-  min-height: 100%;
+body {
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
   margin: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-body), Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
