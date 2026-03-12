@@ -208,12 +208,27 @@ class CartViewSet(viewsets.ViewSet):
 
         try:
             cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
-            cart_item.quantity = quantity
-            cart_item.save()
         except CartItem.DoesNotExist:
             return Response(
                 {"detail": "Item not found in cart"}, status=status.HTTP_404_NOT_FOUND
             )
+
+        # Validate stock before updating
+        try:
+            inv = Inventory.objects.get(product_id=product_id)
+            if inv.available() < quantity:
+                return Response(
+                    {"detail": f"Only {inv.available()} items available in stock"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except Inventory.DoesNotExist:
+            return Response(
+                {"detail": "Product not found or out of stock"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        cart_item.quantity = quantity
+        cart_item.save()
 
         cart = self._get_prefetched_cart(cart.id)
         serializer = CartSerializer(cart)

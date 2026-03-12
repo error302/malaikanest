@@ -11,6 +11,7 @@ import React, {
 } from 'react'
 
 import api from '@/lib/api'
+import { showToast } from '@/components/Toast'
 
 type CartItem = {
   id: string | number
@@ -167,8 +168,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         quantity: fullItem.qty,
       })
       dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to add to cart', e)
+      const msg = e?.response?.data?.detail || 'Failed to add to cart'
+      showToast(msg, 'error')
       await fetchCart()
     } finally {
       setLoading(false)
