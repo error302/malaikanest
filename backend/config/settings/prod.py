@@ -14,41 +14,95 @@ REDIS_URL = os.getenv(
     "REDIS_URL", os.getenv("REDIS_TLS_URL", "redis://localhost:6379/0")
 )
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django.core.cache.backends.redis.RedisClient",
-            "CONNECTION_POOL_KWARGS": {
-                "max_connections": 50,
-                "retry_on_timeout": True,
+# Check if Redis is available, otherwise use local memory cache
+import socket
+
+
+def is_redis_available(url: str) -> bool:
+    try:
+        # Parse host and port from redis URL
+        host_port = url.replace("redis://", "").split("/")[0]
+        if ":" in host_port:
+            host, port = host_port.split(":")
+        else:
+            host = host_port
+            port = 6379
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex((host, int(port)))
+        sock.close()
+        return result == 0
+    except Exception:
+        return False
+
+
+redis_available = is_redis_available(REDIS_URL)
+
+if redis_available:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django.core.cache.backends.redis.RedisClient",
+                "CONNECTION_POOL_KWARGS": {
+                    "max_connections": 50,
+                    "retry_on_timeout": True,
+                },
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
             },
-            "SOCKET_CONNECT_TIMEOUT": 5,
-            "SOCKET_TIMEOUT": 5,
+            "KEY_PREFIX": "malaika",
+            "TIMEOUT": 300,
         },
-        "KEY_PREFIX": "malaika",
-        "TIMEOUT": 300,  # 5 minutes default
-    },
-    "banners": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-        "TIMEOUT": 3600,  # 1 hour for banners
-        "KEY_PREFIX": "malaika_banners",
-    },
-    "categories": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-        "TIMEOUT": 3600,  # 1 hour for categories
-        "KEY_PREFIX": "malaika_categories",
-    },
-    "products": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-        "TIMEOUT": 300,  # 5 minutes for products
-        "KEY_PREFIX": "malaika_products",
-    },
-}
+        "banners": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "TIMEOUT": 3600,
+            "KEY_PREFIX": "malaika_banners",
+        },
+        "categories": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "TIMEOUT": 3600,
+            "KEY_PREFIX": "malaika_categories",
+        },
+        "products": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "TIMEOUT": 300,
+            "KEY_PREFIX": "malaika_products",
+        },
+    }
+else:
+    # Fallback to local memory cache if Redis is not available
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "malaika-cache",
+            "TIMEOUT": 300,
+            "KEY_PREFIX": "malaika",
+        },
+        "banners": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "malaika-banners",
+            "TIMEOUT": 3600,
+            "KEY_PREFIX": "malaika_banners",
+        },
+        "categories": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "malaika-categories",
+            "TIMEOUT": 3600,
+            "KEY_PREFIX": "malaika_categories",
+        },
+        "products": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "malaika-products",
+            "TIMEOUT": 300,
+            "KEY_PREFIX": "malaika_products",
+        },
+    }
+    print("WARNING: Redis not available, using local memory cache")
 
 # Database connection pooling for high traffic
 DATABASE_POOL_SIZE = int(os.getenv("DATABASE_POOL_SIZE", "20"))
