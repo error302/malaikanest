@@ -22,9 +22,9 @@ export default function SectionHeader({
   return (
     <div className={`flex justify-between items-center mb-8 ${className}`}>
       <div>
-        <h2 className="text-3xl font-bold font-display text-white">{title}</h2>
+        <h2 className="text-3xl font-bold font-display text-[var(--text-primary)]">{title}</h2>
         {subtitle && (
-          <p className="text-muted mt-1">{subtitle}</p>
+          <p className="text-[var(--text-secondary)] mt-1">{subtitle}</p>
         )}
       </div>
       
@@ -32,14 +32,14 @@ export default function SectionHeader({
         <div className="flex gap-2">
           <button
             onClick={onLeftClick}
-            className="w-10 h-10 flex items-center justify-center rounded-button border border-border text-white hover:border-accent hover:text-accent transition-all"
+            className="w-10 h-10 flex items-center justify-center rounded-button border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all"
             aria-label="Previous"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={onRightClick}
-            className="w-10 h-10 flex items-center justify-center rounded-button bg-accent text-white hover:bg-accent-hover transition-all"
+            className="w-10 h-10 flex items-center justify-center rounded-button bg-[var(--accent)] text-[var(--text-inverse)] hover:bg-[var(--accent-hover)] transition-all"
             aria-label="Next"
           >
             <ChevronRight size={20} />

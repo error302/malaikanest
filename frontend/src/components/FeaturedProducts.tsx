@@ -48,13 +48,13 @@ export default function FeaturedProducts() {
   if (loading) return <LoadingGrid count={4} />
 
   if (error) return (
-    <div className="text-center py-8 text-gray-500">
+    <div className="text-center py-8 text-[var(--text-secondary)]">
       Unable to load products. Please try again later.
     </div>
   )
 
   if (products.length === 0) return (
-    <div className="text-center py-8 text-gray-500">
+    <div className="text-center py-8 text-[var(--text-secondary)]">
       No products available at the moment.
     </div>
   )
@@ -73,18 +73,18 @@ export default function FeaturedProducts() {
 
   return (
     <div>
-      <div className="mb-6 bg-secondary rounded-xl p-4 md:flex items-center justify-between border border-[#EDE6DC]">
+      <div className="mb-6 bg-[var(--bg-surface)] rounded-xl p-4 md:flex items-center justify-between border border-[var(--border)]">
         <div>
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
             Smart Size Recommender
           </h3>
-          <p className="text-sm text-gray-600 mt-1">Select the age to find perfect fitting clothes or maternity essentials.</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Select the age to find perfect fitting clothes or maternity essentials.</p>
         </div>
         <div className="mt-3 md:mt-0">
           <select
             value={ageFilter}
             onChange={(e) => setAgeFilter(e.target.value)}
-            className="w-full md:w-auto p-2.5 rounded-lg border-gray-300 shadow-sm focus:border-accent focus:ring-accent text-sm text-gray-700 bg-white"
+            className="w-full md:w-auto p-2.5 rounded-lg border-[var(--border)] shadow-sm focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm text-[var(--text-primary)] bg-[var(--bg-card)]"
           >
             <option value="all">Shop All Ages</option>
             <option value="newborn">Newborn (0-3 Months)</option>
@@ -96,18 +96,18 @@ export default function FeaturedProducts() {
       </div>
 
       {filteredProducts.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+        <div className="text-center py-8 text-[var(--text-secondary)] bg-[var(--bg-surface)] rounded-lg">
           No items match this age group currently. Try another filter.
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
           {filteredProducts.slice(0, 8).map(p => (
-            <div key={p.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-              <div className="aspect-square bg-gray-100 relative">
+            <div key={p.id} className="bg-[var(--bg-card)] rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden border border-[var(--border)]">
+              <div className="aspect-square bg-[var(--bg-surface)] relative">
                 {p.image ? (
                   <Image src={p.image} alt={p.name} fill className="object-cover" unoptimized={shouldUseUnoptimizedImage(p.image)} />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-[var(--text-muted)]">
                     <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -116,12 +116,12 @@ export default function FeaturedProducts() {
                 )}
               </div>
               <div className="p-3 sm:p-4">
-                <p className="text-xs text-pastelPink font-medium uppercase tracking-wide">{p.category?.name || 'Baby'}</p>
-                <h3 className="font-semibold text-gray-800 mt-1 line-clamp-2">{p.name}</h3>
-                <p className="text-lg font-bold text-gray-800 mt-2">KSH {parseFloat(p.price).toLocaleString()}</p>
+                <p className="text-xs text-[var(--accent)] font-medium uppercase tracking-wide">{p.category?.name || 'Baby'}</p>
+                <h3 className="font-semibold text-[var(--text-primary)] mt-1 line-clamp-2">{p.name}</h3>
+                <p className="text-lg font-bold text-[var(--text-primary)] mt-2">KSH {parseFloat(p.price).toLocaleString()}</p>
                 <div className="flex gap-2 w-full mt-3">
                   <button
-                    className="flex-1 bg-cta text-white hover:bg-cta-hover font-medium py-2 rounded transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 bg-[var(--accent)] text-[var(--text-inverse)] hover:bg-[var(--accent-hover)] font-medium py-2 rounded transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
                     disabled={(p.stock ?? 0) === 0}
                     onClick={() => add({ id: p.id, name: p.name, price: Number(p.price), image: p.image || '', qty: 1, slug: p.slug })}
                   >
