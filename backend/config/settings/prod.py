@@ -7,7 +7,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()
-]
+] + ["127.0.0.1", "localhost"]
 
 # Cloudinary configuration for image uploads
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
