@@ -10,6 +10,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
     full_slug = serializers.CharField(read_only=True)
     level = serializers.IntegerField(read_only=True)
     image = serializers.ImageField(required=False, allow_null=True)
+    image_full_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -22,12 +23,23 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             "parent",
             "group",
             "image",
+            "image_full_url",
             "level",
         ]
         read_only_fields = ["id", "slug", "full_slug", "level"]
         extra_kwargs = {
             "parent": {"required": False, "allow_null": True},
         }
+
+    def get_image_full_url(self, obj):
+        if obj.image:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            from django.conf import settings
+
+            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.image.url}"
+        return None
 
 
 class AdminProductSerializer(serializers.ModelSerializer):
@@ -54,6 +66,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "sku",
             "image",
             "image_url",
+            "image_full_url",
             "gender",
             "age_group",
             "age_range",
@@ -67,6 +80,17 @@ class AdminProductSerializer(serializers.ModelSerializer):
     def get_category_name(self, obj):
         category = getattr(obj, "category", None)
         return getattr(category, "full_slug", "") or ""
+
+    def get_image_full_url(self, obj):
+        if obj.image:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: construct URL manually
+            from django.conf import settings
+
+            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.image.url}"
+        return None
 
     def create(self, validated_data):
         image_url = validated_data.pop("image_url", None)
@@ -181,6 +205,8 @@ class AdminBannerSerializer(serializers.ModelSerializer):
     mobile_image_url = serializers.URLField(
         required=False, allow_blank=True, allow_null=True
     )
+    image_full_url = serializers.SerializerMethodField()
+    mobile_image_full_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Banner
@@ -190,8 +216,10 @@ class AdminBannerSerializer(serializers.ModelSerializer):
             "subtitle",
             "image",
             "image_url",
+            "image_full_url",
             "mobile_image",
             "mobile_image_url",
+            "mobile_image_full_url",
             "button_text",
             "button_link",
             "position",
@@ -201,6 +229,26 @@ class AdminBannerSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_image_full_url(self, obj):
+        if obj.image:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            from django.conf import settings
+
+            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.image.url}"
+        return None
+
+    def get_mobile_image_full_url(self, obj):
+        if obj.mobile_image:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.mobile_image.url)
+            from django.conf import settings
+
+            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.mobile_image.url}"
+        return None
 
     def create(self, validated_data):
         image_url = validated_data.pop("image_url", None)
