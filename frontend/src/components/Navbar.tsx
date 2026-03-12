@@ -15,7 +15,7 @@ import Logo from "./Logo"
 const staticNav = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/categories" },
-  { label: "Contact", href: "/contact" },
+  { label: "Best Sellers", href: "/best-sellers" },
 ]
 
 export default function Navbar() {
