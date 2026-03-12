@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'backend',
       script: 'venv/bin/gunicorn',
-      args: 'config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120',
+      args: 'config.wsgi:application --bind 0.0.0.0:8001 --workers 4 --timeout 120',
       cwd: '/home/mohameddosho20/malaikanest/backend',
       interpreter: 'none',
       instances: 1,
