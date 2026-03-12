@@ -84,7 +84,7 @@ export default function Navbar() {
                   <button
                     type="button"
                     onClick={() => setShopOpen((prev) => !prev)}
-                    className="inline-flex min-h-0 items-center gap-1 text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]"
+                    className="inline-flex min-h-0 items-center gap-1 text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[var(--link-hover)]"
                   >
                     {item.label}
                     <ChevronDown size={16} className={`transition-transform ${shopOpen ? "rotate-180" : ""}`} />
@@ -94,7 +94,7 @@ export default function Navbar() {
                       <div className="grid gap-5 rounded-[16px] border border-default bg-surface p-5 shadow-[var(--shadow-hover)] md:grid-cols-3">
                         {rootCategories.map((category) => (
                           <div key={category.id}>
-                            <Link href={buildCategoryHref(category)} className="text-base font-semibold text-[var(--text-primary)] hover:text-[#8f6a65]">
+                            <Link href={buildCategoryHref(category)} className="text-base font-semibold text-[var(--text-primary)] hover:text-[var(--link-hover)]">
                               {category.name}
                             </Link>
                             <div className="mt-3 space-y-2">
@@ -115,14 +115,14 @@ export default function Navbar() {
                   )}
                 </div>
               ) : (
-                <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+                <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[var(--link-hover)]">
                   {item.label}
                 </Link>
               )
             ))}
 
             {staticNav.slice(2).map((item) => (
-              <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[#8f6a65]">
+              <Link key={item.label} href={item.href} className="text-[15px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[var(--link-hover)]">
                 {item.label}
               </Link>
             ))}

@@ -85,6 +85,17 @@
   --pastel-cream: #FFFDD0;
   --pastel-lavender: #E6E6FA;
   --pastel-peach: #FFDAB9;
+  
+  /* Star rating colors */
+  --star-filled: #b08a3d;
+  --star-empty: #d9d1cd;
+  
+  /* Link hover color */
+  --link-hover: #8f6a65;
+  
+  /* Brand gradient colors */
+  --brand-gold: #D4A853;
+  --brand-brown: #8B4513;
 }
 
 .dark {
@@ -143,6 +154,17 @@
   --pastel-cream: #3A3A20;
   --pastel-lavender: #2F2F4A;
   --pastel-peach: #4D3528;
+  
+  /* Star rating colors */
+  --star-filled: #d4a853;
+  --star-empty: #4a4a4a;
+  
+  /* Link hover color */
+  --link-hover: #b08a6b;
+  
+  /* Brand gradient colors */
+  --brand-gold: #D4A853;
+  --brand-brown: #8B4513;
 }
 
 html,

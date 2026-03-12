@@ -145,7 +145,7 @@ export default function ProductsPage() {
                         {product.image ? (
                           <Image src={product.image} alt={product.name} fill className="object-cover" unoptimized={shouldUseUnoptimizedImage(product.image)} />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#D4A853] to-[#8B4513] text-white font-semibold">
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--brand-gold)] to-[var(--brand-brown)] text-white font-semibold">
                             {product.name.charAt(0)}
                           </div>
                         )}

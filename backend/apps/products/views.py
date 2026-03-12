@@ -81,6 +81,18 @@ class BrandViewSet(viewsets.ModelViewSet):
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        cache.clear()
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        cache.clear()
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        cache.clear()
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -176,6 +188,17 @@ class ProductViewSet(viewsets.ModelViewSet):
         "avg_rating",
     ]
     ordering = ["-created_at"]
+
+    def list(self, request, *args, **kwargs):
+        cache_key = f"products_list_{request.GET.urlencode()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=300)
+        return response
 
     def get_queryset(self):
         queryset = (
@@ -287,6 +310,21 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return ProductListSerializer
         return ProductSerializer
+
+    def _invalidate_products_cache(self):
+        cache.clear()
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._invalidate_products_cache()
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        self._invalidate_products_cache()
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        self._invalidate_products_cache()
 
     @action(detail=True, methods=["get"])
     def inventory(self, request, pk=None):

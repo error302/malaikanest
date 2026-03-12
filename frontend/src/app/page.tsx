@@ -381,7 +381,7 @@ export default function HomePage() {
                     </div>
                     <div className="ml-auto flex">
                       {Array.from({ length: 5 }).map((_, idx) => (
-                        <Star key={idx} size={16} className={idx < review.rating ? "fill-[#b08a3d] text-[#b08a3d]" : "text-[#d9d1cd]"} />
+                        <Star key={idx} size={16} className={idx < review.rating ? "fill-[var(--star-filled)] text-[var(--star-filled)]" : "text-[var(--star-empty)]"} />
                       ))}
                     </div>
                   </div>
@@ -393,7 +393,7 @@ export default function HomePage() {
 
           {!loadingReviews && reviews.length === 0 && (
             <div className="rounded-[12px] border border-default bg-surface p-10 text-center">
-              <Star className="mx-auto text-[#b08a3d]" size={34} />
+              <Star className="mx-auto text-[var(--star-filled)]" size={34} />
               <p className="mt-3 text-[18px] text-[var(--text-secondary)]">No reviews yet - be the first.</p>
               <Link href="/categories" className="btn-primary mt-5 inline-flex">Shop Now</Link>
             </div>

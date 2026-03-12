@@ -22,7 +22,7 @@ export default function MiniCart({ items = [], onRemove, onUpdateQty }: { items?
                 {it.image ? (
                   <Image src={it.image} className="object-cover" alt={it.name} fill unoptimized={shouldUseUnoptimizedImage(it.image)} />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#D4A853] to-[#8B4513] text-white font-semibold">{it.name.charAt(0)}</div>
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--brand-gold)] to-[var(--brand-brown)] text-white font-semibold">{it.name.charAt(0)}</div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
