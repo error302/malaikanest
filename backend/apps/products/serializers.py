@@ -61,16 +61,25 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return f"https://malaikanest.duckdns.org{obj.image.url}"
         return None
 
     def get_children(self, obj):
         children = obj.children.all().order_by("name")
-        return CategorySerializer(children, many=True, context=self.context).data if children else []
+        return (
+            CategorySerializer(children, many=True, context=self.context).data
+            if children
+            else []
+        )
 
     def get_product_count(self, obj):
         descendant_ids = obj.descendant_ids(include_self=True)
-        return Product.objects.filter(category_id__in=descendant_ids, is_active=True).count()
+        return Product.objects.filter(
+            category_id__in=descendant_ids, is_active=True
+        ).count()
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -127,7 +136,9 @@ class ProductSerializer(serializers.ModelSerializer):
                 image = files[0]
 
         product = Product.objects.create(**validated_data)
-        Inventory.objects.get_or_create(product=product, defaults={"quantity": product.stock})
+        Inventory.objects.get_or_create(
+            product=product, defaults={"quantity": product.stock}
+        )
         if image:
             product.image = image
             product.save(update_fields=["image"])
@@ -136,7 +147,12 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            from django.conf import settings
+
+            return f"https://malaikanest.duckdns.org{obj.image.url}"
         return None
 
 
@@ -181,7 +197,12 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            from django.conf import settings
+
+            return f"https://malaikanest.duckdns.org{obj.image.url}"
         return None
 
 
@@ -207,7 +228,9 @@ class ReviewSerializer(serializers.ModelSerializer):
             if self.instance:
                 existing = existing.exclude(pk=self.instance.pk)
             if existing.exists():
-                raise serializers.ValidationError({"detail": "You have already reviewed this product."})
+                raise serializers.ValidationError(
+                    {"detail": "You have already reviewed this product."}
+                )
 
             has_purchased = product.orderitem_set.filter(
                 order__user=request.user,
@@ -219,7 +242,9 @@ class ReviewSerializer(serializers.ModelSerializer):
                 ],
             ).exists()
             if not has_purchased:
-                raise serializers.ValidationError({"detail": "Only verified buyers can review this product."})
+                raise serializers.ValidationError(
+                    {"detail": "Only verified buyers can review this product."}
+                )
 
         return attrs
 
@@ -261,7 +286,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj):
         if obj.user:
-            full_name = f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
+            full_name = (
+                f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
+            )
             if full_name:
                 return full_name
             return obj.user.email.split("@")[0]
@@ -302,10 +329,16 @@ class BannerSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return obj.image.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return f"https://malaikanest.duckdns.org{obj.image.url}"
         return None
 
     def get_mobile_image(self, obj):
         if getattr(obj, "mobile_image", None):
-            return obj.mobile_image.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.mobile_image.url)
+            return f"https://malaikanest.duckdns.org{obj.mobile_image.url}"
         return None
