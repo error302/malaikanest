@@ -65,6 +65,8 @@ class Category(models.Model):
         blank=True,
         help_text="Top-level group for mega menu navigation",
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["name"]
@@ -74,7 +76,9 @@ class Category(models.Model):
             models.Index(fields=["parent"]),
         ]
         constraints = [
-            models.UniqueConstraint(fields=["parent", "slug"], name="uniq_category_parent_slug"),
+            models.UniqueConstraint(
+                fields=["parent", "slug"], name="uniq_category_parent_slug"
+            ),
             models.UniqueConstraint(
                 fields=["slug"],
                 condition=Q(parent__isnull=True),
@@ -223,7 +227,9 @@ class Product(models.Model):
     slug = models.SlugField(max_length=300, unique=True)
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
     description = models.TextField(blank=True)
-    category = models.ForeignKey(Category, related_name="products", on_delete=models.PROTECT)
+    category = models.ForeignKey(
+        Category, related_name="products", on_delete=models.PROTECT
+    )
     brand = models.ForeignKey(
         "Brand",
         related_name="products",
@@ -232,14 +238,25 @@ class Product(models.Model):
         blank=True,
     )
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    compare_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    compare_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    discount_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     stock = models.PositiveIntegerField(default=0)
     low_stock_threshold = models.PositiveIntegerField(default=5)
-    weight = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Weight in kg")
+    weight = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="Weight in kg"
+    )
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default="unisex")
     age_group = models.CharField(max_length=20, blank=True, choices=AGE_GROUP_CHOICES)
-    age_range = models.CharField(max_length=50, blank=True, choices=AGE_RANGE_CHOICES, help_text="Recommended age range for browsing filters")
+    age_range = models.CharField(
+        max_length=50,
+        blank=True,
+        choices=AGE_RANGE_CHOICES,
+        help_text="Recommended age range for browsing filters",
+    )
     size_label = models.CharField(max_length=20, blank=True, choices=SIZE_CHOICES)
     featured = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
@@ -247,7 +264,9 @@ class Product(models.Model):
     seo_description = models.CharField(max_length=160, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    image = models.ImageField(upload_to="products/", blank=True, null=True, validators=[validate_image_file])
+    image = models.ImageField(
+        upload_to="products/", blank=True, null=True, validators=[validate_image_file]
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -306,7 +325,9 @@ class Product(models.Model):
 
 
 class Inventory(models.Model):
-    product = models.OneToOneField(Product, related_name="inventory", on_delete=models.CASCADE)
+    product = models.OneToOneField(
+        Product, related_name="inventory", on_delete=models.CASCADE
+    )
     quantity = models.PositiveIntegerField(default=0)
     reserved = models.PositiveIntegerField(default=0)
 
@@ -335,9 +356,13 @@ class ProductVariant(models.Model):
         ("multi", "Multi"),
     ]
 
-    product = models.ForeignKey(Product, related_name="variants", on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, related_name="variants", on_delete=models.CASCADE
+    )
     size = models.CharField(max_length=20, choices=SIZE_CHOICES, blank=True, null=True)
-    color = models.CharField(max_length=20, choices=COLOR_CHOICES, blank=True, null=True)
+    color = models.CharField(
+        max_length=20, choices=COLOR_CHOICES, blank=True, null=True
+    )
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
     price_modifier = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_active = models.BooleanField(default=True)
@@ -359,8 +384,12 @@ class ProductVariant(models.Model):
 
 
 class ProductImage(models.Model):
-    product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to="products/gallery/", validators=[validate_image_file])
+    product = models.ForeignKey(
+        Product, related_name="images", on_delete=models.CASCADE
+    )
+    image = models.ImageField(
+        upload_to="products/gallery/", validators=[validate_image_file]
+    )
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False)
     position = models.PositiveSmallIntegerField(default=0)
@@ -375,7 +404,9 @@ class ProductImage(models.Model):
 
 
 class VariantInventory(models.Model):
-    variant = models.OneToOneField(ProductVariant, related_name="inventory", on_delete=models.CASCADE)
+    variant = models.OneToOneField(
+        ProductVariant, related_name="inventory", on_delete=models.CASCADE
+    )
     quantity = models.PositiveIntegerField(default=0)
     reserved = models.PositiveIntegerField(default=0)
 
@@ -400,7 +431,9 @@ class InventoryLog(models.Model):
         ("manual_adjustment", "Manual Adjustment"),
     ]
 
-    product = models.ForeignKey(Product, related_name="inventory_logs", on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, related_name="inventory_logs", on_delete=models.CASCADE
+    )
     order = models.ForeignKey(
         "orders.Order",
         related_name="inventory_logs",
@@ -425,7 +458,9 @@ class InventoryLog(models.Model):
 
 
 class Review(models.Model):
-    product = models.ForeignKey(Product, related_name="reviews", on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, related_name="reviews", on_delete=models.CASCADE
+    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

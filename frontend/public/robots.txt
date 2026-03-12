@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /account/
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://malaikanest.duckdns.org/sitemap.xml

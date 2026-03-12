@@ -1,5 +1,7 @@
 "use client"
 
+export const revalidate = 900
+
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { useSearchParams } from "next/navigation"

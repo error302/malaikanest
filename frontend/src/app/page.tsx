@@ -9,6 +9,25 @@ import api from "../lib/api"
 import { getImageUrl, shouldUseUnoptimizedImage } from "../lib/media"
 import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
 import { useCart } from "../lib/cartContext"
+import JsonLd from "../components/JsonLd"
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Malaika Nest",
+  url: "https://malaikanest.duckdns.org",
+  logo: "https://malaikanest.duckdns.org/logo.png",
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    email: "malaikanest7@gmail.com",
+    telephone: "+254700000000",
+  },
+  sameAs: [
+    "https://www.facebook.com/malaikanest",
+    "https://www.instagram.com/malaikanest",
+  ],
+}
 
 interface Product {
   id: number
@@ -148,6 +167,7 @@ export default function HomePage() {
 
   return (
     <div className="pb-20">
+      <JsonLd data={organizationSchema} />
       <section className="pt-8 md:pt-12">
         <div className="container-shell">
           <div className="grid items-center gap-8 rounded-[12px] border border-default bg-surface p-5 shadow-[var(--shadow-soft)] md:grid-cols-2 md:p-8">
