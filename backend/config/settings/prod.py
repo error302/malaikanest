@@ -9,30 +9,38 @@ ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()
 ] + ["127.0.0.1", "localhost"]
 
-# Use local memory cache for production (Redis not available on VM)
-# This provides basic caching without external dependencies
+# Redis cache configuration for high scalability
+REDIS_URL = os.getenv(
+    "REDIS_URL", os.getenv("REDIS_TLS_URL", "redis://127.0.0.1:6379/0")
+)
+
+# Use Redis cache for production (Redis is installed and running on VM)
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "malaika-cache",
-        "TIMEOUT": 300,
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+        },
         "KEY_PREFIX": "malaika",
+        "TIMEOUT": 300,
     },
     "banners": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "malaika-banners",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
         "TIMEOUT": 3600,
         "KEY_PREFIX": "malaika_banners",
     },
     "categories": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "malaika-categories",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
         "TIMEOUT": 3600,
         "KEY_PREFIX": "malaika_categories",
     },
     "products": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "malaika-products",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
         "TIMEOUT": 300,
         "KEY_PREFIX": "malaika_products",
     },
