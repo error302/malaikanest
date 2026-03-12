@@ -6,4 +6,5 @@ Disallow: /account/
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://malaikanest.duckdns.org/sitemap.xml
+Sitemap: https://malaikanest.duckdns.org/products-sitemap.xml
+Sitemap: https://malaikanest.duckdns.org/categories-sitemap.xml
