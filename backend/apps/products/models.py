@@ -164,7 +164,15 @@ class Banner(models.Model):
     button_text = models.CharField(max_length=50, blank=True)
     button_link = models.URLField(blank=True, null=True)
     image = models.ImageField(upload_to="banners/", validators=[validate_image_file])
+    image_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Paste Cloudinary URL here instead of uploading",
+    )
     mobile_image = models.ImageField(upload_to="banners/", blank=True, null=True)
+    mobile_image_url = models.URLField(
+        blank=True, null=True, help_text="Paste Cloudinary URL for mobile"
+    )
     is_active = models.BooleanField(default=True)
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
@@ -176,6 +184,22 @@ class Banner(models.Model):
 
     def __str__(self):
         return self.title or f"Banner {self.pk}"
+
+    @property
+    def get_image_url(self):
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            return self.image.url
+        return None
+
+    @property
+    def get_mobile_image_url(self):
+        if self.mobile_image_url:
+            return self.mobile_image_url
+        if self.mobile_image:
+            return self.mobile_image.url
+        return self.get_image_url
 
 
 class Product(models.Model):

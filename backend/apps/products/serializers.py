@@ -328,17 +328,7 @@ class BannerSerializer(serializers.ModelSerializer):
         )
 
     def get_image(self, obj):
-        if obj.image:
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return f"https://malaikanest.duckdns.org{obj.image.url}"
-        return None
+        return obj.get_image_url
 
     def get_mobile_image(self, obj):
-        if getattr(obj, "mobile_image", None):
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(obj.mobile_image.url)
-            return f"https://malaikanest.duckdns.org{obj.mobile_image.url}"
-        return None
+        return obj.get_mobile_image_url
