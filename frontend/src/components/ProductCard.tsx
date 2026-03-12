@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingBag } from 'lucide-react'
+import { ShoppingBag, ShoppingCart } from 'lucide-react'
 
 import { useCart } from '../lib/cartContext'
 import { getImageUrl, shouldUseUnoptimizedImage } from '../lib/media'
@@ -34,11 +34,18 @@ export default function ProductCard({ product }: Props) {
   }
 
   return (
-    <article className={`group flex flex-col rounded-[12px] border border-default bg-surface p-3 sm:p-4 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)] ${!inStock ? 'opacity-70' : ''}`}>
+    <article className={`product-card group rounded-[12px] border border-default bg-surface p-3 sm:p-4 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)] ${!inStock ? 'opacity-70' : ''}`}>
       <Link href={`/products/${product.slug}`} className="block w-full">
-        <div className="relative aspect-square w-full overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+        <div className="aspect-square w-full">
           {imageUrl && imageUrl !== '/images/placeholder.png' ? (
-            <Image src={imageUrl} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" unoptimized={shouldUseUnoptimizedImage(imageSrc)} />
+            <Image 
+              src={imageUrl} 
+              alt={product.name} 
+              fill 
+              className="object-cover transition duration-500 group-hover:scale-105" 
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" 
+              unoptimized={shouldUseUnoptimizedImage(imageSrc)} 
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
               <span className="font-display text-4xl sm:text-5xl text-[var(--text-primary)]">{String(product.name || 'P').charAt(0)}</span>
@@ -46,32 +53,34 @@ export default function ProductCard({ product }: Props) {
           )}
 
           {!inStock && (
-            <span className="absolute left-3 top-3 rounded-full border border-default bg-surface px-3 py-1 text-xs font-semibold text-[var(--text-secondary)]">
+            <span className="absolute left-3 top-3 z-10 rounded-full border border-default bg-surface px-3 py-1 text-xs font-semibold text-[var(--text-secondary)]">
               Out of Stock
             </span>
           )}
         </div>
       </Link>
 
-      <div className="mt-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-          {product.category?.name || 'Malaika Nest'}
-        </p>
+      <div className="mt-4 flex flex-1 flex-col justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+            {product.category?.name || 'Malaika Nest'}
+          </p>
 
-        <Link href={`/products/${product.slug}`}>
-          <h3 className="mt-2 line-clamp-2 text-[19px] font-semibold text-[var(--text-primary)]">{product.name}</h3>
-        </Link>
+          <Link href={`/products/${product.slug}`}>
+            <h3 className="mt-2 line-clamp-2 text-[17px] font-semibold text-[var(--text-primary)] sm:text-[19px]">{product.name}</h3>
+          </Link>
+        </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
-          <p className="text-base font-semibold text-[var(--text-primary)]">KES {parseFloat(product.price).toLocaleString()}</p>
+          <p className="whitespace-nowrap text-[15px] font-semibold text-[var(--text-primary)] sm:text-base">KES {parseFloat(product.price).toLocaleString()}</p>
 
           <button
             type="button"
             onClick={handleAddToCart}
             disabled={!inStock}
-            className={`${inStock ? 'btn-primary' : 'btn-secondary cursor-not-allowed opacity-60'} inline-flex items-center justify-center w-10 h-10 sm:w-auto sm:px-4 rounded-lg`}
+            className={`${inStock ? 'btn-primary' : 'btn-secondary cursor-not-allowed opacity-60'} inline-flex items-center justify-center p-2 rounded-lg sm:px-4`}
           >
-            <span className="text-lg">🛒</span>
+            <ShoppingCart size={18} />
             <span className="hidden sm:inline ml-2">Add</span>
           </button>
         </div>

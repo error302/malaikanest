@@ -64,7 +64,7 @@ export default function Banners() {
 
   return (
     <div className="w-full bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
+      <div className="container-shell py-4 md:py-6">
         {banner.button_link ? (
           <a href={banner.button_link} aria-label={banner.title || 'Banner'}>
             {content}

@@ -10,6 +10,7 @@ import { getImageUrl, shouldUseUnoptimizedImage } from "../lib/media"
 import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
 import { useCart } from "../lib/cartContext"
 import JsonLd from "../components/JsonLd"
+import ProductCard from "../components/ProductCard"
 
 const organizationSchema = {
   "@context": "https://schema.org",
@@ -294,58 +295,11 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-            {loadingProducts &&
-              Array.from({ length: 8 }).map((_, idx) => (
-                <div key={idx} className="animate-pulse rounded-[12px] border border-default bg-surface p-4">
-                  <div className="aspect-square rounded-[12px] bg-[var(--bg-soft)]" />
-                  <div className="mt-4 h-4 w-3/4 rounded bg-[var(--bg-soft)]" />
-                  <div className="mt-2 h-4 w-1/2 rounded bg-[var(--bg-soft)]" />
-                  <div className="mt-4 h-10 rounded bg-[var(--bg-soft)]" />
-                </div>
-              ))}
-
+          <div className="product-grid">
             {!loadingProducts &&
-              featuredProducts.map((product) => {
-                const inStock = (product.stock ?? 0) > 0
-                return (
-                  <article
-                    key={product.id}
-                    className="group rounded-[12px] border border-default bg-surface p-4 shadow-[var(--shadow-soft)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
-                  >
-                    <Link href={`/products/${product.slug}`} className="relative block aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
-                      {product.image ? (
-                        <Image src={product.image} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(product.image)} />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
-                          <span className="font-display text-5xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>
-                        </div>
-                      )}
-                      <span className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-default bg-surface text-[var(--text-primary)]">
-                        <Heart size={15} />
-                      </span>
-                    </Link>
-
-                    <div className="mt-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">{product.category?.name || "Product"}</p>
-                      <h3 className="mt-2 line-clamp-2 text-[18px] font-semibold text-[var(--text-primary)]">{product.name}</h3>
-
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <p className="text-lg font-semibold text-[var(--text-primary)]">KES {Number(product.price).toLocaleString()}</p>
-                        <button
-                          type="button"
-                          onClick={() => addToCart(product)}
-                          disabled={!inStock}
-                          className={inStock ? "btn-primary px-4 flex items-center gap-2" : "btn-secondary cursor-not-allowed px-4 opacity-60 flex items-center gap-2"}
-                        >
-                          <ShoppingCart size={16} />
-                          {inStock ? "Add to Cart" : "Out of Stock"}
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                )
-              })}
+              featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
           </div>
 
           {!loadingProducts && featuredProducts.length === 0 && (
