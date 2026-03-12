@@ -40,11 +40,11 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4 py-12">
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
               <svg 
-                className="mx-auto h-16 w-16 text-red-500" 
+                className="mx-auto h-16 w-16 text-[var(--status-error)]" 
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor"
@@ -58,18 +58,18 @@ class ErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
             
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
               Something went wrong
             </h1>
             
-            <p className="text-gray-600 mb-6">
+            <p className="text-[var(--text-secondary)] mb-6">
               We apologize for the inconvenience. Please try refreshing the page.
             </p>
             
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm font-medium text-red-800 mb-1">Error:</p>
-                <p className="text-xs text-red-600 font-mono break-all">
+              <div className="bg-[var(--bg-surface)] border border-[var(--status-error)]/30 rounded-lg p-4 mb-6 text-left">
+                <p className="text-sm font-medium text-[var(--status-error)] mb-1">Error:</p>
+                <p className="text-xs text-[var(--text-secondary)] font-mono break-all">
                   {this.state.error.message}
                 </p>
               </div>
@@ -78,7 +78,7 @@ class ErrorBoundary extends Component<Props, State> {
             <div className="space-y-3">
               <button
                 onClick={() => window.location.reload()}
-                className="w-full px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                className="w-full px-6 py-3 bg-[var(--accent)] text-[var(--text-inverse)] font-medium rounded-lg hover:bg-[var(--accent-hover)] transition-colors"
               >
                 Refresh Page
               </button>
@@ -88,7 +88,7 @@ class ErrorBoundary extends Component<Props, State> {
                   this.setState({ hasError: false, error: null })
                   window.location.href = '/'
                 }}
-                className="w-full px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                className="w-full px-6 py-3 bg-[var(--bg-surface)] text-[var(--text-primary)] font-medium rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors"
               >
                 Go to Home
               </button>

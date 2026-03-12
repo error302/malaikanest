@@ -9,6 +9,51 @@ ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()
 ] + ["127.0.0.1", "localhost"]
 
+# Redis cache configuration for high scalability
+REDIS_URL = os.getenv(
+    "REDIS_URL", os.getenv("REDIS_TLS_URL", "redis://localhost:6379/0")
+)
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django.core.cache.backends.redis.RedisClient",
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                "retry_on_timeout": True,
+            },
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+        },
+        "KEY_PREFIX": "malaika",
+        "TIMEOUT": 300,  # 5 minutes default
+    },
+    "banners": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "TIMEOUT": 3600,  # 1 hour for banners
+        "KEY_PREFIX": "malaika_banners",
+    },
+    "categories": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "TIMEOUT": 3600,  # 1 hour for categories
+        "KEY_PREFIX": "malaika_categories",
+    },
+    "products": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "TIMEOUT": 300,  # 5 minutes for products
+        "KEY_PREFIX": "malaika_products",
+    },
+}
+
+# Database connection pooling for high traffic
+DATABASE_POOL_SIZE = int(os.getenv("DATABASE_POOL_SIZE", "20"))
+DATABASE_MAX_OVERFLOW = int(os.getenv("DATABASE_MAX_OVERFLOW", "10"))
+
 # Cloudinary configuration for image uploads
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
@@ -36,7 +81,10 @@ if database_url:
             "CONN_MAX_AGE": 60,
             "OPTIONS": {
                 "sslmode": "require",
+                "connect_timeout": 10,
             },
+            "POOL_SIZE": DATABASE_POOL_SIZE,
+            "MAX_OVERFLOW": DATABASE_MAX_OVERFLOW,
         }
     }
 else:
@@ -51,7 +99,10 @@ else:
             "CONN_MAX_AGE": 60,
             "OPTIONS": {
                 "sslmode": "require",
+                "connect_timeout": 10,
             },
+            "POOL_SIZE": DATABASE_POOL_SIZE,
+            "MAX_OVERFLOW": DATABASE_MAX_OVERFLOW,
         }
     }
 

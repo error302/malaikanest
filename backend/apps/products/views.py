@@ -1,10 +1,24 @@
-from django.db.models import Avg, Count, Exists, FloatField, IntegerField, OuterRef, Q, Sum, Value
+from django.db.models import (
+    Avg,
+    Count,
+    Exists,
+    FloatField,
+    IntegerField,
+    OuterRef,
+    Q,
+    Sum,
+    Value,
+)
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.core.cache import cache
 from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.conf import settings
 
 try:
     from django_filters.rest_framework import DjangoFilterBackend
@@ -15,7 +29,16 @@ except ModuleNotFoundError:
             return queryset
 
 
-from .models import Banner, Brand, Category, Inventory, Product, ProductVariant, Review, Wishlist
+from .models import (
+    Banner,
+    Brand,
+    Category,
+    Inventory,
+    Product,
+    ProductVariant,
+    Review,
+    Wishlist,
+)
 from .serializers import (
     BannerSerializer,
     BrandSerializer,
@@ -63,8 +86,21 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+    def list(self, request, *args, **kwargs):
+        cache_key = "categories_list"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=3600)  # Cache for 1 hour
+        return response
+
     def get_queryset(self):
-        queryset = Category.objects.select_related("parent", "parent__parent").prefetch_related(
+        queryset = Category.objects.select_related(
+            "parent", "parent__parent"
+        ).prefetch_related(
             "children",
             "children__children",
             "children__children__children",
@@ -99,6 +135,18 @@ class CategoryViewSet(viewsets.ModelViewSet):
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        cache.delete("categories_list")
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        cache.delete("categories_list")
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        cache.delete("categories_list")
+
     @action(detail=False, methods=["get"])
     def resolve(self, request):
         value = request.query_params.get("path") or request.query_params.get("slug")
@@ -113,30 +161,55 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [
+        filters.SearchFilter,
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
     search_fields = ["name", "description", "sku", "brand__name", "category__name"]
-    ordering_fields = ["price", "name", "created_at", "stock", "popularity", "avg_rating"]
+    ordering_fields = [
+        "price",
+        "name",
+        "created_at",
+        "stock",
+        "popularity",
+        "avg_rating",
+    ]
     ordering = ["-created_at"]
 
     def get_queryset(self):
         queryset = (
             Product.objects.filter(is_active=True)
-            .select_related("category", "category__parent", "category__parent__parent", "brand")
+            .select_related(
+                "category", "category__parent", "category__parent__parent", "brand"
+            )
             .prefetch_related("category__children")
             .annotate(
-                avg_rating=Coalesce(Avg("reviews__rating"), Value(0.0), output_field=FloatField()),
-                review_count=Coalesce(Count("reviews", distinct=True), Value(0), output_field=IntegerField()),
-                popularity=Coalesce(Sum("orderitem__quantity"), Value(0), output_field=IntegerField()),
+                avg_rating=Coalesce(
+                    Avg("reviews__rating"), Value(0.0), output_field=FloatField()
+                ),
+                review_count=Coalesce(
+                    Count("reviews", distinct=True),
+                    Value(0),
+                    output_field=IntegerField(),
+                ),
+                popularity=Coalesce(
+                    Sum("orderitem__quantity"), Value(0), output_field=IntegerField()
+                ),
             )
         )
 
-        category_value = self.request.query_params.get("category") or self.request.query_params.get("category_path")
+        category_value = self.request.query_params.get(
+            "category"
+        ) or self.request.query_params.get("category_path")
         if category_value:
             category = resolve_category_by_path(category_value)
             if not category:
                 category = Category.objects.filter(slug=category_value).first()
             if category:
-                queryset = queryset.filter(category_id__in=category.descendant_ids(include_self=True))
+                queryset = queryset.filter(
+                    category_id__in=category.descendant_ids(include_self=True)
+                )
             else:
                 queryset = queryset.none()
 
@@ -192,7 +265,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         size = self.request.query_params.get("size")
         color = self.request.query_params.get("color")
         if size or color:
-            variant_qs = ProductVariant.objects.filter(product=OuterRef("pk"), is_active=True)
+            variant_qs = ProductVariant.objects.filter(
+                product=OuterRef("pk"), is_active=True
+            )
             if size:
                 variant_qs = variant_qs.filter(size=size)
                 queryset = queryset.filter(Q(size_label=size) | Exists(variant_qs))
@@ -250,7 +325,11 @@ class InventoryViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related("user", "product").order_by("-created_at")
     serializer_class = ReviewSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     filterset_fields = ["product", "rating"]
     search_fields = ["title", "body"]
     ordering_fields = ["created_at", "rating"]
@@ -295,6 +374,17 @@ class BannerViewSet(viewsets.ModelViewSet):
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
+    def list(self, request, *args, **kwargs):
+        cache_key = "banners_list_active"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=3600)  # Cache for 1 hour
+        return response
+
     def get_queryset(self):
         queryset = Banner.objects.all().order_by("position", "-created_at")
         if self.action == "list":
@@ -304,3 +394,15 @@ class BannerViewSet(viewsets.ModelViewSet):
                 start_date__lte=now,
             ).filter(Q(end_date__gte=now) | Q(end_date__isnull=True))
         return queryset
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        cache.delete("banners_list_active")
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        cache.delete("banners_list_active")
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        cache.delete("banners_list_active")

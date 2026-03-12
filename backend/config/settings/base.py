@@ -17,9 +17,9 @@ production_env_requested = (
     or settings_module.endswith(".prod")
 )
 
-env_files = [BASE_DIR / '.env']
+env_files = [BASE_DIR / ".env"]
 if production_env_requested:
-    env_files = [BASE_DIR / '.env.production', *env_files]
+    env_files = [BASE_DIR / ".env.production", *env_files]
 
 for env_file in env_files:
     if env_file.exists():
@@ -29,7 +29,7 @@ _SECRET_KEY = os.getenv("SECRET_KEY")
 if not _SECRET_KEY:
     raise ImproperlyConfigured(
         "SECRET_KEY environment variable is not set. "
-        "Generate one with: python -c \"import secrets; print(secrets.token_hex(50))\""
+        'Generate one with: python -c "import secrets; print(secrets.token_hex(50))"'
     )
 SECRET_KEY = _SECRET_KEY
 
@@ -139,9 +139,14 @@ REST_FRAMEWORK = {
         "payments": "10/minute",
         "login": "5/minute",
         "password_reset": "5/hour",
+        "cart": "60/minute",  # Cart operations
+        "order": "20/minute",  # Order operations
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 24,
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
 }
 
 SIMPLE_JWT = {
@@ -243,6 +248,3 @@ try:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
     pass
-
-
-

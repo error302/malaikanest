@@ -191,11 +191,42 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [fetchCart])
 
   const updateQty = useCallback(async (id: string | number, qty: number) => {
+    // Store previous state for rollback
+    const previousItems = [...state.items]
+    
     if (qty < 1) {
       return remove(id)
     }
 
+    // Optimistic update - update UI immediately
     dispatch({ type: 'UPDATE', id, qty })
+    
+    // Debounce the API call to prevent race conditions
+    const debounceKey = `cart_update_${id}`
+    const existingTimeout = (window as any)[debounceKey]
+    if (existingTimeout) {
+      clearTimeout(existingTimeout)
+    }
+    
+    ;(window as any)[debounceKey] = setTimeout(async () => {
+      setLoading(true)
+      try {
+        const res = await api.post(`/api/orders/cart/update/`, {
+          product_id: id,
+          quantity: qty,
+        })
+        dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
+      } catch (e) {
+        // Rollback on error
+        dispatch({ type: 'HYDRATE', cartData: { items: previousItems, subtotal: '0', total: '0' } })
+        console.error('Failed to update cart', e)
+        await fetchCart()
+      } finally {
+        setLoading(false)
+        ;(window as any)[debounceKey] = null
+      }
+    }, 300) // 300ms debounce
+  }, [state.items, remove, fetchCart])
 
     setLoading(true)
     try {
