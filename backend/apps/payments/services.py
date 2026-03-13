@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import ipaddress
+from collections.abc import Mapping
 from uuid import uuid4
 
 import requests
@@ -94,6 +95,33 @@ def pick(data, *keys):
         if key in data:
             return data.get(key)
     return None
+
+
+def _coerce_json_object(value):
+    """
+    Safaricom callbacks sometimes arrive with nested objects encoded as JSON strings
+    (e.g. from form-encoded payloads). Accept dicts as-is and best-effort parse strings.
+    """
+    if isinstance(value, dict):
+        return value
+    # DRF may provide QueryDict/ReturnDict or other Mapping types.
+    if isinstance(value, Mapping):
+        if hasattr(value, "dict"):
+            try:
+                return value.dict()
+            except Exception:
+                pass
+        try:
+            return dict(value)
+        except Exception:
+            return {}
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except Exception:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
 
 
 def is_placeholder_secret(value):
@@ -292,8 +320,9 @@ class PaymentService:
 
     @staticmethod
     def process_callback(raw, client_ip):
-        body = pick(raw, "Body", "body") or {}
-        callback_result = pick(body, "stkCallback", "stkcallback", "stk_callback") or {}
+        raw = _coerce_json_object(raw)
+        body = _coerce_json_object(pick(raw, "Body", "body"))
+        callback_result = _coerce_json_object(pick(body, "stkCallback", "stkcallback", "stk_callback"))
         checkout_id = pick(callback_result, "CheckoutRequestID", "checkoutRequestID", "checkout_request_id")
         merchant_request_id = pick(callback_result, "MerchantRequestID", "merchantRequestID", "merchant_request_id")
         result_code = pick(callback_result, "ResultCode", "resultCode", "result_code")
@@ -318,7 +347,7 @@ class PaymentService:
                 return {"ResultCode": 0, "ResultDesc": "Accepted"}
 
             payment.raw_callback = raw
-            callback_metadata = pick(callback_result, "CallbackMetadata", "callbackMetadata", "callback_metadata") or {}
+            callback_metadata = _coerce_json_object(pick(callback_result, "CallbackMetadata", "callbackMetadata", "callback_metadata"))
 
             if str(result_code) == "0":
                 callback_items = pick(callback_metadata, "Item", "item") or []

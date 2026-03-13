@@ -398,11 +398,18 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None, deliver
 
         # Deduct inventory and create order items
         for product, qty, price, inv in items:
-            # Atomically deduct from inventory using F() expression
-            Inventory.objects.filter(pk=inv.pk).update(
-                quantity=models.F('quantity') - qty,
-                reserved=models.F('reserved') - qty
+            # Atomically deduct quantity, and never let `reserved` go negative.
+            # Also guard against oversell without relying solely on row locking.
+            updated = Inventory.objects.filter(pk=inv.pk, quantity__gte=qty).update(
+                quantity=models.F("quantity") - qty,
+                reserved=models.Case(
+                    models.When(reserved__gte=qty, then=models.F("reserved") - qty),
+                    default=models.Value(0),
+                    output_field=models.IntegerField(),
+                ),
             )
+            if updated != 1:
+                raise ValueError(f"Product {product.name} is out of stock.")
             OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
 
         return order

@@ -3,7 +3,6 @@ Custom Exception Handler
 Provides consistent error responses and security-focused error messages
 """
 import logging
-import sys
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
@@ -25,22 +24,26 @@ def custom_exception_handler(exc, context):
     # Get request from context
     request = context.get('request')
     
-    # Handle different exception types
     if response is not None:
-        error_data = {
-            'error': True,
-            'status_code': response.status_code,
-            'detail': _sanitize_error_message(response.data),
+        sanitized = _sanitize_error_message(response.data)
+        error_payload = {
+            "status_code": response.status_code,
+            "detail": sanitized,
         }
         
         # Add debug information in development
         if getattr(settings, 'DEBUG', False):
-            error_data['debug'] = {
+            error_payload["debug"] = {
                 'exception': str(exc),
                 'path': request.path if request else 'unknown',
             }
         
-        response.data = error_data
+        response.data = {
+            "success": False,
+            "message": "",
+            "data": None,
+            "error": error_payload,
+        }
         
         # Log security-related errors
         if response.status_code >= 500:
@@ -59,10 +62,9 @@ def custom_exception_handler(exc, context):
     
     else:
         # Handle exceptions not caught by DRF
-        error_data = {
-            'error': True,
-            'status_code': 500,
-            'detail': 'An internal error occurred. Please try again later.',
+        error_payload = {
+            "status_code": 500,
+            "detail": "An internal error occurred. Please try again later.",
         }
         
         # Log the error
@@ -71,7 +73,15 @@ def custom_exception_handler(exc, context):
             exc_info=True
         )
         
-        response = Response(error_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        response = Response(
+            {
+                "success": False,
+                "message": "",
+                "data": None,
+                "error": error_payload,
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
     
     return response
 

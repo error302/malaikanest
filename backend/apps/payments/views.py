@@ -139,12 +139,30 @@ class MpesaCallbackView(APIView):
         # Trust only Nginx-overwritten X-Real-IP (or REMOTE_ADDR fallback), never user-controlled X-Forwarded-For.
         client_ip = request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR")
 
+        # In development/tests we allow simulating Safaricom callbacks via X-Forwarded-For.
+        if getattr(settings, "DEBUG", False):
+            xff = request.META.get("HTTP_X_FORWARDED_FOR")
+            if xff:
+                client_ip = xff.split(",")[0].strip()
+
         is_safaricom = is_valid_mpesa_ip(client_ip)
-        if not is_safaricom:
+        if not getattr(settings, "DEBUG", False) and not is_safaricom:
             audit_log(event_type="callback_blocked", payload=request.data, request_ip=client_ip, notes="Blocked non-Safaricom callback in production")
             return JsonResponse({"ResultCode": 1, "ResultDesc": "Unauthorized"}, status=200)
 
-        response_dict = PaymentService.process_callback(request.data, client_ip)
+        raw_payload = request.data
+        # Prefer raw JSON body when present; it's the most faithful representation and
+        # avoids issues where `request.data` is a flattened QueryDict.
+        try:
+            body_bytes = getattr(getattr(request, "_request", None), "body", b"") or b""
+            if body_bytes:
+                parsed = json.loads(body_bytes.decode("utf-8"))
+                if isinstance(parsed, dict):
+                    raw_payload = parsed
+        except Exception:
+            pass
+
+        response_dict = PaymentService.process_callback(raw_payload, client_ip)
         return JsonResponse(response_dict, status=200)
 
 class AdminReconcileCandidatesView(APIView):

@@ -11,7 +11,6 @@ env/
 backend/.env
 .env
 .env.*
-db.sqlite3
 *.log
 
 # Node

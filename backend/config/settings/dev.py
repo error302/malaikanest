@@ -17,6 +17,8 @@ DATABASES = {
     }
 }
 
+print('Running in DEVELOPMENT mode with PostgreSQL')
+
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
@@ -38,6 +40,3 @@ CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
 CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'true').strip().lower() in {'1', 'true', 'yes', 'on'}
 CELERY_TASK_EAGER_PROPAGATES = True
-
-print('Running in DEVELOPMENT mode with PostgreSQL')
-
