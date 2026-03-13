@@ -49,12 +49,15 @@ export default function ProductsPage() {
     setError(null)
     setSuccess(null)
 
+    const previous = products
+    setProducts((current) => current.filter((product) => product.id !== id))
+
     try {
       await api.delete(`/api/products/admin/products/${id}/`)
-      setProducts((current) => current.filter((product) => product.id !== id))
       setSuccess('Product deleted.')
     } catch (error) {
       console.error('Error deleting product:', error)
+      setProducts(previous) // rollback
       setError(handleApiError(error, 'Product could not be deleted.'))
     }
   }

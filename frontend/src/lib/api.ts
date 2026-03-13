@@ -288,8 +288,26 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
   if (e.response?.status === 429) return 'Too many requests. Please wait and try again.'
   if (e.response?.status >= 500) return 'Server error. We are working on it.'
 
-  const detail = e?.response?.data?.detail
-  const message = e?.response?.data?.message
+  const responseData = e?.response?.data
+
+  // Standardized backend envelope: { success, message, data, error: { status_code, detail } }
+  const standardizedDetail = responseData?.error?.detail
+  if (standardizedDetail) {
+    if (typeof standardizedDetail === 'string') return standardizedDetail
+    if (typeof standardizedDetail === 'object') {
+      const nested = standardizedDetail.detail || standardizedDetail.message
+      if (nested) return Array.isArray(nested) ? nested[0] : String(nested)
+      // Fall back to a compact JSON string for validation dicts
+      try {
+        return JSON.stringify(standardizedDetail)
+      } catch {
+        return fallback
+      }
+    }
+  }
+
+  const detail = responseData?.detail
+  const message = responseData?.message
   if (detail) return Array.isArray(detail) ? detail[0] : detail
   if (message) return message
 

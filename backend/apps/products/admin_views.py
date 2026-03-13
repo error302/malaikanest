@@ -1,9 +1,11 @@
 from django.db.models import Q
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User
 from apps.orders.models import CartItem, OrderItem, Order
@@ -45,20 +47,12 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         return queryset
 
     def destroy(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-            with transaction.atomic():
-                CartItem.objects.filter(product=instance).delete()
-                OrderItem.objects.filter(product=instance).delete()
-                self.perform_destroy(instance)
-            return Response(
-                {"success": True, "message": "Product deleted successfully"},
-                status=status.HTTP_200_OK,
-            )
-        except Exception as e:
-            return Response(
-                {"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-            )
+        instance = self.get_object()
+        with transaction.atomic():
+            CartItem.objects.filter(product=instance).delete()
+            OrderItem.objects.filter(product=instance).delete()
+            self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminCategoryViewSet(viewsets.ModelViewSet):
@@ -70,17 +64,14 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
         try:
-            instance = self.get_object()
             self.perform_destroy(instance)
-            return Response(
-                {"success": True, "message": "Category deleted successfully"},
-                status=status.HTTP_200_OK,
+        except ProtectedError:
+            raise ValidationError(
+                {"detail": "This category cannot be deleted because it is used by products. Move or delete the products first."}
             )
-        except Exception as e:
-            return Response(
-                {"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminBannerViewSet(viewsets.ModelViewSet):
@@ -90,24 +81,9 @@ class AdminBannerViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def destroy(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response(
-                {"success": True, "message": "Banner deleted successfully"},
-                status=status.HTTP_200_OK,
-            )
-        except Exception as e:
-            return Response(
-                {"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class AdminBannerViewSet(viewsets.ModelViewSet):
-    queryset = Banner.objects.all().order_by("position", "-created_at")
-    serializer_class = AdminBannerSerializer
-    permission_classes = [IsAdminUser]
-    pagination_class = None
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminUserViewSet(viewsets.ModelViewSet):

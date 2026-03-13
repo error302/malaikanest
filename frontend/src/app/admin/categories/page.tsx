@@ -92,13 +92,16 @@ export default function CategoriesPage() {
     setError('')
     setSuccess('')
 
+    const previous = categories
+    setCategories((current) => current.filter((category) => category.id !== id))
+
     try {
       await api.delete(`/api/products/admin/categories/${id}/`)
-      setCategories((current) => current.filter((category) => category.id !== id))
       setSuccess('Category deleted.')
     } catch (deleteError) {
       console.error('Error deleting category:', deleteError)
-      setError('Could not delete that category. Remove or reassign children/products first.')
+      setCategories(previous) // rollback
+      setError(handleApiError(deleteError, 'Could not delete that category. Remove or reassign children/products first.'))
     }
   }
 

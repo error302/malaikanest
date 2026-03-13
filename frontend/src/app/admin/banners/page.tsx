@@ -143,13 +143,16 @@ export default function BannersPage() {
     setError(null)
     setSuccess(null)
 
+    const previous = banners
+    setBanners((current) => current.filter((banner) => banner.id !== id))
+
     try {
       await api.delete(`/api/products/admin/banners/${id}/`)
       clearCache('/api/products/banners/')
-      setBanners((current) => current.filter((banner) => banner.id !== id))
       setSuccess('Banner deleted.')
     } catch (error) {
       console.error('Error deleting banner:', error)
+      setBanners(previous) // rollback
       setError(handleApiError(error, 'Banner could not be deleted.'))
     }
   }
