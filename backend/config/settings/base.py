@@ -170,6 +170,10 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SAMESITE": "Lax",
 }
 
+# Optional cookie domain so auth works across www/non-www.
+# Example: ".malaikanest.duckdns.org"
+AUTH_COOKIE_DOMAIN = os.getenv("AUTH_COOKIE_DOMAIN") or None
+
 _cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 CORS_ALLOWED_ORIGINS = [u.strip() for u in _cors_env.split(",") if u.strip()]
 

@@ -18,11 +18,12 @@ export async function GET(request: NextRequest) {
     }
     
     const data = await res.json()
-    const products = data.results ?? data
+    const unwrapped = (data && typeof data === 'object' && 'data' in data) ? (data as any).data : data
+    const products = unwrapped?.results ?? unwrapped
 
     const baseUrl = 'https://malaikanest.duckdns.org'
 
-    const urls = products.map((p: any) => `
+    const urls = (Array.isArray(products) ? products : []).map((p: any) => `
       <url>
         <loc>${baseUrl}/products/${p.slug}</loc>
         <lastmod>${p.updated_at ? new Date(p.updated_at).toISOString() : new Date().toISOString()}</lastmod>

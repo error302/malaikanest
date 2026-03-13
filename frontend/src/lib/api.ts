@@ -215,8 +215,7 @@ api.interceptors.response.use(
 
     const shouldAttemptRefresh = error.response?.status === 401 &&
       !originalRequest?._retry &&
-      !isAuthEndpoint(originalRequest?.url) &&
-      hasClientSessionHint()
+      !isAuthEndpoint(originalRequest?.url)
 
     if (shouldAttemptRefresh) {
       originalRequest._retry = true

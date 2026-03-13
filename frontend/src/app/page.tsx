@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck, ShoppingCart } from "lucide-react"
 
 import api from "../lib/api"
-import { getImageUrl, shouldUseUnoptimizedImage } from "../lib/media"
+import { getImageUrl } from "../lib/media"
 import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
 import { useCart } from "../lib/cartContext"
 import JsonLd from "../components/JsonLd"
@@ -166,62 +165,60 @@ export default function HomePage() {
       <JsonLd data={organizationSchema} />
       
       {/* 1. Hero Banner */}
-      <section className="pt-10 md:pt-14 px-4">
+      <section className="pt-8 md:pt-12 px-4">
         <div className="container-shell p-0">
-          <div className="relative overflow-hidden rounded-[22px] border border-default bg-[var(--bg-surface)] shadow-soft">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(139,76,46,0.10),transparent_55%),radial-gradient(circle_at_80%_20%,rgba(212,168,83,0.12),transparent_55%),radial-gradient(circle_at_60%_100%,rgba(139,76,46,0.06),transparent_55%)]" />
-            <div className="relative grid items-center gap-8 p-6 md:grid-cols-2 lg:p-12">
-            <div className="flex flex-col items-center text-center md:items-start md:text-left">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-text-secondary">Baby and Maternity</p>
-              <h1 className="font-display mt-4 text-[34px] leading-[1.06] font-semibold text-text-primary md:text-[46px] lg:text-[56px]">
-                {heroBanner?.title || "Carefully Chosen Essentials for Your Little One"}
-              </h1>
-              <p className="mt-5 max-w-xl text-[16px] text-text-secondary md:text-[18px]">
-                {heroBanner?.subtitle || "Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience."}
-              </p>
-
-              <div className="mt-8 flex flex-col w-full gap-3 sm:flex-row sm:w-auto">
-                <Link
-                  href={heroBanner?.button_link || "/categories"}
-                  className="btn-primary inline-flex items-center justify-center gap-2"
-                >
-                  {heroBanner?.button_text || "Shop Collection"}
-                  <ArrowRight size={18} />
-                </Link>
-                <Link
-                  href="/categories"
-                  className="btn-secondary inline-flex items-center justify-center"
-                >
-                  Explore Categories
-                </Link>
-              </div>
-
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs text-text-secondary md:justify-start">
-                <span className="rounded-full border border-default bg-[var(--bg-soft)] px-3 py-2">Secure M-Pesa</span>
-                <span className="rounded-full border border-default bg-[var(--bg-soft)] px-3 py-2">Fast Delivery</span>
-                <span className="rounded-full border border-default bg-[var(--bg-soft)] px-3 py-2">Parent Approved</span>
-              </div>
-            </div>
-
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[18px] border border-default bg-bg-secondary">
+          <div className="relative overflow-hidden rounded-[26px] border border-default bg-[var(--bg-surface)] shadow-soft">
+            <div className="absolute inset-0">
               {heroImage ? (
-                <>
-                  <SmartImage
+                <SmartImage
                   src={heroImage}
                   alt={heroBanner?.title || "Malaika Nest collection"}
                   fill
                   className="object-cover"
                   priority
                 />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
-                </>
               ) : (
-                <div className="flex h-full items-center justify-center bg-gradient-to-br from-accent-primary to-accent">
-                  <p className="font-display text-[34px] font-semibold text-text-primary">Malaika Nest</p>
-                </div>
+                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_10%,rgba(139,76,46,0.18),transparent_55%),radial-gradient(circle_at_80%_20%,rgba(212,168,83,0.18),transparent_55%),linear-gradient(135deg,rgba(32,28,24,0.10),rgba(32,28,24,0.04))]" />
               )}
+
+              {/* Premium readability overlay */}
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,14,10,0.66)_0%,rgba(18,14,10,0.44)_38%,rgba(18,14,10,0.08)_72%,rgba(18,14,10,0.00)_100%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,rgba(255,255,255,0.16),transparent_60%)]" />
             </div>
-          </div>
+
+            <div className="relative px-6 py-14 md:px-12 md:py-20 lg:px-16">
+              <div className="max-w-[42rem]">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/80">Baby and Maternity</p>
+                <h1 className="font-display mt-4 text-[38px] leading-[1.05] font-semibold text-white md:text-[54px] lg:text-[64px]">
+                  {heroBanner?.title || "Carefully Chosen Essentials for Your Little One"}
+                </h1>
+                <p className="mt-5 max-w-2xl text-[16px] text-white/85 md:text-[18px]">
+                  {heroBanner?.subtitle || "Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience."}
+                </p>
+
+                <div className="mt-9 flex w-full flex-col gap-3 sm:flex-row sm:w-auto">
+                  <Link
+                    href={heroBanner?.button_link || "/categories"}
+                    className="btn-primary inline-flex items-center justify-center gap-2"
+                  >
+                    {heroBanner?.button_text || "Shop Collection"}
+                    <ArrowRight size={18} />
+                  </Link>
+                  <Link
+                    href="/categories"
+                    className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/15"
+                  >
+                    Explore Categories
+                  </Link>
+                </div>
+
+                <div className="mt-9 flex flex-wrap items-center gap-3 text-xs text-white/85">
+                  <span className="rounded-full border border-white/25 bg-white/10 px-3 py-2 backdrop-blur">Secure M-Pesa</span>
+                  <span className="rounded-full border border-white/25 bg-white/10 px-3 py-2 backdrop-blur">Fast Delivery</span>
+                  <span className="rounded-full border border-white/25 bg-white/10 px-3 py-2 backdrop-blur">Parent Approved</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -248,13 +245,12 @@ export default function HomePage() {
                   className="group flex flex-col bg-white rounded-lg border border-default overflow-hidden transition-transform hover:-translate-y-1"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden bg-bg-secondary">
-                    {category.image ? (
-                      <Image src={category.image} alt={category.name} fill className="object-cover transition-transform group-hover:scale-105" unoptimized={shouldUseUnoptimizedImage(category.image)} />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-accent-primary/20">
-                        <span className="text-4xl font-bold text-text-primary">{category.name.charAt(0)}</span>
-                      </div>
-                    )}
+                    <SmartImage
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                    />
                   </div>
 
                   <div className="p-5 flex flex-col flex-1">

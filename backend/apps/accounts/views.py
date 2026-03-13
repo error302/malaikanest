@@ -75,6 +75,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         try:
             refresh = resp.data.get("refresh")
             access = resp.data.get("access")
+            cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
 
             if refresh:
                 max_age = int(
@@ -90,6 +91,8 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                     secure=not settings.DEBUG,
                     samesite="Lax",
                     expires=expires,
+                    path="/",
+                    domain=cookie_domain,
                 )
 
             if access:
@@ -106,6 +109,8 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                     secure=not settings.DEBUG,
                     samesite="Lax",
                     expires=expires_access,
+                    path="/",
+                    domain=cookie_domain,
                 )
 
             # Remove tokens from body — they are now in HTTPOnly cookies only
@@ -139,6 +144,7 @@ class CookieTokenRefreshView(APIView):
             access = str(new_refresh.access_token)
 
             resp = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
+            cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
 
             refresh_max_age = int(settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME", datetime.timedelta(days=30)).total_seconds())
             access_max_age = int(settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME", datetime.timedelta(minutes=15)).total_seconds())
@@ -152,6 +158,8 @@ class CookieTokenRefreshView(APIView):
                 secure=not settings.DEBUG,
                 samesite="Lax",
                 expires=refresh_expires,
+                path="/",
+                domain=cookie_domain,
             )
             resp.set_cookie(
                 "access_token",
@@ -160,6 +168,8 @@ class CookieTokenRefreshView(APIView):
                 secure=not settings.DEBUG,
                 samesite="Lax",
                 expires=access_expires,
+                path="/",
+                domain=cookie_domain,
             )
 
             try:
@@ -261,8 +271,9 @@ def logout_view(request):
             logger.warning("Logout token blacklist failed: %s", e)
 
     resp = Response({"detail": "Logged out"})
-    resp.delete_cookie("access_token")
-    resp.delete_cookie(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"))
+    cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
+    resp.delete_cookie("access_token", path="/", domain=cookie_domain)
+    resp.delete_cookie(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"), path="/", domain=cookie_domain)
     return resp
 
 

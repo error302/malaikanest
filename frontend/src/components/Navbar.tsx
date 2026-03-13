@@ -27,6 +27,7 @@ export default function Navbar() {
   const [shopOpen, setShopOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [categories, setCategories] = useState<CategoryNode[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(false)
 
   const { items, remove, updateQty } = useCart()
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
@@ -36,10 +37,12 @@ export default function Navbar() {
 
   useEffect(() => {
     if (pathname.startsWith("/admin")) return
+    setLoadingCategories(true)
     api
       .get("/api/products/categories/")
       .then((res) => setCategories(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setCategories([]))
+      .finally(() => setLoadingCategories(false))
   }, [pathname])
 
   useEffect(() => {
@@ -89,27 +92,41 @@ export default function Navbar() {
                     {item.label}
                     <ChevronDown size={16} className={`transition-transform ${shopOpen ? "rotate-180" : ""}`} />
                   </button>
-                  {shopOpen && rootCategories.length > 0 && (
+                  {shopOpen && (
                     <div className="absolute left-1/2 top-full z-50 w-[min(90vw,54rem)] -translate-x-1/2 pt-2">
                       <div className="grid gap-5 rounded-[16px] border border-default bg-surface p-5 shadow-[var(--shadow-hover)] md:grid-cols-3">
-                        {rootCategories.map((category) => (
-                          <div key={category.id}>
-                            <Link href={buildCategoryHref(category)} className="text-base font-semibold text-[var(--text-primary)] hover:text-[var(--link-hover)]">
-                              {category.name}
-                            </Link>
-                            <div className="mt-3 space-y-2">
-                              {category.children?.slice(0, 6).map((child) => (
-                                <Link
-                                  key={child.id}
-                                  href={buildCategoryHref(child)}
-                                  className="block rounded-lg px-2 py-1 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]"
-                                >
-                                  {child.name}
-                                </Link>
-                              ))}
-                            </div>
+                        {loadingCategories ? (
+                          <div className="md:col-span-3 rounded-[14px] border border-default bg-[var(--bg-primary)] px-4 py-6 text-center text-sm text-[var(--text-secondary)]">
+                            Loading categories...
                           </div>
-                        ))}
+                        ) : rootCategories.length > 0 ? (
+                          rootCategories.map((category) => (
+                            <div key={category.id}>
+                              <Link href={buildCategoryHref(category)} className="text-base font-semibold text-[var(--text-primary)] hover:text-[var(--link-hover)]">
+                                {category.name}
+                              </Link>
+                              <div className="mt-3 space-y-2">
+                                {category.children?.slice(0, 6).map((child) => (
+                                  <Link
+                                    key={child.id}
+                                    href={buildCategoryHref(child)}
+                                    className="block rounded-lg px-2 py-1 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]"
+                                  >
+                                    {child.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="md:col-span-3 rounded-[14px] border border-default bg-[var(--bg-primary)] px-4 py-6 text-center">
+                            <p className="text-sm font-semibold text-[var(--text-primary)]">No categories found yet.</p>
+                            <p className="mt-1 text-sm text-[var(--text-secondary)]">Add categories in Admin, or refresh the page.</p>
+                            <Link href="/categories" className="btn-secondary mt-4 inline-flex px-6">
+                              Browse All Products
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
