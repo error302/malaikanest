@@ -59,13 +59,22 @@ def validate_production_env(env):
         "CSRF_TRUSTED_ORIGINS",
         "EMAIL_HOST_USER",
         "EMAIL_HOST_PASSWORD",
-        "CLOUDINARY_CLOUD_NAME",
-        "CLOUDINARY_API_KEY",
-        "CLOUDINARY_API_SECRET",
     ]
     missing = [var for var in required_secure_vars if not env.get(var)]
     if missing:
         errors.append(f"Missing required production env vars: {', '.join(missing)}")
+
+    # Cloudinary is mandatory for production media. Allow either CLOUDINARY_URL or split vars.
+    cloudinary_url = (env.get("CLOUDINARY_URL") or "").strip()
+    cloud_name = env.get("CLOUDINARY_CLOUD_NAME") or env.get("CLOUDINARY_NAME")
+    api_key = env.get("CLOUDINARY_API_KEY") or env.get("CLOUDINARY_KEY")
+    api_secret = env.get("CLOUDINARY_API_SECRET") or env.get("CLOUDINARY_SECRET")
+    cloudinary_ok = bool(cloudinary_url) or bool(cloud_name and api_key and api_secret)
+    if not cloudinary_ok:
+        errors.append(
+            "Missing Cloudinary credentials: set CLOUDINARY_URL or "
+            "CLOUDINARY_CLOUD_NAME/CLOUDINARY_API_KEY/CLOUDINARY_API_SECRET."
+        )
 
     secret_key = env.get("SECRET_KEY", "")
     if len(secret_key) < 32:

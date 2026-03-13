@@ -14,7 +14,13 @@ class BrandSerializer(serializers.ModelSerializer):
 
     def get_logo(self, obj):
         if obj.logo:
-            return obj.logo.url
+            url = obj.logo.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(url)
+            return f"https://malaikanest.duckdns.org{url}"
         return None
 
 
@@ -61,10 +67,13 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
+            url = obj.image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.image.url)
-            return f"https://malaikanest.duckdns.org{obj.image.url}"
+                return request.build_absolute_uri(url)
+            return f"https://malaikanest.duckdns.org{url}"
         return None
 
     def get_children(self, obj):
@@ -147,12 +156,13 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
+            url = obj.image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.image.url)
-            from django.conf import settings
-
-            return f"https://malaikanest.duckdns.org{obj.image.url}"
+                return request.build_absolute_uri(url)
+            return f"https://malaikanest.duckdns.org{url}"
         return None
 
 
@@ -197,12 +207,13 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
+            url = obj.image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.image.url)
-            from django.conf import settings
-
-            return f"https://malaikanest.duckdns.org{obj.image.url}"
+                return request.build_absolute_uri(url)
+            return f"https://malaikanest.duckdns.org{url}"
         return None
 
 

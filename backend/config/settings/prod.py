@@ -47,9 +47,34 @@ DATABASE_POOL_SIZE = int(os.getenv("DATABASE_POOL_SIZE", "20"))
 DATABASE_MAX_OVERFLOW = int(os.getenv("DATABASE_MAX_OVERFLOW", "10"))
 
 # Cloudinary configuration for image uploads
-CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
-CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
-CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+_cloudinary_url = os.getenv("CLOUDINARY_URL", "").strip()
+
+# Support both split Cloudinary vars and CLOUDINARY_URL. Also accept legacy names.
+_cloud_name = (
+    os.getenv("CLOUDINARY_CLOUD_NAME")
+    or os.getenv("CLOUDINARY_NAME")
+    or os.getenv("CLOUDINARY_CLOUD")
+)
+_api_key = os.getenv("CLOUDINARY_API_KEY") or os.getenv("CLOUDINARY_KEY")
+_api_secret = os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLOUDINARY_SECRET")
+
+if not _cloudinary_url and _cloud_name and _api_key and _api_secret:
+    _cloudinary_url = f"cloudinary://{_api_key}:{_api_secret}@{_cloud_name}"
+
+# Ensure the underlying Cloudinary SDK can read credentials consistently.
+if _cloudinary_url:
+    os.environ.setdefault("CLOUDINARY_URL", _cloudinary_url)
+
+CLOUDINARY_CLOUD_NAME = _cloud_name
+CLOUDINARY_API_KEY = _api_key
+CLOUDINARY_API_SECRET = _api_secret
+
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
+        "API_KEY": CLOUDINARY_API_KEY,
+        "API_SECRET": CLOUDINARY_API_SECRET,
+    }
 
 # Use Cloudinary for media storage
 STORAGES = {

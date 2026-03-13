@@ -33,12 +33,18 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 
     def get_image_full_url(self, obj):
         if obj.image:
+            url = obj.image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.image.url)
+                return request.build_absolute_uri(url)
             from django.conf import settings
 
-            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.image.url}"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            if host.startswith("http://") or host.startswith("https://"):
+                return f"{host}{url}"
+            return f"https://{host}{url}"
         return None
 
 
@@ -84,13 +90,19 @@ class AdminProductSerializer(serializers.ModelSerializer):
 
     def get_image_full_url(self, obj):
         if obj.image:
+            url = obj.image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.image.url)
+                return request.build_absolute_uri(url)
             # Fallback: construct URL manually
             from django.conf import settings
 
-            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.image.url}"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            if host.startswith("http://") or host.startswith("https://"):
+                return f"{host}{url}"
+            return f"https://{host}{url}"
         return None
 
     def create(self, validated_data):
@@ -233,22 +245,34 @@ class AdminBannerSerializer(serializers.ModelSerializer):
 
     def get_image_full_url(self, obj):
         if obj.image:
+            url = obj.image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.image.url)
+                return request.build_absolute_uri(url)
             from django.conf import settings
 
-            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.image.url}"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            if host.startswith("http://") or host.startswith("https://"):
+                return f"{host}{url}"
+            return f"https://{host}{url}"
         return None
 
     def get_mobile_image_full_url(self, obj):
         if obj.mobile_image:
+            url = obj.mobile_image.url
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(obj.mobile_image.url)
+                return request.build_absolute_uri(url)
             from django.conf import settings
 
-            return f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'https://malaikanest.duckdns.org'}{obj.mobile_image.url}"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            if host.startswith("http://") or host.startswith("https://"):
+                return f"{host}{url}"
+            return f"https://{host}{url}"
         return None
 
     def create(self, validated_data):

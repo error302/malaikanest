@@ -10,8 +10,8 @@ django-cors-headers==4.6.0
 requests==2.32.4
 pytz==2024.2
 Pillow==12.1.1
-cloudinary==1.41.0
-django-cloudinary-storage==0.2.0
+cloudinary==1.44.1
+django-cloudinary-storage==0.3.0
 redis==5.2.1
 celery==5.4.0
 django-celery-beat==2.7.0

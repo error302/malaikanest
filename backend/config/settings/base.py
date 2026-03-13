@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
+    # Cloudinary media storage backend (used in prod via STORAGES["default"]).
+    "cloudinary_storage",
     "cloudinary",
     "apps.accounts",
     "apps.products",
