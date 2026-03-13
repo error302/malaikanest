@@ -84,9 +84,12 @@ export default function ProductCard({ product }: Props) {
             type="button"
             onClick={handleAddToCart}
             disabled={!inStock}
-            className={`mt-3 w-full bg-black text-white py-2 rounded-lg text-xl flex items-center justify-center min-h-[44px] transition-transform active:scale-95 ${!inStock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}`}
+            aria-label="Add to cart"
+            title={inStock ? "Add to cart" : "Out of stock"}
+            className={`mt-3 w-full bg-black text-white py-2 rounded-lg text-xl flex items-center justify-center min-h-[44px] transition-transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 ${!inStock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}`}
           >
-            🛒
+            <span aria-hidden="true">🛒</span>
+            <span className="sr-only">Add to cart</span>
           </button>
         </div>
       </article>
@@ -98,8 +101,11 @@ export default function ProductCard({ product }: Props) {
           onClick={() => setIsFullscreen(false)}
         >
           <button 
+            type="button"
             className="absolute top-6 right-6 text-white p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
             onClick={() => setIsFullscreen(false)}
+            aria-label="Close image preview"
+            title="Close"
           >
             <X size={24} />
           </button>

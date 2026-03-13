@@ -29,13 +29,37 @@ export default function MiniCart({ items = [], onRemove, onUpdateQty }: { items?
                 <div className="text-sm font-medium text-text truncate">{it.name}</div>
                 <div className="text-xs text-gray-500">Ksh {it.price.toLocaleString()} × {it.qty}</div>
                 <div className="mt-1 flex items-center gap-1">
-                  <button onClick={() => onUpdateQty && onUpdateQty(it.id, Math.max(1, it.qty - 1))} className="w-6 h-6 bg-white rounded flex items-center justify-center hover:bg-gray-100">-</button>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateQty && onUpdateQty(it.id, Math.max(1, it.qty - 1))}
+                    aria-label="Decrease quantity"
+                    title="Decrease quantity"
+                    className="w-6 h-6 bg-white rounded flex items-center justify-center hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/30"
+                  >
+                    -
+                  </button>
                   <span className="text-sm w-6 text-center">{it.qty}</span>
-                  <button onClick={() => onUpdateQty && onUpdateQty(it.id, it.qty + 1)} className="w-6 h-6 bg-white rounded flex items-center justify-center hover:bg-gray-100">+</button>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateQty && onUpdateQty(it.id, it.qty + 1)}
+                    aria-label="Increase quantity"
+                    title="Increase quantity"
+                    className="w-6 h-6 bg-white rounded flex items-center justify-center hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/30"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
               <div className="text-sm font-semibold text-text whitespace-nowrap">Ksh {(it.price * it.qty).toLocaleString()}</div>
-              <button onClick={() => onRemove && onRemove(it.id)} className="text-gray-400 hover:text-red-500">X</button>
+              <button
+                type="button"
+                onClick={() => onRemove && onRemove(it.id)}
+                aria-label="Remove item"
+                title="Remove item"
+                className="text-gray-400 hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30 rounded px-1"
+              >
+                X
+              </button>
             </div>
           ))}
         </div>
