@@ -1,10 +1,23 @@
 import './globals.css'
 import React from 'react'
 import type { Metadata, Viewport } from 'next'
+import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Providers } from '../lib/providers'
 import { ToastContainer } from '../components/Toast'
+
+const fontDisplay = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
+})
+
+const fontBody = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['400', '500', '600', '700'],
+})
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -37,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/logo-compact.svg" />
         <meta name="theme-color" content="#FFF9F5" />
       </head>
-      <body className="bg-primary text-primary font-body antialiased transition-colors duration-300">
+      <body className={`${fontDisplay.variable} ${fontBody.variable} bg-primary text-primary font-body antialiased transition-colors duration-300`}>
         <Providers>
           <Navbar />
           <main className="min-h-screen">{children}</main>

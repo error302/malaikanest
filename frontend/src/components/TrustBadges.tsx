@@ -25,20 +25,20 @@ const badges = [
 
 export default function TrustBadges() {
   return (
-    <section className="py-16">
-      <div className="container-shell">
-        <div className="rounded-[12px] border border-default bg-surface p-6 md:p-8">
+    <section className="px-4">
+      <div className="container-shell p-0">
+        <div className="rounded-[18px] border border-default bg-[#d7d7d7] px-5 py-5 md:px-8 md:py-6">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {badges.map((item) => {
               const Icon = item.icon
               return (
-                <article key={item.title} className="flex items-start gap-3 rounded-xl border border-default bg-[var(--bg-primary)] p-4">
-                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-secondary)] text-[var(--text-primary)]">
-                    <Icon size={20} />
+                <article key={item.title} className="flex items-center gap-4">
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/70 ring-1 ring-black/5">
+                    <Icon size={20} className="text-[var(--text-primary)]" />
                   </span>
-                  <div>
-                    <p className="text-base font-semibold text-[var(--text-primary)]">{item.title}</p>
-                    <p className="text-sm text-[var(--text-secondary)]">{item.subtitle}</p>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold text-[var(--text-primary)]">{item.title}</p>
+                    <p className="text-[13px] text-[var(--text-secondary)]">{item.subtitle}</p>
                   </div>
                 </article>
               )

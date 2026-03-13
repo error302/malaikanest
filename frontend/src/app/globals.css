@@ -3,37 +3,45 @@
 @tailwind utilities;
 
 :root {
-  /* Malaika Nest Brand Palette */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #FDFBF7; /* Soft beige */
-  --bg-surface: #FFF9F5;  /* Light peach */
-  --bg-soft: #FFFFFF;     /* Warm white */
-  --bg-card: #FFFFFF;
-  
-  --accent-primary: #FFD1DC;   /* Pastel pink */
-  --accent: #FFDAB9;           /* Light peach */
-  --accent-hover: #FFC1CC;
-  --accent-secondary: #F5F5DC; /* Soft beige */
-  
-  --primary: #000000;
-  --primary-hover: #333333;
-  
-  --text-primary: #1A1A1A;
-  --text-secondary: #4A4A4A;
-  --text-muted: #7A7A7A;
-  --text-inverse: #FFFFFF;
-  
-  --border: #F0E6D2;
-  --border-default: #F0E6D2;
-  
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.08);
-  
-  --radius: 12px;
-  
-  /* Status symbols */
-  --status-success: #88B04B;
-  --status-error: #D23131;
+  /* Premium warm-neutral palette */
+  --bg-primary: #fbf7f1;   /* cream */
+  --bg-secondary: #f6f0e8; /* warm sand */
+  --bg-surface: #ffffff;  /* crisp surface */
+  --bg-soft: #fffaf3;     /* warm white */
+  --bg-card: #ffffff;
+
+  /* Brand */
+  --brand: #8b4c2e;        /* cocoa */
+  --brand-hover: #743b22;  /* deeper cocoa */
+  --brand-soft: #f3e6db;   /* cocoa wash */
+  --gold: #d4a853;         /* premium gold */
+
+  /* Accents */
+  --accent-primary: var(--brand);
+  --accent: var(--gold);
+  --accent-hover: var(--brand-hover);
+  --accent-secondary: #efe7dc;
+
+  /* Text */
+  --text-primary: #1c1813;
+  --text-secondary: #5a5147;
+  --text-muted: #807468;
+  --text-inverse: #ffffff;
+
+  /* Links */
+  --link-hover: var(--brand-hover);
+
+  /* Borders + shadows */
+  --border: #e7dfd4;
+  --border-default: #e7dfd4;
+  --shadow-soft: 0 8px 24px rgba(20, 16, 12, 0.06);
+  --shadow-hover: 0 14px 40px rgba(20, 16, 12, 0.12);
+
+  --radius: 14px;
+
+  /* Status */
+  --status-success: #2e7d32;
+  --status-error: #c62828;
 }
 
 .dark {
@@ -56,13 +64,13 @@ body {
   margin: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
 .font-display {
-  font-family: var(--font-display), "Playfair Display", Georgia, serif;
+  font-family: var(--font-display), Georgia, serif;
 }
 
 .font-body {
@@ -258,7 +266,7 @@ html, body {
 .btn-primary {
   border-radius: var(--radius);
   border: 1px solid transparent;
-  background: var(--text-primary);
+  background: var(--brand);
   color: var(--text-inverse, #fff);
   padding: 0.75rem 1.25rem;
   font-weight: 600;
@@ -268,7 +276,7 @@ html, body {
 .btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-hover);
-  background: var(--accent-primary);
+  background: var(--brand-hover);
 }
 
 .btn-secondary {
@@ -282,7 +290,7 @@ html, body {
 }
 
 .btn-secondary:hover {
-  border-color: var(--accent-primary);
+  border-color: rgba(139, 76, 46, 0.35);
   background: var(--bg-soft);
   transform: translateY(-1px);
 }
@@ -325,4 +333,3 @@ html, body {
 .border-default {
   border-color: var(--border);
 }
-

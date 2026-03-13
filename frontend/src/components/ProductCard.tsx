@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { useState } from 'react'
 import { X } from 'lucide-react'
 
 import { useCart } from '../lib/cartContext'
-import { getImageUrl, shouldUseUnoptimizedImage } from '../lib/media'
+import { getImageUrl } from '../lib/media'
+import SmartImage from './SmartImage'
 
 interface Props {
   product: any
@@ -47,14 +47,13 @@ export default function ProductCard({ product }: Props) {
           className="relative w-full h-48 cursor-zoom-in overflow-hidden" 
           onClick={toggleFullscreen}
         >
-          {imageUrl && imageUrl !== '/images/placeholder.png' ? (
-            <Image 
+          {imageUrl && imageUrl !== '/placeholder.svg' ? (
+            <SmartImage 
               src={imageUrl} 
               alt={product.name} 
               fill 
               className="object-cover" 
               sizes="(max-width: 640px) 100vw, 300px" 
-              unoptimized={shouldUseUnoptimizedImage(imageSrc)} 
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-bg-secondary">
@@ -105,12 +104,11 @@ export default function ProductCard({ product }: Props) {
             <X size={24} />
           </button>
           <div className="relative w-full h-full max-w-4xl max-h-[80vh]">
-            <Image 
+            <SmartImage 
               src={imageUrl} 
               alt={product.name} 
               fill 
               className="object-contain"
-              unoptimized={shouldUseUnoptimizedImage(imageSrc)}
             />
           </div>
           <p className="absolute bottom-10 text-white text-lg font-medium">{product.name}</p>

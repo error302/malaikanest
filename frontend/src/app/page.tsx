@@ -11,6 +11,8 @@ import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/cat
 import { useCart } from "../lib/cartContext"
 import JsonLd from "../components/JsonLd"
 import ProductCard from "../components/ProductCard"
+import SmartImage from "../components/SmartImage"
+import TrustBadges from "../components/TrustBadges"
 
 const organizationSchema = {
   "@context": "https://schema.org",
@@ -58,13 +60,6 @@ interface Review {
   comment: string
   location?: string
 }
-
-const trustItems = [
-  { title: "Safe Materials", subtitle: "Tested quality essentials", icon: Leaf },
-  { title: "Fast Delivery", subtitle: "Reliable nationwide dispatch", icon: Truck },
-  { title: "Parent Approved", subtitle: "Loved by Kenyan families", icon: CheckCircle2 },
-  { title: "Secure Checkout", subtitle: "Protected payment flow", icon: ShieldCheck },
-]
 
 function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
   return (
@@ -171,70 +166,69 @@ export default function HomePage() {
       <JsonLd data={organizationSchema} />
       
       {/* 1. Hero Banner */}
-      <section className="pt-8 md:pt-12 px-4">
+      <section className="pt-10 md:pt-14 px-4">
         <div className="container-shell p-0">
-          <div className="grid items-center gap-8 rounded-lg border border-default bg-surface p-5 shadow-soft md:grid-cols-2 lg:p-10">
+          <div className="relative overflow-hidden rounded-[22px] border border-default bg-[var(--bg-surface)] shadow-soft">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(139,76,46,0.10),transparent_55%),radial-gradient(circle_at_80%_20%,rgba(212,168,83,0.12),transparent_55%),radial-gradient(circle_at_60%_100%,rgba(139,76,46,0.06),transparent_55%)]" />
+            <div className="relative grid items-center gap-8 p-6 md:grid-cols-2 lg:p-12">
             <div className="flex flex-col items-center text-center md:items-start md:text-left">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Premium Baby & Kids Store</p>
-              <h1 className="mt-4 text-[32px] leading-tight font-bold text-text-primary md:text-[42px] lg:text-[52px]">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-text-secondary">Baby and Maternity</p>
+              <h1 className="font-display mt-4 text-[34px] leading-[1.06] font-semibold text-text-primary md:text-[46px] lg:text-[56px]">
                 {heroBanner?.title || "Carefully Chosen Essentials for Your Little One"}
               </h1>
-              <p className="mt-4 max-w-xl text-[16px] text-text-secondary md:text-[18px]">
+              <p className="mt-5 max-w-xl text-[16px] text-text-secondary md:text-[18px]">
                 {heroBanner?.subtitle || "Shop clothing, nursery picks, baby essentials, toys, travel gear, and thoughtful gifts in one polished store experience."}
               </p>
 
               <div className="mt-8 flex flex-col w-full gap-3 sm:flex-row sm:w-auto">
-                <Link href={heroBanner?.button_link || "/categories"} className="btn-primary inline-flex items-center justify-center gap-2 min-h-[44px] px-6 rounded-lg bg-black text-white font-semibold">
+                <Link
+                  href={heroBanner?.button_link || "/categories"}
+                  className="btn-primary inline-flex items-center justify-center gap-2"
+                >
                   {heroBanner?.button_text || "Shop Collection"}
                   <ArrowRight size={18} />
                 </Link>
-                <Link href="/clothing" className="btn-secondary inline-flex items-center justify-center min-h-[44px] px-6 rounded-lg border border-default bg-white text-text-primary font-semibold hover:bg-bg-secondary">
-                  Browse Categories
+                <Link
+                  href="/categories"
+                  className="btn-secondary inline-flex items-center justify-center"
+                >
+                  Explore Categories
                 </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs text-text-secondary md:justify-start">
+                <span className="rounded-full border border-default bg-[var(--bg-soft)] px-3 py-2">Secure M-Pesa</span>
+                <span className="rounded-full border border-default bg-[var(--bg-soft)] px-3 py-2">Fast Delivery</span>
+                <span className="rounded-full border border-default bg-[var(--bg-soft)] px-3 py-2">Parent Approved</span>
               </div>
             </div>
 
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-default bg-bg-secondary">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[18px] border border-default bg-bg-secondary">
               {heroImage ? (
-                <Image
+                <>
+                  <SmartImage
                   src={heroImage}
                   alt={heroBanner?.title || "Malaika Nest collection"}
                   fill
                   className="object-cover"
-                  unoptimized={shouldUseUnoptimizedImage(heroImage)}
+                  priority
                 />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10" />
+                </>
               ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-accent-primary to-accent">
-                  <p className="text-[32px] font-bold text-text-primary">Malaika Nest</p>
+                  <p className="font-display text-[34px] font-semibold text-text-primary">Malaika Nest</p>
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
       </section>
 
       {/* 2. Trust Strip */}
-      <section className="py-6 px-4">
-        <div className="container-shell p-0">
-          <div className="grid grid-cols-2 gap-4 text-center text-sm md:grid-cols-4 bg-bg-surface p-6 rounded-lg border border-default">
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">🚚</span>
-              <span className="font-medium text-text-primary">Fast Delivery</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">🛡</span>
-              <span className="font-medium text-text-primary">Secure Payments</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">👶</span>
-              <span className="font-medium text-text-primary">Baby Safe Products</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">↩</span>
-              <span className="font-medium text-text-primary">Easy Returns</span>
-            </div>
-          </div>
-        </div>
+      <section className="py-6">
+        <TrustBadges />
       </section>
 
       {/* 3. Categories */}
@@ -316,32 +310,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. Why Shop With Us (Community) */}
-      <section className="py-10 px-4">
+      {/* 6. Customer Reviews */}
+      <section className="py-12 px-4">
         <div className="container-shell p-0">
-          <SectionHeading title="What Parents Say" subtitle="Real experiences from families in our community." />
+          <SectionHeading title="Customer Reviews" subtitle="Real experiences from families in our community." />
 
-          {!loadingReviews && reviews.length > 0 && (
+          {!loadingReviews && reviews.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-3">
               {reviews.slice(0, 3).map((review) => (
-                <article key={review.id} className="rounded-lg border border-default bg-white p-6 shadow-soft">
+                <article key={review.id} className="rounded-[18px] border border-default bg-white p-6 shadow-soft">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-primary/30 font-bold text-text-primary text-sm">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--brand-soft)] font-semibold text-text-primary">
                       {review.user_name.charAt(0)}
                     </span>
-                    <div>
-                      <p className="font-bold text-text-primary text-sm">{review.user_name}</p>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-text-primary">{review.user_name}</p>
                       <p className="text-xs text-text-secondary">{review.location || "Kenya"}</p>
                     </div>
                     <div className="ml-auto flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, idx) => (
-                        <Star key={idx} size={14} className={idx < review.rating ? "fill-[#D4A853] text-[#D4A853]" : "text-gray-200"} />
+                        <Star key={idx} size={14} className={idx < review.rating ? "fill-[var(--gold)] text-[var(--gold)]" : "text-gray-200"} />
                       ))}
                     </div>
                   </div>
                   <p className="mt-4 text-sm text-text-secondary leading-relaxed">&quot;{review.comment}&quot;</p>
                 </article>
               ))}
+            </div>
+          ) : (
+            <div className="rounded-[22px] border border-default bg-[var(--bg-soft)] p-10 text-center shadow-soft">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white ring-1 ring-black/5">
+                <Star size={26} className="text-[var(--gold)]" />
+              </div>
+              <p className="mt-5 text-[18px] text-text-primary">No reviews yet, be the first.</p>
+              <p className="mt-2 text-sm text-text-secondary">Your feedback helps other parents shop with confidence.</p>
+              <Link href="/categories" className="btn-primary mt-7 inline-flex items-center justify-center">
+                Shop Now
+              </Link>
             </div>
           )}
         </div>

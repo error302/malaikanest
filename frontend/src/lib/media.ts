@@ -7,7 +7,7 @@ function getApiUrl(): string {
 }
 
 export function getImageUrl(imageUrl: string | null | undefined): string {
-  if (!imageUrl) return '/images/placeholder.png'
+  if (!imageUrl) return '/placeholder.svg'
 
   // Already a full URL (Cloudinary or external)
   if (imageUrl.startsWith('http')) {
@@ -40,6 +40,10 @@ export function getProductImageUrl(imageUrl: string | null | undefined): string 
 
 export function shouldUseUnoptimizedImage(src?: string | null): boolean {
   if (!src) return false
-  // Use unoptimized for external URLs (Cloudinary, CDN)
-  return src.startsWith('http') || src.includes('cloudinary')
+  // Prefer Next.js optimization for Cloudinary and well-known CDNs.
+  // Use unoptimized only for localhost or non-http(s) sources.
+  const lower = src.toLowerCase()
+  if (lower.startsWith('data:') || lower.startsWith('blob:')) return true
+  if (lower.startsWith('http://localhost') || lower.startsWith('http://127.0.0.1')) return true
+  return false
 }
