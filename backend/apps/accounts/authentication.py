@@ -31,7 +31,17 @@ class CookieJWTAuthentication(JWTAuthentication):
             if raw_token is None:
                 return None
 
-        validated_token = self.get_validated_token(raw_token)
+        # Important: if the cookie contains an expired/invalid token we should
+        # treat it as "no credentials" instead of hard-failing the request.
+        # Otherwise public endpoints and the refresh endpoint get stuck in 401 loops.
+        try:
+            validated_token = self.get_validated_token(raw_token)
+        except (InvalidToken, TokenError):
+            # If the client explicitly sent an Authorization header, keep strict behavior.
+            if header is not None:
+                raise
+            return None
+
         return self.get_user(validated_token), validated_token
 
 
