@@ -58,8 +58,18 @@ def main() -> int:
     allowed_dirs = tuple([d.strip() for d in args.dirs.split(",") if d.strip()])
 
     cloudinary_url = os.getenv("CLOUDINARY_URL", "").strip()
-    if not cloudinary_url:
-        raise SystemExit("CLOUDINARY_URL is not set; cannot upload.")
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME") or os.getenv("CLOUDINARY_NAME")
+    api_key = os.getenv("CLOUDINARY_API_KEY") or os.getenv("CLOUDINARY_KEY")
+    api_secret = os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLOUDINARY_SECRET")
+
+    # Configure Cloudinary either from CLOUDINARY_URL or split vars.
+    if cloudinary_url:
+        # cloudinary python SDK auto-configures from CLOUDINARY_URL.
+        pass
+    elif cloud_name and api_key and api_secret:
+        cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret, secure=True)
+    else:
+        raise SystemExit("Cloudinary credentials are not set (CLOUDINARY_URL or split vars); cannot upload.")
 
     print(f"MEDIA_ROOT={media_root}")
     print(f"dirs={allowed_dirs}")
@@ -100,4 +110,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
