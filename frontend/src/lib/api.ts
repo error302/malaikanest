@@ -78,8 +78,41 @@ const retryWithBackoff = async <T>(
   }
 }
 
+const normalizeHost = (host: string) => host.replace(/^www\./i, '').toLowerCase()
+
+const getBaseUrl = (): string => {
+  // In the browser, prefer same-origin requests so auth cookies always attach
+  // (especially important when users hit either www/non-www).
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin
+
+    // If API_URL is unset, use relative URLs.
+    if (!API_URL) return ''
+
+    // If API_URL points to the same "site host" (ignoring leading www), also use relative URLs.
+    try {
+      const apiOrigin = new URL(API_URL).origin
+      const apiHost = normalizeHost(new URL(API_URL).hostname)
+      const pageHost = normalizeHost(new URL(origin).hostname)
+
+      if (apiHost === pageHost) return ''
+
+      // Different origins (local dev, separate domains): use explicit API_URL.
+      if (apiOrigin !== origin) return API_URL
+    } catch {
+      // If parsing fails, fall back to relative.
+      return ''
+    }
+
+    return ''
+  }
+
+  // Server-side (sitemaps, SSR): fall back to configured API host.
+  return API_URL || ''
+}
+
 const api = axios.create({
-  baseURL: API_URL || '',
+  baseURL: getBaseUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
