@@ -91,6 +91,14 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Support both DATABASE_URL and individual DB_* variables
 database_url = os.getenv("DATABASE_URL")
+
+def _db_sslmode(hostname: str | None) -> str:
+    host = (hostname or "").strip().lower()
+    # Local Postgres on the VM typically doesn't have SSL configured.
+    if host in {"localhost", "127.0.0.1", "::1"} or host.endswith(".local"):
+        return "disable"
+    return "require"
+
 if database_url:
     # Parse DATABASE_URL format: postgresql://user:password@host:port/dbname
     parsed = urllib.parse.urlparse(database_url)
@@ -104,7 +112,7 @@ if database_url:
             "PORT": parsed.port or 5432,
             "CONN_MAX_AGE": 60,
             "OPTIONS": {
-                "sslmode": "require",
+                "sslmode": _db_sslmode(parsed.hostname),
                 "connect_timeout": 10,
             },
             "POOL_SIZE": DATABASE_POOL_SIZE,
@@ -122,7 +130,7 @@ else:
             "PORT": os.getenv("DB_PORT", "5432"),
             "CONN_MAX_AGE": 60,
             "OPTIONS": {
-                "sslmode": "require",
+                "sslmode": _db_sslmode(os.getenv("DB_HOST", "localhost")),
                 "connect_timeout": 10,
             },
             "POOL_SIZE": DATABASE_POOL_SIZE,
