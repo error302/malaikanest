@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 from apps.products.models import Product, Category
-from .openai_client import openai_client
+from .ollama_client import ollama_client
 
 
 DESCRIPTION_SYSTEM_PROMPT = """You are a product description writer for a baby and children's clothing store in Kenya.
@@ -22,43 +22,46 @@ def generate_product_description(product: Product) -> str:
     prompt = f"""Write a product description for:
 Name: {product.name}
 Category: {product.category.name}
-Existing description: {product.description or 'None'}
+Existing description: {product.description or "None"}
 
 Write a new, improved description."""
-    
+
     try:
-        result = openai_client.chat_json(
-            message=prompt,
-            system_prompt=DESCRIPTION_SYSTEM_PROMPT
+        result = ollama_client.chat_json(
+            message=prompt, system_prompt=DESCRIPTION_SYSTEM_PROMPT
         )
-        return result.get('description', '')
+        return result.get("description", "")
     except Exception as e:
         return f"Error generating description: {str(e)}"
 
 
-def bulk_generate_descriptions(category_id: int = None, limit: int = 20) -> Dict[str, Any]:
-    products = Product.objects.filter(description='')
+def bulk_generate_descriptions(
+    category_id: int = None, limit: int = 20
+) -> Dict[str, Any]:
+    products = Product.objects.filter(description="")
     if category_id:
         products = products.filter(category_id=category_id)
-    
+
     products = list(products[:limit])
-    
-    results = {'success': 0, 'failed': 0, 'products': []}
-    
+
+    results = {"success": 0, "failed": 0, "products": []}
+
     for product in products:
         try:
             new_description = generate_product_description(product)
             product.description = new_description
             product.save()
-            results['success'] += 1
-            results['products'].append({
-                'id': product.id,
-                'name': product.name,
-                'description': new_description[:100] + '...'
-            })
+            results["success"] += 1
+            results["products"].append(
+                {
+                    "id": product.id,
+                    "name": product.name,
+                    "description": new_description[:100] + "...",
+                }
+            )
         except Exception as e:
-            results['failed'] += 1
-    
+            results["failed"] += 1
+
     return results
 
 
@@ -83,23 +86,24 @@ def generate_seo_metadata(product: Product) -> Dict[str, str]:
     prompt = f"""Generate SEO metadata for:
 Name: {product.name}
 Category: {product.category.name}
-Current description: {product.description[:200] if product.description else 'None'}"""
-    
+Current description: {product.description[:200] if product.description else "None"}"""
+
     try:
-        result = openai_client.chat_json(
-            message=prompt,
-            system_prompt=SEO_SYSTEM_PROMPT
+        result = ollama_client.chat_json(
+            message=prompt, system_prompt=SEO_SYSTEM_PROMPT
         )
         return {
-            'meta_title': result.get('meta_title', ''),
-            'meta_description': result.get('meta_description', ''),
-            'keywords': result.get('keywords', [])
+            "meta_title": result.get("meta_title", ""),
+            "meta_description": result.get("meta_description", ""),
+            "keywords": result.get("keywords", []),
         }
     except Exception as e:
         return {
-            'meta_title': product.name,
-            'meta_description': product.description[:160] if product.description else '',
-            'keywords': [product.category.name.lower()]
+            "meta_title": product.name,
+            "meta_description": product.description[:160]
+            if product.description
+            else "",
+            "keywords": [product.category.name.lower()],
         }
 
 
@@ -107,17 +111,17 @@ def suggest_tags(product: Product) -> List[str]:
     prompt = f"""Suggest tags for search/filters for:
 Name: {product.name}
 Category: {product.category.name}
-Description: {product.description or 'None'}
+Description: {product.description or "None"}
 
 Return JSON with array of tags:
 {"tags": ["tag1", "tag2", ...]}"""
-    
+
     try:
-        result = openai_client.chat_json(
+        result = ollama_client.chat_json(
             message=prompt,
-            system_prompt="You are a tagging expert. Suggest relevant tags."
+            system_prompt="You are a tagging expert. Suggest relevant tags.",
         )
-        return result.get('tags', [])
+        return result.get("tags", [])
     except Exception:
         return [product.category.name.lower()]
 
@@ -131,27 +135,29 @@ Return JSON:
 {"name": "product name here"}
 """
     try:
-        result = openai_client.chat_json(
+        result = ollama_client.chat_json(
             message=prompt,
-            system_prompt="You are a product naming expert. Create attractive names."
+            system_prompt="You are a product naming expert. Create attractive names.",
         )
-        return result.get('name', '')
+        return result.get("name", "")
     except Exception as e:
-        return ''
+        return ""
 
 
 def optimize_existing_descriptions(quality_threshold: float = 0.5) -> Dict[str, Any]:
-    products = Product.objects.filter(description__isnull=False).exclude(description='')[:50]
-    
-    results = {'optimized': 0, 'skipped': 0}
-    
+    products = Product.objects.filter(description__isnull=False).exclude(
+        description=""
+    )[:50]
+
+    results = {"optimized": 0, "skipped": 0}
+
     for product in products:
         if len(product.description) < 50:
             new_desc = generate_product_description(product)
             product.description = new_desc
             product.save()
-            results['optimized'] += 1
+            results["optimized"] += 1
         else:
-            results['skipped'] += 1
-    
+            results["skipped"] += 1
+
     return results
