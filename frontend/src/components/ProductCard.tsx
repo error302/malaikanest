@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { ShoppingCart, X } from 'lucide-react'
 
 import { useCart } from '../lib/cartContext'
 import { getImageUrl } from '../lib/media'
@@ -41,10 +41,10 @@ export default function ProductCard({ product }: Props) {
 
   return (
     <>
-      <article className="w-full flex flex-col bg-white rounded-lg border border-default overflow-hidden">
+      <article className="w-full flex flex-col bg-white rounded-2xl border border-default overflow-hidden shadow-[0_1px_0_rgba(0,0,0,0.04)] transition-transform hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(0,0,0,0.08)]">
         {/* Product Image */}
         <div 
-          className="relative w-full h-48 cursor-zoom-in overflow-hidden" 
+          className="relative aspect-[4/5] w-full cursor-zoom-in overflow-hidden bg-[var(--bg-secondary)]" 
           onClick={toggleFullscreen}
         >
           {imageUrl && imageUrl !== '/placeholder.svg' ? (
@@ -69,14 +69,14 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         {/* Product Details */}
-        <div className="p-3 flex flex-col flex-1">
-          <Link href={`/products/${product.slug}`} className="hover:underline">
-            <h3 className="text-sm font-medium line-clamp-2 text-text-primary h-10">
+        <div className="p-4 flex flex-col flex-1">
+          <Link href={`/products/${product.slug}`} className="group/link">
+            <h3 className="text-[15px] font-semibold line-clamp-2 text-text-primary min-h-[2.5rem] transition-colors group-hover/link:text-[var(--link-hover)]">
               {product.name}
             </h3>
           </Link>
           
-          <p className="mt-1 text-base font-semibold text-text-primary">
+          <p className="mt-2 text-[16px] font-semibold text-text-primary">
             KES {parseFloat(product.price).toLocaleString()}
           </p>
 
@@ -86,10 +86,10 @@ export default function ProductCard({ product }: Props) {
             disabled={!inStock}
             aria-label="Add to cart"
             title={inStock ? "Add to cart" : "Out of stock"}
-            className={`mt-3 w-full bg-black text-white py-2 rounded-lg text-xl flex items-center justify-center min-h-[44px] transition-transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 ${!inStock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}`}
+            className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-black bg-black px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 ${!inStock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-800'}`}
           >
-            <span aria-hidden="true">🛒</span>
-            <span className="sr-only">Add to cart</span>
+            <ShoppingCart size={16} aria-hidden="true" />
+            <span>{inStock ? "Add to cart" : "Out of stock"}</span>
           </button>
         </div>
       </article>

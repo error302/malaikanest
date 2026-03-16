@@ -6,7 +6,6 @@ import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck, Shoppi
 
 import api from "../lib/api"
 import { getImageUrl } from "../lib/media"
-import { buildCategoryHref, CategoryNode, orderRootCategories } from "../lib/catalog"
 import { useCart } from "../lib/cartContext"
 import JsonLd from "../components/JsonLd"
 import ProductCard from "../components/ProductCard"
@@ -73,12 +72,10 @@ function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title:
 export default function HomePage() {
   const { add } = useCart()
 
-  const [categories, setCategories] = useState<CategoryNode[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [banners, setBanners] = useState<Banner[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
 
-  const [loadingCategories, setLoadingCategories] = useState(true)
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [loadingReviews, setLoadingReviews] = useState(true)
   const [bannerIndex, setBannerIndex] = useState(0)
@@ -92,12 +89,6 @@ export default function HomePage() {
         setBanners(rows)
       })
       .catch(() => setBanners([]))
-
-    api
-      .get("/api/products/categories/")
-      .then((res) => setCategories(Array.isArray(res.data) ? res.data : res.data?.results || []))
-      .catch(() => setCategories([]))
-      .finally(() => setLoadingCategories(false))
 
     api
       .get("/api/products/products/?ordering=-created_at")
@@ -135,19 +126,17 @@ export default function HomePage() {
   }, [])
 
   const heroBanner = banners[bannerIndex]
-  const rootCategories = useMemo(() => orderRootCategories(categories), [categories])
 
   const heroImage = useMemo(() => {
     const bannerImage = isMobile ? heroBanner?.mobile_image ?? heroBanner?.image : heroBanner?.image
     const rawSrc =
       bannerImage ||
       products.find((p) => p.image)?.image ||
-      rootCategories.find((c) => c.image)?.image ||
       null
     // Always pass through getImageUrl so relative paths like 'banners/x.jpg'
     // become absolute URLs and render correctly in production.
     return rawSrc ? getImageUrl(rawSrc) : null
-  }, [heroBanner, isMobile, products, rootCategories])
+  }, [heroBanner, isMobile, products])
 
   const featuredProducts = useMemo(() => {
     const featured = products.filter((product) => Boolean(product.featured))
@@ -223,52 +212,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. Trust Strip */}
-      <section className="py-6">
-        <TrustBadges />
-      </section>
-
-      {/* 3. Categories */}
-      <section className="py-10 px-4">
-        <div className="container-shell p-0">
-          <SectionHeading
-            title="Shop by Category"
-            subtitle="Explore our curated collections for every stage of your baby's growth."
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {!loadingCategories &&
-              rootCategories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={buildCategoryHref(category)}
-                  className="group flex flex-col bg-white rounded-lg border border-default overflow-hidden transition-transform hover:-translate-y-1"
-                >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-bg-secondary">
-                    <SmartImage
-                      src={category.image}
-                      alt={category.name}
-                      fill
-                      className="object-cover transition-transform group-hover:scale-105"
-                    />
-                  </div>
-
-                  <div className="p-5 flex flex-col flex-1">
-                    <h3 className="text-xl font-bold text-text-primary">{category.name}</h3>
-                    <p className="mt-2 text-sm text-text-secondary line-clamp-2">
-                      {category.description || "Beautiful and practical essentials for your little ones."}
-                    </p>
-                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-black">
-                      Shop Now <ArrowRight size={16} />
-                    </span>
-                  </div>
-                </Link>
-              ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Featured Products */}
+      {/* 3. Featured Products */}
       <section className="py-10 px-4">
         <div className="container-shell p-0">
           <div className="mb-8 flex items-end justify-between">
@@ -287,7 +231,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. Popular Products (New Arrivals) */}
+      {/* 4. Popular Products (New Arrivals) */}
       <section className="py-10 px-4">
         <div className="container-shell p-0">
           <div className="mb-8 flex items-end justify-between">
@@ -306,7 +250,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. Customer Reviews */}
+      {/* 5. Customer Reviews */}
       <section className="py-12 px-4">
         <div className="container-shell p-0">
           <SectionHeading title="Customer Reviews" subtitle="Real experiences from families in our community." />
@@ -346,6 +290,11 @@ export default function HomePage() {
             </div>
           )}
         </div>
+      </section>
+
+      {/* 6. Trust Strip (Above Footer) */}
+      <section className="pb-8">
+        <TrustBadges />
       </section>
     </div>
   )

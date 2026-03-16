@@ -74,12 +74,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    if (hasSessionHint) {
-      checkAuth()
-      return
-    }
-
+    // Always do a lightweight server-side probe once on mount so cookie-based sessions
+    // work even when localStorage is empty (e.g. switching between www/non-www).
+    // This prevents "I am logged in but can't tell" and reduces admin 401 loops.
     setIsLoading(false)
+    if (hasSessionHint || typeof window !== 'undefined') {
+      checkAuth()
+    }
   }, [checkAuth])
 
   const login = useCallback(async (email: string, password: string, captchaToken?: string) => {

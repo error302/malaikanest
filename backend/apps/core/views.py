@@ -9,6 +9,11 @@ from django.core.cache import cache
 from django.db import connection
 import logging
 
+from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
+
+from .models import SiteSettings
+from .serializers import PublicSiteSettingsSerializer, SiteSettingsSerializer
+
 logger = logging.getLogger("apps.core")
 
 
@@ -115,59 +120,35 @@ class ContactFormView(APIView):
             )
 
 
-# Default settings (fallback when database settings don't exist)
-DEFAULT_SETTINGS = {
-    "site_name": "Malaika Nest",
-    "site_description": "Premium Baby Products in Kenya",
-    "contact_email": "malaikanest7@gmail.com",
-    "contact_phone": "+254700000000",
-    "address": "Nairobi, Kenya",
-    "facebook_url": "",
-    "instagram_url": "",
-    "twitter_url": "",
-    "shipping_fee": "500",
-    "free_shipping_threshold": "5000",
-    "minimum_order_amount": "1000",
-}
+PUBLIC_SETTINGS_CACHE_KEY = "core_public_site_settings_v1"
 
 
 class SiteSettingsView(APIView):
     """Get and update site settings"""
 
     permission_classes = [IsAdminUser]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def get(self, request):
-        """Get site settings"""
-        # Try to get from Django settings first (from database cache)
-        cached_settings = getattr(settings, "SITE_SETTINGS", None)
-
-        if cached_settings:
-            return Response(cached_settings)
-
-        # Return defaults
-        return Response(DEFAULT_SETTINGS)
+        obj = SiteSettings.get_solo()
+        data = SiteSettingsSerializer(obj, context={"request": request}).data
+        return Response(data, status=status.HTTP_200_OK)
 
     def put(self, request):
-        """Update site settings"""
-        new_settings = request.data
+        obj = SiteSettings.get_solo()
+        serializer = SiteSettingsSerializer(obj, data=request.data, partial=False, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        cache.delete(PUBLIC_SETTINGS_CACHE_KEY)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # Validate required fields
-        required_fields = ["site_name", "contact_email"]
-        for field in required_fields:
-            if field not in new_settings:
-                return Response(
-                    {"error": f"{field} is required"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        # Update settings (in production, you'd save to database)
-        # For now, we'll just return the settings and let the frontend handle caching
-        all_settings = {**DEFAULT_SETTINGS, **new_settings}
-
-        # Store in Django settings (in production, use database)
-        settings.SITE_SETTINGS = all_settings
-
-        return Response(all_settings)
+    def patch(self, request):
+        obj = SiteSettings.get_solo()
+        serializer = SiteSettingsSerializer(obj, data=request.data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        cache.delete(PUBLIC_SETTINGS_CACHE_KEY)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PublicSettingsView(APIView):
@@ -176,29 +157,14 @@ class PublicSettingsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        """Get public site settings"""
-        cached_settings = getattr(settings, "SITE_SETTINGS", None)
+        cached = cache.get(PUBLIC_SETTINGS_CACHE_KEY)
+        if cached is not None:
+            return Response(cached, status=status.HTTP_200_OK)
 
-        if cached_settings:
-            # Return only public settings
-            public_settings = {
-                "site_name": cached_settings.get("site_name", "Malaika Nest"),
-                "site_description": cached_settings.get("site_description", ""),
-                "contact_email": cached_settings.get("contact_email", ""),
-                "contact_phone": cached_settings.get("contact_phone", ""),
-                "address": cached_settings.get("address", ""),
-                "facebook_url": cached_settings.get("facebook_url", ""),
-                "instagram_url": cached_settings.get("instagram_url", ""),
-                "twitter_url": cached_settings.get("twitter_url", ""),
-                "shipping_fee": cached_settings.get("shipping_fee", "500"),
-                "free_shipping_threshold": cached_settings.get(
-                    "free_shipping_threshold", "5000"
-                ),
-                "minimum_order_amount": cached_settings.get(
-                    "minimum_order_amount", "1000"
-                ),
-            }
-            return Response(public_settings)
+        obj = SiteSettings.get_solo()
+        data = PublicSiteSettingsSerializer(obj, context={"request": request}).data
+        cache.set(PUBLIC_SETTINGS_CACHE_KEY, data, timeout=300)  # 5 min
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class Pm2LogsView(APIView):
@@ -214,20 +180,3 @@ class Pm2LogsView(APIView):
                 return Response({"logs": lines[-200:]})
         except Exception as e:
             return Response({"error": str(e)})
-
-        # Return public defaults
-        return Response(
-            {
-                "site_name": "Malaika Nest",
-                "site_description": "Premium Baby Products in Kenya",
-                "contact_email": "malaikanest7@gmail.com",
-                "contact_phone": "+254700000000",
-                "address": "Nairobi, Kenya",
-                "facebook_url": "",
-                "instagram_url": "",
-                "twitter_url": "",
-                "shipping_fee": "500",
-                "free_shipping_threshold": "5000",
-                "minimum_order_amount": "1000",
-            }
-        )

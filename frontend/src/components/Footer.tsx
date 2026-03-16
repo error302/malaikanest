@@ -18,11 +18,11 @@ export default function Footer() {
   if (pathname.startsWith('/admin')) return null
 
   return (
-    <footer className="border-t border-default bg-surface pt-16">
-      <div className="container-shell grid gap-10 pb-12 md:grid-cols-2 xl:grid-cols-4">
+    <footer className="border-t border-default bg-surface pt-10">
+      <div className="container-shell grid gap-8 pb-8 md:grid-cols-2 xl:grid-cols-4">
         <section>
           <Logo />
-          <p className="mt-5 max-w-xs text-[18px] text-[var(--text-secondary)]">Premium baby products for Kenyan families.</p>
+          <p className="mt-4 max-w-xs text-[16px] text-[var(--text-secondary)]">Premium baby products for Kenyan families.</p>
           <div className="mt-6 flex items-center gap-4 text-[var(--text-primary)]">
             <a href="https://www.facebook.com/groups/1614565823184535/?ref=share&mibextid=NSMWBT" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-default transition-colors hover:bg-[var(--bg-soft)]">
               <Facebook size={18} />
@@ -41,7 +41,7 @@ export default function Footer() {
 
         <section>
           <h3 className="font-body text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">Shop</h3>
-          <ul className="mt-6 space-y-3 text-[18px] text-[var(--text-secondary)]">
+          <ul className="mt-5 space-y-2.5 text-[16px] text-[var(--text-secondary)]">
             <li><Link href="/categories" className="transition-colors hover:text-[var(--text-primary)]">All Products</Link></li>
             <li><Link href="/categories?group=Newborn" className="transition-colors hover:text-[var(--text-primary)]">Newborn</Link></li>
             <li><Link href="/categories?group=Feeding" className="transition-colors hover:text-[var(--text-primary)]">Feeding</Link></li>
@@ -52,7 +52,7 @@ export default function Footer() {
 
         <section>
           <h3 className="font-body text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">Support</h3>
-          <ul className="mt-6 space-y-3 text-[18px] text-[var(--text-secondary)]">
+          <ul className="mt-5 space-y-2.5 text-[16px] text-[var(--text-secondary)]">
             <li><Link href="/faq" className="transition-colors hover:text-[var(--text-primary)]">FAQ</Link></li>
             <li><Link href="/shipping" className="transition-colors hover:text-[var(--text-primary)]">Shipping Info</Link></li>
             <li><Link href="/contact" className="transition-colors hover:text-[var(--text-primary)]">Contact Us</Link></li>
@@ -63,7 +63,7 @@ export default function Footer() {
 
         <section>
           <h3 className="font-body text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-primary)]">Contact</h3>
-          <ul className="mt-6 space-y-3 text-[18px] text-[var(--text-secondary)]">
+          <ul className="mt-5 space-y-2.5 text-[16px] text-[var(--text-secondary)]">
             <li>malaikanest7@gmail.com</li>
             <li>+254 726 771 321</li>
             <li>Mombasa, Kenya</li>
@@ -72,7 +72,7 @@ export default function Footer() {
         </section>
       </div>
 
-      <div className="border-t border-default bg-[var(--bg-primary)] py-6">
+      <div className="border-t border-default bg-[var(--bg-primary)] py-4">
         <div className="container-shell flex flex-col items-center justify-between gap-2 text-sm text-[var(--text-secondary)] sm:flex-row">
           <p>© 2026 Malaika Nest. All rights reserved.</p>
           <p>Made with ❤️ in Mombasa, Kenya</p>

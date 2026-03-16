@@ -157,13 +157,24 @@ export default function Navbar() {
             <Link
               href={isAuthenticated ? "/account/orders" : "/login"}
               aria-label="Account"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-default bg-surface text-[var(--text-primary)]"
+              className="inline-flex items-center gap-3 rounded-xl border border-default bg-surface px-3 py-2 text-[var(--text-primary)]"
+              title={isAuthenticated && user ? `Signed in as ${user.name}` : "Sign in"}
             >
-              {isAuthenticated && user ? (
-                <span className="text-sm font-semibold">{user.name?.charAt(0).toUpperCase()}</span>
-              ) : (
-                <User size={18} />
-              )}
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bg-soft)]">
+                {isAuthenticated && user ? (
+                  <span className="text-sm font-semibold">{user.name?.charAt(0).toUpperCase()}</span>
+                ) : (
+                  <User size={18} />
+                )}
+              </span>
+              <span className="hidden min-w-0 flex-col leading-tight sm:flex">
+                <span className="text-xs font-semibold text-[var(--text-primary)]">
+                  {isAuthenticated && user ? "Signed in" : "Account"}
+                </span>
+                <span className="max-w-[10rem] truncate text-xs text-[var(--text-secondary)]">
+                  {isAuthenticated && user ? user.name : "Login / Register"}
+                </span>
+              </span>
             </Link>
 
             {isAuthenticated && (
