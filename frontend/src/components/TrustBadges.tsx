@@ -1,14 +1,14 @@
-import { CheckCircle2, Leaf, ShieldCheck, Truck } from 'lucide-react'
+import { CheckCircle2, CreditCard, Leaf, ShieldCheck, Truck } from 'lucide-react'
 
 const badges = [
   {
-    title: 'Safe Materials',
-    subtitle: 'Baby-safe quality standards',
-    icon: Leaf,
+    title: 'M-Pesa Accepted',
+    subtitle: 'Pay easily with M-Pesa',
+    icon: CreditCard,
   },
   {
     title: 'Fast Delivery',
-    subtitle: 'Dispatch across Kenya',
+    subtitle: 'Across Kenya',
     icon: Truck,
   },
   {

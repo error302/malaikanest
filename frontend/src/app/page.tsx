@@ -69,6 +69,9 @@ function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title:
   )
 }
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function HomePage() {
   const { add } = useCart()
 
@@ -212,6 +215,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 2. Categories Grid */}
+      <section className="py-10 px-4">
+        <div className="container-shell p-0">
+          <div className="mb-8 text-center md:mb-10">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">Browse</p>
+            <h2 className="font-display mt-3 text-[28px] text-[var(--text-primary)] md:text-[32px]">Shop by Category</h2>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-4">
+            {[
+              { name: "Baby", slug: "baby", icon: "👶", color: "from-rose-100 to-rose-50" },
+              { name: "Kids", slug: "kids", icon: "👕", color: "from-blue-100 to-blue-50" },
+              { name: "Toys", slug: "toys", icon: "🧸", color: "from-amber-100 to-amber-50" },
+              { name: "Feeding", slug: "feeding", icon: "🍼", color: "from-emerald-100 to-emerald-50" },
+            ].map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/categories?category_path=${cat.slug}`}
+                className="group relative overflow-hidden rounded-[16px] border border-default bg-gradient-to-br p-6 shadow-soft transition-all hover:-translate-y-1 hover:shadow-hover"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-4xl">{cat.icon}</span>
+                  <p className="mt-3 text-lg font-semibold text-[var(--text-primary)]">{cat.name}</p>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">Shop now</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+          
+          <div className="mt-6 text-center">
+            <Link href="/categories" className="text-sm font-semibold text-[var(--text-primary)] hover:underline">
+              View All Categories →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* 3. Featured Products */}
       <section className="py-10 px-4">
         <div className="container-shell p-0">
@@ -292,7 +332,38 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. Trust Strip (Above Footer) */}
+      {/* 6. CTA Banner */}
+      <section className="px-4">
+        <div className="container-shell p-0">
+          <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-secondary)] px-6 py-10 text-center md:px-12 md:py-14">
+            <div className="relative z-10">
+              <h2 className="font-display text-[28px] font-semibold text-white md:text-[36px]">
+                Ready to Shop?
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-white/85 md:text-lg">
+                Explore our full collection of premium baby and kids products. 
+                Free delivery on orders over KES 3,000.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <Link
+                  href="/categories"
+                  className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-[var(--brand-primary)] transition hover:bg-white/90"
+                >
+                  Shop Now
+                </Link>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center justify-center rounded-full border border-white/40 px-8 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Contact Us
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Trust Strip (Above Footer) */}
       <section className="pb-8">
         <TrustBadges />
       </section>

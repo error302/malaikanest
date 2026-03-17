@@ -19,6 +19,83 @@ import {
   SIZE_FILTERS,
 } from "../lib/catalog"
 
+const getFallbackCategories = (): CategoryNode[] => [
+  {
+    id: 1,
+    name: "Baby",
+    slug: "baby",
+    full_slug: "baby",
+    description: "Essentials for newborns to 2 years",
+    children: [
+      { id: 11, name: "Clothing", slug: "clothing", full_slug: "baby/clothing", description: "Onesies, rompers, sets", children: [], depth: 1 },
+      { id: 12, name: "Essentials", slug: "essentials", full_slug: "baby/essentials", description: "Diapers, wipes, skincare", children: [], depth: 1 },
+      { id: 13, name: "Gear", slug: "gear", full_slug: "baby/gear", description: "Strollers, carriers", children: [], depth: 1 },
+    ],
+    depth: 0,
+  },
+  {
+    id: 2,
+    name: "Kids",
+    slug: "kids",
+    full_slug: "kids",
+    description: "Clothing for 2-12 years",
+    children: [
+      { id: 21, name: "Boys", slug: "boys", full_slug: "kids/boys", description: "Shirts, pants, hoodies", children: [], depth: 1 },
+      { id: 22, name: "Girls", slug: "girls", full_slug: "kids/girls", description: "Dresses, tops, skirts", children: [], depth: 1 },
+    ],
+    depth: 0,
+  },
+  {
+    id: 3,
+    name: "Toys",
+    slug: "toys",
+    full_slug: "toys",
+    description: "Fun and educational toys",
+    children: [
+      { id: 31, name: "Educational", slug: "educational", full_slug: "toys/educational", description: "Learning toys", children: [], depth: 1 },
+      { id: 32, name: "Soft Toys", slug: "soft-toys", full_slug: "toys/soft-toys", description: "Plushies and cuddly toys", children: [], depth: 1 },
+      { id: 33, name: "Outdoor", slug: "outdoor", full_slug: "toys/outdoor", description: "Outdoor play toys", children: [], depth: 1 },
+    ],
+    depth: 0,
+  },
+  {
+    id: 4,
+    name: "Feeding",
+    slug: "feeding",
+    full_slug: "feeding",
+    description: "Feeding essentials",
+    children: [
+      { id: 41, name: "Bottles", slug: "bottles", full_slug: "feeding/bottles", description: "Baby bottles", children: [], depth: 1 },
+      { id: 42, name: "Sippy Cups", slug: "sippy-cups", full_slug: "feeding/sippy-cups", description: "Transition cups", children: [], depth: 1 },
+    ],
+    depth: 0,
+  },
+  {
+    id: 5,
+    name: "Nursery",
+    slug: "nursery",
+    full_slug: "nursery",
+    description: "Baby room essentials",
+    children: [
+      { id: 51, name: "Bedding", slug: "bedding", full_slug: "nursery/bedding", description: "Crib sheets, mattresses", children: [], depth: 1 },
+      { id: 52, name: "Blankets", slug: "blankets", full_slug: "nursery/blankets", description: "Swaddles, comforters", children: [], depth: 1 },
+    ],
+    depth: 0,
+  },
+  {
+    id: 6,
+    name: "Accessories",
+    slug: "accessories",
+    full_slug: "accessories",
+    description: "Complete the look",
+    children: [
+      { id: 61, name: "Shoes", slug: "shoes", full_slug: "accessories/shoes", description: "Baby and kids shoes", children: [], depth: 1 },
+      { id: 62, name: "Hats", slug: "hats", full_slug: "accessories/hats", description: "Sun hats, beanies", children: [], depth: 1 },
+    ],
+    depth: 0,
+  },
+]
+
 interface Product {
   id: number
   name: string
@@ -99,21 +176,40 @@ export default function CategoryCatalog({ initialCategoryPath = "" }: { initialC
   }, [initialCategoryPath, searchParams])
 
   useEffect(() => {
-    api
-      .get("/api/products/categories/")
-      .then((res) => setCategories(Array.isArray(res.data) ? res.data : res.data?.results || []))
-      .catch(() => setCategories([]))
-      .finally(() => setLoadingCategories(false))
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get("/api/products/categories/")
+        const data = Array.isArray(res.data) ? res.data : res.data?.results || []
+        setCategories(data)
+      } catch (error) {
+        console.error('Failed to load categories:', error)
+        setCategories(getFallbackCategories())
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
 
-    api
-      .get("/api/products/categories/?flat=1")
-      .then((res) => setFlatCategories(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setFlatCategories([]))
+    const fetchFlatCategories = async () => {
+      try {
+        const res = await api.get("/api/products/categories/?flat=1")
+        setFlatCategories(Array.isArray(res.data) ? res.data : [])
+      } catch (error) {
+        console.error('Failed to load flat categories:', error)
+      }
+    }
 
-    api
-      .get("/api/products/brands/")
-      .then((res) => setBrands(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setBrands([]))
+    const fetchBrands = async () => {
+      try {
+        const res = await api.get("/api/products/brands/")
+        setBrands(Array.isArray(res.data) ? res.data : [])
+      } catch (error) {
+        console.error('Failed to load brands:', error)
+      }
+    }
+
+    fetchCategories()
+    fetchFlatCategories()
+    fetchBrands()
   }, [])
 
   useEffect(() => {
