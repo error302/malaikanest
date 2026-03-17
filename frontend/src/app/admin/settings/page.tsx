@@ -74,7 +74,7 @@ export default function SettingsPage() {
           setSessionExpired(true)
           return
         }
-        handleApiError(err, { fallbackMessage: 'Unable to load settings.' })
+        showToast(handleApiError(err, 'Unable to load settings.'), 'error')
       })
       .finally(() => mounted && setIsLoading(false))
 
@@ -114,8 +114,7 @@ export default function SettingsPage() {
         showToast('Session expired. Please log in again.', 'error')
         return
       }
-      handleApiError(err, { fallbackMessage: 'Failed to save settings.' })
-      showToast('Failed to save settings.', 'error')
+      showToast(handleApiError(err, 'Failed to save settings.'), 'error')
     } finally {
       setIsSaving(false)
     }
