@@ -5,6 +5,25 @@ def to_bool(value):
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def enforce_postgresql_only(databases, *, context=""):
+    """
+    Malaika Nest policy: SQLite is forbidden. PostgreSQL is mandatory.
+
+    We intentionally fail fast at import-time if any environment/config attempts
+    to use a non-PostgreSQL Django database engine.
+    """
+
+    default_db = (databases or {}).get("default") or {}
+    engine = str(default_db.get("ENGINE") or "").strip()
+    allowed = {"django.db.backends.postgresql", "django.db.backends.postgis"}
+    if engine not in allowed:
+        hint = f" ({context})" if context else ""
+        raise RuntimeError(
+            "Invalid database engine configured"
+            f"{hint}: ENGINE={engine!r}. This project requires PostgreSQL only."
+        )
+
+
 def is_localhost_url(value):
     if not value:
         return False

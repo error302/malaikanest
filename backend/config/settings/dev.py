@@ -1,6 +1,7 @@
 from .base import *
 import os
 from pathlib import Path
+from .guards import enforce_postgresql_only
 
 DEBUG = True
 
@@ -16,6 +17,8 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
+
+enforce_postgresql_only(DATABASES, context="dev")
 
 print('Running in DEVELOPMENT mode with PostgreSQL')
 

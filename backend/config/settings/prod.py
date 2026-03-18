@@ -2,7 +2,7 @@ from .base import *
 import urllib.parse
 import cloudinary
 
-from .guards import validate_production_env
+from .guards import enforce_postgresql_only, validate_production_env
 
 DEBUG = False
 
@@ -150,6 +150,8 @@ else:
         }
     }
 
+enforce_postgresql_only(DATABASES, context="prod")
+
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -173,8 +175,5 @@ LOGGING["handlers"]["file"]["level"] = "WARNING"
 LOGGING["loggers"]["django"]["level"] = "WARNING"
 
 validate_production_env(os.environ)
-
-if DATABASES["default"]["NAME"] != "malaika_db":
-    raise Exception("Invalid database configuration. This project must use malaika_db.")
 
 print("Running in PRODUCTION mode")
