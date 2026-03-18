@@ -10,6 +10,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
     full_slug = serializers.CharField(read_only=True)
     level = serializers.IntegerField(read_only=True)
     image = serializers.ImageField(required=False, allow_null=True)
+    image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     image_full_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -23,6 +24,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             "parent",
             "group",
             "image",
+            "image_url",
             "image_full_url",
             "level",
         ]
@@ -46,6 +48,39 @@ class AdminCategorySerializer(serializers.ModelSerializer):
                 return f"{host}{url}"
             return f"https://{host}{url}"
         return None
+
+    def _download_image(self, image_url):
+        if not image_url:
+            return None
+        try:
+            import requests
+            from django.core.files.base import ContentFile
+            from urllib.parse import urlparse
+
+            response = requests.get(image_url, timeout=10)
+            if response.status_code == 200:
+                parsed = urlparse(image_url)
+                filename = parsed.path.split("/")[-1] or "category_image.jpg"
+                return ContentFile(response.content, name=filename)
+        except Exception:
+            pass
+        return None
+
+    def create(self, validated_data):
+        image_url = validated_data.pop("image_url", None)
+        if image_url:
+            downloaded = self._download_image(image_url)
+            if downloaded:
+                validated_data["image"] = downloaded
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        image_url = validated_data.pop("image_url", None)
+        if image_url:
+            downloaded = self._download_image(image_url)
+            if downloaded:
+                validated_data["image"] = downloaded
+        return super().update(instance, validated_data)
 
 
 class AdminProductSerializer(serializers.ModelSerializer):
