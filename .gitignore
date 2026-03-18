@@ -12,10 +12,15 @@ backend/.env
 .env
 .env.*
 *.log
+backend/staticfiles/
+backend/static/
 
 # Node
 node_modules/
 .next/
+out/
+.turbo/
+.vercel/
 npm-debug.log
 yarn-error.log
 

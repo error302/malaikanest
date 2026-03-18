@@ -131,11 +131,11 @@ api.interceptors.request.use((config) => {
   // Add JWT token from localStorage if available (for compatibility)
   // Also check for cookies - browser will send cookies automatically
   if (typeof window !== 'undefined') {
-    // Check for token in localStorage first (for backward compatibility)
+    // Only attach an Authorization header when the token looks like a real JWT.
+    // Using placeholders (e.g. "admin_session") breaks cookie-based auth and token refresh.
     const token = localStorage.getItem('malaika_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+    const looksLikeJwt = !!token && token.split('.').length === 3
+    if (looksLikeJwt) config.headers.Authorization = `Bearer ${token}`
   }
 
   return config

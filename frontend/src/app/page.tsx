@@ -156,7 +156,7 @@ export default function HomePage() {
       {/* 1. Hero Banner - Fixed: padding-bottom for trust pills */}
       <section className="pt-8 md:pt-12 px-4 pb-6">
         <div className="container-shell p-0">
-          <div className="relative overflow-hidden rounded-[26px] border border-default bg-[var(--bg-surface)] shadow-soft">
+          <div className="relative min-h-[360px] overflow-hidden rounded-[26px] border border-default bg-[var(--bg-surface)] shadow-soft md:min-h-[480px] lg:min-h-[560px]">
             <div className="absolute inset-0">
               {heroImage ? (
                 <SmartImage
@@ -175,7 +175,7 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,rgba(255,255,255,0.16),transparent_60%)]" />
             </div>
 
-            <div className="relative px-6 py-14 md:px-12 md:py-20 lg:px-16 pb-20">
+            <div className="relative flex min-h-[360px] flex-col justify-center px-6 py-14 pb-20 md:min-h-[480px] md:px-12 md:py-20 lg:min-h-[560px] lg:px-16">
               <div className="max-w-[42rem]">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/80">Baby and Maternity</p>
                 <h1 className="font-display mt-4 text-[38px] leading-[1.05] font-semibold text-white md:text-[54px] lg:text-[64px]">
@@ -212,45 +212,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* 2. Categories Grid - Fixed: consistent spacing */}
-      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
-        <div className="container-shell p-0">
-          <div className="mb-8 text-center md:mb-10">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">Browse</p>
-            <h2 className="font-display mt-3 text-[28px] text-[var(--text-primary)] md:text-[32px]">Shop by Category</h2>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {[
-              { name: "Baby", slug: "baby", icon: "👶" },
-              { name: "Kids", slug: "kids", icon: "👕" },
-              { name: "Toys", slug: "toys", icon: "🧸" },
-              { name: "Feeding", slug: "feeding", icon: "🍼" },
-            ].map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/categories?category_path=${cat.slug}`}
-                className="group relative overflow-hidden rounded-[16px] border border-default bg-gradient-to-br from-rose-50 to-rose-100 p-6 shadow-soft transition-all hover:-translate-y-1 hover:shadow-hover"
-              >
-                <div className="flex flex-col items-center text-center">
-                  <span className="text-4xl">{cat.icon}</span>
-                  <p className="mt-3 text-lg font-semibold text-[var(--text-primary)]">{cat.name}</p>
-                  <p className="mt-1 text-xs text-[var(--text-secondary)]">Shop now</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-          
-          <div className="mt-6 text-center">
-            <Link href="/categories" className="text-sm font-semibold text-[var(--text-primary)] hover:underline">
-              View All Categories →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Featured Products - Fixed: center grid when few items */}
+      {/* 2. Featured Products - Fixed: center grid when few items */}
       <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
         <div className="container-shell p-0">
           <div className="mb-8 flex items-end justify-between">

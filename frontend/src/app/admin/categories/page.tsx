@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import api, { handleApiError } from '@/lib/api'
 import { shouldUseUnoptimizedImage } from '@/lib/media'
@@ -18,10 +19,12 @@ interface Category {
 }
 
 export default function CategoriesPage() {
+  const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [seeding, setSeeding] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [uploadingId, setUploadingId] = useState<number | null>(null)
   const [form, setForm] = useState({
@@ -42,9 +45,20 @@ export default function CategoriesPage() {
       setError('')
       const res = await api.get('/api/products/admin/categories/')
       setCategories(Array.isArray(res.data) ? res.data : [])
-    } catch (fetchError) {
+    } catch (fetchError: any) {
+      const status = fetchError?.response?.status
+      if (status === 401) {
+        setError('Session expired. Please log in again.')
+        setTimeout(() => router.replace('/admin/login'), 350)
+        return
+      }
+      if (status === 403) {
+        setError('Admin access required.')
+        setTimeout(() => router.replace('/admin/login'), 350)
+        return
+      }
       console.error('Error fetching categories:', fetchError)
-      setError('Unable to load categories.')
+      setError(handleApiError(fetchError, 'Unable to load categories.'))
     } finally {
       setLoading(false)
     }
@@ -53,6 +67,24 @@ export default function CategoriesPage() {
   useEffect(() => {
     fetchCategories()
   }, [])
+
+  const handleSeedDefaults = async () => {
+    if (!confirm('Restore the default category architecture? This is safe and idempotent.')) return
+
+    setSeeding(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      await api.post('/api/products/admin/categories/seed/')
+      await fetchCategories()
+      setSuccess('Default categories restored.')
+    } catch (seedError) {
+      setError(handleApiError(seedError, 'Could not restore default categories.'))
+    } finally {
+      setSeeding(false)
+    }
+  }
 
   const resetCreateForm = () => {
     setForm({ name: '', parent: '', description: '' })
@@ -147,9 +179,19 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="mb-2 text-2xl font-bold text-gray-800">Categories</h1>
-        <p className="text-sm text-gray-500">Manage the 3-level storefront hierarchy, descriptions, and category images.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="mb-2 text-2xl font-bold text-gray-800">Categories</h1>
+          <p className="text-sm text-gray-500">Manage the 3-level storefront hierarchy, descriptions, and category images.</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleSeedDefaults}
+          disabled={seeding}
+          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100 disabled:opacity-60"
+        >
+          {seeding ? 'Restoring...' : 'Restore Default Categories'}
+        </button>
       </div>
 
       <form onSubmit={handleAdd} className="rounded-xl bg-white p-6 shadow-md">
@@ -174,7 +216,7 @@ export default function CategoriesPage() {
             >
               <option value="">Top level</option>
               {sortedCategories.map((category) => (
-                <option key={category.id} value={category.id}>{`${'— '.repeat(category.level)}${category.name}`}</option>
+                <option key={category.id} value={category.id}>{`${'-- '.repeat(category.level)}${category.name}`}</option>
               ))}
             </select>
           </label>
@@ -254,7 +296,7 @@ export default function CategoriesPage() {
                     </label>
                   </div>
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-800">{`${'— '.repeat(category.level)}${category.name}`}</td>
+                <td className="px-6 py-4 font-medium text-gray-800">{`${'-- '.repeat(category.level)}${category.name}`}</td>
                 <td className="px-6 py-4 font-mono text-sm text-gray-500">/{category.full_slug}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">Level {category.level + 1}</td>
                 <td className="px-6 py-4">

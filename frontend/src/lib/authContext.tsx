@@ -102,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Proceed with local logout regardless of network failure.
     } finally {
       localStorage.removeItem(USER_KEY)
+      localStorage.removeItem(TOKEN_KEY)
       setUser(null)
     }
   }, [])

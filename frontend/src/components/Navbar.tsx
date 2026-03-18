@@ -18,6 +18,15 @@ const staticNav = [
   { label: "Best Sellers", href: "/best-sellers" },
 ]
 
+const fallbackShopGroups = [
+  { label: "Clothing", href: "/clothing", note: "Baby, toddler, and kids apparel" },
+  { label: "Baby Essentials", href: "/baby-essentials", note: "Feeding, diapering, bath, health" },
+  { label: "Nursery", href: "/nursery", note: "Bedding, decor, and furniture" },
+  { label: "Toys & Learning", href: "/toys", note: "Soft, educational, teething" },
+  { label: "Travel & Safety", href: "/travel", note: "Strollers, carriers, gates" },
+  { label: "Gifts", href: "/gifts", note: "Gift sets and starter kits" },
+]
+
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -119,12 +128,28 @@ export default function Navbar() {
                             </div>
                           ))
                         ) : (
-                          <div className="md:col-span-3 rounded-[14px] border border-default bg-[var(--bg-primary)] px-4 py-6 text-center">
-                            <p className="text-sm font-semibold text-[var(--text-primary)]">No categories found yet.</p>
-                            <p className="mt-1 text-sm text-[var(--text-secondary)]">Add categories in Admin, or refresh the page.</p>
-                            <Link href="/categories" className="btn-secondary mt-4 inline-flex px-6">
-                              Browse All Products
-                            </Link>
+                          <div className="md:col-span-3 rounded-[14px] border border-default bg-[var(--bg-primary)] px-4 py-6">
+                            <p className="text-sm font-semibold text-[var(--text-primary)]">Shop our collections</p>
+                            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                              Categories will appear here once added in Admin. For now, you can browse by collection:
+                            </p>
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                              {fallbackShopGroups.map((group) => (
+                                <Link
+                                  key={group.label}
+                                  href={group.href}
+                                  className="rounded-[14px] border border-default bg-surface px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+                                >
+                                  <p className="text-sm font-semibold text-[var(--text-primary)]">{group.label}</p>
+                                  <p className="mt-1 text-xs text-[var(--text-secondary)]">{group.note}</p>
+                                </Link>
+                              ))}
+                            </div>
+                            <div className="mt-5 text-center">
+                              <Link href="/categories" className="btn-secondary inline-flex px-6">
+                                Browse All Products
+                              </Link>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -249,7 +274,7 @@ export default function Navbar() {
         {mobileOpen && (
           <div className="mb-4 rounded-xl border border-default bg-surface p-4 xl:hidden">
             <nav className="flex flex-col gap-1" aria-label="Mobile Primary">
-              {[...staticNav.slice(0, 2), ...categoryLinks, ...staticNav.slice(2)].map((item) => (
+              {[...staticNav.slice(0, 2), ...(categoryLinks.length ? categoryLinks : fallbackShopGroups), ...staticNav.slice(2)].map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}

@@ -1,6 +1,9 @@
+import io
+
 from django.db.models import Q
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
+from django.core.management import call_command
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
@@ -72,6 +75,19 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
                 {"detail": "This category cannot be deleted because it is used by products. Move or delete the products first."}
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["post"], url_path="seed")
+    def seed_defaults(self, request):
+        """
+        Rebuild (idempotently) the production category architecture.
+
+        This calls the existing management command so admins can recover categories
+        from the dashboard without SSH access.
+        """
+        output = io.StringIO()
+        with transaction.atomic():
+            call_command("seed_categories", stdout=output)
+        return Response({"detail": "Category seeding complete.", "log": output.getvalue()})
 
 
 class AdminBannerViewSet(viewsets.ModelViewSet):

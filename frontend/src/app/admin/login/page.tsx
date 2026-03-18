@@ -27,9 +27,9 @@ export default function AdminLogin() {
       if (captchaRequired) payload.captcha_token = captchaToken
       await api.post('/api/accounts/admin/login/', payload)
 
-      // Mark that an authenticated admin session exists so the API
-      // client will automatically refresh JWT cookies on 401s.
-      localStorage.setItem('malaika_token', 'admin_session')
+      // Admin auth is cookie-based (httpOnly). Ensure we don't keep any legacy
+      // localStorage token/placeholder that could override cookie auth.
+      localStorage.removeItem('malaika_token')
 
       router.push('/admin')
       router.refresh()
