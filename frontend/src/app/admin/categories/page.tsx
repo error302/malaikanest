@@ -34,6 +34,7 @@ export default function CategoriesPage() {
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState('')
 
   const sortedCategories = useMemo(
     () => [...categories].sort((a, b) => a.full_slug.localeCompare(b.full_slug)),
@@ -90,6 +91,7 @@ export default function CategoriesPage() {
     setForm({ name: '', parent: '', description: '' })
     setImageFile(null)
     setImagePreview(null)
+    setImageUrl('')
   }
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -106,6 +108,7 @@ export default function CategoriesPage() {
       payload.append('description', form.description.trim())
       if (form.parent) payload.append('parent', form.parent)
       if (imageFile) payload.append('image', imageFile)
+      if (imageUrl.trim()) payload.append('image_url', imageUrl.trim())
 
       const res = await api.post('/api/products/admin/categories/', payload)
       setCategories((current) => [...current, res.data])
@@ -238,6 +241,16 @@ export default function CategoriesPage() {
               accept="image/png,image/jpeg,image/webp"
               onChange={(e) => handleImageSelect(e.target.files?.[0] || null)}
               className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            />
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => {
+                setImageUrl(e.target.value)
+                if (e.target.value) setImageFile(null)
+              }}
+              placeholder="Or paste Cloudinary URL"
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm"
             />
           </label>
         </div>
