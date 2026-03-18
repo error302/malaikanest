@@ -5,7 +5,7 @@ import Image from "next/image"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Filter, Search } from "lucide-react"
 
-import ProductCard from "./ProductCard"
+import ProductCard from "@/components/ProductCard"
 import api from "../lib/api"
 import { shouldUseUnoptimizedImage } from "../lib/media"
 import {
@@ -27,11 +27,10 @@ const getFallbackCategories = (): CategoryNode[] => [
     full_slug: "baby",
     description: "Essentials for newborns to 2 years",
     children: [
-      { id: 11, name: "Clothing", slug: "clothing", full_slug: "baby/clothing", description: "Onesies, rompers, sets", children: [], depth: 1 },
-      { id: 12, name: "Essentials", slug: "essentials", full_slug: "baby/essentials", description: "Diapers, wipes, skincare", children: [], depth: 1 },
-      { id: 13, name: "Gear", slug: "gear", full_slug: "baby/gear", description: "Strollers, carriers", children: [], depth: 1 },
+      { id: 11, name: "Clothing", slug: "clothing", full_slug: "baby/clothing", description: "Onesies, rompers, sets", children: [] },
+      { id: 12, name: "Essentials", slug: "essentials", full_slug: "baby/essentials", description: "Diapers, wipes, skincare", children: [] },
+      { id: 13, name: "Gear", slug: "gear", full_slug: "baby/gear", description: "Strollers, carriers", children: [] },
     ],
-    depth: 0,
   },
   {
     id: 2,
@@ -40,10 +39,9 @@ const getFallbackCategories = (): CategoryNode[] => [
     full_slug: "kids",
     description: "Clothing for 2-12 years",
     children: [
-      { id: 21, name: "Boys", slug: "boys", full_slug: "kids/boys", description: "Shirts, pants, hoodies", children: [], depth: 1 },
-      { id: 22, name: "Girls", slug: "girls", full_slug: "kids/girls", description: "Dresses, tops, skirts", children: [], depth: 1 },
+      { id: 21, name: "Boys", slug: "boys", full_slug: "kids/boys", description: "Shirts, pants, hoodies", children: [] },
+      { id: 22, name: "Girls", slug: "girls", full_slug: "kids/girls", description: "Dresses, tops, skirts", children: [] },
     ],
-    depth: 0,
   },
   {
     id: 3,
@@ -52,11 +50,10 @@ const getFallbackCategories = (): CategoryNode[] => [
     full_slug: "toys",
     description: "Fun and educational toys",
     children: [
-      { id: 31, name: "Educational", slug: "educational", full_slug: "toys/educational", description: "Learning toys", children: [], depth: 1 },
-      { id: 32, name: "Soft Toys", slug: "soft-toys", full_slug: "toys/soft-toys", description: "Plushies and cuddly toys", children: [], depth: 1 },
-      { id: 33, name: "Outdoor", slug: "outdoor", full_slug: "toys/outdoor", description: "Outdoor play toys", children: [], depth: 1 },
+      { id: 31, name: "Educational", slug: "educational", full_slug: "toys/educational", description: "Learning toys", children: [] },
+      { id: 32, name: "Soft Toys", slug: "soft-toys", full_slug: "toys/soft-toys", description: "Plushies and cuddly toys", children: [] },
+      { id: 33, name: "Outdoor", slug: "outdoor", full_slug: "toys/outdoor", description: "Outdoor play toys", children: [] },
     ],
-    depth: 0,
   },
   {
     id: 4,
@@ -65,10 +62,9 @@ const getFallbackCategories = (): CategoryNode[] => [
     full_slug: "feeding",
     description: "Feeding essentials",
     children: [
-      { id: 41, name: "Bottles", slug: "bottles", full_slug: "feeding/bottles", description: "Baby bottles", children: [], depth: 1 },
-      { id: 42, name: "Sippy Cups", slug: "sippy-cups", full_slug: "feeding/sippy-cups", description: "Transition cups", children: [], depth: 1 },
+      { id: 41, name: "Bottles", slug: "bottles", full_slug: "feeding/bottles", description: "Baby bottles", children: [] },
+      { id: 42, name: "Sippy Cups", slug: "sippy-cups", full_slug: "feeding/sippy-cups", description: "Transition cups", children: [] },
     ],
-    depth: 0,
   },
   {
     id: 5,
@@ -77,10 +73,9 @@ const getFallbackCategories = (): CategoryNode[] => [
     full_slug: "nursery",
     description: "Baby room essentials",
     children: [
-      { id: 51, name: "Bedding", slug: "bedding", full_slug: "nursery/bedding", description: "Crib sheets, mattresses", children: [], depth: 1 },
-      { id: 52, name: "Blankets", slug: "blankets", full_slug: "nursery/blankets", description: "Swaddles, comforters", children: [], depth: 1 },
+      { id: 51, name: "Bedding", slug: "bedding", full_slug: "nursery/bedding", description: "Crib sheets, mattresses", children: [] },
+      { id: 52, name: "Blankets", slug: "blankets", full_slug: "nursery/blankets", description: "Swaddles, comforters", children: [] },
     ],
-    depth: 0,
   },
   {
     id: 6,
@@ -89,10 +84,9 @@ const getFallbackCategories = (): CategoryNode[] => [
     full_slug: "accessories",
     description: "Complete the look",
     children: [
-      { id: 61, name: "Shoes", slug: "shoes", full_slug: "accessories/shoes", description: "Baby and kids shoes", children: [], depth: 1 },
-      { id: 62, name: "Hats", slug: "hats", full_slug: "accessories/hats", description: "Sun hats, beanies", children: [], depth: 1 },
+      { id: 61, name: "Shoes", slug: "shoes", full_slug: "accessories/shoes", description: "Baby and kids shoes", children: [] },
+      { id: 62, name: "Hats", slug: "hats", full_slug: "accessories/hats", description: "Sun hats, beanies", children: [] },
     ],
-    depth: 0,
   },
 ]
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, CheckCircle2, Heart, Leaf, ShieldCheck, Star, Truck, ShoppingCart } from "lucide-react"
+import { ArrowRight, Star } from "lucide-react"
 
 import api from "../lib/api"
 import { getImageUrl } from "../lib/media"
@@ -70,7 +70,6 @@ function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title:
 }
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default function HomePage() {
   const { add } = useCart()
@@ -136,8 +135,6 @@ export default function HomePage() {
       bannerImage ||
       products.find((p) => p.image)?.image ||
       null
-    // Always pass through getImageUrl so relative paths like 'banners/x.jpg'
-    // become absolute URLs and render correctly in production.
     return rawSrc ? getImageUrl(rawSrc) : null
   }, [heroBanner, isMobile, products])
 
@@ -153,11 +150,11 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-20 overflow-x-hidden">
+    <div className="flex flex-col pb-20 overflow-x-hidden">
       <JsonLd data={organizationSchema} />
       
-      {/* 1. Hero Banner */}
-      <section className="pt-8 md:pt-12 px-4">
+      {/* 1. Hero Banner - Fixed: padding-bottom for trust pills */}
+      <section className="pt-8 md:pt-12 px-4 pb-6">
         <div className="container-shell p-0">
           <div className="relative overflow-hidden rounded-[26px] border border-default bg-[var(--bg-surface)] shadow-soft">
             <div className="absolute inset-0">
@@ -178,7 +175,7 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,rgba(255,255,255,0.16),transparent_60%)]" />
             </div>
 
-            <div className="relative px-6 py-14 md:px-12 md:py-20 lg:px-16">
+            <div className="relative px-6 py-14 md:px-12 md:py-20 lg:px-16 pb-20">
               <div className="max-w-[42rem]">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/80">Baby and Maternity</p>
                 <h1 className="font-display mt-4 text-[38px] leading-[1.05] font-semibold text-white md:text-[54px] lg:text-[64px]">
@@ -204,6 +201,7 @@ export default function HomePage() {
                   </Link>
                 </div>
 
+                {/* Fixed: margin-bottom on trust pills */}
                 <div className="mt-9 flex flex-wrap items-center gap-3 text-xs text-white/85">
                   <span className="rounded-full border border-white/25 bg-white/10 px-3 py-2 backdrop-blur">Secure M-Pesa</span>
                   <span className="rounded-full border border-white/25 bg-white/10 px-3 py-2 backdrop-blur">Fast Delivery</span>
@@ -215,25 +213,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. Categories Grid */}
-      <section className="py-10 px-4">
+      {/* 2. Categories Grid - Fixed: consistent spacing */}
+      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
         <div className="container-shell p-0">
           <div className="mb-8 text-center md:mb-10">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">Browse</p>
             <h2 className="font-display mt-3 text-[28px] text-[var(--text-primary)] md:text-[32px]">Shop by Category</h2>
           </div>
           
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              { name: "Baby", slug: "baby", icon: "👶", color: "from-rose-100 to-rose-50" },
-              { name: "Kids", slug: "kids", icon: "👕", color: "from-blue-100 to-blue-50" },
-              { name: "Toys", slug: "toys", icon: "🧸", color: "from-amber-100 to-amber-50" },
-              { name: "Feeding", slug: "feeding", icon: "🍼", color: "from-emerald-100 to-emerald-50" },
+              { name: "Baby", slug: "baby", icon: "👶" },
+              { name: "Kids", slug: "kids", icon: "👕" },
+              { name: "Toys", slug: "toys", icon: "🧸" },
+              { name: "Feeding", slug: "feeding", icon: "🍼" },
             ].map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/categories?category_path=${cat.slug}`}
-                className="group relative overflow-hidden rounded-[16px] border border-default bg-gradient-to-br p-6 shadow-soft transition-all hover:-translate-y-1 hover:shadow-hover"
+                className="group relative overflow-hidden rounded-[16px] border border-default bg-gradient-to-br from-rose-50 to-rose-100 p-6 shadow-soft transition-all hover:-translate-y-1 hover:shadow-hover"
               >
                 <div className="flex flex-col items-center text-center">
                   <span className="text-4xl">{cat.icon}</span>
@@ -252,8 +250,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Featured Products */}
-      <section className="py-10 px-4">
+      {/* 3. Featured Products - Fixed: center grid when few items */}
+      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
         <div className="container-shell p-0">
           <div className="mb-8 flex items-end justify-between">
             <h2 className="text-[28px] font-bold text-text-primary md:text-[34px]">Featured Products</h2>
@@ -262,17 +260,20 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {!loadingProducts &&
+          <div className={`grid gap-4 ${featuredProducts.length > 0 && featuredProducts.length < 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-center' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
+            {!loadingProducts && featuredProducts.length > 0 ? (
               featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
-              ))}
+              ))
+            ) : !loadingProducts ? (
+              <p className="col-span-full text-center text-[var(--text-secondary)] py-10">No featured products yet.</p>
+            ) : null}
           </div>
         </div>
       </section>
 
-      {/* 4. Popular Products (New Arrivals) */}
-      <section className="py-10 px-4">
+      {/* 4. Popular Products - Fixed: center grid when few items, consistent spacing */}
+      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
         <div className="container-shell p-0">
           <div className="mb-8 flex items-end justify-between">
             <h2 className="text-[28px] font-bold text-text-primary md:text-[34px]">Popular Items</h2>
@@ -281,17 +282,20 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {!loadingProducts &&
+          <div className={`grid gap-4 ${products.length > 0 && products.length < 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-center' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
+            {!loadingProducts && products.length > 0 ? (
               products.slice(0, 10).map((product) => (
                 <ProductCard key={product.id} product={product} />
-              ))}
+              ))
+            ) : !loadingProducts ? (
+              <p className="col-span-full text-center text-[var(--text-secondary)] py-10">No products available yet.</p>
+            ) : null}
           </div>
         </div>
       </section>
 
-      {/* 5. Customer Reviews */}
-      <section className="py-12 px-4">
+      {/* 5. Customer Reviews - Fixed: compact empty state */}
+      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
         <div className="container-shell p-0">
           <SectionHeading title="Customer Reviews" subtitle="Real experiences from families in our community." />
 
@@ -318,13 +322,14 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[22px] border border-default bg-[var(--bg-soft)] p-10 text-center shadow-soft">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white ring-1 ring-black/5">
-                <Star size={26} className="text-[var(--gold)]" />
+            /* Fixed: compact empty state */
+            <div className="rounded-[18px] border border-default bg-[var(--bg-soft)] px-6 py-8 text-center shadow-soft">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white ring-1 ring-black/5">
+                <Star size={24} className="text-[var(--gold)]" />
               </div>
-              <p className="mt-5 text-[18px] text-text-primary">No reviews yet, be the first.</p>
+              <p className="mt-4 text-[18px] text-text-primary">No reviews yet, be the first.</p>
               <p className="mt-2 text-sm text-text-secondary">Your feedback helps other parents shop with confidence.</p>
-              <Link href="/categories" className="btn-primary mt-7 inline-flex items-center justify-center">
+              <Link href="/categories" className="btn-primary mt-6 inline-flex items-center justify-center">
                 Shop Now
               </Link>
             </div>
@@ -332,8 +337,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. CTA Banner */}
-      <section className="px-4">
+      {/* 6. CTA Banner - Fixed: consistent spacing */}
+      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
         <div className="container-shell p-0">
           <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-secondary)] px-6 py-10 text-center md:px-12 md:py-14">
             <div className="relative z-10">
@@ -363,8 +368,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. Trust Strip (Above Footer) */}
-      <section className="pb-8">
+      {/* 7. Trust Strip - Fixed: margin to separate from footer */}
+      <section className="px-4 pb-12">
         <TrustBadges />
       </section>
     </div>
