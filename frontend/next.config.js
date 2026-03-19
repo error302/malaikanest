@@ -56,6 +56,24 @@ const nextConfig = {
         ],
       },
       {
+        source: '/',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/((?!_next/static|_next/image).*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, s-maxage=0, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
         source: '/static/:path*',
         headers: [
           {

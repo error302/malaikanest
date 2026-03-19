@@ -70,6 +70,7 @@ function SectionHeading({ eyebrow, title, subtitle }: { eyebrow?: string; title:
 }
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default function HomePage() {
   const { add } = useCart()
