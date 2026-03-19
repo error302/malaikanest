@@ -1,22 +1,83 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import api from '@/lib/api'
 import Turnstile from '@/components/Turnstile'
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void
+          renderButton: (element: HTMLElement, config: any) => void
+          prompt: () => void
+        }
+      }
+    }
+  }
+}
+
 export default function RegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({ email: '', password: '', phone: '', first_name: '', last_name: '' })
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
 
   const captchaSiteKey = process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY || ''
   const captchaRequired = Boolean(captchaSiteKey)
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''
+
+  useEffect(() => {
+    if (!googleClientId || typeof window === 'undefined') return
+
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleResponse,
+        })
+        const buttonDiv = document.getElementById('google-signup-button')
+        if (buttonDiv) {
+          window.google.accounts.id.renderButton(buttonDiv, {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+          })
+        }
+      }
+    }
+    document.body.appendChild(script)
+  }, [googleClientId])
+
+  const handleGoogleResponse = async (response: any) => {
+    if (!response.credential) return
+
+    setGoogleLoading(true)
+    setError('')
+
+    try {
+      await api.post('/api/accounts/google/', {
+        token: response.credential,
+      })
+      router.push('/')
+      router.refresh()
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Google sign-up failed')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -52,8 +113,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="pb-20 pt-10">
-      <div className="container-shell">
+    <div className="flex min-h-[calc(100vh-200px)] items-center justify-center py-8">
+      <div className="container-shell w-full">
         <div className="mx-auto max-w-xl rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:p-8">
           <div className="mb-6 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Account</p>
@@ -96,6 +157,22 @@ export default function RegisterPage() {
             <button className="btn-primary w-full" type="submit" disabled={loading || (captchaRequired && !captchaToken)}>
               {loading ? 'Creating...' : 'Create account'}
             </button>
+
+            {googleClientId && (
+              <>
+                <div className="relative flex items-center justify-center">
+                  <span className="absolute inset-x-0 border-t border-gray-200"></span>
+                  <span className="relative bg-surface px-4 text-sm text-[var(--text-secondary)]">or</span>
+                </div>
+                <div id="google-signup-button" className={googleLoading ? 'opacity-50 pointer-events-none' : ''}>
+                  {googleLoading && (
+                    <div className="flex h-10 items-center justify-center rounded-lg border border-gray-300 bg-white">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             <p className="text-center text-sm text-[var(--text-secondary)]">
               Already have an account? <Link href="/login" className="font-semibold text-[var(--text-primary)] underline">Sign in</Link>
