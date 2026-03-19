@@ -250,6 +250,45 @@ class CartViewSet(viewsets.ViewSet):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["post"], url_path="merge", permission_classes=[permissions.IsAuthenticated])
+    def merge(self, request):
+        """
+        BUG-CART-01: Merge guest cart into user cart on login.
+        Combines quantities for same products.
+        """
+        session_key = request.data.get("session_key")
+
+        if not session_key:
+            return Response({"detail": "No session key provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        guest_cart = Cart.objects.filter(session_key=session_key, user=None).first()
+        if not guest_cart:
+            cart = self._get_prefetched_cart(request.user.cart.id if hasattr(request.user, 'cart') else 0)
+            return Response(CartSerializer(cart).data)
+
+        user_cart, _ = Cart.objects.get_or_create(user=request.user)
+
+        with transaction.atomic():
+            for item in guest_cart.items.all():
+                user_item, created = CartItem.objects.get_or_create(
+                    cart=user_cart,
+                    product=item.product,
+                    defaults={"quantity": item.quantity}
+                )
+                if not created:
+                    try:
+                        inv = Inventory.objects.get(product=item.product)
+                        max_qty = inv.available()
+                        user_item.quantity = min(user_item.quantity + item.quantity, max_qty)
+                    except Inventory.DoesNotExist:
+                        user_item.quantity += item.quantity
+                    user_item.save()
+            guest_cart.delete()
+
+        cart = self._get_prefetched_cart(user_cart.id)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
 
 class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Order.objects.all()
