@@ -41,6 +41,9 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         ip = get_client_ip(request)
         ua = request.META.get("HTTP_USER_AGENT", "")
 
+        if email:
+            request._log_email = email
+
         try:
             require_captcha(
                 request,
@@ -116,8 +119,8 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             # Remove tokens from body — they are now in HTTPOnly cookies only
             resp.data.pop("refresh", None)
             resp.data.pop("access", None)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to set auth cookies: %s", e)
         return resp
 
 
@@ -174,11 +177,13 @@ class CookieTokenRefreshView(APIView):
 
             try:
                 refresh.blacklist()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Token blacklist failed: %s", e)
 
             return resp
-        except (TokenError, User.DoesNotExist, Exception):
+        except TokenError:
+            return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
             return Response({"detail": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -195,6 +200,10 @@ class RegisterView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         ip = get_client_ip(request)
         ua = request.META.get("HTTP_USER_AGENT", "")
+
+        email = request.data.get("email", "")
+        if email:
+            request._log_email = email
 
         try:
             require_captcha(
@@ -346,3 +355,99 @@ def admin_session_view(request):
             "is_staff": bool(getattr(user, "is_staff", False)),
         }
     )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def google_auth_view(request):
+    """Handle Google OAuth token and authenticate/create user."""
+    import httpx
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    token = request.data.get("token")
+
+    request._log_email = "google_oauth"
+
+    if not token:
+        return Response({"detail": "Token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    google_client_id = getattr(settings, "GOOGLE_CLIENT_ID", None)
+    if not google_client_id:
+        return Response({"detail": "Google OAuth not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    try:
+        response = httpx.get(
+            f"https://oauth2.googleapis.com/tokeninfo",
+            params={"id_token": token},
+            timeout=10
+        )
+        if response.status_code != 200:
+            return Response({"detail": "Invalid Google token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token_info = response.json()
+        if token_info.get("aud") != google_client_id:
+            return Response({"detail": "Invalid Google token audience"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        google_email = token_info.get("email")
+        google_name = token_info.get("name", "")
+        google_picture = token_info.get("picture", "")
+
+        if not google_email:
+            return Response({"detail": "Email not provided by Google"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user, created = User.objects.get_or_create(
+            email=google_email,
+            defaults={
+                "username": google_email.split("@")[0][:150],
+                "first_name": google_name.split()[0] if google_name else "",
+                "last_name": " ".join(google_name.split()[1:]) if len(google_name.split()) > 1 else "",
+                "is_active": True,
+                "email_verified": True,
+            }
+        )
+
+        if created:
+            log_auth_event("google_register", email=google_email)
+        else:
+            if not user.is_active:
+                return Response({"detail": "Account is deactivated"}, status=status.HTTP_403_FORBIDDEN)
+            log_auth_event("google_login", email=google_email)
+
+        refresh = RefreshToken.for_user(user)
+        access = str(refresh.access_token)
+
+        resp = Response({"success": True, "user_id": user.id})
+
+        max_age = int(settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME", 86400 * 7))
+        refresh_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age)
+        resp.set_cookie(
+            settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"),
+            str(refresh),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite="Lax",
+            expires=refresh_expires,
+            path="/",
+        )
+
+        access_max_age = int(settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME", 300))
+        access_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=access_max_age)
+        resp.set_cookie(
+            "access_token",
+            access,
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite="Lax",
+            expires=access_expires,
+            path="/",
+        )
+
+        return resp
+
+    except httpx.HTTPError as e:
+        logger.error(f"Google token verification failed: {e}")
+        return Response({"detail": "Failed to verify Google token"}, status=status.HTTP_502_BAD_GATEWAY)
+    except Exception as e:
+        logger.error(f"Google auth error: {e}")
+        return Response({"detail": "Authentication failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

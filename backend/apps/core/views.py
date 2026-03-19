@@ -31,8 +31,9 @@ class HealthCheckView(APIView):
         try:
             connection.ensure_connection()
             checks["database"] = "ok"
-        except Exception as e:
-            checks["database"] = str(e)
+        except Exception:
+            logger.warning("Health check: database connection failed")
+            checks["database"] = "error"
             all_healthy = False
 
         # Redis cache check
@@ -41,10 +42,11 @@ class HealthCheckView(APIView):
             if cache.get("health_check") == "1":
                 checks["cache"] = "ok"
             else:
-                checks["cache"] = "failed"
+                checks["cache"] = "error"
                 all_healthy = False
-        except Exception as e:
-            checks["cache"] = str(e)
+        except Exception:
+            logger.warning("Health check: cache connection failed")
+            checks["cache"] = "error"
             all_healthy = False
 
         status_code = 200 if all_healthy else 503
@@ -178,5 +180,6 @@ class Pm2LogsView(APIView):
             with open(log_path, "r") as f:
                 lines = f.readlines()
                 return Response({"logs": lines[-200:]})
-        except Exception as e:
-            return Response({"error": str(e)})
+        except Exception:
+            logger.warning("PM2 logs endpoint: failed to read log file")
+            return Response({"error": "Unable to read log file"})

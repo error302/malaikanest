@@ -75,6 +75,7 @@ export default function HomePage() {
   const { add } = useCart()
 
   const [products, setProducts] = useState<Product[]>([])
+  const [newArrivals, setNewArrivals] = useState<Product[]>([])
   const [banners, setBanners] = useState<Banner[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
 
@@ -100,6 +101,14 @@ export default function HomePage() {
       })
       .catch(() => setProducts([]))
       .finally(() => setLoadingProducts(false))
+
+    api
+      .get("/api/products/products/?ordering=-created_at&group=clothing")
+      .then((res) => {
+        const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
+        setNewArrivals(rows.slice(0, 6))
+      })
+      .catch(() => setNewArrivals([]))
 
     api
       .get("/api/products/reviews/?featured=true")
@@ -212,10 +221,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      {/* 2. Featured Products - Fixed: center grid when few items */}
-      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
+      {/* 2. Featured Products */}
+      <section className="px-4" style={{ paddingTop: '24px', paddingBottom: '16px' }}>
         <div className="container-shell p-0">
-          <div className="mb-8 flex items-end justify-between">
+          <div className="mb-6 flex items-end justify-between">
             <h2 className="text-[28px] font-bold text-text-primary md:text-[34px]">Featured Products</h2>
             <Link href="/categories" className="text-sm font-semibold text-black hover:underline">
               View All
@@ -234,10 +243,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Popular Products - Fixed: center grid when few items, consistent spacing */}
-      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
+      {/* 3. Popular Products */}
+      <section className="px-4" style={{ paddingTop: '16px', paddingBottom: '16px' }}>
         <div className="container-shell p-0">
-          <div className="mb-8 flex items-end justify-between">
+          <div className="mb-6 flex items-end justify-between">
             <h2 className="text-[28px] font-bold text-text-primary md:text-[34px]">Popular Items</h2>
             <Link href="/categories" className="text-sm font-semibold text-black hover:underline">
               Browse More
@@ -256,8 +265,30 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. Customer Reviews - Fixed: compact empty state */}
-      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
+      {/* 4. New Arrivals - Clothing */}
+      <section className="px-4" style={{ paddingTop: '16px', paddingBottom: '24px' }}>
+        <div className="container-shell p-0">
+          <div className="mb-4 flex items-end justify-between">
+            <h2 className="text-[28px] font-bold text-text-primary md:text-[34px]">New Arrivals</h2>
+            <Link href="/categories?group=clothing" className="text-sm font-semibold text-black hover:underline">
+              View All
+            </Link>
+          </div>
+
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {!loadingProducts && newArrivals.length > 0 ? (
+              newArrivals.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : !loadingProducts ? (
+              <p className="col-span-full text-center text-[var(--text-secondary)] py-10">No new arrivals yet.</p>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Customer Reviews - Compact */}
+      <section className="px-4" style={{ paddingTop: '12px', paddingBottom: '16px' }}>
         <div className="container-shell p-0">
           <SectionHeading title="Customer Reviews" subtitle="Real experiences from families in our community." />
 
@@ -299,8 +330,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. CTA Banner - Fixed: consistent spacing */}
-      <section className="px-4" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
+      {/* 7. CTA Banner */}
+      <section className="px-4" style={{ paddingTop: '24px', paddingBottom: '24px' }}>
         <div className="container-shell p-0">
           <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-secondary)] px-6 py-10 text-center md:px-12 md:py-14">
             <div className="relative z-10">
@@ -330,8 +361,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. Trust Strip - Fixed: margin to separate from footer */}
-      <section className="px-4 pb-12">
+      {/* 8. Trust Strip - Almost touching footer */}
+      <section className="px-4 pb-2">
         <TrustBadges />
       </section>
     </div>

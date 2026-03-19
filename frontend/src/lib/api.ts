@@ -120,6 +120,19 @@ const api = axios.create({
   timeout: 30000,
 })
 
+// Token refresh queue to handle concurrent requests
+let isRefreshing = false
+let failedQueue: Array<{ resolve: (value?: any) => void; reject: (error?: any) => void }> = []
+
+const processQueue = (error: any) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    }
+  })
+  failedQueue = []
+}
+
 // Request interceptor
 api.interceptors.request.use((config) => {
   (config as any).metadata = { startTime: Date.now() }
@@ -217,13 +230,28 @@ api.interceptors.response.use(
       !originalRequest?._retry &&
       !isAuthEndpoint(originalRequest?.url)
 
-    if (shouldAttemptRefresh) {
+    if (shouldAttemptRefresh && originalRequest) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(() => api(originalRequest)).catch((err) => Promise.reject(err))
+      }
+
       originalRequest._retry = true
+      isRefreshing = true
+
       try {
         await api.post('/api/accounts/token/refresh/')
+        processQueue(null)
+        isRefreshing = false
         return api(originalRequest)
-      } catch {
-        // refresh failed
+      } catch (refreshError) {
+        processQueue(refreshError)
+        isRefreshing = false
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshError)
       }
     }
 

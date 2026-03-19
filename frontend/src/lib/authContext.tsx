@@ -34,6 +34,17 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 const USER_KEY = 'malaika_user_v1'
 const TOKEN_KEY = 'malaika_token'
+const SESSION_KEY = 'malaika_session_key'
+
+const getSessionKey = (): string | null => {
+  if (typeof window === 'undefined') return null
+  let key = localStorage.getItem(SESSION_KEY)
+  if (!key) {
+    key = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    localStorage.setItem(SESSION_KEY, key)
+  }
+  return key
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -87,8 +98,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const payload: Record<string, string> = { email, password }
     if (captchaToken) payload.captcha_token = captchaToken
 
+    // Store session key before login to merge guest cart
+    const sessionKey = getSessionKey()
+
     // Backend sets httponly secure cookies automatically.
     await api.post('/api/accounts/token/', payload)
+
+    // Merge guest cart into user cart
+    if (sessionKey) {
+      try {
+        await api.post('/api/orders/cart/merge/', { session_key: sessionKey })
+      } catch {
+        // Ignore merge errors
+      }
+    }
 
     // Check auth again to ensure user session is fully instantiated.
     await checkAuth()

@@ -245,6 +245,10 @@ class RequestLoggingMiddleware:
 
         log_level = logging.WARNING if response.status_code >= 400 else logging.INFO
 
+        _email_mask = getattr(request, '_log_email', None)
+        if _email_mask:
+            _email_mask = _email_mask[:2] + '***'
+
         request_logger.log(
             log_level,
             'request '
@@ -254,8 +258,8 @@ class RequestLoggingMiddleware:
             request.path,
             response.status_code,
             duration_ms,
-            user,
-            request.META.get('REMOTE_ADDR', 'unknown'),
+            _email_mask or user,
+            request.META.get('REMOTE_ADDR', 'unknown')[:3] + '***',
         )
 
         response['X-Request-ID'] = request_id

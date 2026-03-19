@@ -1,7 +1,10 @@
 import os
 import json
+import logging
 import requests
 from typing import Optional, Dict, Any, List
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaClient:
@@ -10,7 +13,6 @@ class OllamaClient:
         self.base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.model = os.getenv("OLLAMA_MODEL", "llama2")
 
-        # Set up headers for authentication if API key is provided
         self.headers = {"Content-Type": "application/json"}
         if self.api_key:
             self.headers["Authorization"] = f"Bearer {self.api_key}"
@@ -20,6 +22,26 @@ class OllamaClient:
             raise Exception(
                 "Ollama API key not configured. Please set OLLAMA_API_KEY environment variable."
             )
+
+    def _make_request(self, endpoint: str, payload: Dict[str, Any], timeout: float = 30.0) -> Dict[str, Any]:
+        try:
+            response = requests.post(
+                f"{self.base_url}{endpoint}",
+                headers=self.headers,
+                json=payload,
+                timeout=timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.ConnectionError:
+            logger.warning(f"Ollama offline at {self.base_url} — returning empty response")
+            return {}
+        except requests.Timeout:
+            logger.warning(f"Ollama request timed out at {self.base_url}")
+            return {}
+        except requests.RequestException as e:
+            logger.error(f"Ollama request failed: {e}")
+            return {}
 
     def chat(
         self,
@@ -41,13 +63,11 @@ class OllamaClient:
             "stream": False,
         }
 
-        response = requests.post(
-            f"{self.base_url}/api/chat", headers=self.headers, json=payload
-        )
-        response.raise_for_status()
-
-        result = response.json()
-        return result["message"]["content"]
+        result = self._make_request("/api/chat", payload)
+        if not result:
+            return ""
+        
+        return result.get("message", {}).get("content", "")
 
     def chat_json(
         self,
@@ -67,19 +87,17 @@ class OllamaClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
             "stream": False,
-            "format": "json",  # Ollama uses format parameter for JSON mode
+            "format": "json",
         }
 
-        response = requests.post(
-            f"{self.base_url}/api/chat", headers=self.headers, json=payload
-        )
-        response.raise_for_status()
+        result = self._make_request("/api/chat", payload)
+        if not result:
+            return {"error": "AI service unavailable", "raw": ""}
 
-        result = response.json()
-        content = result["message"]["content"]
+        content = result.get("message", {}).get("content", "")
 
         try:
-            return json.loads(content)
+            return json.loads(content) if content else {}
         except json.JSONDecodeError:
             return {"error": "Failed to parse JSON", "raw": content}
 
@@ -88,13 +106,11 @@ class OllamaClient:
 
         payload = {"model": self.model, "prompt": text}
 
-        response = requests.post(
-            f"{self.base_url}/api/embeddings", headers=self.headers, json=payload
-        )
-        response.raise_for_status()
-
-        result = response.json()
-        return result["embedding"]
+        result = self._make_request("/api/embeddings", payload)
+        if not result:
+            return []
+        
+        return result.get("embedding", [])
 
     def batch_embeddings(self, texts: List[str]) -> List[List[float]]:
         if not texts:

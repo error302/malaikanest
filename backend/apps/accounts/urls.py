@@ -11,6 +11,7 @@ from .views import (
     AdminCookieTokenObtainPairView,
     CookieTokenRefreshView,
     admin_session_view,
+    google_auth_view,
 )
 
 urlpatterns = [
@@ -29,4 +30,5 @@ urlpatterns = [
         password_reset_confirm_view,
         name="password_reset_confirm",
     ),
+    path("google/", google_auth_view, name="google_auth"),
 ]
