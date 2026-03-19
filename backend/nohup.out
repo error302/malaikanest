@@ -1,0 +1,33 @@
+[2026-03-09 12:04:18 +0000] [433609] [INFO] Starting gunicorn 23.0.0
+[2026-03-09 12:04:18 +0000] [433609] [INFO] Listening at: unix:/home/mohameddosho20/malaikanest/gunicorn.sock (433609)
+[2026-03-09 12:04:18 +0000] [433609] [INFO] Using worker: sync
+[2026-03-09 12:04:18 +0000] [433610] [INFO] Booting worker with pid: 433610
+[2026-03-09 12:04:18 +0000] [433612] [INFO] Booting worker with pid: 433612
+[2026-03-09 12:04:18 +0000] [433613] [INFO] Booting worker with pid: 433613
+[2026-03-09 12:04:18 +0000] [433614] [INFO] Booting worker with pid: 433614
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+[2026-03-09 12:14:31 +0000] [433609] [ERROR] Worker (pid:433612) was sent SIGHUP!
+[2026-03-09 12:14:31 +0000] [433609] [ERROR] Worker (pid:433613) was sent SIGHUP!
+[2026-03-09 12:14:31 +0000] [433609] [ERROR] Worker (pid:433614) was sent SIGHUP!
+[2026-03-09 12:14:31 +0000] [433609] [ERROR] Worker (pid:433610) was sent SIGHUP!
+[2026-03-09 12:14:31 +0000] [434267] [INFO] Booting worker with pid: 434267
+[2026-03-09 12:14:31 +0000] [434268] [INFO] Booting worker with pid: 434268
+[2026-03-09 12:14:31 +0000] [433609] [INFO] Handling signal: hup
+[2026-03-09 12:14:31 +0000] [433609] [INFO] Hang up: Master
+[2026-03-09 12:14:31 +0000] [434269] [INFO] Booting worker with pid: 434269
+[2026-03-09 12:14:31 +0000] [434270] [INFO] Booting worker with pid: 434270
+[2026-03-09 12:14:31 +0000] [434271] [INFO] Booting worker with pid: 434271
+[2026-03-09 12:14:31 +0000] [434272] [INFO] Booting worker with pid: 434272
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+Running in DEVELOPMENT mode with PostgreSQL
+[2026-03-09 15:14:34 +0300] [434267] [INFO] Worker exiting (pid: 434267)
+[2026-03-09 15:14:34 +0300] [434268] [INFO] Worker exiting (pid: 434268)
+[2026-03-09 12:14:34 +0000] [433609] [ERROR] Worker (pid:434268) was sent SIGTERM!
+[2026-03-09 12:14:34 +0000] [433609] [ERROR] Worker (pid:434267) was sent SIGTERM!
