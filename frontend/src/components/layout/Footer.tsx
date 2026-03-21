@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Facebook, Instagram, MessageCircle, Phone, CreditCard, Heart } from 'lucide-react';
 
 const SHOP_LINKS = [
   { label: 'All Products', href: '/categories' },
@@ -20,10 +21,10 @@ const SUPPORT_LINKS = [
 ];
 
 const SOCIAL = [
-  { label: 'Facebook', href: 'https://facebook.com', icon: 'f' },
-  { label: 'Instagram', href: 'https://instagram.com', icon: '◎' },
-  { label: 'TikTok', href: 'https://tiktok.com', icon: '♪' },
-  { label: 'WhatsApp', href: 'https://wa.me/254726771321', icon: '💬' },
+  { label: 'Facebook', href: 'https://facebook.com', Icon: Facebook },
+  { label: 'Instagram', href: 'https://instagram.com', Icon: Instagram },
+  { label: 'TikTok', href: 'https://tiktok.com', Icon: MessageCircle },
+  { label: 'WhatsApp', href: 'https://wa.me/254726771321', Icon: MessageCircle },
 ];
 
 export default function Footer() {
@@ -44,7 +45,7 @@ export default function Footer() {
               />
               <div>
                 <div className="font-serif text-lg font-semibold text-[#1A3A2A]">Malaika Nest</div>
-                <div className="text-[9px] uppercase tracking-[0.14em] text-[#8A7060]">Baby &amp; Maternity</div>
+                <div className="text-[9px] uppercase tracking-[0.14em] text-[#8A7060]">Baby & Maternity</div>
               </div>
             </Link>
 
@@ -54,23 +55,23 @@ export default function Footer() {
 
             {/* Social icons */}
             <div className="flex gap-2 mb-5">
-              {SOCIAL.map((s) => (
+              {SOCIAL.map(({ label, href, Icon }) => (
                 <a
-                  key={s.label}
-                  href={s.href}
+                  key={label}
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={s.label}
-                  className="w-8 h-8 rounded-full border border-[#D8C9B8] flex items-center justify-center text-[#5C4033] hover:border-[#C9A96E] hover:text-[#1A3A2A] transition-all text-xs"
+                  aria-label={label}
+                  className="w-8 h-8 rounded-full border border-[#D8C9B8] flex items-center justify-center text-[#5C4033] hover:border-[#C9A96E] hover:text-[#1A3A2A] transition-all"
                 >
-                  {s.icon}
+                  <Icon size={14} />
                 </a>
               ))}
             </div>
 
             {/* M-Pesa call-out */}
             <div className="inline-flex items-center gap-2 bg-[#1A3A2A]/8 border border-[#1A3A2A]/15 rounded-lg px-3 py-2">
-              <span className="text-base">📱</span>
+              <CreditCard className="w-4 h-4 text-[#1A3A2A]" />
               <div>
                 <p className="text-[10px] text-[#5C4033] leading-none">Lipa Na M-Pesa</p>
                 <p className="text-xs font-semibold text-[#1A3A2A] leading-tight">Till: 3370347</p>
@@ -133,9 +134,9 @@ export default function Footer() {
               <li>
                 <a
                   href="tel:+254726771321"
-                  className="text-xs text-[#5C4033] hover:text-[#1A3A2A] transition-colors font-light"
+                  className="flex items-center gap-1 text-xs text-[#5C4033] hover:text-[#1A3A2A] transition-colors font-light"
                 >
-                  +254 726 771 321
+                  <Phone size={12} /> +254 726 771 321
                 </a>
               </li>
               <li className="text-xs text-[#5C4033] font-light">Mombasa, Kenya</li>
@@ -151,10 +152,10 @@ export default function Footer() {
         <div className="border-t border-[#E0D5C8]">
           <div className="max-w-[1380px] mx-auto px-6 lg:px-16 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-[11px] text-[#8A7060]">
-              © 2026 Malaika Nest. All rights reserved.
+              2026 Malaika Nest. All rights reserved.
             </p>
             <p className="text-[11px] text-[#8A7060] flex items-center gap-1">
-              Made with <span className="text-[#C4704A]">❤️</span> from Mombasa, Kenya
+              Made with <Heart size={12} className="text-[#C4704A] fill-[#C4704A]" /> from Mombasa, Kenya
             </p>
           </div>
         </div>

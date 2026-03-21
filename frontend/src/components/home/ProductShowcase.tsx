@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, ShoppingBag, Star, ArrowRight, Eye } from 'lucide-react';
-import api from '@/lib/api';
+import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
 
 interface Product {
@@ -60,8 +59,8 @@ function ProductCard({ product }: { product: Product }) {
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl bg-[#F5EFE6]">
-            🛍️
+          <div className="w-full h-full flex items-center justify-center bg-[#F5EFE6]">
+            <Package className="w-12 h-12 text-[#C9A96E]" />
           </div>
         )}
 
@@ -180,8 +179,8 @@ function FeaturedCard({ product }: { product: Product }) {
           onError={() => setImageError(true)}
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-8xl bg-[#F5EFE6]">
-          🌟
+        <div className="absolute inset-0 flex items-center justify-center bg-[#F5EFE6]">
+          <Sparkles className="w-20 h-20 text-[#C9A96E]" />
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -234,13 +233,13 @@ function FeaturedCard({ product }: { product: Product }) {
   );
 }
 
-const QUICK_CATEGORIES = [
-  { emoji: '👗', name: 'Clothing', href: '/categories', bg: 'bg-rose-50 hover:bg-rose-100' },
-  { emoji: '🍼', name: 'Essentials', href: '/categories', bg: 'bg-amber-50 hover:bg-amber-100' },
-  { emoji: '🛏️', name: 'Nursery', href: '/categories', bg: 'bg-sky-50 hover:bg-sky-100' },
-  { emoji: '🧸', name: 'Toys', href: '/categories', bg: 'bg-violet-50 hover:bg-violet-100' },
-  { emoji: '🚗', name: 'Travel', href: '/categories', bg: 'bg-green-50 hover:bg-green-100' },
-  { emoji: '🎁', name: 'Gifts', href: '/categories', bg: 'bg-pink-50 hover:bg-pink-100' },
+const CATEGORIES = [
+  { name: 'Clothing', href: '/categories', Icon: Shirt, color: 'bg-rose-50 hover:bg-rose-100' },
+  { name: 'Essentials', href: '/categories', Icon: Package, color: 'bg-amber-50 hover:bg-amber-100' },
+  { name: 'Nursery', href: '/categories', Icon: Home, color: 'bg-sky-50 hover:bg-sky-100' },
+  { name: 'Toys', href: '/categories', Icon: Gamepad2, color: 'bg-violet-50 hover:bg-violet-100' },
+  { name: 'Travel', href: '/categories', Icon: Car, color: 'bg-green-50 hover:bg-green-100' },
+  { name: 'Gifts', href: '/categories', Icon: Gift, color: 'bg-pink-50 hover:bg-pink-100' },
 ];
 
 export function CategoryQuickLinks() {
@@ -248,14 +247,14 @@ export function CategoryQuickLinks() {
     <section className="bg-[#FAF4EC] py-10 px-6 lg:px-16">
       <div className="max-w-[1380px] mx-auto">
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {QUICK_CATEGORIES.map((c) => (
+          {CATEGORIES.map(({ name, href, Icon, color }) => (
             <Link
-              key={c.name}
-              href={c.href}
-              className={`${c.bg} rounded-2xl py-5 flex flex-col items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md border border-transparent hover:border-[#C9A96E]/20`}
+              key={name}
+              href={href}
+              className={`${color} rounded-2xl py-5 flex flex-col items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md border border-transparent hover:border-[#C9A96E]/20`}
             >
-              <span className="text-3xl">{c.emoji}</span>
-              <span className="text-xs font-medium text-[#2C1810]">{c.name}</span>
+              <Icon className="w-7 h-7 text-[#1A3A2A]" />
+              <span className="text-xs font-medium text-[#2C1810]">{name}</span>
             </Link>
           ))}
         </div>
@@ -399,14 +398,14 @@ export function ProductSection({
   );
 }
 
-export function ValuePropsSection() {
-  const props = [
-    { icon: '🛡️', title: 'Safety Tested', body: 'Every item meets international child safety standards. We only stock what we\'d use ourselves.' },
-    { icon: '📱', title: 'M-Pesa Checkout', body: 'Instant STK Push to your phone. No card needed — just your M-Pesa PIN.' },
-    { icon: '🚀', title: 'Fast Delivery', body: 'Same-day in Mombasa. Next-day across Kenya. Free on orders over KES 3,000.' },
-    { icon: '💚', title: '100% Genuine', body: 'Zero counterfeits. Every product sourced from verified manufacturers.' },
-  ];
+const VALUE_PROPS = [
+  { Icon: Shield, title: 'Safety Tested', body: 'Every item meets international child safety standards. We only stock what we use ourselves.' },
+  { Icon: CreditCard, title: 'M-Pesa Checkout', body: 'Instant STK Push to your phone. No card needed.' },
+  { Icon: Truck, title: 'Fast Delivery', body: 'Same-day in Mombasa. Next-day across Kenya. Free on orders over KES 3,000.' },
+  { Icon: Sparkles, title: '100% Genuine', body: 'Zero counterfeits. Every product sourced from verified manufacturers.' },
+];
 
+export function ValuePropsSection() {
   return (
     <section className="py-14 px-6 lg:px-16 bg-[#FAF4EC]">
       <div className="max-w-[1380px] mx-auto">
@@ -417,14 +416,14 @@ export function ValuePropsSection() {
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {props.map((p) => (
+          {VALUE_PROPS.map(({ Icon, title, body }) => (
             <div
-              key={p.title}
+              key={title}
               className="bg-white rounded-2xl p-6 border border-[#EDE3D8] hover:border-[#C9A96E]/40 hover:shadow-md transition-all"
             >
-              <div className="text-3xl mb-4">{p.icon}</div>
-              <h3 className="font-semibold text-[#1A3A2A] mb-2">{p.title}</h3>
-              <p className="text-sm text-[#5C4033] leading-relaxed font-light">{p.body}</p>
+              <Icon className="w-8 h-8 text-[#C4704A] mb-4" />
+              <h3 className="font-semibold text-[#1A3A2A] mb-2">{title}</h3>
+              <p className="text-sm text-[#5C4033] leading-relaxed font-light">{body}</p>
             </div>
           ))}
         </div>
@@ -446,7 +445,7 @@ export function TestimonialsSection() {
         <div className="mb-8">
           <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[#C4704A] font-medium mb-1.5">
             <span className="block w-5 h-px bg-[#C4704A]" />
-            Real Reviews
+            Customer Reviews
           </p>
           <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#1A3A2A]">
             What Kenyan parents are saying
@@ -502,11 +501,11 @@ export function NewsletterSection() {
           New arrivals &amp; exclusive offers
         </h2>
         <p className="text-white/60 text-sm font-light mb-7 leading-relaxed">
-          Join 2,400+ Kenyan parents. No spam — just good products and honest deals.
+          Join 2,400+ Kenyan parents. No spam, just good products and honest deals.
         </p>
         {submitted ? (
           <div className="bg-[#E8C98A]/10 border border-[#E8C98A]/30 rounded-xl py-4 px-6 text-[#E8C98A] text-sm font-medium">
-            🎉 You&apos;re in! Welcome to the Malaika Nest family.
+            Welcome to the Malaika Nest family.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex gap-2 max-w-md mx-auto">

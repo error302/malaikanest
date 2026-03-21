@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CreditCard, Truck, CheckCircle } from 'lucide-react';
 
 interface Slide {
   image: string;
@@ -14,7 +14,6 @@ interface Slide {
   ctaHref: string;
   ctaSecondary?: string;
   ctaSecondaryHref?: string;
-  align?: 'left' | 'center';
 }
 
 const SLIDES: Slide[] = [
@@ -27,16 +26,14 @@ const SLIDES: Slide[] = [
     ctaHref: '/categories',
     ctaSecondary: 'Best Sellers',
     ctaSecondaryHref: '/best-sellers',
-    align: 'left',
   },
   {
     image: '/images/hero/hero-2.jpg',
     tag: 'Safe & Tested',
     headline: 'Clothing made\nfor soft skin.',
-    sub: 'Organic cotton onesies, rompers and sets — gentle on newborns, kind to parents\' budgets.',
+    sub: 'Organic cotton onesies, rompers and sets — gentle on newborns, kind to parents budgets.',
     cta: 'Shop Clothing',
     ctaHref: '/categories',
-    align: 'left',
   },
   {
     image: '/images/hero/hero-3.jpg',
@@ -45,7 +42,6 @@ const SLIDES: Slide[] = [
     sub: 'Beautifully curated gift sets for baby showers, newborns and milestones.',
     cta: 'Browse Gift Sets',
     ctaHref: '/categories',
-    align: 'left',
   },
 ];
 
@@ -53,6 +49,12 @@ const FALLBACK_GRADIENTS = [
   'from-[#1A3A2A] via-[#254D38] to-[#1A3A2A]',
   'from-[#3D2B1F] via-[#5C3D2E] to-[#3D2B1F]',
   'from-[#1C2E4A] via-[#253D5E] to-[#1C2E4A]',
+];
+
+const TRUST_BADGES = [
+  { Icon: CreditCard, label: 'Secure M-Pesa' },
+  { Icon: Truck, label: 'Fast Delivery' },
+  { Icon: CheckCircle, label: 'Parent Approved' },
 ];
 
 export default function HeroSection() {
@@ -139,7 +141,7 @@ export default function HeroSection() {
                 className="inline-flex items-center gap-2 bg-[#C4704A] hover:bg-[#D4835E] text-white font-medium text-sm px-7 py-3.5 rounded-full transition-colors tracking-wide"
               >
                 {slide.cta}
-                <span className="text-base">→</span>
+                <ChevronRight size={16} />
               </Link>
               {slide.ctaSecondary && (
                 <Link
@@ -152,17 +154,13 @@ export default function HeroSection() {
             </div>
 
             <div className="flex flex-wrap gap-x-5 gap-y-2 mt-8 pt-6 border-t border-white/10">
-              {[
-                { icon: '📱', label: 'Secure M-Pesa' },
-                { icon: '🚀', label: 'Fast Delivery' },
-                { icon: '✅', label: 'Parent Approved' },
-              ].map((b) => (
+              {TRUST_BADGES.map(({ Icon, label }) => (
                 <div
-                  key={b.label}
+                  key={label}
                   className="flex items-center gap-1.5 text-white/60 text-xs tracking-wide"
                 >
-                  <span>{b.icon}</span>
-                  {b.label}
+                  <Icon size={14} />
+                  {label}
                 </div>
               ))}
             </div>

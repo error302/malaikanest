@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Search, User, Heart, ChevronDown, X, Menu } from 'lucide-react';
+import { ShoppingBag, Search, User, Heart, ChevronDown, X, Menu, Shirt, Package, Home, Gamepad2, Car, Gift, Sparkles, Flame } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { useAuth } from '@/lib/authContext';
 
@@ -13,7 +13,7 @@ const SHOP_CATEGORIES = [
     name: 'Clothing',
     href: '/categories',
     description: 'Onesies, rompers & more',
-    emoji: '👗',
+    Icon: Shirt,
     color: 'bg-rose-50',
     featured: ['Newborn Sets', 'Toddler Tops', 'Sleepwear'],
   },
@@ -21,15 +21,15 @@ const SHOP_CATEGORIES = [
     name: 'Baby Essentials',
     href: '/categories',
     description: 'Feeding, bathing & care',
-    emoji: '🍼',
+    Icon: Package,
     color: 'bg-amber-50',
     featured: ['Feeding', 'Bath Time', 'Diapering'],
   },
   {
     name: 'Nursery',
     href: '/categories',
-    description: 'Furniture, bedding & décor',
-    emoji: '🛏️',
+    description: 'Furniture, bedding & decor',
+    Icon: Home,
     color: 'bg-sky-50',
     featured: ['Bedding', 'Furniture', 'Lighting'],
   },
@@ -37,15 +37,15 @@ const SHOP_CATEGORIES = [
     name: 'Toys & Learning',
     href: '/categories',
     description: 'Play, explore & grow',
-    emoji: '🧸',
+    Icon: Gamepad2,
     color: 'bg-violet-50',
-    featured: ['0–12 Months', 'Toddler Toys', 'Educational'],
+    featured: ['0-12 Months', 'Toddler Toys', 'Educational'],
   },
   {
     name: 'Travel & Safety',
     href: '/categories',
     description: 'Strollers, carriers & safety',
-    emoji: '🚗',
+    Icon: Car,
     color: 'bg-green-50',
     featured: ['Strollers', 'Car Seats', 'Baby Carriers'],
   },
@@ -53,7 +53,7 @@ const SHOP_CATEGORIES = [
     name: 'Gift Sets',
     href: '/categories',
     description: 'Curated bundles for every occasion',
-    emoji: '🎁',
+    Icon: Gift,
     color: 'bg-pink-50',
     featured: ['Newborn Gifts', 'Baby Shower', 'Milestone Gifts'],
   },
@@ -99,7 +99,7 @@ export default function Navbar() {
     <>
       {/* Announcement bar */}
       <div className="bg-[#1A3A2A] text-[#E8C98A] text-center text-xs py-2.5 px-4 font-light tracking-wide">
-        🎁 Free delivery on orders over <strong className="font-semibold">KES 3,000</strong>
+        Free delivery on orders over <strong className="font-semibold">KES 3,000</strong>
         &nbsp;·&nbsp; M-Pesa Till: <strong className="font-semibold">3370347</strong>
         &nbsp;·&nbsp; Same-day delivery in Mombasa
       </div>
@@ -255,9 +255,9 @@ export default function Navbar() {
                   className="group flex flex-col rounded-2xl border border-[#E8E0D5] hover:border-[#C9A96E]/60 hover:shadow-md transition-all duration-200 overflow-hidden bg-white"
                 >
                   <div
-                    className={`${cat.color} h-28 flex items-center justify-center text-4xl transition-transform duration-200 group-hover:scale-105`}
+                    className={`${cat.color} h-28 flex items-center justify-center transition-transform duration-200 group-hover:scale-105`}
                   >
-                    {cat.emoji}
+                    <cat.Icon className="w-10 h-10 text-[#1A3A2A]" />
                   </div>
                   <div className="p-3">
                     <div className="text-sm font-semibold text-[#1A3A2A] group-hover:text-[#C4704A] transition-colors">
@@ -287,23 +287,23 @@ export default function Navbar() {
                 <Link
                   href="/best-sellers"
                   onClick={() => setShopOpen(false)}
-                  className="text-sm text-[#C4704A] font-medium hover:underline"
+                  className="flex items-center gap-1 text-sm text-[#C4704A] font-medium hover:underline"
                 >
-                  🔥 Best Sellers
+                  <Flame size={14} /> Best Sellers
                 </Link>
                 <Link
                   href="/categories"
                   onClick={() => setShopOpen(false)}
-                  className="text-sm text-[#5C4033] hover:text-[#C4704A] transition-colors"
+                  className="flex items-center gap-1 text-sm text-[#5C4033] hover:text-[#C4704A] transition-colors"
                 >
-                  ✨ New Arrivals
+                  <Sparkles size={14} /> New Arrivals
                 </Link>
                 <Link
                   href="/categories"
                   onClick={() => setShopOpen(false)}
-                  className="text-sm text-[#5C4033] hover:text-[#C4704A] transition-colors"
+                  className="flex items-center gap-1 text-sm text-[#5C4033] hover:text-[#C4704A] transition-colors"
                 >
-                  🎁 Gift Ideas
+                  <Gift size={14} /> Gift Ideas
                 </Link>
               </div>
               <Link
@@ -388,7 +388,7 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-3 p-3 rounded-xl bg-[#F5EFE6] hover:bg-[#EDE3D8] transition-colors"
                   >
-                    <span className="text-2xl">{cat.emoji}</span>
+                    <cat.Icon className="w-6 h-6 text-[#1A3A2A]" />
                     <span className="text-sm font-medium text-[#1A3A2A]">{cat.name}</span>
                   </Link>
                 ))}
