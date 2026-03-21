@@ -1,14 +1,19 @@
 #!/bin/bash
+# Malaika Nest Backup Script
+# Cron: 0 2 * * * /var/www/malaikanest/deployment/backup.sh >> /var/log/malaikanest/backup.log 2>&1
 set -euo pipefail
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/malaikanest}"
 PG_USER="${PG_USER:-malaika_user}"
-PG_DB="${PG_DB:-malaika_db}"
+PG_DB="${PG_DB:-malaika_production}"
 PG_HOST="${PG_HOST:-localhost}"
-MEDIA_DIR="${MEDIA_DIR:-/home/mohameddosho20/malaikanest/backend/media}"
-RETENTION_DAYS="${RETENTION_DAYS:-14}"
+MEDIA_DIR="${MEDIA_DIR:-/var/www/malaikanest/backend/media}"
+RETENTION_DAYS="${RETENTION_DAYS:-7}"
 GCS_BUCKET="${GCS_BUCKET:-}"
 ALERT_WEBHOOK="${ALERT_WEBHOOK:-}"
+LOG_TAG="[$(date '+%Y-%m-%d %H:%M:%S')]"
+
+echo "$LOG_TAG Starting backup..."
 
 mkdir -p "$BACKUP_DIR"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")

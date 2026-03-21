@@ -2,7 +2,13 @@ from rest_framework import serializers
 
 from apps.orders.models import Order
 
-from .models import Banner, Brand, Category, Inventory, Product, Review, Wishlist
+from .models import Banner, Brand, Category, Inventory, Product, Review, Wishlist, Tag
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ("id", "name", "slug")
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -97,9 +103,13 @@ class ProductSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     discount_percentage = serializers.ReadOnlyField()
     in_stock = serializers.ReadOnlyField()
+    is_in_stock = serializers.SerializerMethodField()
     available_stock = serializers.ReadOnlyField()
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    meta_title = serializers.CharField(source="seo_title", read_only=True)
+    meta_description = serializers.CharField(source="seo_description", read_only=True)
 
     class Meta:
         model = Product
@@ -111,6 +121,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "description",
             "category",
             "brand",
+            "tags",
             "price",
             "compare_price",
             "discount_price",
@@ -119,6 +130,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "available_stock",
             "low_stock_threshold",
             "in_stock",
+            "is_in_stock",
             "weight",
             "gender",
             "age_group",
@@ -128,6 +140,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "status",
             "seo_title",
             "seo_description",
+            "meta_title",
+            "meta_description",
             "image",
             "is_active",
             "avg_rating",
@@ -164,6 +178,12 @@ class ProductSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             return f"https://malaikanest.duckdns.org{url}"
         return None
+
+    def get_is_in_stock(self, obj):
+        try:
+            return obj.available_stock > 0
+        except Exception:
+            return bool(getattr(obj, "stock", 0) > 0)
 
 
 class ProductListSerializer(serializers.ModelSerializer):

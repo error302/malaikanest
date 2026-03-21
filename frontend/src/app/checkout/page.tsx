@@ -63,8 +63,8 @@ function CheckoutContent() {
     setLoading(true)
     try {
       // Checkout requires an authenticated session because payment APIs are protected.
-      await api.get('/api/accounts/profile/')
-      const res = await api.get('/api/orders/cart/')
+      await api.get('/api/v1/accounts/profile/')
+      const res = await api.get('/api/v1/orders/cart/')
       setCart(res.data)
       setRequiresAuth(false)
       setError('')
@@ -90,7 +90,7 @@ function CheckoutContent() {
       const poll = async () => {
         attempts += 1
         try {
-          const res = await api.get(`/api/orders/orders/${oid}/`)
+          const res = await api.get(`/api/v1/orders/orders/${oid}/`)
           const order = res.data
           consecutiveErrors = 0
 
@@ -170,7 +170,7 @@ function CheckoutContent() {
     setProcessing(true)
 
     try {
-      const checkoutRes = await api.post('/api/orders/cart/checkout/', {
+      const checkoutRes = await api.post('/api/v1/orders/cart/checkout/', {
         delivery_region: deliveryRegion,
         is_gift: isGift,
         gift_message: giftMessage,
@@ -179,7 +179,7 @@ function CheckoutContent() {
       const order = checkoutRes.data
       setOrderId(order.id)
 
-      await api.post('/api/payments/mpesa/pay/', {
+      await api.post('/api/v1/payments/mpesa/pay/', {
         order_id: order.id,
         phone: phoneValue,
       })

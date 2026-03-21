@@ -8,21 +8,29 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CartItem
-        fields = ('id', 'product', 'quantity')
+        fields = ('id', 'product', 'quantity', 'unit_price')
 
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     subtotal = serializers.SerializerMethodField()
+    discount = serializers.SerializerMethodField()
+    delivery_fee = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ('id', 'user', 'items', 'created_at', 'subtotal', 'total')
+        fields = ('id', 'user', 'items', 'created_at', 'subtotal', 'discount', 'delivery_fee', 'total')
 
     def get_subtotal(self, obj):
         # Use already-prefetched items to avoid N+1 queries
-        return sum(ci.product.price * ci.quantity for ci in obj.items.all())
+        return sum((ci.unit_price or ci.product.price) * ci.quantity for ci in obj.items.all())
+
+    def get_discount(self, _obj):
+        return 0
+
+    def get_delivery_fee(self, _obj):
+        return 0
 
     def get_total(self, obj):
         return self.get_subtotal(obj)

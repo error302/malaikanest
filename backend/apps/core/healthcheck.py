@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.db import connection
 from django.core.cache import cache
 from django.conf import settings
+from django.utils import timezone
 import os
 import logging
 
@@ -20,7 +21,7 @@ def health_check(request):
     Health check endpoint for monitoring.
     Returns 200 if all systems are healthy, 503 otherwise.
     """
-    status = {"status": "healthy", "checks": {}}
+    status = {"status": "ok", "timestamp": timezone.now().isoformat(), "checks": {}}
     http_status = 200
 
     # Check database
@@ -31,7 +32,7 @@ def health_check(request):
     except Exception as e:
         logger.error(f"Health check - Database error: {e}")
         status["checks"]["database"] = "error"
-        status["status"] = "unhealthy"
+        status["status"] = "error"
         http_status = 503
 
     # Check Redis (optional - not required for health)

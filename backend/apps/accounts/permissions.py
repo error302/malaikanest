@@ -6,13 +6,15 @@ import logging
 from rest_framework import permissions
 from django.shortcuts import get_object_or_404
 
+from .models import User
+
 logger = logging.getLogger('security')
 
 
 class IsAdminUser(permissions.BasePermission):
     """
     Custom permission to only allow admin users (staff or superuser) to access.
-    Checks user.role == 'admin' or user.is_staff == True
+    Checks user.role == 'ADMIN' or user.is_staff == True
     """
     
     def has_permission(self, request, view):
@@ -22,7 +24,7 @@ class IsAdminUser(permissions.BasePermission):
         # Check for admin role or staff status
         is_admin = (
             request.user.is_staff or 
-            getattr(request.user, 'role', None) == 'admin' or
+            getattr(request.user, 'role', None) == User.ROLE_ADMIN or
             request.user.is_superuser
         )
         
@@ -52,7 +54,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         
         return (
             request.user.is_staff or 
-            getattr(request.user, 'role', None) == 'admin' or
+            getattr(request.user, 'role', None) == User.ROLE_ADMIN or
             request.user.is_superuser
         )
 
@@ -64,7 +66,7 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     
     def has_object_permission(self, request, view, obj):
         # Admin always has access
-        if request.user.is_staff or getattr(request.user, 'role', None) == 'admin':
+        if request.user.is_staff or getattr(request.user, 'role', None) == User.ROLE_ADMIN:
             return True
         
         # Check if the user owns the object
@@ -95,12 +97,11 @@ class IsVerifiedUser(permissions.BasePermission):
             return False
         
         # Check if user has verified email
-        if hasattr(request.user, 'is_verified'):
-            if not request.user.is_verified:
-                logger.warning(
-                    f"Unverified user {request.user.email} attempted to access verified endpoint: {request.path}"
-                )
-                return False
+        if hasattr(request.user, "is_email_verified") and not request.user.is_email_verified:
+            logger.warning(
+                f"Unverified user {request.user.email} attempted to access verified endpoint: {request.path}"
+            )
+            return False
         
         return True
 
@@ -120,7 +121,7 @@ class CanManageOrders(permissions.BasePermission):
     
     def has_object_permission(self, request, view, obj):
         # Admin can access any order
-        if request.user.is_staff or getattr(request.user, 'role', None) == 'admin':
+        if request.user.is_staff or getattr(request.user, 'role', None) == User.ROLE_ADMIN:
             return True
         
         # User can only access their own orders

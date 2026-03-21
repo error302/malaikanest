@@ -17,5 +17,4 @@ def order_status_changed(sender, instance, created, **kwargs):
     try:
         send_order_confirmation.delay(instance.id)
     except Exception as exc:
-        logger.warning('Falling back to synchronous order confirmation for order %s: %s', instance.id, exc)
-        send_order_confirmation(instance.id)
+        logger.error('Failed to enqueue order confirmation for order %s: %s', instance.id, exc)

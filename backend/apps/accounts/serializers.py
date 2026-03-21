@@ -38,7 +38,18 @@ def validate_password_strength(password):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'phone', 'first_name', 'last_name', 'role', 'is_staff', 'date_joined')
+        fields = (
+            "id",
+            "email",
+            "phone_number",
+            "full_name",
+            "first_name",
+            "last_name",
+            "role",
+            "is_staff",
+            "is_email_verified",
+            "date_joined",
+        )
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -57,7 +68,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'required': 'Email is required.',
         }
     )
-    phone = serializers.CharField(
+    phone_number = serializers.CharField(
         min_length=9,
         max_length=15,
         error_messages={
@@ -68,7 +79,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'phone', 'password', 'first_name', 'last_name')
+        fields = ("email", "phone_number", "password", "first_name", "last_name", "full_name")
 
     def validate_email(self, value):
         value = value.lower().strip()
@@ -76,10 +87,18 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An account with this email already exists.")
         return value
 
-    def validate_phone(self, value):
-        cleaned = re.sub(r'[^\d+]', '', value)
-        if len(cleaned) < 9:
-            raise serializers.ValidationError("Please enter a valid phone number.")
+    def validate_phone_number(self, value):
+        cleaned = re.sub(r"[^\d+]", "", str(value or ""))
+        # Accept: 07XXXXXXXX, 7XXXXXXXX, 2547XXXXXXXX, +2547XXXXXXXX
+        if cleaned.startswith("0") and len(cleaned) == 10:
+            cleaned = "+254" + cleaned[1:]
+        elif cleaned.startswith("254") and len(cleaned) == 12:
+            cleaned = "+" + cleaned
+        elif cleaned.startswith("7") and len(cleaned) == 9:
+            cleaned = "+254" + cleaned
+
+        if not re.match(r"^\+2547\d{8}$", cleaned):
+            raise serializers.ValidationError("Phone number must be in Kenyan format: +2547XXXXXXXX.")
         return cleaned
 
     def validate_password(self, value):
@@ -104,14 +123,6 @@ class TokenObtainPairWithUserSerializer(TokenObtainPairSerializer):
         return token
     
     def validate(self, attrs):
-        # Allow login with email instead of username
-        email = attrs.get('email')
-        username = attrs.get('username')
-        
-        # If email is provided but username is not, use email as username
-        if email and not username:
-            attrs['username'] = email
-        
         data = super().validate(attrs)
         
         # User is already loaded by authenticate() during token creation
@@ -120,9 +131,11 @@ class TokenObtainPairWithUserSerializer(TokenObtainPairSerializer):
         data['user'] = {
             'id': user.id,
             'email': user.email,
+            'phone_number': getattr(user, 'phone_number', ''),
+            'full_name': getattr(user, 'full_name', ''),
             'first_name': getattr(user, 'first_name', ''),
             'last_name': getattr(user, 'last_name', ''),
-            'role': getattr(user, 'role', 'customer'),
+            'role': getattr(user, 'role', User.ROLE_CUSTOMER),
             'is_staff': user.is_staff,
         }
         

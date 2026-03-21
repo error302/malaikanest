@@ -19,8 +19,8 @@ class OllamaClient:
 
     def _check_client(self):
         if not self.api_key:
-            raise Exception(
-                "Ollama API key not configured. Please set OLLAMA_API_KEY environment variable."
+            logger.warning(
+                "Ollama API key not set. Proceeding without authentication (local Ollama)."
             )
 
     def _make_request(self, endpoint: str, payload: Dict[str, Any], timeout: float = 30.0) -> Dict[str, Any]:

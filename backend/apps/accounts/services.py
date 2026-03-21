@@ -78,7 +78,7 @@ class AuthService:
                 raise ValueError("Verification link has expired. Please request a new one.")
 
             user.is_active = True
-            user.email_verified = True
+            user.is_email_verified = True
             user.verification_token = None
             user.verification_token_expires = None
             user.save()

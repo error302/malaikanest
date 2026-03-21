@@ -1,19 +1,21 @@
+import datetime
+import logging
+import re
+
+import requests
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework import generics, permissions, status
-from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.views import APIView
-from django.conf import settings
-from django.utils.crypto import get_random_string
-from django.core.mail import send_mail
-from django.utils import timezone
-from django.utils.html import strip_tags
-from django.contrib.auth import authenticate
-from .serializers import UserSerializer, RegisterSerializer, TokenObtainPairWithUserSerializer
-from .models import User
-from .services import AuthService
+
+from apps.core.captcha import CaptchaError, require_captcha
+
+from .models import User, normalize_kenyan_phone
 from .security import (
     clear_login_failures,
     get_client_ip,
@@ -21,20 +23,56 @@ from .security import (
     log_auth_event,
     register_login_failure,
 )
-from apps.core.captcha import CaptchaError, require_captcha
-import logging
-import datetime
-
+from .serializers import RegisterSerializer, TokenObtainPairWithUserSerializer, UserSerializer
+from .services import AuthService
 
 logger = logging.getLogger("apps.accounts")
 
 
-class CookieTokenObtainPairView(TokenObtainPairView):
-    """Returns access token in body and sets refresh and access tokens in httpOnly secure cookies"""
-    serializer_class = TokenObtainPairWithUserSerializer
+def _jwt_cookie_secure() -> bool:
+    return bool(settings.SIMPLE_JWT.get("AUTH_COOKIE_SECURE", not settings.DEBUG))
 
-    def finalize_response(self, request, response, *args, **kwargs):
-        return super().finalize_response(request, response, *args, **kwargs)
+
+def _jwt_cookie_samesite() -> str:
+    return str(settings.SIMPLE_JWT.get("AUTH_COOKIE_SAMESITE", "Strict"))
+
+
+def _set_refresh_cookie(resp: Response, refresh_token: str) -> None:
+    cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
+    lifetime = settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME")
+    seconds = int(lifetime.total_seconds()) if hasattr(lifetime, "total_seconds") else int(lifetime or 0)
+    expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds or (7 * 24 * 60 * 60))
+
+    resp.set_cookie(
+        settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"),
+        refresh_token,
+        httponly=True,
+        secure=_jwt_cookie_secure(),
+        samesite=_jwt_cookie_samesite(),
+        expires=expires,
+        path="/",
+        domain=cookie_domain,
+    )
+
+
+def _clear_refresh_cookie(resp: Response) -> None:
+    cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
+    resp.delete_cookie(
+        settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"),
+        path="/",
+        domain=cookie_domain,
+    )
+
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    """
+    Login endpoint:
+    - Returns `access` in response body
+    - Sets refresh token as httpOnly cookie
+    - Never sets an access token cookie
+    """
+
+    serializer_class = TokenObtainPairWithUserSerializer
 
     def post(self, request, *args, **kwargs):
         email = (request.data.get("email") or request.data.get("username") or "").strip().lower()
@@ -77,64 +115,25 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
         try:
             refresh = resp.data.get("refresh")
-            access = resp.data.get("access")
-            cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
-
             if refresh:
-                max_age = int(
-                    settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME", 86400).total_seconds()
-                    if hasattr(settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME"), "total_seconds")
-                    else settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME", 86400)
-                )
-                expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age)
-                resp.set_cookie(
-                    settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"),
-                    refresh,
-                    httponly=True,
-                    secure=not settings.DEBUG,
-                    samesite="Lax",
-                    expires=expires,
-                    path="/",
-                    domain=cookie_domain,
-                )
-
-            if access:
-                max_access_age = int(
-                    settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME", 300).total_seconds()
-                    if hasattr(settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME"), "total_seconds")
-                    else settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME", 300)
-                )
-                expires_access = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_access_age)
-                resp.set_cookie(
-                    "access_token",
-                    access,
-                    httponly=True,
-                    secure=not settings.DEBUG,
-                    samesite="Lax",
-                    expires=expires_access,
-                    path="/",
-                    domain=cookie_domain,
-                )
-
-            # Remove tokens from body — they are now in HTTPOnly cookies only
+                _set_refresh_cookie(resp, refresh)
+            # Never return refresh token in body
             resp.data.pop("refresh", None)
-            resp.data.pop("access", None)
-        except Exception as e:
-            logger.warning("Failed to set auth cookies: %s", e)
+        except Exception as exc:
+            logger.warning("Failed to set refresh cookie: %s", exc)
+
         return resp
 
 
 class CookieTokenRefreshView(APIView):
-    """Refresh JWT using httpOnly refresh cookie (or body fallback), then rotate cookies."""
+    """Refresh endpoint reads refresh cookie only; returns access token in body and rotates refresh cookie."""
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         from rest_framework_simplejwt.exceptions import TokenError
 
         refresh_value = request.COOKIES.get(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"))
-        if not refresh_value:
-            refresh_value = request.data.get("refresh")
-
         if not refresh_value:
             return Response({"detail": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -146,39 +145,13 @@ class CookieTokenRefreshView(APIView):
             new_refresh = RefreshToken.for_user(user)
             access = str(new_refresh.access_token)
 
-            resp = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
-            cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
-
-            refresh_max_age = int(settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME", datetime.timedelta(days=30)).total_seconds())
-            access_max_age = int(settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME", datetime.timedelta(minutes=15)).total_seconds())
-            refresh_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=refresh_max_age)
-            access_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=access_max_age)
-
-            resp.set_cookie(
-                settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"),
-                str(new_refresh),
-                httponly=True,
-                secure=not settings.DEBUG,
-                samesite="Lax",
-                expires=refresh_expires,
-                path="/",
-                domain=cookie_domain,
-            )
-            resp.set_cookie(
-                "access_token",
-                access,
-                httponly=True,
-                secure=not settings.DEBUG,
-                samesite="Lax",
-                expires=access_expires,
-                path="/",
-                domain=cookie_domain,
-            )
+            resp = Response({"access": access}, status=status.HTTP_200_OK)
+            _set_refresh_cookie(resp, str(new_refresh))
 
             try:
                 refresh.blacklist()
-            except Exception as e:
-                logger.warning("Token blacklist failed: %s", e)
+            except Exception as exc:
+                logger.warning("Refresh token blacklist failed: %s", exc)
 
             return resp
         except TokenError:
@@ -212,7 +185,13 @@ class RegisterView(generics.CreateAPIView):
                 enforce=bool(getattr(settings, "CAPTCHA_ENFORCE_REGISTER", False)),
             )
         except CaptchaError as exc:
-            log_auth_event("register_captcha_failed", email=request.data.get("email", ""), ip=ip, user_agent=ua, reason=str(exc))
+            log_auth_event(
+                "register_captcha_failed",
+                email=request.data.get("email", ""),
+                ip=ip,
+                user_agent=ua,
+                reason=str(exc),
+            )
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         user, email_sent = AuthService.register_user(request.data, ip, ua)
@@ -240,8 +219,8 @@ def verify_email_view(request):
     try:
         AuthService.verify_email(token)
         return Response({"message": "Email verified successfully! You can now login.", "success": True})
-    except ValueError as e:
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
@@ -255,8 +234,8 @@ def resend_verification_view(request):
 
     try:
         AuthService.resend_verification_email(email)
-    except ValueError as e:
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({"message": "If your email is registered and unverified, a new verification link has been sent."})
 
@@ -272,17 +251,15 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def logout_view(request):
-    refresh_value = request.data.get("refresh") or request.COOKIES.get(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"))
+    refresh_value = request.COOKIES.get(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"))
     if refresh_value:
         try:
             RefreshToken(refresh_value).blacklist()
-        except Exception as e:
-            logger.warning("Logout token blacklist failed: %s", e)
+        except Exception as exc:
+            logger.warning("Logout refresh token blacklist failed: %s", exc)
 
     resp = Response({"detail": "Logged out"})
-    cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
-    resp.delete_cookie("access_token", path="/", domain=cookie_domain)
-    resp.delete_cookie(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"), path="/", domain=cookie_domain)
+    _clear_refresh_cookie(resp)
     return resp
 
 
@@ -295,10 +272,10 @@ def password_reset_request_view(request):
 
     try:
         AuthService.request_password_reset(email)
-    except RuntimeError as e:
-        return Response({"detail": str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-    except ValueError as e:
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except RuntimeError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({"detail": "If the email exists, a reset link has been sent."})
 
@@ -314,11 +291,10 @@ def password_reset_confirm_view(request):
 
     try:
         AuthService.confirm_password_reset(token, new_password)
-    except ValueError as e:
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({"detail": "Password has been reset successfully."})
-
 
 
 class AdminCookieTokenObtainPairView(CookieTokenObtainPairView):
@@ -330,9 +306,12 @@ class AdminCookieTokenObtainPairView(CookieTokenObtainPairView):
 
         user = authenticate(request, username=email, password=password)
         if not user:
-            return Response({"detail": "No active account found with the given credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"detail": "No active account found with the given credentials"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
-        is_admin = bool(getattr(user, "is_staff", False) or getattr(user, "role", "") == "admin")
+        is_admin = bool(getattr(user, "is_staff", False) or getattr(user, "role", "") == User.ROLE_ADMIN)
         if not is_admin:
             return Response({"detail": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -343,7 +322,7 @@ class AdminCookieTokenObtainPairView(CookieTokenObtainPairView):
 @permission_classes([permissions.IsAuthenticated])
 def admin_session_view(request):
     user = request.user
-    is_admin = bool(getattr(user, "is_staff", False) or getattr(user, "role", "") == "admin")
+    is_admin = bool(getattr(user, "is_staff", False) or getattr(user, "role", "") == User.ROLE_ADMIN)
     if not is_admin:
         return Response({"detail": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -351,7 +330,7 @@ def admin_session_view(request):
         {
             "id": user.id,
             "email": user.email,
-            "role": getattr(user, "role", "customer"),
+            "role": getattr(user, "role", User.ROLE_CUSTOMER),
             "is_staff": bool(getattr(user, "is_staff", False)),
         }
     )
@@ -360,12 +339,15 @@ def admin_session_view(request):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def google_auth_view(request):
-    """Handle Google OAuth token and authenticate/create user."""
-    import httpx
-    from django.contrib.auth import get_user_model
+    """
+    Optional Google OAuth login.
 
-    User = get_user_model()
+    NOTE: This project requires `phone_number`. For first-time Google signups,
+    callers must send `phone_number` alongside `token`.
+    """
+
     token = request.data.get("token")
+    phone_number = request.data.get("phone_number")
 
     request._log_email = "google_oauth"
 
@@ -377,10 +359,10 @@ def google_auth_view(request):
         return Response({"detail": "Google OAuth not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     try:
-        response = httpx.get(
-            f"https://oauth2.googleapis.com/tokeninfo",
+        response = requests.get(
+            "https://oauth2.googleapis.com/tokeninfo",
             params={"id_token": token},
-            timeout=10
+            timeout=10,
         )
         if response.status_code != 200:
             return Response({"detail": "Invalid Google token"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -390,22 +372,40 @@ def google_auth_view(request):
             return Response({"detail": "Invalid Google token audience"}, status=status.HTTP_401_UNAUTHORIZED)
 
         google_email = token_info.get("email")
-        google_name = token_info.get("name", "")
-        google_picture = token_info.get("picture", "")
+        google_name = token_info.get("name", "") or ""
 
         if not google_email:
             return Response({"detail": "Email not provided by Google"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user, created = User.objects.get_or_create(
-            email=google_email,
-            defaults={
-                "username": google_email.split("@")[0][:150],
-                "first_name": google_name.split()[0] if google_name else "",
-                "last_name": " ".join(google_name.split()[1:]) if len(google_name.split()) > 1 else "",
-                "is_active": True,
-                "email_verified": True,
-            }
-        )
+        first_name = google_name.split()[0] if google_name else ""
+        last_name = " ".join(google_name.split()[1:]) if len(google_name.split()) > 1 else ""
+
+        user = User.objects.filter(email=google_email).first()
+        created = False
+        if not user:
+            if not phone_number:
+                return Response(
+                    {"detail": "phone_number is required for first-time Google signup", "requires_phone": True},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            phone_number = normalize_kenyan_phone(phone_number)
+            if not re.match(r"^\\+2547\\d{8}$", phone_number):
+                return Response(
+                    {"detail": "Phone number must be in Kenyan format: +2547XXXXXXXX."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user = User.objects.create_user(
+                email=google_email,
+                phone_number=phone_number,
+                password=None,
+                first_name=first_name,
+                last_name=last_name,
+                full_name=google_name,
+                is_active=True,
+                is_email_verified=True,
+            )
+            created = True
 
         if created:
             log_auth_event("google_register", email=google_email)
@@ -417,37 +417,14 @@ def google_auth_view(request):
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)
 
-        resp = Response({"success": True, "user_id": user.id})
-
-        max_age = int(settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME", 86400 * 7))
-        refresh_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age)
-        resp.set_cookie(
-            settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"),
-            str(refresh),
-            httponly=True,
-            secure=not settings.DEBUG,
-            samesite="Lax",
-            expires=refresh_expires,
-            path="/",
-        )
-
-        access_max_age = int(settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME", 300))
-        access_expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=access_max_age)
-        resp.set_cookie(
-            "access_token",
-            access,
-            httponly=True,
-            secure=not settings.DEBUG,
-            samesite="Lax",
-            expires=access_expires,
-            path="/",
-        )
-
+        resp = Response({"access": access, "user": UserSerializer(user).data})
+        _set_refresh_cookie(resp, str(refresh))
         return resp
 
-    except httpx.HTTPError as e:
-        logger.error(f"Google token verification failed: {e}")
+    except requests.RequestException as exc:
+        logger.error("Google token verification failed: %s", exc)
         return Response({"detail": "Failed to verify Google token"}, status=status.HTTP_502_BAD_GATEWAY)
-    except Exception as e:
-        logger.error(f"Google auth error: {e}")
+    except Exception as exc:
+        logger.error("Google auth error: %s", exc)
         return Response({"detail": "Authentication failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

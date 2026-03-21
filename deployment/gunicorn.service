@@ -1,16 +1,49 @@
 [Unit]
-Description=gunicorn daemon for Malaika Nest
-After=network.target
+Description=Gunicorn WSGI server for Malaika Nest
+Documentation=https://docs.gunicorn.org
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
 
 [Service]
-User=appuser
-Group=appuser
+Type=notify
+User=www-data
+Group=www-data
+RuntimeDirectory=gunicorn
+RuntimeDirectoryMode=0755
 WorkingDirectory=/var/www/malaikanest/backend
-Environment=DJANGO_ENV=prod
 EnvironmentFile=-/var/www/malaikanest/backend/.env.production
-ExecStart=/var/www/malaikanest/venv/bin/gunicorn --access-logfile - --workers 4 --bind 127.0.0.1:8000 config.wsgi:application
+Environment=DJANGO_ENV=prod
+Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+
+# Create the socket directory if it doesn't exist
+ExecStartPre=/bin/mkdir -p /run/gunicorn
+ExecStartPre=/bin/chown www-data:www-data /run/gunicorn
+
+ExecStart=/var/www/malaikanest/venv/bin/gunicorn \
+    --workers 4 \
+    --worker-class sync \
+    --worker-connections 1000 \
+    --bind unix:/run/gunicorn/malaikanest.sock \
+    --umask 007 \
+    --access-logfile /var/log/malaikanest/gunicorn-access.log \
+    --error-logfile /var/log/malaikanest/gunicorn-error.log \
+    --log-level info \
+    --timeout 60 \
+    --graceful-timeout 30 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    config.wsgi:application
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
 Restart=always
 RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gunicorn-malaikanest
 
 [Install]
 WantedBy=multi-user.target

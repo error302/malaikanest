@@ -5,14 +5,15 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'phone', 'first_name', 'last_name', 'role', 'is_active', 'date_joined')
+    list_display = ('email', 'phone_number', 'full_name', 'role', 'is_active', 'is_email_verified', 'date_joined')
     list_filter = ('role', 'is_active', 'is_staff')
-    search_fields = ('email', 'phone', 'first_name', 'last_name')
+    search_fields = ('email', 'phone_number', 'full_name', 'first_name', 'last_name')
     ordering = ('-date_joined',)
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('phone', 'first_name', 'last_name')}),
+        ('Personal Info', {'fields': ('phone_number', 'full_name', 'first_name', 'last_name')}),
+        ('Verification', {'fields': ('is_email_verified', 'verification_token', 'verification_token_expires')}),
         ('Permissions', {'fields': ('role', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important Dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -20,6 +21,6 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'phone', 'password1', 'password2'),
+            'fields': ('email', 'phone_number', 'password1', 'password2'),
         }),
     )

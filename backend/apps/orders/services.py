@@ -62,15 +62,20 @@ class OrderService:
             )
 
             for product, qty, price, inv in items:
-                Inventory.objects.filter(pk=inv.pk).update(quantity=F("quantity") - qty)
-                Product.objects.filter(pk=product.pk).update(stock=F("stock") - qty)
+                # Reserve stock only. Deduction happens after payment confirmation.
+                updated = Inventory.objects.filter(
+                    pk=inv.pk,
+                    quantity__gte=F("reserved") + qty,
+                ).update(reserved=F("reserved") + qty)
+                if updated != 1:
+                    raise ValueError(f"Product {product.name} out of stock. Available: {inv.available()}")
                 OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
                 InventoryLog.objects.create(
                     product=product,
                     order=order,
                     change_type="order_placed",
-                    quantity_change=-qty,
-                    reason=f"Stock deducted for order {order.receipt_number}",
+                    quantity_change=0,
+                    reason=f"Stock reserved for order {order.receipt_number}",
                 )
 
             cart.items.all().delete()
@@ -79,7 +84,7 @@ class OrderService:
     @staticmethod
     def cancel_order(order):
         """
-        Cancels an order and atomically restores inventory.
+        Cancels an order and atomically releases reserved inventory.
         """
         if order.status in ["paid", "initiated", "processing", "shipped"]:
             raise ValueError("Cannot cancel this order in its current state")
@@ -89,14 +94,16 @@ class OrderService:
 
         with transaction.atomic():
             for item in order.items.select_related("product").all():
-                Inventory.objects.filter(product=item.product).update(quantity=F("quantity") + item.quantity)
-                Product.objects.filter(pk=item.product_id).update(stock=F("stock") + item.quantity)
+                Inventory.objects.filter(
+                    product=item.product,
+                    reserved__gte=item.quantity,
+                ).update(reserved=F("reserved") - item.quantity)
                 InventoryLog.objects.create(
                     product=item.product,
                     order=order,
                     change_type="order_cancelled",
-                    quantity_change=item.quantity,
-                    reason=f"Stock restored after cancellation of order {order.receipt_number}",
+                    quantity_change=0,
+                    reason=f"Stock reservation released after cancellation of order {order.receipt_number}",
                 )
             order.status = "cancelled"
             order.save(update_fields=["status"])

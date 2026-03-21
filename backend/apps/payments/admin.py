@@ -16,8 +16,8 @@ class PaymentAdmin(admin.ModelAdmin):
         "checkout_request_id",
         "created_at",
     )
-    search_fields = ("checkout_request_id", "mpesa_receipt_number", "order__receipt_number")
-    readonly_fields = ("raw_callback",)
+    search_fields = ("mpesa_checkout_request_id", "mpesa_receipt_number", "order__receipt_number")
+    readonly_fields = ("raw_callback_json",)
     list_filter = ("status", "payment_method", "created_at")
     actions = ("queue_reconcile_selected", "queue_reconcile_stale")
 

@@ -29,11 +29,17 @@ class RateLimitMiddleware:
     # Endpoints that require special rate limiting
     SENSITIVE_ENDPOINTS = [
         '/api/accounts/token/',
+        '/api/v1/accounts/token/',
         '/api/accounts/admin/login/',
+        '/api/v1/accounts/admin/login/',
         '/api/accounts/register/',
+        '/api/v1/accounts/register/',
         '/api/accounts/resend-verification/',
+        '/api/v1/accounts/resend-verification/',
         '/api/accounts/password/reset/',
+        '/api/v1/accounts/password/reset/',
         '/api/accounts/token/refresh/',
+        '/api/v1/accounts/token/refresh/',
     ]
     
     def __init__(self, get_response):
@@ -264,4 +270,3 @@ class RequestLoggingMiddleware:
 
         response['X-Request-ID'] = request_id
         return response
-

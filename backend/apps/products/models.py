@@ -36,7 +36,13 @@ class Brand(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name) or "brand"
+            candidate = base_slug
+            counter = 2
+            while Brand.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                candidate = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = candidate
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -153,6 +159,29 @@ class Category(models.Model):
     @property
     def is_top_level(self):
         return self.parent is None
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, db_index=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name) or "tag"
+            candidate = base_slug
+            counter = 2
+            while Tag.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                candidate = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -292,6 +321,7 @@ class Product(models.Model):
         upload_to="products/", blank=True, null=True, validators=[validate_image_file]
     )
     is_active = models.BooleanField(default=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="products")
 
     class Meta:
         indexes = [
@@ -312,7 +342,13 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name) or "product"
+            candidate = base_slug
+            counter = 2
+            while Product.objects.filter(slug=candidate).exclude(pk=self.pk).exists():
+                candidate = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = candidate
         super().save(*args, **kwargs)
 
     def __str__(self):

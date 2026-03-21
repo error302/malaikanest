@@ -11,9 +11,9 @@ class AuthCookieLoginTests(APITestCase):
         password = "StrongPass123!"
         User.objects.create_user(
             email="customer@example.com",
-            phone="254700111222",
+            phone_number="+254700111222",
             password=password,
-            role="customer",
+            role="CUSTOMER",
         )
 
         response = self.client.post(
@@ -24,23 +24,26 @@ class AuthCookieLoginTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertNotIn("access", response.data)
         self.assertNotIn("refresh", response.data)
-        self.assertIn("access_token", response.cookies)
         self.assertIn("refresh_token", response.cookies)
-        self.assertTrue(response.cookies["access_token"]["httponly"])
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
+        self.assertIn("access", response.data)
 
-        profile = self.client.get("/api/accounts/profile/", secure=True)
+        access = response.data["access"]
+        profile = self.client.get(
+            "/api/accounts/profile/",
+            secure=True,
+            HTTP_AUTHORIZATION=f"Bearer {access}",
+        )
         self.assertEqual(profile.status_code, status.HTTP_200_OK)
         self.assertEqual(profile.data["email"], "customer@example.com")
-        self.assertEqual(profile.data["role"], "customer")
+        self.assertEqual(profile.data["role"], "CUSTOMER")
 
     def test_admin_login_sets_cookies_and_can_access_admin_reconcile_endpoint(self):
         password = "AdminStrongPass123!"
         admin = User.objects.create_superuser(
             email="admin@example.com",
-            phone="254700333444",
+            phone_number="+254700333444",
             password=password,
         )
 
@@ -51,21 +54,29 @@ class AuthCookieLoginTests(APITestCase):
             secure=True,
         )
         self.assertEqual(login.status_code, status.HTTP_200_OK)
-        self.assertIn("access_token", login.cookies)
         self.assertIn("refresh_token", login.cookies)
+        self.assertIn("access", login.data)
 
-        profile = self.client.get("/api/accounts/profile/", secure=True)
+        profile = self.client.get(
+            "/api/accounts/profile/",
+            secure=True,
+            HTTP_AUTHORIZATION=f"Bearer {login.data['access']}",
+        )
         self.assertEqual(profile.status_code, status.HTTP_200_OK)
-        self.assertEqual(profile.data["role"], "admin")
+        self.assertEqual(profile.data["role"], "ADMIN")
 
-        reconcile = self.client.get("/api/payments/admin/reconcile/candidates/", secure=True)
+        reconcile = self.client.get(
+            "/api/payments/admin/reconcile/candidates/",
+            secure=True,
+            HTTP_AUTHORIZATION=f"Bearer {login.data['access']}",
+        )
         self.assertEqual(reconcile.status_code, status.HTTP_200_OK)
 
     def test_admin_login_endpoint_allows_admin_and_sets_http_only_cookies(self):
         password = "AdminOnlyPass123!"
         admin = User.objects.create_superuser(
             email="owner@example.com",
-            phone="254700555666",
+            phone_number="+254700555666",
             password=password,
         )
 
@@ -77,12 +88,15 @@ class AuthCookieLoginTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access_token", response.cookies)
         self.assertIn("refresh_token", response.cookies)
-        self.assertTrue(response.cookies["access_token"]["httponly"])
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
+        self.assertIn("access", response.data)
 
-        session = self.client.get("/api/accounts/admin/session/", secure=True)
+        session = self.client.get(
+            "/api/accounts/admin/session/",
+            secure=True,
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}",
+        )
         self.assertEqual(session.status_code, status.HTTP_200_OK)
         self.assertEqual(session.data["email"], admin.email)
         self.assertTrue(session.data["is_staff"])
@@ -91,9 +105,9 @@ class AuthCookieLoginTests(APITestCase):
         password = "CustomerPass123!"
         customer = User.objects.create_user(
             email="shopper@example.com",
-            phone="254700777888",
+            phone_number="+254700777888",
             password=password,
-            role="customer",
+            role="CUSTOMER",
         )
 
         response = self.client.post(

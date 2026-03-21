@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import api from '@/lib/api'
+import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/authToken'
 
 type User = {
   id: number
@@ -16,7 +17,8 @@ type RegisterData = {
   password: string
   first_name: string
   last_name: string
-  phone?: string
+  phone_number?: string
+  full_name?: string
 }
 
 type AuthContextType = {
@@ -32,8 +34,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-const USER_KEY = 'malaika_user_v1'
-const TOKEN_KEY = 'malaika_token'
 const SESSION_KEY = 'malaika_session_key'
 
 const getSessionKey = (): string | null => {
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      const res = await api.get('/api/accounts/profile/')
+      const res = await api.get('/api/v1/accounts/profile/')
       if (res.data) {
         const fullName = [res.data.first_name, res.data.last_name].filter(Boolean).join(' ').trim()
         const userData = {
@@ -63,33 +63,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           is_staff: res.data.is_staff,
         }
         setUser(userData)
-        localStorage.setItem(USER_KEY, JSON.stringify(userData))
       }
     } catch {
       setUser(null)
-      localStorage.removeItem(USER_KEY)
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    const stored = localStorage.getItem(USER_KEY)
-
-    if (stored) {
+    const bootstrap = async () => {
+      setIsLoading(true)
       try {
-        setUser(JSON.parse(stored))
+        // Attempt to restore session via refresh cookie.
+        const refreshRes = await api.post('/api/v1/accounts/token/refresh/')
+        const newAccess = (refreshRes.data as any)?.access
+        if (newAccess) setAccessToken(newAccess)
+        await checkAuth()
       } catch {
-        localStorage.removeItem(USER_KEY)
+        clearAccessToken()
+        setUser(null)
+        setIsLoading(false)
       }
     }
 
-    setIsLoading(false)
-    // Only check auth if we have a stored user session hint
-    // This prevents infinite refresh loops for non-logged-in users
-    if (stored) {
-      checkAuth()
-    }
+    bootstrap()
   }, [checkAuth])
 
   const login = useCallback(async (email: string, password: string, captchaToken?: string) => {
@@ -99,13 +97,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Store session key before login to merge guest cart
     const sessionKey = getSessionKey()
 
-    // Backend sets httponly secure cookies automatically.
-    await api.post('/api/accounts/token/', payload)
+    // Backend sets refresh cookie and returns access token in body.
+    const res = await api.post('/api/v1/accounts/token/', payload)
+    const access = (res.data as any)?.access
+    if (access) setAccessToken(access)
 
     // Merge guest cart into user cart
     if (sessionKey) {
       try {
-        await api.post('/api/orders/cart/merge/', { session_key: sessionKey })
+        await api.post('/api/v1/orders/cart/merge/', { session_key: sessionKey })
       } catch {
         // Ignore merge errors
       }
@@ -118,18 +118,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       // Tells backend to blacklist the token and clear the httponly cookies.
-      await api.post('/api/accounts/logout/')
+      await api.post('/api/v1/accounts/logout/')
     } catch {
       // Proceed with local logout regardless of network failure.
     } finally {
-      localStorage.removeItem(USER_KEY)
-      localStorage.removeItem(TOKEN_KEY)
+      clearAccessToken()
       setUser(null)
     }
   }, [])
 
   const register = useCallback(async (data: RegisterData) => {
-    await api.post('/api/accounts/register/', data)
+    await api.post('/api/v1/accounts/register/', data)
   }, [])
 
   const value = useMemo(
@@ -157,5 +156,5 @@ export function useAuth() {
 
 export function isLoggedIn(): boolean {
   if (typeof window === 'undefined') return false
-  return !!localStorage.getItem(USER_KEY)
+  return !!getAccessToken()
 }

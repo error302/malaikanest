@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Payment(models.Model):
@@ -11,7 +12,6 @@ class Payment(models.Model):
         ("initiated", "Initiated"),
         ("completed", "Completed"),
         ("failed", "Failed"),
-        ("pending", "Pending"),
         ("cancelled", "Cancelled"),
     ]
 
@@ -22,14 +22,17 @@ class Payment(models.Model):
     payment_method = models.CharField(
         max_length=20, choices=PAYMENT_METHOD_CHOICES, default="mpesa"
     )
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    checkout_request_id = models.CharField(max_length=128, unique=True, null=True, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    mpesa_checkout_request_id = models.CharField(max_length=128, unique=True, null=True, blank=True)
     mpesa_receipt_number = models.CharField(max_length=128, unique=True, null=True, blank=True)
     paypal_transaction_id = models.CharField(max_length=128, unique=True, null=True, blank=True)
     card_last_four = models.CharField(max_length=4, null=True, blank=True)
     card_brand = models.CharField(max_length=20, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="initiated")
-    raw_callback = models.JSONField(null=True, blank=True)
+    raw_callback_json = models.JSONField(null=True, blank=True)
+    callback_received_at = models.DateTimeField(null=True, blank=True)
+    initiated_at = models.DateTimeField(default=timezone.now, db_index=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -42,6 +45,31 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.id} {self.payment_method} {self.status} KES {self.amount}"
+
+    # Backwards-compatible aliases (legacy field names)
+    @property
+    def phone(self):
+        return self.phone_number
+
+    @phone.setter
+    def phone(self, value):
+        self.phone_number = value
+
+    @property
+    def checkout_request_id(self):
+        return self.mpesa_checkout_request_id
+
+    @checkout_request_id.setter
+    def checkout_request_id(self, value):
+        self.mpesa_checkout_request_id = value
+
+    @property
+    def raw_callback(self):
+        return self.raw_callback_json
+
+    @raw_callback.setter
+    def raw_callback(self, value):
+        self.raw_callback_json = value
 
 
 class PaymentAuditLog(models.Model):

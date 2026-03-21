@@ -65,6 +65,57 @@ class CartViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # New locked implementation (kept early-return to avoid legacy code path).
+        try:
+            with transaction.atomic():
+                inv = (
+                    Inventory.objects.select_for_update()
+                    .select_related("product")
+                    .get(product_id=product_id)
+                )
+
+                if request.user.is_authenticated:
+                    cart, _ = Cart.objects.get_or_create(user=request.user)
+                else:
+                    cart = self._get_or_create_guest_cart(request)
+
+                cart = Cart.objects.select_for_update().get(pk=cart.pk)
+
+                ci = (
+                    CartItem.objects.select_for_update()
+                    .filter(cart=cart, product_id=product_id, variant__isnull=True)
+                    .first()
+                )
+                desired_qty = qty if not ci else (ci.quantity + qty)
+
+                if inv.available() < desired_qty:
+                    return Response(
+                        {"detail": f"Only {inv.available()} items available in stock"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                if ci:
+                    ci.quantity = desired_qty
+                    if not ci.unit_price:
+                        ci.unit_price = inv.product.price
+                    ci.save(update_fields=["quantity", "unit_price"])
+                else:
+                    CartItem.objects.create(
+                        cart=cart,
+                        product=inv.product,
+                        quantity=qty,
+                        unit_price=inv.product.price,
+                    )
+
+            cart = self._get_prefetched_cart(cart.id)
+            serializer = CartSerializer(cart)
+            return Response(serializer.data)
+        except Inventory.DoesNotExist:
+            return Response(
+                {"detail": "Product not found or out of stock"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # MED-06: Validate stock before adding to cart
         try:
             inv = Inventory.objects.get(product_id=product_id)
@@ -196,6 +247,52 @@ class CartViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Locked implementation to prevent race conditions.
+        try:
+            with transaction.atomic():
+                inv = Inventory.objects.select_for_update().get(product_id=product_id)
+                if inv.available() < quantity:
+                    return Response(
+                        {"detail": f"Only {inv.available()} items available in stock"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                if request.user.is_authenticated:
+                    cart = get_object_or_404(Cart.objects.select_for_update(), user=request.user)
+                else:
+                    session_key = request.session.session_key
+                    if not session_key:
+                        return Response(
+                            {"detail": "No cart found"}, status=status.HTTP_400_BAD_REQUEST
+                        )
+                    cart = get_object_or_404(
+                        Cart.objects.select_for_update(), session_key=session_key, user=None
+                    )
+
+                cart_item = (
+                    CartItem.objects.select_for_update()
+                    .filter(cart=cart, product_id=product_id, variant__isnull=True)
+                    .first()
+                )
+                if not cart_item:
+                    return Response(
+                        {"detail": "Item not found in cart"}, status=status.HTTP_404_NOT_FOUND
+                    )
+
+                cart_item.quantity = quantity
+                if not cart_item.unit_price:
+                    cart_item.unit_price = cart_item.product.price
+                cart_item.save(update_fields=["quantity", "unit_price"])
+
+            cart = self._get_prefetched_cart(cart.id)
+            serializer = CartSerializer(cart)
+            return Response(serializer.data)
+        except Inventory.DoesNotExist:
+            return Response(
+                {"detail": "Product not found or out of stock"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if request.user.is_authenticated:
             cart = get_object_or_404(Cart, user=request.user)
         else:
@@ -263,7 +360,8 @@ class CartViewSet(viewsets.ViewSet):
 
         guest_cart = Cart.objects.filter(session_key=session_key, user=None).first()
         if not guest_cart:
-            cart = self._get_prefetched_cart(request.user.cart.id if hasattr(request.user, 'cart') else 0)
+            user_cart, _ = Cart.objects.get_or_create(user=request.user)
+            cart = self._get_prefetched_cart(user_cart.id)
             return Response(CartSerializer(cart).data)
 
         user_cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -273,7 +371,7 @@ class CartViewSet(viewsets.ViewSet):
                 user_item, created = CartItem.objects.get_or_create(
                     cart=user_cart,
                     product=item.product,
-                    defaults={"quantity": item.quantity}
+                    defaults={"quantity": item.quantity, "unit_price": item.unit_price or item.product.price}
                 )
                 if not created:
                     try:
@@ -282,6 +380,8 @@ class CartViewSet(viewsets.ViewSet):
                         user_item.quantity = min(user_item.quantity + item.quantity, max_qty)
                     except Inventory.DoesNotExist:
                         user_item.quantity += item.quantity
+                    if not user_item.unit_price:
+                        user_item.unit_price = item.unit_price or item.product.price
                     user_item.save()
             guest_cart.delete()
 
@@ -299,28 +399,35 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        status_filter = self.request.query_params.get("status")
 
         # Admin users can see all orders
-        if user.is_staff or getattr(user, "role", None) == "admin":
-            return (
+        if user.is_staff or getattr(user, "role", None) == "ADMIN":
+            qs = (
                 Order.objects.all()
                 .select_related("user")
                 .prefetch_related("items__product")
             )
+            if status_filter:
+                qs = qs.filter(status=status_filter)
+            return qs
 
         # Regular users can only see their own orders
-        return (
+        qs = (
             Order.objects.filter(user=user)
             .select_related("user")
             .prefetch_related("items__product")
         )
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
 
     def get_object(self):
         """Override to add row-level security check."""
         obj = super().get_object()
         user = self.request.user
 
-        if user.is_staff or getattr(user, "role", None) == "admin":
+        if user.is_staff or getattr(user, "role", None) == "ADMIN":
             return obj
 
         if obj.user != user:
@@ -416,3 +523,28 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(
             {"detail": "Invoice not available"}, status=status.HTTP_404_NOT_FOUND
         )
+
+
+class GuestOrderTrackView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request):
+        order_number = request.data.get("order_number") or request.data.get("receipt_number")
+        email = (request.data.get("email") or "").strip().lower()
+
+        if not order_number or not email:
+            return Response(
+                {"detail": "order_number and email are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order = (
+            Order.objects.select_related("user")
+            .prefetch_related("items__product")
+            .filter(receipt_number=order_number, guest_email__iexact=email)
+            .first()
+        )
+        if not order:
+            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(OrderSerializer(order).data)

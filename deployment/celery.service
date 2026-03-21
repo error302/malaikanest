@@ -1,16 +1,38 @@
 [Unit]
-Description=Celery Service
-After=network.target
+Description=Celery Worker for Malaika Nest
+Documentation=https://docs.celeryq.dev
+After=network.target redis.service
+Wants=redis.service
 
 [Service]
-Type=forking
+Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/opt/kenya_baby_ecommerce/backend
-Environment=PATH=/opt/venv/bin
-ExecStart=/opt/venv/bin/celery -A kenya_ecom multi start worker -Q default -c 4 --logfile=/var/log/celery/worker.log --loglevel=INFO
-ExecStop=/opt/venv/bin/celery -A kenya_ecom multi stopwait worker
+WorkingDirectory=/var/www/malaikanest/backend
+EnvironmentFile=-/var/www/malaikanest/backend/.env.production
+Environment=DJANGO_ENV=prod
+Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+
+ExecStart=/var/www/malaikanest/venv/bin/celery \
+    -A config \
+    worker \
+    --loglevel=info \
+    --concurrency=4 \
+    --logfile=/var/log/malaikanest/celery-worker.log \
+    --pidfile=/run/celery/worker.pid \
+    --hostname=worker@%%h
+
+ExecStop=/var/www/malaikanest/venv/bin/celery -A config control shutdown
+
 Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=celery-malaikanest
+
+# Important for payment tasks: ensure late-acked tasks survive worker crashes
+KillMode=mixed
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target

@@ -1,142 +1,77 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+# Malaika Nest Production Deploy Script
+# Run after: git pull origin main
+# Usage: bash deploy.sh
+set -euo pipefail
 
-echo "========================================"
-echo "Starting Malaika Nest Deployment"
-echo "========================================"
+APP_DIR="/var/www/malaikanest"
+BACKEND_DIR="$APP_DIR/backend"
+FRONTEND_DIR="$APP_DIR/frontend"
+VENV="$APP_DIR/venv"
 
-# Navigate to project directory
-cd ~/malaikanest || exit 1
+# Colours
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-# Pull latest code from GitHub
-echo "Pulling latest code from GitHub..."
-git pull origin main
+log()  { echo -e "${GREEN}[deploy]${NC} $*"; }
+warn() { echo -e "${YELLOW}[warn]${NC}  $*"; }
+die()  { echo -e "${RED}[error]${NC} $*" >&2; exit 1; }
 
-# Create .env file if it doesn't exist
-echo "Setting up environment variables..."
-if [ ! -f backend/.env ]; then
-    echo "Creating backend/.env (placeholders only; fill with real values on the server)..."
-    cat > backend/.env << 'EOF'
-# Django Settings
-SECRET_KEY=CHANGE_ME
-DEBUG=False
-ALLOWED_HOSTS=104.154.161.10,malaikanest.duckdns.org,www.malaikanest.duckdns.org
+# ── Safety checks ─────────────────────────────────────────────────────────────
+[[ -d "$BACKEND_DIR" ]] || die "Backend directory not found: $BACKEND_DIR"
+[[ -d "$VENV" ]] || die "Virtualenv not found: $VENV. Run: python3 -m venv $VENV && $VENV/bin/pip install -r $BACKEND_DIR/requirements.txt"
+[[ -f "$BACKEND_DIR/.env.production" ]] || die "Missing $BACKEND_DIR/.env.production"
 
-# Database (PostgreSQL on the VM)
-DATABASE_URL=postgresql://malaika_user:CHANGE_ME@localhost:5432/malaika_db
+PYTHON="$VENV/bin/python"
+PIP="$VENV/bin/pip"
 
+# ── Backend ───────────────────────────────────────────────────────────────────
+log "Installing Python dependencies..."
+"$PIP" install --quiet -r "$BACKEND_DIR/requirements.txt"
 
-# Cloudinary (for image uploads)
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
+log "Running database migrations..."
+DJANGO_SETTINGS_MODULE=config.settings.prod "$PYTHON" "$BACKEND_DIR/manage.py" migrate --noinput
 
-# Email Settings
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=
-EMAIL_HOST_PASSWORD=
-EMAIL_USE_TLS=True
-DEFAULT_FROM_EMAIL=Malaika Nest <noreply@malaikanest.local>
+log "Collecting static files..."
+DJANGO_SETTINGS_MODULE=config.settings.prod "$PYTHON" "$BACKEND_DIR/manage.py" collectstatic --noinput --clear
 
-# M-Pesa Payment Settings (update with your credentials)
-MPESA_CONSUMER_KEY=your-consumer-key
-MPESA_CONSUMER_SECRET=your-consumer-secret
-MPESA_SHORTCODE=your-shortcode
-MPESA_PASSKEY=your-passkey
+log "Running deployment check..."
+DJANGO_SETTINGS_MODULE=config.settings.prod "$PYTHON" "$BACKEND_DIR/manage.py" check --deploy || warn "Deployment check raised warnings (review above)"
 
-# CORS
-CORS_ALLOWED_ORIGINS=https://malaikanest.duckdns.org,https://www.malaikanest.duckdns.org,http://localhost:3000
-EOF
-    echo "backend/.env created (placeholders)."
+# ── Frontend ──────────────────────────────────────────────────────────────────
+if [[ -d "$FRONTEND_DIR" ]]; then
+    log "Installing frontend dependencies..."
+    npm --prefix "$FRONTEND_DIR" ci --prefer-offline
+
+    log "Building Next.js frontend..."
+    npm --prefix "$FRONTEND_DIR" run build
+
+    log "Clearing npm cache to save disk space..."
+    npm --prefix "$FRONTEND_DIR" cache clean --force 2>/dev/null || true
 fi
 
-# Install frontend dependencies and build
-echo "Installing frontend dependencies..."
-cd ~/malaikanest/frontend
-npm install
+# ── Services ─────────────────────────────────────────────────────────────────
+log "Restarting backend services..."
+sudo systemctl restart gunicorn celery celerybeat
 
-echo "Building frontend..."
-npm run build
+log "Testing nginx config..."
+sudo nginx -t
 
-# Clean up npm cache to save disk space and prevent ENOSPC errors
-echo "Cleaning up npm cache..."
-npm cache clean --force || true
+log "Reloading nginx..."
+sudo systemctl reload nginx
 
-# Stop and restart frontend - delete first to avoid port conflicts
-echo "Check/Stop frontend..."
-pm2 delete frontend 2>/dev/null || true
-# Kill old node processes on port 3000 since lsof is missing on the VM
-fuser -k 3000/tcp 2>/dev/null || killall node 2>/dev/null || true
-sleep 2
+log "Checking service status..."
+sudo systemctl is-active --quiet gunicorn && log "gunicorn:    running ✓" || warn "gunicorn:    FAILED ✗"
+sudo systemctl is-active --quiet celery    && log "celery:      running ✓" || warn "celery:      FAILED ✗"
+sudo systemctl is-active --quiet celerybeat && log "celerybeat:  running ✓" || warn "celerybeat:  FAILED ✗"
+sudo systemctl is-active --quiet nginx     && log "nginx:       running ✓" || warn "nginx:       FAILED ✗"
 
-echo "Starting frontend..."
-pm2 start ecosystem.config.js || pm2 restart frontend
-
-# Setup backend
-echo "Setting up backend..."
-cd ~/malaikanest/backend
-
-# Check for virtual environment and set PYTHON_CMD
-PYTHON_CMD="python3"
-GUNICORN_CMD="gunicorn"
-VENV_ACTIVATED=false
-
-if [ -d "../.venv" ]; then
-    echo "✅ Using .venv"
-    source ../.venv/bin/activate
-    PYTHON_CMD="../.venv/bin/python"
-    GUNICORN_CMD="../.venv/bin/gunicorn"
-    VENV_ACTIVATED=true
-elif [ -d "venv" ]; then
-    echo "✅ Using venv"
-    source venv/bin/activate
-    PYTHON_CMD="venv/bin/python"
-    GUNICORN_CMD="venv/bin/gunicorn"
-    VENV_ACTIVATED=true
-elif [ -d ".venv" ]; then
-    echo "✅ Using .venv"
-    source .venv/bin/activate
-    PYTHON_CMD=".venv/bin/python"
-    GUNICORN_CMD=".venv/bin/gunicorn"
-    VENV_ACTIVATED=true
-else
-    echo "⚠️ Virtual environment not found, using system Python"
-fi
-
-# Install Python dependencies
-echo "Installing Python dependencies..."
-pip install -r requirements.txt || echo "⚠️ pip install failed, continuing..."
-
-# Run migrations
-echo "Running database migrations..."
-$PYTHON_CMD manage.py migrate --noinput || echo "⚠️ Migration failed, continuing..."
-
-# Collect static files
-echo "Collecting static files..."
-$PYTHON_CMD manage.py collectstatic --noinput || echo "⚠️ Collectstatic failed, continuing..."
-
-# Restart backend using PM2
-echo "Restarting backend with PM2..."
-
-# Delete existing backend process and restart cleanly
-pm2 delete backend 2>/dev/null || true
-fuser -k 8000/tcp 2>/dev/null || killall gunicorn 2>/dev/null || true
-sleep 2
-
-# Use ecosystem.config.js for proper backend startup with venv
-pm2 start ./ecosystem.config.js || pm2 restart backend
-
-# Save PM2 state for automatic restart on reboot
-pm2 save 2>/dev/null || true
-
-# Also try systemd as fallback
-sudo systemctl restart malaika-gunicorn 2>/dev/null || echo "⚠️ Systemd not available, using PM2 only"
-
-echo "========================================"
-echo "Deployment Complete!"
-echo "========================================"
 echo ""
-echo "⚠️ IMPORTANT: Please run this command to expose the logs:"
-echo "sudo cp ~/malaikanest/malaikanest-nginx.conf /etc/nginx/sites-available/malaikanest && sudo systemctl reload nginx"
-echo ""
+echo "========================================"
+echo -e "${GREEN}Deployment complete!${NC}"
+echo "========================================"
+echo "Frontend: https://malaikanest.duckdns.org"
+echo "Health:   https://malaikanest.duckdns.org/api/health/"
+echo "Admin:    https://malaikanest.duckdns.org/manage-store/"

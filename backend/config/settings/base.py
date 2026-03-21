@@ -33,8 +33,8 @@ if not _SECRET_KEY:
     )
 SECRET_KEY = _SECRET_KEY
 
-# Admin URL secret for protected admin access (e.g., /secret-admin/)
-ADMIN_URL_SECRET = os.getenv("ADMIN_URL_SECRET", "change-me-in-production")
+# Admin URL prefix (default: /manage-store/). Backwards-compatible with legacy ADMIN_URL_SECRET.
+ADMIN_URL_PREFIX = (os.getenv("ADMIN_URL_PREFIX") or os.getenv("ADMIN_URL_SECRET") or "manage-store").strip("/")
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost").split(",") if h.strip()
@@ -49,10 +49,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "django_filters",
     "corsheaders",
+    "django_celery_beat",
     # Cloudinary media storage backend (used in prod via STORAGES["default"]).
     "cloudinary_storage",
     "cloudinary",
+    "channels",
     "apps.accounts",
     "apps.products",
     "apps.orders",
@@ -72,6 +75,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.core.middleware.RateLimitMiddleware",
     "apps.core.middleware.RequestLoggingMiddleware",
 ]
 
@@ -95,6 +99,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")]},
+    }
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -135,6 +146,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "1200/hour",
@@ -151,23 +163,24 @@ REST_FRAMEWORK = {
         "apps.core.renderers.StandardizedJSONRenderer",
     ],
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
 }
 
 SIMPLE_JWT = {
     "ALGORITHM": "HS256",
     "SIGNING_KEY": os.getenv("SIMPLE_JWT_SECRET") or SECRET_KEY,
-    "ACCESS_TOKEN_LIFETIME": timedelta(
-        seconds=int(os.getenv("ACCESS_TOKEN_LIFETIME", "300"))
-    ),
-    "REFRESH_TOKEN_LIFETIME": timedelta(
-        seconds=int(os.getenv("REFRESH_TOKEN_LIFETIME", "86400"))
-    ),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("ACCESS_TOKEN_MINUTES", "15"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_DAYS", "7"))),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_COOKIE": "refresh_token",
-    "AUTH_COOKIE_SECURE": True,
+    "AUTH_COOKIE_SECURE": os.getenv("AUTH_COOKIE_SECURE", "true").strip().lower() in {"1", "true", "yes", "on"},
     "AUTH_COOKIE_HTTP_ONLY": True,
-    "AUTH_COOKIE_SAMESITE": "Lax",
+    "AUTH_COOKIE_SAMESITE": os.getenv("AUTH_COOKIE_SAMESITE", "Strict"),
 }
 
 # Optional cookie domain so auth works across www/non-www.
@@ -208,6 +221,82 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 DEFAULT_FROM_EMAIL = os.getenv(
     "DEFAULT_FROM_EMAIL", "Malaika Nest <malaikanest7@gmail.com>"
 )
+
+# Redis + Celery
+REDIS_URL = os.getenv("REDIS_URL", os.getenv("REDIS_TLS_URL", "redis://127.0.0.1:6379/0"))
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", REDIS_URL)
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_ENABLE_UTC = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_TRACK_STARTED = True
+
+CELERY_BEAT_SCHEDULE = {
+    "payments-reconcile-every-10-min": {
+        "task": "apps.payments.tasks.reconcile_payments_task",
+        "schedule": timedelta(minutes=10),
+        "args": (5, 500),
+    },
+    "cleanup-old-guest-carts-hourly": {
+        "task": "apps.orders.tasks.cleanup_old_guest_carts",
+        "schedule": timedelta(hours=1),
+    },
+    "products-low-stock-daily": {
+        "task": "apps.products.tasks.low_stock_check",
+        "schedule": timedelta(days=1),
+    },
+}
+
+# Default DB pooling value used by dev/prod settings.
+DB_CONN_MAX_AGE = int(os.getenv("DB_CONN_MAX_AGE", "600"))
+
+# Media storage: filesystem by default; switch to Cloudinary when configured.
+_cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME") or os.getenv("CLOUDINARY_NAME") or os.getenv("CLOUDINARY_CLOUD")
+_cloud_key = os.getenv("CLOUDINARY_API_KEY") or os.getenv("CLOUDINARY_KEY")
+_cloud_secret = os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLOUDINARY_SECRET")
+
+if _cloud_name and _cloud_key and _cloud_secret:
+    try:
+        import cloudinary
+
+        cloudinary.config(
+            cloud_name=_cloud_name,
+            api_key=_cloud_key,
+            api_secret=_cloud_secret,
+            secure=True,
+            force_version=False,
+        )
+        STORAGES = {
+            "default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"},
+            "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        }
+    except Exception:
+        STORAGES = {
+            "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+            "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        }
+else:
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+
+# Baseline security (prod overrides tighten).
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False
+SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+X_FRAME_OPTIONS = "DENY"
+
+# Custom: where the frontend should send missing-content traffic.
+CONTENT_NOT_FOUND_URL = os.getenv("CONTENT_NOT_FOUND_URL", "/")
 
 LOGGING = {
     "version": 1,

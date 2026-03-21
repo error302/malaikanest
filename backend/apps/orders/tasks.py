@@ -513,8 +513,8 @@ def cancel_stale_pending_orders():
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def reduce_inventory(self, order_id):
     """
-    Reduce inventory when order is placed.
-    This is called during checkout.
+    Deduct inventory when payment is confirmed.
+    Idempotent via conditional updates against the `reserved` column.
     """
     try:
         order = Order.objects.prefetch_related('items').get(pk=order_id)
@@ -524,10 +524,25 @@ def reduce_inventory(self, order_id):
     
     try:
         with transaction.atomic():
+            from apps.products.models import Product
+
             for item in order.items.select_related('product').all():
-                Inventory.objects.filter(product=item.product).update(
-                    quantity=F('quantity') - item.quantity
+                updated = Inventory.objects.filter(
+                    product=item.product,
+                    reserved__gte=item.quantity,
+                    quantity__gte=item.quantity,
+                ).update(
+                    quantity=F("quantity") - item.quantity,
+                    reserved=F("reserved") - item.quantity,
                 )
+                if updated != 1:
+                    logger.info(
+                        "reduce_inventory: skipped item product=%s qty=%s (already deducted or insufficient reserved)",
+                        item.product_id,
+                        item.quantity,
+                    )
+                else:
+                    Product.objects.filter(pk=item.product_id).update(stock=F("stock") - item.quantity)
         logger.info(f"Inventory reduced for order {order_id}")
         return "success"
     except Exception as e:
@@ -541,7 +556,8 @@ def reduce_inventory(self, order_id):
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def restore_inventory(self, order_id):
     """
-    Restore inventory when order is cancelled.
+    Release reserved inventory when order is cancelled/payment fails.
+    If stock was already deducted, this will restock quantity and keep reserved non-negative.
     """
     try:
         order = Order.objects.prefetch_related('items').get(pk=order_id)
@@ -551,10 +567,23 @@ def restore_inventory(self, order_id):
     
     try:
         with transaction.atomic():
+            from apps.products.models import Product
+
             for item in order.items.select_related('product').all():
+                # First try to release reservation (pre-payment cancellation / failure).
+                released = Inventory.objects.filter(
+                    product=item.product,
+                    reserved__gte=item.quantity,
+                ).update(reserved=F("reserved") - item.quantity)
+
+                if released == 1:
+                    continue
+
+                # If not reserved, assume it was already deducted and restock quantity.
                 Inventory.objects.filter(product=item.product).update(
-                    quantity=F('quantity') + item.quantity
+                    quantity=F("quantity") + item.quantity
                 )
+                Product.objects.filter(pk=item.product_id).update(stock=F("stock") + item.quantity)
         logger.info(f"Inventory restored for order {order_id}")
         return "success"
     except Exception as e:
@@ -735,4 +764,3 @@ Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
     except Exception as e:
         logger.error(f"Failed to send critical alert: {e}")
         return f"alert failed: {str(e)}"
-

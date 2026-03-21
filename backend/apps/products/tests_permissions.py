@@ -11,12 +11,12 @@ class ProductPermissionBoundaryTests(APITestCase):
     def setUp(self):
         self.customer = User.objects.create_user(
             email="buyer@example.com",
-            phone="254711000111",
+            phone_number="+254711000111",
             password="BuyerPass123!",
         )
         self.admin = User.objects.create_superuser(
             email="staff@example.com",
-            phone="254711000222",
+            phone_number="+254711000222",
             password="StaffPass123!",
         )
 

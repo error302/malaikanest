@@ -19,8 +19,8 @@ class PaymentsConcurrencyTests(TransactionTestCase):
     reset_sequences = True
 
     def setUp(self):
-        self.user1 = User.objects.create_user(email='u1@example.com', phone='254700000001', password='pass')
-        self.user2 = User.objects.create_user(email='u2@example.com', phone='254700000002', password='pass')
+        self.user1 = User.objects.create_user(email='u1@example.com', phone_number='+254700000001', password='pass')
+        self.user2 = User.objects.create_user(email='u2@example.com', phone_number='+254700000002', password='pass')
         cat = Category.objects.create(name='Essentials')
         prod = Product.objects.create(name='Onesie', slug='onesie', category=cat, price=250.00)
         Inventory.objects.create(product=prod, quantity=1)
@@ -55,7 +55,7 @@ class PaymentsConcurrencyTests(TransactionTestCase):
 
 class PaymentIdempotencyTests(TransactionTestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email='p@example.com', phone='254700000003', password='pass')
+        self.user = User.objects.create_user(email='p@example.com', phone_number='+254700000003', password='pass')
         cat = Category.objects.create(name='Toys')
         prod = Product.objects.create(name='Rattle', slug='rattle-2', category=cat, price=100.00)
         Inventory.objects.create(product=prod, quantity=5)
@@ -64,7 +64,7 @@ class PaymentIdempotencyTests(TransactionTestCase):
 
     def test_payment_verify_idempotent(self):
         order = create_order_from_cart(self.user, self.cart, coupon=None, receipt_number='r1')
-        payment = Payment.objects.create(order=order, amount=order.total, status='initiated', checkout_request_id='ck1')
+        payment = Payment.objects.create(order=order, amount=order.total, status='initiated', mpesa_checkout_request_id='ck1')
 
         def mark_completed():
             with transaction.atomic():
@@ -95,7 +95,7 @@ class MpesaCallbackValidationTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             email='pay-user@example.com',
-            phone='254700000004',
+            phone_number='+254700000004',
             password='Pass12345!'
         )
         self.order = Order.objects.create(
@@ -113,8 +113,8 @@ class MpesaCallbackValidationTests(APITestCase):
             order=self.order,
             amount='200.00',
             payment_method='mpesa',
-            phone='254700000004',
-            checkout_request_id='ws_co_123',
+            phone_number='254700000004',
+            mpesa_checkout_request_id='ws_co_123',
             status='initiated',
         )
 

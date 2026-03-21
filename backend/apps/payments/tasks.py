@@ -25,7 +25,7 @@ except ImportError:
         return decorator
 
 
-@shared_task(bind=True, max_retries=5, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, acks_late=True, reject_on_worker_lost=True)
 def verify_mpesa_payment_async(self, payment_id):
     from .models import Payment
     from .services import audit_log
@@ -52,13 +52,12 @@ def verify_mpesa_payment_async(self, payment_id):
         )
         return "no checkout_request_id"
 
-    consumer_key = os.getenv("MPESA_CONSUMER_KEY")
-    consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
-    shortcode = os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
+    shortcode = os.getenv("MPESA_SHORTCODE") or os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
     passkey = os.getenv("MPESA_PASSKEY")
-    mpesa_env = os.getenv("MPESA_ENV", "sandbox")
+    mpesa_env = (os.getenv("MPESA_ENV", "sandbox") or "sandbox").strip().lower()
+    mpesa_env = "live" if mpesa_env in {"live", "production", "prod"} else "sandbox"
 
-    if not all([consumer_key, consumer_secret, shortcode, passkey]):
+    if not all([shortcode, passkey]):
         audit_log(
             payment=payment,
             event_type="reconcile_query",
@@ -68,11 +67,6 @@ def verify_mpesa_payment_async(self, payment_id):
         )
         return "not configured"
 
-    token_url = (
-        "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-        if mpesa_env == "live"
-        else "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-    )
     query_url = (
         "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
         if mpesa_env == "live"
@@ -80,10 +74,20 @@ def verify_mpesa_payment_async(self, payment_id):
     )
 
     try:
-        token_resp = requests.get(token_url, auth=(consumer_key, consumer_secret), timeout=10)
-        token_resp.raise_for_status()
-        access_token = token_resp.json().get("access_token")
+        from .services import PaymentService
+
+        access_token = PaymentService.get_mpesa_oauth_token()
     except requests.exceptions.RequestException as exc:
+        audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"stage": "token", "error": str(exc)},
+            checkout_request_id=payment.checkout_request_id,
+            notes="Token fetch failed",
+            source="celery"
+        )
+        raise self.retry(exc=exc)
+    except Exception as exc:
         audit_log(
             payment=payment,
             event_type="reconcile_query",
@@ -109,7 +113,7 @@ def verify_mpesa_payment_async(self, payment_id):
             query_url,
             json=payload,
             headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
-            timeout=10,
+            timeout=30,
         )
         resp.raise_for_status()
         data = resp.json()
@@ -174,8 +178,8 @@ def reconcile_payments_task(stale_minutes=30, limit=200):
     cutoff = timezone.now() - datetime.timedelta(minutes=stale_minutes)
     payments = (
         Payment.objects.filter(payment_method="mpesa", status="initiated", created_at__lt=cutoff)
-        .exclude(checkout_request_id__isnull=True)
-        .exclude(checkout_request_id="")
+        .exclude(mpesa_checkout_request_id__isnull=True)
+        .exclude(mpesa_checkout_request_id="")
         .order_by("created_at")[:limit]
     )
 

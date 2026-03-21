@@ -86,7 +86,7 @@ export default function HomePage() {
 
   useEffect(() => {
     api
-      .get("/api/products/banners/")
+      .get("/api/v1/products/banners/")
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
         setBanners(rows)
@@ -94,7 +94,7 @@ export default function HomePage() {
       .catch(() => setBanners([]))
 
     api
-      .get("/api/products/products/?ordering=-created_at")
+      .get("/api/v1/products/products/?ordering=-created_at")
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
         setProducts(rows.slice(0, 8))
@@ -103,7 +103,7 @@ export default function HomePage() {
       .finally(() => setLoadingProducts(false))
 
     api
-      .get("/api/products/products/?ordering=-created_at&group=clothing")
+      .get("/api/v1/products/products/?ordering=-created_at&group=clothing")
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
         setNewArrivals(rows.slice(0, 6))
@@ -111,7 +111,7 @@ export default function HomePage() {
       .catch(() => setNewArrivals([]))
 
     api
-      .get("/api/products/reviews/?featured=true")
+      .get("/api/v1/products/reviews/?featured=true")
       .then((res) => setReviews(Array.isArray(res.data) ? res.data : res.data?.results || []))
       .catch(() => setReviews([]))
       .finally(() => setLoadingReviews(false))

@@ -2,21 +2,35 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('access_token')
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-  const isLoginPage = request.nextUrl.pathname === '/admin/login'
+  const refresh = request.cookies.get('refresh_token')
+  const pathname = request.nextUrl.pathname
 
-  if (isAdminRoute && !isLoginPage && !token) {
-    return NextResponse.redirect(new URL('/admin/login', request.url))
+  const isAdminRoute = pathname.startsWith('/admin')
+  const isAdminLogin = pathname === '/admin/login'
+
+  const isUserProtected =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/account') ||
+    pathname.startsWith('/orders') ||
+    pathname === '/checkout' ||
+    pathname.startsWith('/checkout/')
+
+  if (isAdminRoute && !isAdminLogin && !refresh) {
+    const url = new URL('/admin/login', request.url)
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
   }
-  if (isLoginPage && token) {
-    return NextResponse.redirect(new URL('/admin', request.url))
+
+  if (isUserProtected && !refresh) {
+    const url = new URL('/login', request.url)
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/dashboard/:path*', '/account/:path*', '/checkout/:path*', '/orders/:path*'],
 }
 

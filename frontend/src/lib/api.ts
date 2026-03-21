@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios'
+import { clearAccessToken, getAccessToken, setAccessToken } from './authToken'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -18,11 +19,17 @@ const MAX_RETRIES = 3
 const RETRY_DELAY = 1000
 
 const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
+  '/api/v1/accounts/token/',
+  '/api/v1/accounts/token/refresh/',
+  '/api/v1/accounts/register/',
+  '/api/v1/accounts/admin/login/',
+  '/api/v1/accounts/profile/', // Don't trigger refresh loop for profile check
+  // Legacy aliases
   '/api/accounts/token/',
   '/api/accounts/token/refresh/',
   '/api/accounts/register/',
   '/api/accounts/admin/login/',
-  '/api/accounts/profile/',  // Don't trigger refresh loop for profile check
+  '/api/accounts/profile/',
 ]
 
 const CACHEABLE_ENDPOINTS = [
@@ -50,11 +57,6 @@ const getCacheDuration = (url: string): number => {
 
 const getCacheKey = (method: string, url: string, params?: any, data?: any): string => {
   return `${method}:${url}:${JSON.stringify(params)}:${JSON.stringify(data)}`
-}
-
-const hasClientSessionHint = (): boolean => {
-  if (typeof window === 'undefined') return false
-  return !!(localStorage.getItem('malaika_user_v1') || localStorage.getItem('malaika_token'))
 }
 
 // Exponential backoff retry
@@ -142,15 +144,8 @@ api.interceptors.request.use((config) => {
     delete config.headers['Content-Type']
   }
 
-  // Add JWT token from localStorage if available (for compatibility)
-  // Also check for cookies - browser will send cookies automatically
-  if (typeof window !== 'undefined') {
-    // Only attach an Authorization header when the token looks like a real JWT.
-    // Using placeholders (e.g. "admin_session") breaks cookie-based auth and token refresh.
-    const token = localStorage.getItem('malaika_token')
-    const looksLikeJwt = !!token && token.split('.').length === 3
-    if (looksLikeJwt) config.headers.Authorization = `Bearer ${token}`
-  }
+  const token = getAccessToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
 
   return config
 })
@@ -242,13 +237,16 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        await api.post('/api/accounts/token/refresh/')
+        const refreshRes = await api.post('/api/v1/accounts/token/refresh/')
+        const newAccess = (refreshRes.data as any)?.access
+        if (newAccess) setAccessToken(newAccess)
         processQueue(null)
         isRefreshing = false
         return api(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError)
         isRefreshing = false
+        clearAccessToken()
         // Only redirect to login if we're not already on the login/register page
         // This prevents infinite redirect loops
         if (typeof window !== 'undefined' && 

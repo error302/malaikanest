@@ -6,9 +6,16 @@ from .guards import enforce_postgresql_only, validate_production_env
 
 DEBUG = False
 
-ALLOWED_HOSTS = [
-    h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()
-] + ["127.0.0.1", "localhost"]
+_env_hosts = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
+_default_hosts = [
+    "malaikanest.duckdns.org",
+    "www.malaikanest.duckdns.org",
+]
+_vps_ip = (os.getenv("VPS_IP") or os.getenv("PUBLIC_IP") or "").strip()
+if _vps_ip:
+    _default_hosts.append(_vps_ip)
+
+ALLOWED_HOSTS = sorted(set(_env_hosts or _default_hosts) | {"127.0.0.1", "localhost"})
 
 # Redis cache configuration for high scalability
 REDIS_URL = os.getenv(
@@ -62,6 +69,13 @@ _api_secret = os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLOUDINARY_SECRET
 if not _cloudinary_url and _cloud_name and _api_key and _api_secret:
     _cloudinary_url = f"cloudinary://{_api_key}:{_api_secret}@{_cloud_name}"
 
+# Production must have Cloudinary configured for media handling.
+if not _cloudinary_url and not (_cloud_name and _api_key and _api_secret):
+    raise ImproperlyConfigured(
+        "Cloudinary is not configured. Set CLOUDINARY_URL or "
+        "CLOUDINARY_CLOUD_NAME/CLOUDINARY_API_KEY/CLOUDINARY_API_SECRET."
+    )
+
 # Ensure the underlying Cloudinary SDK can read credentials consistently.
 if _cloudinary_url:
     os.environ.setdefault("CLOUDINARY_URL", _cloudinary_url)
@@ -88,14 +102,10 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
         force_version=False,
     )
 
-# Use Cloudinary for media storage
+# Enforce Cloudinary for media storage in production.
 STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
+    "default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
 MEDIA_URL = "/media/"
@@ -122,7 +132,7 @@ if database_url:
             "PASSWORD": parsed.password,
             "HOST": parsed.hostname,
             "PORT": parsed.port or 5432,
-            "CONN_MAX_AGE": 60,
+            "CONN_MAX_AGE": globals().get("DB_CONN_MAX_AGE", 600),
             "OPTIONS": {
                 "sslmode": _db_sslmode(parsed.hostname),
                 "connect_timeout": 10,
@@ -140,7 +150,7 @@ else:
             "PASSWORD": os.getenv("DB_PASSWORD"),
             "HOST": os.getenv("DB_HOST", "localhost"),
             "PORT": os.getenv("DB_PORT", "5432"),
-            "CONN_MAX_AGE": 60,
+            "CONN_MAX_AGE": globals().get("DB_CONN_MAX_AGE", 600),
             "OPTIONS": {
                 "sslmode": _db_sslmode(os.getenv("DB_HOST", "localhost")),
                 "connect_timeout": 10,
@@ -155,6 +165,8 @@ enforce_postgresql_only(DATABASES, context="prod")
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+SIMPLE_JWT["AUTH_COOKIE_SECURE"] = True
+SIMPLE_JWT["AUTH_COOKIE_SAMESITE"] = "Strict"
 
 # Admin session persistence - keep admin logged in
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days

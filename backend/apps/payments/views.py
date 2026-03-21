@@ -51,7 +51,7 @@ class InitiatePaymentView(APIView):
             defaults={
                 "amount": order.total,
                 "payment_method": payment_method,
-                "phone": request.data.get("phone"),
+                "phone_number": request.data.get("phone"),
                 "status": "initiated",
             },
         )
@@ -61,7 +61,7 @@ class InitiatePaymentView(APIView):
                 return Response({"detail": "Payment already completed"}, status=status.HTTP_400_BAD_REQUEST)
             if request.data.get("phone") and not payment.phone:
                 payment.phone = request.data.get("phone")
-                payment.save(update_fields=["phone", "updated_at"])
+                payment.save(update_fields=["phone_number", "updated_at"])
 
         if payment_method == "mpesa":
             return Response({"payment_id": payment.id, "payment_method": "mpesa"})
@@ -115,20 +115,98 @@ class MpesaInitiateAndPushView(APIView):
 
         payment, _ = Payment.objects.get_or_create(
             order=order,
-            defaults={"amount": order.total, "payment_method": "mpesa", "phone": phone_norm, "status": "initiated"},
+            defaults={"amount": order.total, "payment_method": "mpesa", "phone_number": phone_norm, "status": "initiated"},
         )
         if payment.status == "completed":
             return Response({"detail": "Payment already completed"}, status=status.HTTP_400_BAD_REQUEST)
 
         if payment.phone != phone_norm:
             payment.phone = phone_norm
-            payment.save(update_fields=["phone", "updated_at"])
+            payment.save(update_fields=["phone_number", "updated_at"])
 
         try:
             checkout_request_id = PaymentService.initiate_mpesa_stk(payment, phone_norm)
             return Response({"detail": "STK push initiated. Check your phone for M-Pesa prompt.", "checkout_request_id": checkout_request_id, "order_id": order.id})
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+class MpesaInitiateView(APIView):
+    """
+    Single-call endpoint required by the frontend:
+    - Validates order + amount + phone
+    - Initiates STK push
+    - Returns CheckoutRequestID
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = "payments"
+
+    def post(self, request):
+        order_id = request.data.get("order_id")
+        phone = request.data.get("phone")
+        if not order_id or not phone:
+            return Response({"detail": "order_id and phone are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.filter(pk=order_id, user=request.user).first()
+        if not order:
+            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        if order.status != "pending":
+            return Response({"detail": "Order not in pending state"}, status=status.HTTP_400_BAD_REQUEST)
+
+        phone_norm = normalize_phone(phone)
+        payment, _ = Payment.objects.get_or_create(
+            order=order,
+            defaults={
+                "amount": order.total,
+                "payment_method": "mpesa",
+                "phone_number": phone_norm,
+                "status": "initiated",
+            },
+        )
+
+        # Validate amount hasn't drifted.
+        try:
+            if Decimal(str(payment.amount)) != Decimal(str(order.total)):
+                return Response({"detail": "Order total mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+        except (InvalidOperation, TypeError):
+            return Response({"detail": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if payment.status == "completed":
+            return Response({"detail": "Payment already completed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if payment.phone != phone_norm:
+            payment.phone = phone_norm
+            payment.save(update_fields=["phone_number", "updated_at"])
+
+        try:
+            checkout_request_id = PaymentService.initiate_mpesa_stk(payment, phone_norm)
+            return Response({"checkout_request_id": checkout_request_id, "order_id": order.id})
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentVerifyView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = "payments"
+
+    def get(self, request, checkout_request_id):
+        payment = (
+            Payment.objects.select_related("order")
+            .filter(mpesa_checkout_request_id=checkout_request_id, order__user=request.user)
+            .first()
+        )
+        if not payment:
+            return Response({"detail": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            {
+                "checkout_request_id": payment.checkout_request_id,
+                "status": payment.status,
+                "order_id": payment.order_id,
+                "mpesa_receipt_number": payment.mpesa_receipt_number,
+            }
+        )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -176,8 +254,8 @@ class AdminReconcileCandidatesView(APIView):
         candidates = (
             Payment.objects.select_related("order")
             .filter(payment_method="mpesa", status="initiated", created_at__lt=cutoff)
-            .exclude(checkout_request_id__isnull=True)
-            .exclude(checkout_request_id="")
+            .exclude(mpesa_checkout_request_id__isnull=True)
+            .exclude(mpesa_checkout_request_id="")
             .order_by("created_at")[:limit]
         )
 

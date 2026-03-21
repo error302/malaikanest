@@ -5,7 +5,11 @@ from .guards import enforce_postgresql_only
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if h.strip()
+]
 
 DATABASES = {
     'default': {
@@ -15,12 +19,14 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
+        "CONN_MAX_AGE": globals().get("DB_CONN_MAX_AGE", 600),
     }
 }
 
 enforce_postgresql_only(DATABASES, context="dev")
 
-print('Running in DEVELOPMENT mode with PostgreSQL')
+SIMPLE_JWT["AUTH_COOKIE_SECURE"] = False
+SIMPLE_JWT["AUTH_COOKIE_SAMESITE"] = "Lax"
 
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False

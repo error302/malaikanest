@@ -106,9 +106,21 @@ class CartItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
-        unique_together = ('cart', 'variant')
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cart", "product"],
+                condition=models.Q(variant__isnull=True),
+                name="uniq_cart_product_no_variant",
+            ),
+            models.UniqueConstraint(
+                fields=["cart", "variant"],
+                condition=models.Q(variant__isnull=False),
+                name="uniq_cart_variant",
+            ),
+        ]
 
     @property
     def effective_variant(self):
@@ -310,7 +322,7 @@ class Order(models.Model):
     def customer_phone(self):
         """Get customer phone for display."""
         if self.user:
-            return getattr(self.user, 'phone', None)
+            return getattr(self.user, 'phone_number', None)
         return self.guest_phone or self.shipping_phone
     
     @property
@@ -361,8 +373,8 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None, deliver
             for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
         }
         
-        # Validate stock and calculate total
-        total = 0
+        # Validate stock and calculate totals
+        subtotal = 0
         items = []
         
         for ci in cart_items:
@@ -375,20 +387,26 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None, deliver
             if inv.available() < ci.quantity:
                 raise ValueError(f'Product {ci.product.name} is out of stock. Available: {inv.available()}')
             
-            total += ci.product.price * ci.quantity
+            line_total = ci.product.price * ci.quantity
+            subtotal += line_total
             items.append((ci.product, ci.quantity, ci.product.price, inv))
 
-        # Apply coupon discount
-        if coupon and coupon.active:
-            total = max(total - coupon.amount, 0)
+        discount_amount = 0
+        if coupon and coupon.active and hasattr(coupon, "calculate_discount") and coupon.is_valid():
+            discount_amount = coupon.calculate_discount(subtotal)
 
         # Apply delivery fee
         delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
-        total += delivery_fee
+
+        total = max(subtotal - discount_amount, 0) + delivery_fee
 
         # Create the order
         order = Order.objects.create(
             user=user,
+            subtotal=subtotal,
+            discount_amount=discount_amount,
+            delivery_fee=delivery_fee,
+            tax_amount=0,
             total=total,
             status='pending',
             coupon=coupon,
@@ -396,18 +414,12 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None, deliver
             delivery_region=delivery_region,
         )
 
-        # Deduct inventory and create order items
+        # Reserve inventory (do not deduct stock until payment is confirmed).
         for product, qty, price, inv in items:
-            # Atomically deduct quantity, and never let `reserved` go negative.
-            # Also guard against oversell without relying solely on row locking.
-            updated = Inventory.objects.filter(pk=inv.pk, quantity__gte=qty).update(
-                quantity=models.F("quantity") - qty,
-                reserved=models.Case(
-                    models.When(reserved__gte=qty, then=models.F("reserved") - qty),
-                    default=models.Value(0),
-                    output_field=models.IntegerField(),
-                ),
-            )
+            updated = Inventory.objects.filter(
+                pk=inv.pk,
+                quantity__gte=models.F("reserved") + qty,
+            ).update(reserved=models.F("reserved") + qty)
             if updated != 1:
                 raise ValueError(f"Product {product.name} is out of stock.")
             OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
