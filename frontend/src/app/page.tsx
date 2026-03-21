@@ -35,12 +35,27 @@ async function getFeaturedProducts(): Promise<Product[]> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?featured=true&limit=4`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
     const data = await res.json();
-    const products = data.results ?? data ?? [];
-    return products.map((p: Record<string, unknown>) => ({
+    const results = data.results ?? data.data?.results ?? [];
+    if (!results.length) {
+      const fallback = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=4`,
+        { next: { revalidate: 60 } }
+      );
+      if (fallback.ok) {
+        const fd = await fallback.json();
+        const fp = fd.results ?? fd.data?.results ?? [];
+        return fp.map((p: Record<string, unknown>) => ({
+          ...p,
+          image: p.image ? getImageUrl(p.image as string) : null,
+        }));
+      }
+      return [];
+    }
+    return results.map((p: Record<string, unknown>) => ({
       ...p,
       image: p.image ? getImageUrl(p.image as string) : null,
     }));
@@ -52,13 +67,13 @@ async function getFeaturedProducts(): Promise<Product[]> {
 async function getBestSellers(): Promise<Product[]> {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-sold_count&limit=4`,
-      { next: { revalidate: 300 } }
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=4`,
+      { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
     const data = await res.json();
-    const products = data.results ?? data ?? [];
-    return products.map((p: Record<string, unknown>) => ({
+    const results = data.results ?? data.data?.results ?? [];
+    return results.map((p: Record<string, unknown>) => ({
       ...p,
       image: p.image ? getImageUrl(p.image as string) : null,
     }));
@@ -71,12 +86,12 @@ async function getNewArrivals(): Promise<Product[]> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=4`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
     const data = await res.json();
-    const products = data.results ?? data ?? [];
-    return products.map((p: Record<string, unknown>) => ({
+    const results = data.results ?? data.data?.results ?? [];
+    return results.map((p: Record<string, unknown>) => ({
       ...p,
       image: p.image ? getImageUrl(p.image as string) : null,
     }));
