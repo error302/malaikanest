@@ -18,14 +18,18 @@ export default function Banners() {
 
   useEffect(() => {
     let mounted = true
+    console.log('Fetching banners...')
     api.get('/api/products/banners/')
       .then((res) => {
+        console.log('Banners response:', res.data)
         // Handle standardized API response: { success, data: { count, results }, error }
         const apiData = res.data?.data?.results ?? res.data?.results ?? res.data ?? []
         const rows = Array.isArray(apiData) ? apiData : []
+        console.log('Banners parsed:', rows.length)
         if (mounted) setBanners(rows)
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Banners error:', err)
         if (mounted) setBanners([])
       })
     return () => {
