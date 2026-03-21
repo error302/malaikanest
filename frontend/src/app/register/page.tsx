@@ -162,7 +162,7 @@ export default function RegisterPage() {
         if (Array.isArray(val)) {
           setError(val[0] || 'Please check your information and try again.')
         } else if (typeof val === 'object') {
-          const msgs = Object.values(val).flat()
+          const msgs = (Object.values(val) as unknown[]).flat() as string[]
           setError(msgs[0] || 'Please check your information and try again.')
         } else {
           setError(String(val) || 'Registration failed. Please try again.')
