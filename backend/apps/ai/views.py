@@ -1,5 +1,6 @@
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 import uuid
@@ -9,6 +10,7 @@ from .services import chatbot, embeddings, recommendations, bundles, admin_tools
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def chat(request):
     message = request.data.get('message', '')
     session_id = request.data.get('session_id', str(uuid.uuid4()))
@@ -29,6 +31,7 @@ def chat(request):
 
 @csrf_exempt
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def search_products(request):
     query = request.query_params.get('q', '')
     limit = int(request.query_params.get('limit', 10))
@@ -47,6 +50,7 @@ def search_products(request):
 
 @csrf_exempt
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def product_recommendations(request):
     product_id = request.query_params.get('product_id')
     user_email = request.query_params.get('email')
@@ -92,6 +96,7 @@ def generate_bundle(request):
 
 @csrf_exempt
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def bundle_suggestions(request):
     budget = request.query_params.get('budget')
     age_group = request.query_params.get('age_group', 'newborn')
