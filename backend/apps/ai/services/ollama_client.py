@@ -23,7 +23,7 @@ class OllamaClient:
                 "Ollama API key not set. Proceeding without authentication (local Ollama)."
             )
 
-    def _make_request(self, endpoint: str, payload: Dict[str, Any], timeout: float = 30.0) -> Dict[str, Any]:
+    def _make_request(self, endpoint: str, payload: Dict[str, Any], timeout: float = 180.0) -> Dict[str, Any]:
         try:
             response = requests.post(
                 f"{self.base_url}{endpoint}",
@@ -74,7 +74,7 @@ class OllamaClient:
         message: str,
         system_prompt: str,
         temperature: float = 0.3,
-        max_tokens: int = 1500,
+        max_tokens: int = 500,
     ) -> Dict[str, Any]:
         self._check_client()
 
