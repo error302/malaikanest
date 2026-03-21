@@ -6,6 +6,7 @@ import TrustBar from '@/components/layout/TrustBar'
 import Footer from '@/components/layout/Footer'
 import { Providers } from '@/lib/providers'
 import { ToastContainer } from '@/components/Toast'
+import Chatbot from '@/components/Chatbot'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <TrustBar />
           <Footer />
+          <Chatbot />
           <ToastContainer />
         </Providers>
       </body>
