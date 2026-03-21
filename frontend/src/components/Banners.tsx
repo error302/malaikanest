@@ -20,7 +20,9 @@ export default function Banners() {
     let mounted = true
     api.get('/api/products/banners/')
       .then((res) => {
-        const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
+        // Handle standardized API response: { success, data: { count, results }, error }
+        const apiData = res.data?.data?.results ?? res.data?.results ?? res.data ?? []
+        const rows = Array.isArray(apiData) ? apiData : []
         if (mounted) setBanners(rows)
       })
       .catch(() => {
