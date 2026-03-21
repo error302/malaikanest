@@ -4,15 +4,15 @@ import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 
-import ProductCard from "../../components/ProductCard"
-import api from "../../lib/api"
-import { shouldUseUnoptimizedImage } from "../../lib/media"
+import ProductCard from "@/components/ProductCard"
+import api from "@/lib/api"
+import { shouldUseUnoptimizedImage } from "@/lib/media"
 import {
   AGE_FILTERS,
   AGE_GROUP_FILTERS,
   GENDER_FILTERS,
   SIZE_FILTERS,
-} from "../../lib/catalog"
+} from "@/lib/catalog"
 
 interface Product {
   id: number

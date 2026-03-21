@@ -46,13 +46,20 @@ const getSessionKey = (): string | null => {
   return key
 }
 
+const withTimeout = (promise: Promise<any>, ms: number) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+  ])
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const checkAuth = useCallback(async () => {
     try {
-      const res = await api.get('/api/v1/accounts/profile/')
+      const res = await withTimeout(api.get('/api/v1/accounts/profile/'), 5000)
       if (res.data) {
         const fullName = [res.data.first_name, res.data.last_name].filter(Boolean).join(' ').trim()
         const userData = {
@@ -75,8 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const bootstrap = async () => {
       setIsLoading(true)
       try {
-        // Attempt to restore session via refresh cookie.
-        const refreshRes = await api.post('/api/v1/accounts/token/refresh/')
+        const refreshRes = await withTimeout(api.post('/api/v1/accounts/token/refresh/'), 5000)
         const newAccess = (refreshRes.data as any)?.access
         if (newAccess) setAccessToken(newAccess)
         await checkAuth()
@@ -87,7 +93,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 8000)
+
     bootstrap()
+
+    return () => clearTimeout(timer)
   }, [checkAuth])
 
   const login = useCallback(async (email: string, password: string, captchaToken?: string) => {

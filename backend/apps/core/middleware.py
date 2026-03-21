@@ -20,11 +20,25 @@ class RateLimitMiddleware:
     
     # Rate limits for different endpoint categories
     RATE_LIMITS = {
-        'default': '100/hour',
-        'auth': '10/minute',      # Login, register
-        'password_reset': '3/hour',  # Password reset - max 3 per email per hour
-        'api': '100/hour',
+        'default': '500/hour',
+        'auth': '20/minute',      # Login, register
+        'password_reset': '5/hour',  # Password reset - max 5 per email per hour
+        'api': '500/hour',
     }
+    
+    # Endpoints excluded from rate limiting
+    EXCLUDED_ENDPOINTS = [
+        '/api/accounts/profile/',
+        '/api/v1/accounts/profile/',
+        '/api/accounts/token/refresh/',
+        '/api/v1/accounts/token/refresh/',
+        '/api/products/banners/',
+        '/api/v1/products/banners/',
+        '/api/products/categories/',
+        '/api/v1/products/categories/',
+        '/api/products/products/',
+        '/api/v1/products/products/',
+    ]
     
     # Endpoints that require special rate limiting
     SENSITIVE_ENDPOINTS = [
@@ -38,8 +52,6 @@ class RateLimitMiddleware:
         '/api/v1/accounts/resend-verification/',
         '/api/accounts/password/reset/',
         '/api/v1/accounts/password/reset/',
-        '/api/accounts/token/refresh/',
-        '/api/v1/accounts/token/refresh/',
     ]
     
     def __init__(self, get_response):

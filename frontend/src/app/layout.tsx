@@ -1,9 +1,5 @@
 import './globals.css'
-import React from 'react'
 import type { Metadata, Viewport } from 'next'
-import Navbar from '@/components/layout/Navbar'
-import TrustBar from '@/components/layout/TrustBar'
-import Footer from '@/components/layout/Footer'
 import { Providers } from '@/lib/providers'
 import { ToastContainer } from '@/components/Toast'
 import Chatbot from '@/components/Chatbot'
@@ -41,10 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen flex flex-col antialiased">
         <Providers>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <TrustBar />
-          <Footer />
+          {children}
           <Chatbot />
           <ToastContainer />
         </Providers>

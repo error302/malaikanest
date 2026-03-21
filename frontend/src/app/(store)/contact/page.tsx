@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Mail, MapPin, Phone, AlertCircle } from 'lucide-react'
-import api from '../../lib/api'
+import api from '@/lib/api'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
