@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
               Password reset instructions were sent to <strong className="text-[var(--text-primary)]">{email}</strong>.
             </p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Check your spam folder if you don't see the email within a few minutes.
+              Check your spam folder if you don&apos;t see the email within a few minutes.
             </p>
             <Link href="/login" className="btn-primary mt-7 inline-flex px-7">Back to Login</Link>
           </div>

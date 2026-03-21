@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 import api, { handleApiError } from '@/lib/api'
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
     [categories]
   )
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setError('')
       const res = await api.get('/api/products/admin/categories/')
@@ -63,11 +63,11 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
   useEffect(() => {
     fetchCategories()
-  }, [])
+  }, [fetchCategories])
 
   const handleSeedDefaults = async () => {
     if (!confirm('Restore the default category architecture? This is safe and idempotent.')) return

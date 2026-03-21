@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
@@ -40,6 +40,25 @@ export default function LoginPage() {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''
   const redirect = searchParams.get('redirect') || '/'
 
+  const handleGoogleResponse = useCallback(async (response: any) => {
+    if (!response.credential) return
+    
+    setGoogleLoading(true)
+    setError('')
+
+    try {
+      await api.post('/api/accounts/google/', {
+        token: response.credential,
+      })
+      await router.push(redirect)
+      router.refresh()
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Google sign-in failed')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }, [router, redirect])
+
   useEffect(() => {
     if (!googleClientId || typeof window === 'undefined') return
 
@@ -64,26 +83,7 @@ export default function LoginPage() {
       }
     }
     document.body.appendChild(script)
-  }, [googleClientId])
-
-  const handleGoogleResponse = async (response: any) => {
-    if (!response.credential) return
-    
-    setGoogleLoading(true)
-    setError('')
-
-    try {
-      await api.post('/api/accounts/google/', {
-        token: response.credential,
-      })
-      await router.push(redirect)
-      router.refresh()
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Google sign-in failed')
-    } finally {
-      setGoogleLoading(false)
-    }
-  }
+  }, [googleClientId, handleGoogleResponse])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

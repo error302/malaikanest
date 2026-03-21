@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
@@ -90,6 +90,25 @@ export default function RegisterPage() {
   const captchaRequired = Boolean(captchaSiteKey)
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''
 
+  const handleGoogleResponse = useCallback(async (response: any) => {
+    if (!response.credential) return
+
+    setGoogleLoading(true)
+    setError('')
+
+    try {
+      await api.post('/api/accounts/google/', {
+        token: response.credential,
+      })
+      router.push('/')
+      router.refresh()
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Google sign-up failed')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }, [router])
+
   useEffect(() => {
     if (!googleClientId || typeof window === 'undefined') return
 
@@ -114,26 +133,7 @@ export default function RegisterPage() {
       }
     }
     document.body.appendChild(script)
-  }, [googleClientId])
-
-  const handleGoogleResponse = async (response: any) => {
-    if (!response.credential) return
-
-    setGoogleLoading(true)
-    setError('')
-
-    try {
-      await api.post('/api/accounts/google/', {
-        token: response.credential,
-      })
-      router.push('/')
-      router.refresh()
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Google sign-up failed')
-    } finally {
-      setGoogleLoading(false)
-    }
-  }
+  }, [googleClientId, handleGoogleResponse])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
