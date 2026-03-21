@@ -22,6 +22,7 @@ const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
   '/api/accounts/token/refresh/',
   '/api/accounts/register/',
   '/api/accounts/admin/login/',
+  '/api/accounts/profile/',  // Don't trigger refresh loop for profile check
 ]
 
 const CACHEABLE_ENDPOINTS = [
@@ -248,7 +249,12 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError)
         isRefreshing = false
-        if (typeof window !== 'undefined') {
+        // Only redirect to login if we're not already on the login/register page
+        // This prevents infinite redirect loops
+        if (typeof window !== 'undefined' && 
+            !window.location.pathname.includes('/login') && 
+            !window.location.pathname.includes('/register') &&
+            !window.location.pathname.includes('/forgot-password')) {
           window.location.href = '/login'
         }
         return Promise.reject(refreshError)

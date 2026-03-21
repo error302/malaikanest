@@ -75,7 +75,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(USER_KEY)
-    const hasSessionHint = !!(stored || localStorage.getItem(TOKEN_KEY))
 
     if (stored) {
       try {
@@ -85,11 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Always do a lightweight server-side probe once on mount so cookie-based sessions
-    // work even when localStorage is empty (e.g. switching between www/non-www).
-    // This prevents "I am logged in but can't tell" and reduces admin 401 loops.
     setIsLoading(false)
-    if (hasSessionHint || typeof window !== 'undefined') {
+    // Only check auth if we have a stored user session hint
+    // This prevents infinite refresh loops for non-logged-in users
+    if (stored) {
       checkAuth()
     }
   }, [checkAuth])
