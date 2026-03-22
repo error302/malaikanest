@@ -6,7 +6,6 @@
  */
 
 import HeroSection from '@/components/home/HeroSection';
-import Banners from '@/components/Banners';
 import {
   CategoryQuickLinks,
   ProductSection,
@@ -169,13 +168,10 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* 1. Full-bleed slideshow hero */}
+      {/* 1. Full-bleed slideshow hero (includes banners) */}
       <HeroSection />
 
-      {/* 2. Banners */}
-      <Banners />
-
-      {/* 3. Category quick-links */}
+      {/* 2. Category quick-links */}
       <CategoryQuickLinks />
 
       {/* 3. Featured — large + side list */}

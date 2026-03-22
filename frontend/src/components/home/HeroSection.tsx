@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, CreditCard, Truck, CheckCircle } from 'lucide-react';
+import { getImageUrl } from '@/lib/media';
 
 interface Slide {
   image: string;
@@ -16,7 +17,15 @@ interface Slide {
   ctaSecondaryHref?: string;
 }
 
-const SLIDES: Slide[] = [
+interface Banner {
+  id: number;
+  title?: string;
+  subtitle?: string;
+  image: string;
+  button_link?: string;
+}
+
+const STATIC_SLIDES: Slide[] = [
   {
     image: '/images/hero/hero-1.jpg',
     tag: 'New Season Arrivals',
@@ -61,17 +70,42 @@ export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [slides, setSlides] = useState<Slide[]>(STATIC_SLIDES);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/banners/`)
+      .then(res => res.json())
+      .then(data => {
+        const apiData = data?.data?.results ?? data?.results ?? [];
+        if (mounted && apiData.length > 0) {
+          setBanners(apiData);
+          const bannerSlides: Slide[] = apiData.map((b: Banner) => ({
+            image: getImageUrl(b.image),
+            tag: b.title || 'Special Offer',
+            headline: b.subtitle || '',
+            sub: '',
+            cta: 'Shop Now',
+            ctaHref: b.button_link || '/categories',
+          }));
+          setSlides([...STATIC_SLIDES, ...bannerSlides]);
+        }
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
 
   const goTo = useCallback(
     (index: number) => {
       if (isTransitioning) return;
       setIsTransitioning(true);
       setTimeout(() => {
-        setCurrent((index + SLIDES.length) % SLIDES.length);
+        setCurrent((index + slides.length) % slides.length);
         setIsTransitioning(false);
       }, 300);
     },
-    [isTransitioning]
+    [isTransitioning, slides.length]
   );
 
   const prev = () => goTo(current - 1);
@@ -82,11 +116,11 @@ export default function HeroSection() {
     return () => clearInterval(timer);
   }, [current, goTo]);
 
-  const slide = SLIDES[current];
+  const slide = slides[current];
 
   return (
     <section className="relative w-full h-[88vh] min-h-[560px] max-h-[900px] overflow-hidden bg-[#1A3A2A]">
-      {SLIDES.map((s, i) => (
+      {slides.map((s, i) => (
         <div
           key={i}
           className={`absolute inset-0 transition-opacity duration-700 ${
@@ -184,7 +218,7 @@ export default function HeroSection() {
       </button>
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {SLIDES.map((_, i) => (
+        {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
