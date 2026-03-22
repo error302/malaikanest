@@ -133,6 +133,7 @@ export default function HeroSection() {
               alt={s.headline}
               fill
               priority={i === 0}
+              loading={i === 0 ? 'eager' : 'lazy'}
               className="object-cover object-center"
               onError={() => setImageErrors((prev) => ({ ...prev, [i]: true }))}
               sizes="100vw"

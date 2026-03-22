@@ -1,8 +1,5 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { Providers } from '@/lib/providers'
-import { ToastContainer } from '@/components/Toast'
-import Chatbot from '@/components/Chatbot'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -36,11 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#FDF8F3" />
       </head>
       <body className="min-h-screen flex flex-col antialiased">
-        <Providers>
-          {children}
-          <Chatbot />
-          <ToastContainer />
-        </Providers>
+        {children}
       </body>
     </html>
   )
