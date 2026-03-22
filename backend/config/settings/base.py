@@ -237,9 +237,12 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_TRACK_STARTED = True
 
 CELERY_BEAT_SCHEDULE = {
-    "payments-reconcile-every-10-min": {
+    # Reconcile any M-Pesa payments where the callback was missed or delayed.
+    # Runs every 15 minutes — catches payments that have been initiated but
+    # have no callback after 5+ minutes.  Limit 500 prevents runaway queries.
+    "payments-reconcile-every-15-min": {
         "task": "apps.payments.tasks.reconcile_payments_task",
-        "schedule": timedelta(minutes=10),
+        "schedule": timedelta(minutes=15),
         "args": (5, 500),
     },
     "cleanup-old-guest-carts-hourly": {

@@ -9,6 +9,7 @@ from .views import (
     MpesaInitiateView,
     MpesaInitiateAndPushView,
     MpesaSTKPushView,
+    PaymentStatusByIdView,
     PaymentVerifyView,
     PayPalCallbackView,
 )
@@ -20,6 +21,8 @@ urlpatterns = [
     path('mpesa/initiate/', MpesaInitiateView.as_view(), name='mpesa_initiate'),
     path('mpesa/', MpesaInitiateAndPushView.as_view(), name='mpesa_pay_legacy'),
     path('mpesa/callback/', MpesaCallbackView.as_view(), name='mpesa_callback'),
+    # Polling endpoint: frontend polls this every 3s after STK push (2-minute window)
+    path('<int:pk>/status/', PaymentStatusByIdView.as_view(), name='payment_status_by_id'),
     path('verify/<str:checkout_request_id>/', PaymentVerifyView.as_view(), name='payment_verify'),
     path('paypal/callback/', PayPalCallbackView.as_view(), name='paypal_callback'),
     path('card/callback/', CardCallbackView.as_view(), name='card_callback'),

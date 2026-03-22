@@ -183,7 +183,54 @@ SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-LOGGING["handlers"]["file"]["level"] = "WARNING"
+LOGGING["handlers"]["file"]["level"] = "INFO"
+LOGGING["loggers"]["django"]["level"] = "WARNING"
+
+# ── JSON Structured Logging ─────────────────────────────────────────────────
+# Production uses JSON lines so log aggregators (Datadog, Loki, GCP Cloud Logging,
+# Elastic) can parse and index each log entry as structured data.
+# The apps.payments logger emits at INFO so all payment events are captured.
+import logging
+import json as _json
+
+
+class _JsonFormatter(logging.Formatter):
+    """One-line JSON log record — safe for log aggregation pipelines."""
+
+    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+        log_obj = {
+            "ts": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "logger": record.name,
+            "module": record.module,
+            "msg": record.getMessage(),
+        }
+        if record.exc_info:
+            log_obj["exc_info"] = self.formatException(record.exc_info)
+        return _json.dumps(log_obj, ensure_ascii=False, default=str)
+
+
+LOGGING["formatters"]["json"] = {"()": _JsonFormatter}
+
+LOGGING["handlers"]["json_file"] = {
+    "level": "INFO",
+    "class": "logging.handlers.RotatingFileHandler",
+    # Payment events, API errors, and Celery task outcomes all land here.
+    "filename": BASE_DIR / "logs" / "production.json.log",
+    "maxBytes": 1024 * 1024 * 20,  # 20 MB per file
+    "backupCount": 10,
+    "formatter": "json",
+    "encoding": "utf-8",
+}
+
+# Route all app loggers through the JSON handler so payment events are captured.
+LOGGING["loggers"]["apps"] = {
+    "handlers": ["json_file", "console"],
+    "level": "INFO",
+    "propagate": False,
+}
+# Django framework logs: WARNING+ to keep noise down but catch server errors.
+LOGGING["loggers"]["django"]["handlers"] = ["json_file", "console"]
 LOGGING["loggers"]["django"]["level"] = "WARNING"
 
 validate_production_env(os.environ)

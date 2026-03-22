@@ -19,6 +19,9 @@ Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
 ExecStartPre=/bin/mkdir -p /run/gunicorn
 ExecStartPre=/bin/chown www-data:www-data /run/gunicorn
 
+# Worker count: (2 × nproc) + 1
+# On a 2-core VM: (2 × 2) + 1 = 5 workers (tune down to 3-4 if RAM is tight).
+# On a 4-core VM: (2 × 4) + 1 = 9 workers.
 ExecStart=/var/www/malaikanest/venv/bin/gunicorn \
     --workers 4 \
     --worker-class sync \
@@ -28,8 +31,8 @@ ExecStart=/var/www/malaikanest/venv/bin/gunicorn \
     --access-logfile /var/log/malaikanest/gunicorn-access.log \
     --error-logfile /var/log/malaikanest/gunicorn-error.log \
     --log-level info \
-    --timeout 60 \
-    --graceful-timeout 30 \
+    --timeout 120 \
+    --graceful-timeout 90 \
     --max-requests 1000 \
     --max-requests-jitter 50 \
     config.wsgi:application

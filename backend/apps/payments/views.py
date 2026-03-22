@@ -209,6 +209,60 @@ class PaymentVerifyView(APIView):
         )
 
 
+class PaymentStatusByIdView(APIView):
+    """
+    GET /api/v1/payments/{id}/status/
+
+    Frontend polling endpoint used during checkout after an STK Push is
+    triggered. The client polls this endpoint every 3 seconds for up to 2
+    minutes waiting for the M-Pesa callback to arrive and flip status to
+    'completed'. Returns only the minimal fields needed for the polling loop —
+    never exposes raw callback JSON or internal DB IDs in sequential form.
+
+    Permission: IsAuthenticated + caller must own the payment (order__user check).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = "payments"
+
+    def get(self, request, pk):
+        # Scope to the authenticated user's payments — any other PK returns 404
+        # so we don't leak the existence of other users' payment records.
+        payment = (
+            Payment.objects.select_related("order")
+            .filter(pk=pk, order__user=request.user)
+            .first()
+        )
+        if not payment:
+            return Response(
+                {"status": "error", "message": "Payment not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        logger.info(
+            "payment_status_poll order=%s payment=%s status=%s user=%s",
+            payment.order_id,
+            payment.pk,
+            payment.status,
+            request.user.pk,
+        )
+
+        return Response(
+            {
+                "status": "success",
+                "data": {
+                    "payment_id": payment.pk,
+                    "payment_status": payment.status,
+                    "checkout_request_id": payment.checkout_request_id,
+                    "mpesa_receipt_number": payment.mpesa_receipt_number,
+                    "order_id": payment.order_id,
+                    "amount": str(payment.amount),
+                    "payment_method": payment.payment_method,
+                },
+            }
+        )
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]

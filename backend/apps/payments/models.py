@@ -78,6 +78,7 @@ class PaymentAuditLog(models.Model):
         ("callback_blocked", "Callback Blocked"),
         ("callback_unmatched", "Callback Unmatched"),
         ("callback_duplicate", "Callback Duplicate"),
+        ("callback_duplicate_receipt", "Callback Duplicate Receipt"),
         ("callback_failed", "Callback Failed"),
         ("callback_completed", "Callback Completed"),
         ("stk_initiated", "STK Initiated"),
