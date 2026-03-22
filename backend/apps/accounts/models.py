@@ -1,4 +1,5 @@
 from django.db import models
+from apps.core.models import BaseModel
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -104,7 +105,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 
-class UserAddress(models.Model):
+class UserAddress(BaseModel):
     LABEL_CHOICES = [
         ('home', 'Home'),
         ('work', 'Work'),
@@ -122,8 +123,6 @@ class UserAddress(models.Model):
     county = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=20, blank=True)
     is_default = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-is_default', '-created_at']

@@ -1,5 +1,7 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from apps.core.models import BaseModel
 
 
 class UserManager(BaseUserManager):
@@ -21,7 +23,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, phone, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     ROLE_CHOICES = (('admin', 'Admin'), ('customer', 'Customer'))
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, unique=True)

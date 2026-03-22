@@ -1,7 +1,20 @@
+import uuid
 from django.db import models
 
 
-class SiteSettings(models.Model):
+class BaseModel(models.Model):
+    """
+    Abstract base model providing UUID primary key and timestamp tracking.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class SiteSettings(BaseModel):
     """
     Singleton-ish site configuration.
 
@@ -30,17 +43,17 @@ class SiteSettings(models.Model):
     # Stored in Cloudinary via default storage in production.
     logo = models.ImageField(upload_to="site/logo/", null=True, blank=True)
 
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         verbose_name = "Site Settings"
         verbose_name_plural = "Site Settings"
 
-    def __str__(self) -> str:  # pragma: no cover
+    def __str__(self) -> str:
         return f"SiteSettings({self.pk})"
 
     @classmethod
     def get_solo(cls) -> "SiteSettings":
-        obj, _ = cls.objects.get_or_create(pk=1, defaults={})
+        # Note: With UUIDs, pk=1 doesn't make sense. We should get the first one.
+        obj = cls.objects.first()
+        if not obj:
+            obj = cls.objects.create()
         return obj
-

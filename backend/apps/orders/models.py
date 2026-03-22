@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from apps.core.models import BaseModel
 from django.conf import settings
 from django.utils import timezone
 from apps.products.models import Product, ProductVariant, Inventory, InventoryLog, VariantInventory
@@ -7,22 +8,22 @@ import random
 from datetime import datetime
 
 
-class Invoice(models.Model):
+class Invoice(BaseModel):
     """Model for storing generated invoices linked to orders."""
     
     order = models.OneToOneField('orders.Order', on_delete=models.CASCADE, related_name='invoice')
     invoice_number = models.CharField(max_length=50, unique=True, db_index=True)
     pdf_file = models.FileField(upload_to='invoices/%Y/%m/', null=True, blank=True)
     pdf_url = models.URLField(null=True, blank=True)
-    generated_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
     download_count = models.PositiveIntegerField(default=0)
     
     class Meta:
-        ordering = ['-generated_at']
+        ordering = ['-created_at']
         indexes = [
             models.Index(fields=['order']),
-            models.Index(fields=['-generated_at']),
+            models.Index(fields=['-created_at']),
         ]
     
     def __str__(self):
@@ -52,7 +53,7 @@ class Invoice(models.Model):
         return f"INV-{year}-{new_seq:06d}"
 
 
-class Coupon(models.Model):
+class Coupon(BaseModel):
     DISCOUNT_TYPE_CHOICES = [
         ('flat', 'Flat Amount'),
         ('percentage', 'Percentage'),
@@ -65,7 +66,6 @@ class Coupon(models.Model):
     usage_limit = models.PositiveIntegerField(null=True, blank=True)
     times_used = models.PositiveIntegerField(default=0)
     active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.code
@@ -83,10 +83,9 @@ class Coupon(models.Model):
         return min(self.amount, subtotal)
 
 
-class Cart(models.Model):
+class Cart(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     session_key = models.CharField(max_length=40, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         indexes = [
@@ -101,7 +100,7 @@ class Cart(models.Model):
         return f"Guest cart ({self.session_key or 'no session'})"
 
 
-class CartItem(models.Model):
+class CartItem(BaseModel):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, null=True, blank=True)
@@ -129,7 +128,7 @@ class CartItem(models.Model):
         return self.product.variants.filter(size='one-size').first() or self.product.variants.first()
 
 
-class Order(models.Model):
+class Order(BaseModel):
     """Order model with state machine for status transitions."""
     
     # Status constants for the state machine
@@ -199,8 +198,6 @@ class Order(models.Model):
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     paid_at = models.DateTimeField(null=True, blank=True)
     processed_at = models.DateTimeField(null=True, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
@@ -340,7 +337,7 @@ class Order(models.Model):
         return self.customer_name
 
 
-class OrderItem(models.Model):
+class OrderItem(BaseModel):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     price = models.DecimalField(max_digits=10, decimal_places=2)

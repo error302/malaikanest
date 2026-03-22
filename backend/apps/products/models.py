@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from apps.core.models import BaseModel
 from django.db.models import Q
 from django.utils.text import slugify
 
@@ -26,13 +27,12 @@ def validate_image_file(image):
             raise ValidationError("Invalid image format")
 
 
-class Brand(models.Model):
+class Brand(BaseModel):
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
     logo = models.ImageField(upload_to="brands/", blank=True, null=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -49,7 +49,7 @@ class Brand(models.Model):
         return self.name
 
 
-class Category(models.Model):
+class Category(BaseModel):
     name = models.CharField(max_length=120)
     slug = models.SlugField(max_length=140, blank=True)
     description = models.TextField(blank=True)
@@ -71,8 +71,6 @@ class Category(models.Model):
         blank=True,
         help_text="Top-level group for mega menu navigation",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["name"]
@@ -164,10 +162,9 @@ class Category(models.Model):
         return self.name
 
 
-class Tag(models.Model):
+class Tag(BaseModel):
     name = models.CharField(max_length=80, unique=True)
     slug = models.SlugField(max_length=120, unique=True, db_index=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["name"]
@@ -187,7 +184,7 @@ class Tag(models.Model):
         return self.name
 
 
-class Banner(models.Model):
+class Banner(BaseModel):
     title = models.CharField(max_length=200, blank=True)
     subtitle = models.CharField(max_length=300, blank=True)
     button_text = models.CharField(max_length=50, blank=True)
@@ -206,7 +203,6 @@ class Banner(models.Model):
     start_date = models.DateTimeField(null=True, blank=True)
     end_date = models.DateTimeField(null=True, blank=True)
     position = models.PositiveSmallIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["position", "-created_at"]
@@ -231,7 +227,7 @@ class Banner(models.Model):
         return self.get_image_url
 
 
-class Product(models.Model):
+class Product(BaseModel):
     GENDER_CHOICES = [
         ("boy", "Boy"),
         ("girl", "Girl"),
@@ -315,8 +311,6 @@ class Product(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     seo_title = models.CharField(max_length=70, blank=True)
     seo_description = models.CharField(max_length=160, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     image = models.ImageField(
         upload_to="products/", blank=True, null=True, validators=[validate_image_file]
     )
@@ -384,7 +378,7 @@ class Product(models.Model):
         return 0
 
 
-class Inventory(models.Model):
+class Inventory(BaseModel):
     product = models.OneToOneField(
         Product, related_name="inventory", on_delete=models.CASCADE
     )
@@ -398,7 +392,7 @@ class Inventory(models.Model):
         return f"{self.product.name} inventory: {self.quantity}"
 
 
-class ProductVariant(models.Model):
+class ProductVariant(BaseModel):
     SIZE_CHOICES = Product.SIZE_CHOICES
     COLOR_CHOICES = [
         ("white", "White"),
@@ -443,7 +437,7 @@ class ProductVariant(models.Model):
         return " - ".join(parts)
 
 
-class ProductImage(models.Model):
+class ProductImage(BaseModel):
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE
     )
@@ -453,7 +447,6 @@ class ProductImage(models.Model):
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False)
     position = models.PositiveSmallIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["position", "-created_at"]
@@ -463,7 +456,7 @@ class ProductImage(models.Model):
         return f"{self.product.name} - Image {self.position}"
 
 
-class VariantInventory(models.Model):
+class VariantInventory(BaseModel):
     variant = models.OneToOneField(
         ProductVariant, related_name="inventory", on_delete=models.CASCADE
     )
@@ -483,7 +476,7 @@ class VariantInventory(models.Model):
         return f"{self.variant} inventory: {self.quantity}"
 
 
-class InventoryLog(models.Model):
+class InventoryLog(BaseModel):
     CHANGE_TYPE_CHOICES = [
         ("order_placed", "Order Placed"),
         ("order_cancelled", "Order Cancelled"),
@@ -504,7 +497,6 @@ class InventoryLog(models.Model):
     change_type = models.CharField(max_length=30, choices=CHANGE_TYPE_CHOICES)
     quantity_change = models.IntegerField()
     reason = models.CharField(max_length=255, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -517,7 +509,7 @@ class InventoryLog(models.Model):
         return f"{self.product.name} {self.change_type} {self.quantity_change}"
 
 
-class Review(models.Model):
+class Review(BaseModel):
     product = models.ForeignKey(
         Product, related_name="reviews", on_delete=models.CASCADE
     )
@@ -532,7 +524,6 @@ class Review(models.Model):
     rating = models.PositiveSmallIntegerField()
     title = models.CharField(max_length=200, blank=True)
     body = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = [("product", "user")]
@@ -546,7 +537,7 @@ class Review(models.Model):
         return f"{self.product.name} review by {identifier}"
 
 
-class Wishlist(models.Model):
+class Wishlist(BaseModel):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -555,7 +546,6 @@ class Wishlist(models.Model):
         blank=True,
     )
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("user", "product")

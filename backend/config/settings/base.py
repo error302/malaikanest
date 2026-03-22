@@ -25,13 +25,15 @@ for env_file in env_files:
     if env_file.exists():
         load_dotenv(env_file, override=False)
 
-_SECRET_KEY = os.getenv("SECRET_KEY")
-if not _SECRET_KEY:
-    raise ImproperlyConfigured(
-        "SECRET_KEY environment variable is not set. "
-        'Generate one with: python -c "import secrets; print(secrets.token_hex(50))"'
-    )
-SECRET_KEY = _SECRET_KEY
+def get_env_or_crash(var_name):
+    import os
+    from django.core.exceptions import ImproperlyConfigured
+    val = os.getenv(var_name)
+    if not val:
+        raise ImproperlyConfigured(f"{var_name} environment variable is strictly required by the Behavioral Contract.")
+    return val
+
+SECRET_KEY = get_env_or_crash("SECRET_KEY")
 
 # Admin URL prefix (default: /manage-store/). Backwards-compatible with legacy ADMIN_URL_SECRET.
 ADMIN_URL_PREFIX = (os.getenv("ADMIN_URL_PREFIX") or os.getenv("ADMIN_URL_SECRET") or "manage-store").strip("/")
@@ -160,7 +162,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 24,
     "DEFAULT_RENDERER_CLASSES": [
-        "apps.core.renderers.StandardizedJSONRenderer",
+        "apps.core.renderers.StandardJSONRenderer",
     ],
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
     "DEFAULT_FILTER_BACKENDS": [
@@ -213,10 +215,10 @@ else:
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_HOST = get_env_or_crash("EMAIL_HOST")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_USER = get_env_or_crash("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = get_env_or_crash("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 DEFAULT_FROM_EMAIL = os.getenv(
     "DEFAULT_FROM_EMAIL", "Malaika Nest <malaikanest7@gmail.com>"

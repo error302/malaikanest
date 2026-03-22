@@ -1,8 +1,9 @@
 from django.db import models
 from django.utils import timezone
+from apps.core.models import BaseModel
 
 
-class Payment(models.Model):
+class Payment(BaseModel):
     PAYMENT_METHOD_CHOICES = [
         ("mpesa", "M-Pesa"),
         ("paypal", "PayPal"),
@@ -33,8 +34,8 @@ class Payment(models.Model):
     callback_received_at = models.DateTimeField(null=True, blank=True)
     initiated_at = models.DateTimeField(default=timezone.now, db_index=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    
+    # created_at and updated_at are provided by BaseModel
 
     class Meta:
         indexes = [
@@ -72,7 +73,7 @@ class Payment(models.Model):
         self.raw_callback_json = value
 
 
-class PaymentAuditLog(models.Model):
+class PaymentAuditLog(BaseModel):
     EVENT_CHOICES = [
         ("callback_received", "Callback Received"),
         ("callback_blocked", "Callback Blocked"),
@@ -104,7 +105,8 @@ class PaymentAuditLog(models.Model):
     payload_hash = models.CharField(max_length=64)
     payload = models.JSONField()
     notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # created_at and updated_at are provided by BaseModel
 
     class Meta:
         indexes = [
