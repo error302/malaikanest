@@ -89,7 +89,7 @@ export default function HeroSection() {
             cta: 'Shop Now',
             ctaHref: b.button_link || '/categories',
           }));
-          setSlides([...STATIC_SLIDES, ...bannerSlides]);
+          setSlides(bannerSlides);
         }
       })
       .catch(() => {});

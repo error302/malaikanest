@@ -100,60 +100,7 @@ async function getNewArrivals(): Promise<Product[]> {
   }
 }
 
-const FALLBACK_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: 'Organic Cotton Onesie Set (3 pcs)',
-    slug: 'organic-cotton-onesie-set',
-    price: '2100',
-    original_price: '2600',
-    rating: 5,
-    review_count: 24,
-    image: '/images/products/onesie-set.jpg',
-    badge: 'New In',
-    badge_color: 'bg-[#1A3A2A] text-[#E8C98A]',
-    category: { name: 'Clothing' },
-    stock: 10,
-  },
-  {
-    id: 2,
-    name: 'Soft Sensory Teddy Bear',
-    slug: 'soft-sensory-teddy-bear',
-    price: '1800',
-    original_price: '2200',
-    rating: 5,
-    review_count: 41,
-    image: '/images/products/teddy-bear.jpg',
-    badge: 'Best Seller',
-    badge_color: 'bg-[#C4704A] text-white',
-    category: { name: 'Toys' },
-    stock: 15,
-  },
-  {
-    id: 3,
-    name: 'BPA-Free Feeding Bottle Set',
-    slug: 'bpa-free-feeding-bottle-set',
-    price: '950',
-    original_price: '1200',
-    rating: 4,
-    review_count: 18,
-    image: '/images/products/feeding-set.jpg',
-    badge: 'Popular',
-    category: { name: 'Baby Essentials' },
-    stock: 20,
-  },
-  {
-    id: 4,
-    name: 'Waterproof Mattress Protector',
-    slug: 'waterproof-mattress-protector',
-    price: '3200',
-    rating: 5,
-    review_count: 9,
-    image: '/images/products/mattress-protector.jpg',
-    category: { name: 'Nursery' },
-    stock: 8,
-  },
-];
+
 
 export default async function HomePage() {
   const [featured, bestSellers, newArrivals] = await Promise.all([
@@ -162,9 +109,9 @@ export default async function HomePage() {
     getNewArrivals(),
   ]);
 
-  const featuredProducts = featured.length ? featured : FALLBACK_PRODUCTS;
-  const bestSellerProducts = bestSellers.length ? bestSellers : FALLBACK_PRODUCTS;
-  const newArrivalProducts = newArrivals.length ? newArrivals : FALLBACK_PRODUCTS;
+  const featuredProducts = featured;
+  const bestSellerProducts = bestSellers;
+  const newArrivalProducts = newArrivals;
 
   return (
     <>

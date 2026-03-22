@@ -278,6 +278,8 @@ export function ProductSection({
   products,
   layout = 'grid4',
 }: ProductSectionProps) {
+  if (!products || products.length === 0) return null;
+
   if (layout === 'featured+3' && products.length >= 4) {
     return (
       <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]">
