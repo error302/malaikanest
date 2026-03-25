@@ -82,10 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const bootstrap = async () => {
       setIsLoading(true)
       try {
-        const refreshRes = await withTimeout(api.post('/api/v1/accounts/token/refresh/'), 5000)
+        const refreshRes = await withTimeout(api.post('/api/v1/accounts/token/refresh/'), 3000)
         const newAccess = (refreshRes.data as any)?.access
-        if (newAccess) setAccessToken(newAccess)
-        await checkAuth()
+        if (newAccess) {
+          setAccessToken(newAccess)
+          await checkAuth()
+        } else {
+          setIsLoading(false)
+        }
       } catch {
         clearAccessToken()
         setUser(null)
@@ -95,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 8000)
+    }, 5000)
 
     bootstrap()
 
