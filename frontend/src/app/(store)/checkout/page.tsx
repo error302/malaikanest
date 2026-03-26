@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, ChevronLeft, Loader2, ShieldCheck } from 'lucide-react'
 
 import api, { handleApiError } from '@/lib/api'
+import MpesaCheckout from '@/components/MpesaCheckout'
 
 type CartData = {
   id: number
@@ -183,21 +184,7 @@ function CheckoutContent() {
 
       const order = checkoutRes.data
       setOrderId(order.id)
-
-      const mpesaRes = await api.post('/api/v1/payments/mpesa/pay/', {
-        order_id: order.id,
-        phone: phoneValue,
-      })
-
-      const crid = (mpesaRes.data as any)?.checkout_request_id as string | undefined
-      if (!crid) throw new Error('Missing checkout_request_id')
-      setCheckoutRequestId(crid)
-
-      hasStartedPolling.current = false
       setPaymentInitiated(true)
-
-      // Persist polling state in URL so refresh doesn't break the flow.
-      router.replace(`/checkout?order_id=${order.id}&checkout_request_id=${encodeURIComponent(crid)}`)
     } catch (err: unknown) {
       setError(handleApiError(err))
       setProcessing(false)
@@ -293,18 +280,6 @@ function CheckoutContent() {
                     </select>
                   </label>
 
-                  <label className="block text-sm font-medium text-[var(--text-primary)]">
-                    M-Pesa Phone Number
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="07XXXXXXXX"
-                      className="input-soft mt-2"
-                    />
-                    <p className="mt-1 text-xs text-[var(--text-secondary)]">Use the number that will receive the STK prompt.</p>
-                  </label>
-
                   <label className="inline-flex items-center gap-3 pt-1 text-[var(--text-primary)]">
                     <input
                       type="checkbox"
@@ -337,13 +312,20 @@ function CheckoutContent() {
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">You will receive a secure phone prompt to approve payment.</p>
                 </div>
 
-                <button
-                  onClick={handleCheckout}
-                  disabled={processing || !phoneLooksValid}
-                  className="btn-primary mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {processing ? 'Processing...' : `Pay KES ${formatKsh(payableTotal)} with M-Pesa`}
-                </button>
+                <div className="mt-6">
+                  <MpesaCheckout
+                    orderId={orderId || 0}
+                    totalAmount={payableTotal}
+                    defaultPhone={phone}
+                    onSuccess={(receipt) => {
+                      router.push(`/checkout/success?order=${orderId}&receipt=${receipt}`)
+                    }}
+                    onFailure={() => {
+                      setError('Payment failed or was cancelled. Please try again.')
+                      setPaymentInitiated(false)
+                    }}
+                  />
+                </div>
               </article>
             </section>
 
