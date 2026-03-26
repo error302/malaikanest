@@ -27,7 +27,7 @@ interface Banner {
 
 const STATIC_SLIDES: Slide[] = [
   {
-    image: '/images/hero/hero-1.jpg',
+    image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=1920&q=80',
     tag: 'New Season Arrivals',
     headline: 'Everything your\nlittle one needs.',
     sub: 'Premium baby essentials, carefully chosen for Kenyan families. Safe, affordable, delivered.',
@@ -37,7 +37,7 @@ const STATIC_SLIDES: Slide[] = [
     ctaSecondaryHref: '/best-sellers',
   },
   {
-    image: '/images/hero/hero-2.jpg',
+    image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1920&q=80',
     tag: 'Safe & Tested',
     headline: 'Clothing made\nfor soft skin.',
     sub: 'Organic cotton onesies, rompers and sets — gentle on newborns, kind to parents budgets.',
@@ -45,7 +45,7 @@ const STATIC_SLIDES: Slide[] = [
     ctaHref: '/categories',
   },
   {
-    image: '/images/hero/hero-3.jpg',
+    image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=1920&q=80',
     tag: 'Gift Ideas',
     headline: 'The perfect gift\nfor every baby.',
     sub: 'Beautifully curated gift sets for baby showers, newborns and milestones.',
