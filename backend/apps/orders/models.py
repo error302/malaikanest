@@ -6,6 +6,17 @@ from apps.products.models import Product, ProductVariant, Inventory, InventoryLo
 import uuid
 import random
 from datetime import datetime
+from django.db.models import F
+from decimal import Decimal
+
+
+def generate_receipt_number() -> str:
+    """
+    Human-friendly public order reference.
+
+    Kept as `receipt_number` for backwards compatibility with existing API/UI.
+    """
+    return f"MN-{uuid.uuid4().hex[:12].upper()}"
 
 
 class Invoice(BaseModel):
@@ -54,38 +65,88 @@ class Invoice(BaseModel):
 
 
 class Coupon(BaseModel):
+    DISCOUNT_TYPE_FLAT = "flat"
+    DISCOUNT_TYPE_PERCENT = "percentage"
     DISCOUNT_TYPE_CHOICES = [
-        ('flat', 'Flat Amount'),
-        ('percentage', 'Percentage'),
+        (DISCOUNT_TYPE_FLAT, "Flat Amount"),
+        (DISCOUNT_TYPE_PERCENT, "Percentage"),
     ]
 
-    code = models.CharField(max_length=50, unique=True)
-    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='flat')
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    usage_limit = models.PositiveIntegerField(null=True, blank=True)
-    times_used = models.PositiveIntegerField(default=0)
-    active = models.BooleanField(default=True)
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    discount_type = models.CharField(
+        max_length=20, choices=DISCOUNT_TYPE_CHOICES, default=DISCOUNT_TYPE_FLAT
+    )
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    max_uses = models.PositiveIntegerField(null=True, blank=True)
+    used_count = models.PositiveIntegerField(default=0)
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_to = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.code
 
-    def is_valid(self):
-        if not self.active:
+    def clean(self):
+        super().clean()
+        if self.code:
+            self.code = self.code.strip().upper()
+        if self.discount_type == self.DISCOUNT_TYPE_PERCENT:
+            # Clamp to 0..100
+            try:
+                dv = Decimal(str(self.discount_value))
+            except Exception:
+                dv = Decimal("0")
+            if dv < 0:
+                self.discount_value = Decimal("0")
+            elif dv > 100:
+                self.discount_value = Decimal("100")
+
+    def is_valid(self, *, now=None):
+        now = now or timezone.now()
+        if not self.is_active:
             return False
-        if self.usage_limit and self.times_used >= self.usage_limit:
+        if self.valid_from and now < self.valid_from:
+            return False
+        if self.valid_to and now > self.valid_to:
+            return False
+        if self.max_uses is not None and self.used_count >= self.max_uses:
             return False
         return True
 
     def calculate_discount(self, subtotal):
-        if self.discount_type == 'percentage':
-            return (subtotal * self.amount / 100)
-        return min(self.amount, subtotal)
+        try:
+            subtotal = Decimal(str(subtotal))
+        except Exception:
+            subtotal = Decimal("0")
+
+        if subtotal <= 0:
+            return Decimal("0")
+
+        if self.min_order_value and subtotal < Decimal(str(self.min_order_value)):
+            return Decimal("0")
+
+        if self.discount_type == self.DISCOUNT_TYPE_PERCENT:
+            pct = Decimal(str(self.discount_value or 0))
+            return (subtotal * pct / Decimal("100")).quantize(Decimal("0.01"))
+
+        return min(Decimal(str(self.discount_value or 0)), subtotal).quantize(Decimal("0.01"))
 
 
 class Cart(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     session_key = models.CharField(max_length=40, null=True, blank=True)
+    coupon = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL, related_name="carts")
+    coupon_applied_at = models.DateTimeField(null=True, blank=True)
+    delivery_region = models.CharField(
+        max_length=20,
+        choices=[
+            ("mombasa", "Mombasa (Same Day)"),
+            ("nairobi", "Nairobi (1-2 Days)"),
+            ("upcountry", "Upcountry (2-3 Days)"),
+        ],
+        default="nairobi",
+    )
 
     class Meta:
         indexes = [
@@ -98,6 +159,21 @@ class Cart(BaseModel):
         if self.user:
             return f"Cart for {self.user.email}"
         return f"Guest cart ({self.session_key or 'no session'})"
+
+    def subtotal_amount(self) -> Decimal:
+        total = Decimal("0")
+        for item in self.items.all():
+            price = item.unit_price or getattr(item.product, "price", 0) or 0
+            total += Decimal(str(price)) * Decimal(str(item.quantity or 0))
+        return total.quantize(Decimal("0.01"))
+
+    def discount_amount(self) -> Decimal:
+        subtotal = self.subtotal_amount()
+        if not self.coupon:
+            return Decimal("0.00")
+        if not self.coupon.is_valid():
+            return Decimal("0.00")
+        return self.coupon.calculate_discount(subtotal)
 
 
 class CartItem(BaseModel):
@@ -205,7 +281,13 @@ class Order(BaseModel):
     cancelled_at = models.DateTimeField(null=True, blank=True)
     
     coupon = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL)
-    receipt_number = models.CharField(max_length=128, unique=True)
+    receipt_number = models.CharField(
+        max_length=128,
+        unique=True,
+        db_index=True,
+        default=generate_receipt_number,
+        editable=False,
+    )
     delivery_region = models.CharField(max_length=20, choices=DELIVERY_CHOICES, default='nairobi')
     
     # Shipping address fields
@@ -354,7 +436,7 @@ DELIVERY_FEES = {
 }
 
 
-def create_order_from_cart(user, cart, coupon=None, receipt_number=None, delivery_region='nairobi'):
+def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):
     """
     Create an order from a cart with proper inventory locking to prevent race conditions.
     Uses select_for_update to lock all inventory rows within a single transaction.
@@ -388,8 +470,8 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None, deliver
             subtotal += line_total
             items.append((ci.product, ci.quantity, ci.product.price, inv))
 
-        discount_amount = 0
-        if coupon and coupon.active and hasattr(coupon, "calculate_discount") and coupon.is_valid():
+        discount_amount = Decimal("0.00")
+        if coupon and getattr(coupon, "is_active", False) and hasattr(coupon, "calculate_discount") and coupon.is_valid():
             discount_amount = coupon.calculate_discount(subtotal)
 
         # Apply delivery fee
@@ -407,7 +489,6 @@ def create_order_from_cart(user, cart, coupon=None, receipt_number=None, deliver
             total=total,
             status='pending',
             coupon=coupon,
-            receipt_number=receipt_number,
             delivery_region=delivery_region,
         )
 

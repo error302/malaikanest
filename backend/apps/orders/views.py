@@ -3,14 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from django.db.models import F
-from django.utils.crypto import get_random_string
+from django.utils import timezone
 from apps.accounts.models import User
 from apps.products.models import Inventory
-from .models import Cart, CartItem, Order, OrderItem, Coupon, create_order_from_cart
+from .models import Cart, CartItem, Order, OrderItem, Coupon
 from .serializers import (
     CartSerializer,
-    CartItemSerializer,
     OrderSerializer,
     CouponSerializer,
 )
@@ -33,8 +31,8 @@ class CartViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
     def _get_prefetched_cart(self, cart_id):
-        return Cart.objects.prefetch_related(
-            "items__product__category", "items__product__brand"
+        return Cart.objects.select_related("coupon").prefetch_related(
+            "items__product__category", "items__product__brand", "items__product__tags"
         ).get(id=cart_id)
 
     def list(self, request):
@@ -116,44 +114,77 @@ class CartViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # MED-06: Validate stock before adding to cart
-        try:
-            inv = Inventory.objects.get(product_id=product_id)
-            if inv.available() < qty:
-                return Response(
-                    {"detail": f"Only {inv.available()} items available in stock"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        except Inventory.DoesNotExist:
-            return Response(
-                {"detail": "Product not found or out of stock"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    @action(detail=False, methods=["post"])
+    def apply_coupon(self, request):
+        code = (request.data.get("code") or request.data.get("coupon") or "").strip().upper()
+        if not code:
+            return Response({"detail": "Coupon code is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         if request.user.is_authenticated:
             cart, _ = Cart.objects.get_or_create(user=request.user)
         else:
             cart = self._get_or_create_guest_cart(request)
 
-        ci, created = CartItem.objects.get_or_create(
-            cart=cart, product_id=product_id, defaults={"quantity": qty}
-        )
-        if not created:
-            # Validate total qty against available stock
-            new_qty = ci.quantity + qty
-            inv = Inventory.objects.get(product_id=product_id)
-            if inv.available() < new_qty:
+        with transaction.atomic():
+            cart = Cart.objects.select_for_update().get(pk=cart.pk)
+            coupon = Coupon.objects.select_for_update().filter(code=code, is_active=True).first()
+            if not coupon:
+                return Response({"detail": "Invalid coupon code"}, status=status.HTTP_400_BAD_REQUEST)
+
+            subtotal = cart.subtotal_amount()
+            if not coupon.is_valid():
+                return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
+            if coupon.min_order_value and subtotal < coupon.min_order_value:
                 return Response(
-                    {
-                        "detail": f"Cannot add {qty} more — only {inv.available()} available"
-                    },
+                    {"detail": f"Minimum order value is KES {coupon.min_order_value}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            ci.quantity = new_qty
-            ci.save()
+
+            # Idempotent: do nothing if already applied.
+            if cart.coupon_id == coupon.id:
+                cart = self._get_prefetched_cart(cart.id)
+                return Response(CartSerializer(cart).data)
+
+            # Release any previous coupon usage (best-effort).
+            if cart.coupon_id:
+                prev = Coupon.objects.select_for_update().filter(pk=cart.coupon_id).first()
+                if prev and prev.used_count and prev.used_count > 0:
+                    prev.used_count = prev.used_count - 1
+                    prev.save(update_fields=["used_count", "updated_at"])
+
+            if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
+                return Response({"detail": "Coupon usage limit reached"}, status=status.HTTP_400_BAD_REQUEST)
+
+            coupon.used_count = coupon.used_count + 1
+            coupon.save(update_fields=["used_count", "updated_at"])
+
+            cart.coupon = coupon
+            cart.coupon_applied_at = timezone.now()
+            cart.save(update_fields=["coupon", "coupon_applied_at", "updated_at"])
+
         cart = self._get_prefetched_cart(cart.id)
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
+        return Response(CartSerializer(cart).data)
+
+    @action(detail=False, methods=["post"])
+    def remove_coupon(self, request):
+        if request.user.is_authenticated:
+            cart, _ = Cart.objects.get_or_create(user=request.user)
+        else:
+            cart = self._get_or_create_guest_cart(request)
+
+        with transaction.atomic():
+            cart = Cart.objects.select_for_update().get(pk=cart.pk)
+            if cart.coupon_id:
+                coupon = Coupon.objects.select_for_update().filter(pk=cart.coupon_id).first()
+                if coupon and coupon.used_count and coupon.used_count > 0:
+                    coupon.used_count = coupon.used_count - 1
+                    coupon.save(update_fields=["used_count", "updated_at"])
+            cart.coupon = None
+            cart.coupon_applied_at = None
+            cart.save(update_fields=["coupon", "coupon_applied_at", "updated_at"])
+
+        cart = self._get_prefetched_cart(cart.id)
+        return Response(CartSerializer(cart).data)
 
     @action(detail=False, methods=["post"])
     def checkout(self, request):
@@ -167,7 +198,11 @@ class CartViewSet(viewsets.ViewSet):
 
         coupon = None
         if coupon_code:
-            coupon = get_object_or_404(Coupon, code=coupon_code, active=True)
+            coupon = Coupon.objects.filter(code=str(coupon_code).strip().upper(), is_active=True).first()
+            if not coupon:
+                return Response({"detail": "Invalid coupon code"}, status=status.HTTP_400_BAD_REQUEST)
+            if coupon and not coupon.is_valid():
+                return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
 
         if is_guest and guest_email:
             session_key = request.session.session_key
@@ -175,6 +210,13 @@ class CartViewSet(viewsets.ViewSet):
                 request.session.create()
                 session_key = request.session.session_key
             cart = get_object_or_404(Cart, session_key=session_key, user=None)
+            # Use coupon stored on the cart if present.
+            coupon = coupon or cart.coupon
+            if coupon and not coupon.is_valid():
+                return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Persist delivery region on cart for consistent totals in responses.
+            Cart.objects.filter(pk=cart.pk).update(delivery_region=delivery_region)
 
             user = None
             try:
@@ -206,6 +248,10 @@ class CartViewSet(viewsets.ViewSet):
             )
 
         cart = get_object_or_404(Cart, user=request.user)
+        coupon = coupon or cart.coupon
+        if coupon and not coupon.is_valid():
+            return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
+        Cart.objects.filter(pk=cart.pk).update(delivery_region=delivery_region)
         try:
             order = OrderService.process_checkout(
                 cart=cart,
@@ -293,44 +339,6 @@ class CartViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if request.user.is_authenticated:
-            cart = get_object_or_404(Cart, user=request.user)
-        else:
-            session_key = request.session.session_key
-            if not session_key:
-                return Response(
-                    {"detail": "No cart found"}, status=status.HTTP_400_BAD_REQUEST
-                )
-            cart = get_object_or_404(Cart, session_key=session_key, user=None)
-
-        try:
-            cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
-        except CartItem.DoesNotExist:
-            return Response(
-                {"detail": "Item not found in cart"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Validate stock before updating
-        try:
-            inv = Inventory.objects.get(product_id=product_id)
-            if inv.available() < quantity:
-                return Response(
-                    {"detail": f"Only {inv.available()} items available in stock"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        except Inventory.DoesNotExist:
-            return Response(
-                {"detail": "Product not found or out of stock"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        cart_item.quantity = quantity
-        cart_item.save()
-
-        cart = self._get_prefetched_cart(cart.id)
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
-
     def clear_cart(self, request):
         """Clear all items from the cart."""
         if request.user.is_authenticated:
@@ -342,7 +350,17 @@ class CartViewSet(viewsets.ViewSet):
                 session_key = request.session.session_key
             cart, _ = Cart.objects.get_or_create(session_key=session_key, user=None)
 
-        CartItem.objects.filter(cart=cart).delete()
+        with transaction.atomic():
+            cart = Cart.objects.select_for_update().get(pk=cart.pk)
+            CartItem.objects.filter(cart=cart).delete()
+            if cart.coupon_id:
+                coupon = Coupon.objects.select_for_update().filter(pk=cart.coupon_id).first()
+                if coupon and coupon.used_count and coupon.used_count > 0:
+                    coupon.used_count = coupon.used_count - 1
+                    coupon.save(update_fields=["used_count", "updated_at"])
+            cart.coupon = None
+            cart.coupon_applied_at = None
+            cart.save(update_fields=["coupon", "coupon_applied_at", "updated_at"])
         cart = self._get_prefetched_cart(cart.id)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
@@ -353,10 +371,13 @@ class CartViewSet(viewsets.ViewSet):
         BUG-CART-01: Merge guest cart into user cart on login.
         Combines quantities for same products.
         """
-        session_key = request.data.get("session_key")
+        session_key = (request.data.get("session_key") or request.session.session_key or "").strip()
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key or ""
 
         if not session_key:
-            return Response({"detail": "No session key provided"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "No guest session found"}, status=status.HTTP_400_BAD_REQUEST)
 
         guest_cart = Cart.objects.filter(session_key=session_key, user=None).first()
         if not guest_cart:

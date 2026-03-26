@@ -55,7 +55,7 @@ export default function ProductDetailPage() {
 
     setLoading(true)
     api
-      .get(`/api/products/products/?slug=${slug}`)
+      .get(`/api/v1/products/products/?slug=${slug}`)
       .then((res) => {
         const rows = res.data?.results || res.data || []
         if (rows.length > 0) {

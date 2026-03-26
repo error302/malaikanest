@@ -82,3 +82,6 @@ backend/media/
 backend/config/media/
 
 test_traceback.txt
+
+# TypeScript incremental build artifacts
+*.tsbuildinfo

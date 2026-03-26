@@ -214,15 +214,31 @@ else:
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = get_env_or_crash("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
-EMAIL_HOST_USER = get_env_or_crash("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = get_env_or_crash("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
-DEFAULT_FROM_EMAIL = os.getenv(
-    "DEFAULT_FROM_EMAIL", "Malaika Nest <malaikanest7@gmail.com>"
-)
+#
+# Email
+# - Dev/local: console backend by default (no env required)
+# - Prod: SMTP backend with required env vars
+#
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Malaika Nest <malaikanest7@gmail.com>")
+
+_email_host = (os.getenv("EMAIL_HOST") or "").strip()
+if production_env_requested:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = get_env_or_crash("EMAIL_HOST")
+    EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+    EMAIL_HOST_USER = get_env_or_crash("EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = get_env_or_crash("EMAIL_HOST_PASSWORD")
+    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").strip().lower() in {"1", "true", "yes", "on"}
+else:
+    if _email_host:
+        EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+        EMAIL_HOST = _email_host
+        EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+        EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+        EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+        EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").strip().lower() in {"1", "true", "yes", "on"}
+    else:
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Redis + Celery
 REDIS_URL = os.getenv("REDIS_URL", os.getenv("REDIS_TLS_URL", "redis://127.0.0.1:6379/0"))

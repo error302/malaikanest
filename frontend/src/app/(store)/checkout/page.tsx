@@ -15,6 +15,7 @@ type CartData = {
     quantity: number
   }>
   subtotal: string
+  discount?: string
   total: string
 }
 
@@ -54,6 +55,7 @@ function CheckoutContent() {
   const [giftMessage, setGiftMessage] = useState('')
   const [error, setError] = useState('')
   const [orderId, setOrderId] = useState<number | null>(null)
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
   const [paymentInitiated, setPaymentInitiated] = useState(false)
   const hasStartedPolling = useRef(false)
   const router = useRouter()
@@ -82,25 +84,25 @@ function CheckoutContent() {
   }, [])
 
   const pollPaymentStatus = useCallback(
-    async (oid: number) => {
+    async (crid: string, oid: number) => {
       let attempts = 0
-      const maxAttempts = 30
+      const maxAttempts = 40 // ~2 minutes at 3s interval
       let consecutiveErrors = 0
 
       const poll = async () => {
         attempts += 1
         try {
-          const res = await api.get(`/api/v1/orders/orders/${oid}/`)
-          const order = res.data
+          const res = await api.get(`/api/v1/payments/verify/${encodeURIComponent(crid)}/`)
+          const payment = res.data
           consecutiveErrors = 0
 
-          if (order.status === 'paid') {
+          if (payment.status === 'completed') {
             router.push(`/checkout/success?order_id=${oid}`)
             return
           }
 
-          if (['payment_failed', 'cancelled', 'failed'].includes(order.status)) {
-            setError('Payment was not completed. Please try again.')
+          if (['failed', 'cancelled'].includes(payment.status)) {
+            setError('Payment was not completed. Tafadhali jaribu tena.')
             setProcessing(false)
             return
           }
@@ -120,7 +122,7 @@ function CheckoutContent() {
         }
 
         if (attempts < maxAttempts) {
-          setTimeout(poll, 5000)
+          setTimeout(poll, 3000)
         } else {
           setError('Payment verification timed out. If you were charged, your order will confirm shortly.')
           setProcessing(false)
@@ -138,32 +140,35 @@ function CheckoutContent() {
 
   useEffect(() => {
     const pendingOrder = searchParams.get('order_id')
+    const pendingCrid = searchParams.get('checkout_request_id')
     if (pendingOrder) {
       hasStartedPolling.current = false
       setOrderId(parseInt(pendingOrder, 10))
+      setCheckoutRequestId(pendingCrid)
       setPaymentInitiated(true)
       setProcessing(true)
     }
   }, [searchParams])
 
   useEffect(() => {
-    if (!paymentInitiated || !orderId || hasStartedPolling.current) return
+    if (!paymentInitiated || !orderId || !checkoutRequestId || hasStartedPolling.current) return
     hasStartedPolling.current = true
-    pollPaymentStatus(orderId)
-  }, [orderId, paymentInitiated, pollPaymentStatus])
+    pollPaymentStatus(checkoutRequestId, orderId)
+  }, [orderId, checkoutRequestId, paymentInitiated, pollPaymentStatus])
 
   const phoneValue = useMemo(() => toMpesaPhone(phone), [phone])
   const phoneLooksValid = /^254\d{9}$/.test(phoneValue)
   const subtotal = useMemo(() => toMoneyNumber(cart?.subtotal || '0'), [cart?.subtotal])
+  const discount = useMemo(() => toMoneyNumber(cart?.discount || '0'), [cart?.discount])
   const deliveryFee = useMemo(() => DELIVERY_FEES[deliveryRegion] ?? 0, [deliveryRegion])
-  const payableTotal = useMemo(() => subtotal + deliveryFee, [subtotal, deliveryFee])
-  const includedVat = useMemo(() => subtotal - subtotal / 1.16, [subtotal])
+  const payableTotal = useMemo(() => Math.max(subtotal - discount, 0) + deliveryFee, [subtotal, discount, deliveryFee])
+  const includedVat = useMemo(() => (subtotal - discount) - (subtotal - discount) / 1.16, [subtotal, discount])
 
   const handleCheckout = async () => {
     setError('')
 
     if (!phoneLooksValid) {
-      setError('Enter a valid M-Pesa phone number (e.g. 07XXXXXXXX or 2547XXXXXXXX).')
+      setError('Weka nambari sahihi ya M-Pesa (mfano 07XXXXXXXX au 2547XXXXXXXX).')
       return
     }
 
@@ -179,13 +184,20 @@ function CheckoutContent() {
       const order = checkoutRes.data
       setOrderId(order.id)
 
-      await api.post('/api/v1/payments/mpesa/pay/', {
+      const mpesaRes = await api.post('/api/v1/payments/mpesa/pay/', {
         order_id: order.id,
         phone: phoneValue,
       })
 
+      const crid = (mpesaRes.data as any)?.checkout_request_id as string | undefined
+      if (!crid) throw new Error('Missing checkout_request_id')
+      setCheckoutRequestId(crid)
+
       hasStartedPolling.current = false
       setPaymentInitiated(true)
+
+      // Persist polling state in URL so refresh doesn't break the flow.
+      router.replace(`/checkout?order_id=${order.id}&checkout_request_id=${encodeURIComponent(crid)}`)
     } catch (err: unknown) {
       setError(handleApiError(err))
       setProcessing(false)
@@ -358,6 +370,12 @@ function CheckoutContent() {
                     <span>Subtotal</span>
                     <span>KES {formatKsh(subtotal)}</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex items-center justify-between text-[var(--text-secondary)]">
+                      <span>Discount</span>
+                      <span className="text-green-700">- KES {formatKsh(discount)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-[var(--text-secondary)] text-sm">
                     <span>VAT (16% incl.)</span>
                     <span>KES {formatKsh(includedVat)}</span>

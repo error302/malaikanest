@@ -34,18 +34,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-const SESSION_KEY = 'malaika_session_key'
-
-const getSessionKey = (): string | null => {
-  if (typeof window === 'undefined') return null
-  let key = localStorage.getItem(SESSION_KEY)
-  if (!key) {
-    key = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    localStorage.setItem(SESSION_KEY, key)
-  }
-  return key
-}
-
 const withTimeout = (promise: Promise<any>, ms: number) => {
   return Promise.race([
     promise,
@@ -110,21 +98,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const payload: Record<string, string> = { email, password }
     if (captchaToken) payload.captcha_token = captchaToken
 
-    // Store session key before login to merge guest cart
-    const sessionKey = getSessionKey()
-
     // Backend sets refresh cookie and returns access token in body.
     const res = await api.post('/api/v1/accounts/token/', payload)
     const access = (res.data as any)?.access
     if (access) setAccessToken(access)
 
-    // Merge guest cart into user cart
-    if (sessionKey) {
-      try {
-        await api.post('/api/v1/orders/cart/merge/', { session_key: sessionKey })
-      } catch {
-        // Ignore merge errors
-      }
+    // Merge current guest-session cart into user cart (server reads session cookie).
+    try {
+      await api.post('/api/v1/orders/cart/merge/', {})
+    } catch {
+      // Ignore merge errors
     }
 
     // Check auth again to ensure user session is fully instantiated.
@@ -151,7 +134,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       isAuthenticated: !!user,
-      isAdmin: !!(user && (user.role === 'admin' || user.is_staff)),
+      isAdmin: !!(
+        user &&
+        (String(user.role || '')
+          .toUpperCase()
+          .trim() === 'ADMIN' ||
+          user.is_staff)
+      ),
       isLoading,
       login,
       logout,

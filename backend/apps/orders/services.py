@@ -1,6 +1,5 @@
 from django.db import transaction
 from django.db.models import F
-from django.utils.crypto import get_random_string
 
 from apps.products.models import Inventory, InventoryLog, Product
 from .models import DELIVERY_FEES
@@ -15,8 +14,6 @@ class OrderService:
         """
         if not cart.items.exists():
             raise ValueError("Cart is empty")
-
-        receipt_number = get_random_string(32)
 
         with transaction.atomic():
             cart_items = cart.items.select_related("product").all()
@@ -40,7 +37,7 @@ class OrderService:
                 subtotal += line_total
                 items.append((ci.product, ci.quantity, ci.product.price, inv))
 
-            discount_amount = coupon.calculate_discount(subtotal) if coupon and coupon.active else 0
+            discount_amount = coupon.calculate_discount(subtotal) if coupon and coupon.is_active and coupon.is_valid() else 0
             delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
             total = max(subtotal - discount_amount, 0) + delivery_fee
 
@@ -55,7 +52,6 @@ class OrderService:
                 total=total,
                 status="pending",
                 coupon=coupon,
-                receipt_number=receipt_number,
                 guest_email=guest_email,
                 guest_phone=guest_phone,
                 delivery_region=delivery_region,

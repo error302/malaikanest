@@ -177,7 +177,7 @@ export default function CategoryCatalog({ initialCategoryPath = "" }: { initialC
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get("/api/products/categories/")
+        const res = await api.get("/api/v1/products/categories/")
         const data = Array.isArray(res.data) ? res.data : res.data?.results || []
         setCategories(data)
       } catch (error) {
@@ -190,7 +190,7 @@ export default function CategoryCatalog({ initialCategoryPath = "" }: { initialC
 
     const fetchFlatCategories = async () => {
       try {
-        const res = await api.get("/api/products/categories/?flat=1")
+        const res = await api.get("/api/v1/products/categories/?flat=1")
         setFlatCategories(Array.isArray(res.data) ? res.data : [])
       } catch (error) {
         console.error('Failed to load flat categories:', error)
@@ -199,7 +199,7 @@ export default function CategoryCatalog({ initialCategoryPath = "" }: { initialC
 
     const fetchBrands = async () => {
       try {
-        const res = await api.get("/api/products/brands/")
+        const res = await api.get("/api/v1/products/brands/")
         setBrands(Array.isArray(res.data) ? res.data : [])
       } catch (error) {
         console.error('Failed to load brands:', error)
@@ -254,7 +254,7 @@ export default function CategoryCatalog({ initialCategoryPath = "" }: { initialC
 
     setLoadingProducts(true)
     api
-      .get("/api/products/products/", { params })
+      .get("/api/v1/products/products/", { params })
       .then((res) => {
         const data = res.data
         const rows = Array.isArray(data) ? data : data.results || []

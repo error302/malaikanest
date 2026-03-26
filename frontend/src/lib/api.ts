@@ -33,6 +33,9 @@ const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
 ]
 
 const CACHEABLE_ENDPOINTS = [
+  '/api/v1/products/products/',
+  '/api/v1/products/categories/',
+  '/api/v1/products/banners/',
   '/api/products/products/',
   '/api/products/categories/',
   '/api/products/banners/',

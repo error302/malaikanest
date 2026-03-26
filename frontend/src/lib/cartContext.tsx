@@ -136,7 +136,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCart = useCallback(async () => {
     try {
-      const res = await api.get('/api/orders/cart/', { headers: { 'Cache-Control': 'no-store' } })
+      const res = await api.get('/api/v1/orders/cart/', { headers: { 'Cache-Control': 'no-store' } })
       dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
       setSynced(true)
     } catch (e) {
@@ -163,7 +163,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true)
     try {
-      const res = await api.post('/api/orders/cart/add/', {
+      const res = await api.post('/api/v1/orders/cart/add/', {
         product_id: item.id,
         quantity: fullItem.qty,
       })
@@ -183,7 +183,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true)
     try {
-      const res = await api.post(`/api/orders/cart/remove/${id}/`)
+      const res = await api.post(`/api/v1/orders/cart/remove/${id}/`)
       dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
     } catch (e) {
       console.error('Failed to remove from cart', e)
@@ -214,7 +214,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     ;(window as any)[debounceKey] = setTimeout(async () => {
       setLoading(true)
       try {
-        const res = await api.post(`/api/orders/cart/update/`, {
+        const res = await api.post(`/api/v1/orders/cart/update/`, {
           product_id: id,
           quantity: qty,
         })
@@ -236,7 +236,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true)
     try {
-      await api.post('/api/orders/cart/clear/')
+      await api.post('/api/v1/orders/cart/clear/')
       localStorage.removeItem(STORAGE_KEY)
       dispatch({ type: 'HYDRATE', cartData: { items: [], subtotal: '0', total: '0' } })
     } catch (e) {

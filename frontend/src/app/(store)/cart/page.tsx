@@ -26,7 +26,11 @@ type CartData = {
   id: number
   items: CartItem[]
   subtotal: string
+  discount?: string
+  delivery_fee?: string
   total: string
+  coupon?: { code: string } | null
+  delivery_region?: string
 }
 
 const toMoneyNumber = (value: string | number): number => {
@@ -45,11 +49,13 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<number | null>(null)
   const [error, setError] = useState('')
+  const [couponCode, setCouponCode] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
   const router = useRouter()
 
   const fetchCart = useCallback(async () => {
     try {
-      const res = await api.get('/api/orders/cart/')
+      const res = await api.get('/api/v1/orders/cart/')
       setCart(res.data)
       setError('')
     } catch {
@@ -68,7 +74,7 @@ export default function CartPage() {
     setUpdating(productId)
     setError('')
     try {
-      const res = await api.post('/api/orders/cart/update/', { product_id: productId, quantity: newQty })
+      const res = await api.post('/api/v1/orders/cart/update/', { product_id: productId, quantity: newQty })
       if (res?.data) {
         setCart(res.data)
       } else {
@@ -85,7 +91,7 @@ export default function CartPage() {
     setUpdating(productId)
     setError('')
     try {
-      const res = await api.post(`/api/orders/cart/remove/${productId}/`)
+      const res = await api.post(`/api/v1/orders/cart/remove/${productId}/`)
       if (res?.data) {
         setCart(res.data)
       } else {
@@ -95,6 +101,34 @@ export default function CartPage() {
       setError('Failed to remove cart item.')
     } finally {
       setUpdating(null)
+    }
+  }
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return
+    setCouponLoading(true)
+    setError('')
+    try {
+      const res = await api.post('/api/v1/orders/cart/coupon/apply/', { code: couponCode.trim() })
+      setCart(res.data)
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || 'Failed to apply coupon.')
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const removeCoupon = async () => {
+    setCouponLoading(true)
+    setError('')
+    try {
+      const res = await api.post('/api/v1/orders/cart/coupon/remove/')
+      setCart(res.data)
+      setCouponCode('')
+    } catch {
+      setError('Failed to remove coupon.')
+    } finally {
+      setCouponLoading(false)
     }
   }
 
@@ -233,18 +267,60 @@ export default function CartPage() {
             <div className="card-soft p-6">
               <h2 className="font-display text-[28px] text-[var(--text-primary)]">Order Summary</h2>
 
+              <div className="mt-5 rounded-[12px] border border-default bg-[var(--bg-soft)] p-4">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Have a coupon?</p>
+                {cart.coupon?.code ? (
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Applied: <span className="font-mono font-semibold text-[var(--text-primary)]">{cart.coupon.code}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      disabled={couponLoading}
+                      className="btn-secondary px-4 py-2 text-sm"
+                    >
+                      {couponLoading ? 'Removing…' : 'Remove'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="Enter code"
+                      className="input-soft flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="btn-primary px-4 py-2 text-sm disabled:opacity-60"
+                    >
+                      {couponLoading ? 'Applying…' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="mt-6 space-y-3 text-[16px]">
                 <div className="flex items-center justify-between text-[var(--text-secondary)]">
                   <span>Subtotal</span>
                   <span>KES {formatKsh(cart.subtotal || '0')}</span>
                 </div>
+                {toMoneyNumber(cart.discount || '0') > 0 && (
+                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
+                    <span>Discount</span>
+                    <span className="text-green-700">- KES {formatKsh(cart.discount || '0')}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-[var(--text-secondary)] text-sm">
                   <span>VAT (16% incl.)</span>
                   <span>KES {formatKsh(toMoneyNumber(cart.subtotal || '0') - (toMoneyNumber(cart.subtotal || '0') / 1.16))}</span>
                 </div>
                 <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                  <span>Shipping</span>
-                  <span>Calculated at checkout</span>
+                  <span>Shipping (est.)</span>
+                  <span>KES {formatKsh(cart.delivery_fee || '0')}</span>
                 </div>
                 <div className="border-t border-default pt-3 text-[var(--text-primary)]">
                   <div className="flex items-center justify-between">
