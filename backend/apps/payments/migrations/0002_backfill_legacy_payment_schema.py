@@ -1,0 +1,187 @@
+from django.db import migrations
+
+
+def table_exists(cursor, table_name):
+    cursor.execute("SELECT to_regclass(%s)", [table_name])
+    return cursor.fetchone()[0] is not None
+
+
+def column_exists(cursor, table_name, column_name):
+    cursor.execute(
+        """
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = %s AND column_name = %s
+        )
+        """,
+        [table_name, column_name],
+    )
+    return bool(cursor.fetchone()[0])
+
+
+def backfill_payment_schema(apps, schema_editor):
+    with schema_editor.connection.cursor() as cursor:
+        if table_exists(cursor, "payments_payment"):
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS phone_number varchar(20)"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS mpesa_checkout_request_id varchar(128)"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS raw_callback_json jsonb"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS callback_received_at timestamptz"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS initiated_at timestamptz"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS completed_at timestamptz"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS created_at timestamptz"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ADD COLUMN IF NOT EXISTS updated_at timestamptz"
+            )
+
+            if column_exists(cursor, "payments_payment", "phone"):
+                cursor.execute(
+                    """
+                    UPDATE payments_payment
+                    SET phone_number = COALESCE(phone_number, phone)
+                    WHERE phone IS NOT NULL
+                    """
+                )
+
+            if column_exists(cursor, "payments_payment", "checkout_request_id"):
+                cursor.execute(
+                    """
+                    UPDATE payments_payment
+                    SET mpesa_checkout_request_id = COALESCE(mpesa_checkout_request_id, checkout_request_id)
+                    WHERE checkout_request_id IS NOT NULL
+                    """
+                )
+
+            if column_exists(cursor, "payments_payment", "raw_callback"):
+                cursor.execute(
+                    """
+                    UPDATE payments_payment
+                    SET raw_callback_json = COALESCE(raw_callback_json, raw_callback)
+                    WHERE raw_callback IS NOT NULL
+                    """
+                )
+
+            cursor.execute(
+                """
+                UPDATE payments_payment
+                SET created_at = COALESCE(created_at, NOW()),
+                    updated_at = COALESCE(updated_at, created_at, NOW()),
+                    initiated_at = COALESCE(initiated_at, created_at, NOW()),
+                    completed_at = COALESCE(
+                        completed_at,
+                        CASE WHEN status = 'completed' THEN updated_at ELSE NULL END
+                    )
+                """
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ALTER COLUMN created_at SET DEFAULT NOW()"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ALTER COLUMN updated_at SET DEFAULT NOW()"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ALTER COLUMN initiated_at SET DEFAULT NOW()"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ALTER COLUMN created_at SET NOT NULL"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ALTER COLUMN updated_at SET NOT NULL"
+            )
+            cursor.execute(
+                "ALTER TABLE payments_payment ALTER COLUMN initiated_at SET NOT NULL"
+            )
+            cursor.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS payments_payment_mpesa_checkout_request_id_uniq
+                ON payments_payment (mpesa_checkout_request_id)
+                WHERE mpesa_checkout_request_id IS NOT NULL
+                """
+            )
+            cursor.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS payments_payment_mpesa_receipt_number_uniq
+                ON payments_payment (mpesa_receipt_number)
+                WHERE mpesa_receipt_number IS NOT NULL
+                """
+            )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS payments_paymentauditlog (
+                id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                created_at timestamptz NOT NULL DEFAULT NOW(),
+                updated_at timestamptz NOT NULL DEFAULT NOW(),
+                event_type varchar(40) NOT NULL,
+                source varchar(40) NOT NULL DEFAULT 'system',
+                request_ip inet NULL,
+                checkout_request_id varchar(128) NULL,
+                merchant_request_id varchar(128) NULL,
+                result_code varchar(32) NULL,
+                payload_hash varchar(64) NOT NULL,
+                payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+                notes text NOT NULL DEFAULT '',
+                payment_id bigint NULL REFERENCES payments_payment(id) ON DELETE SET NULL
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS payments_paymentauditlog_event_created_idx
+            ON payments_paymentauditlog (event_type, created_at DESC)
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS payments_paymentauditlog_checkout_idx
+            ON payments_paymentauditlog (checkout_request_id)
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS payments_paymentauditlog_merchant_idx
+            ON payments_paymentauditlog (merchant_request_id)
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS payments_paymentauditlog_result_idx
+            ON payments_paymentauditlog (result_code)
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS payments_paymentauditlog_payload_hash_idx
+            ON payments_paymentauditlog (payload_hash)
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS payments_paymentauditlog_created_idx
+            ON payments_paymentauditlog (created_at DESC)
+            """
+        )
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ("payments", "0001_initial"),
+    ]
+
+    operations = [
+        migrations.RunPython(backfill_payment_schema, migrations.RunPython.noop),
+    ]
