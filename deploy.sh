@@ -19,6 +19,23 @@ log()  { echo -e "${GREEN}[deploy]${NC} $*"; }
 warn() { echo -e "${YELLOW}[warn]${NC}  $*"; }
 die()  { echo -e "${RED}[error]${NC} $*" >&2; exit 1; }
 
+sync_next_standalone_assets() {
+    local standalone_dir="$FRONTEND_DIR/.next/standalone"
+    local nested_app_dir="$standalone_dir/malaikanest/frontend"
+    local runtime_dir="$standalone_dir"
+
+    if [[ -d "$nested_app_dir" ]]; then
+        runtime_dir="$nested_app_dir"
+    fi
+
+    [[ -d "$runtime_dir" ]] || die "Standalone output not found: $runtime_dir"
+    mkdir -p "$runtime_dir/.next/static" "$runtime_dir/public"
+
+    log "Syncing standalone Next.js assets into runtime directory..."
+    rsync -a --delete "$FRONTEND_DIR/.next/static/" "$runtime_dir/.next/static/"
+    rsync -a --delete "$FRONTEND_DIR/public/" "$runtime_dir/public/"
+}
+
 # ── Safety checks ─────────────────────────────────────────────────────────────
 [[ -d "$BACKEND_DIR" ]] || die "Backend directory not found: $BACKEND_DIR"
 [[ -d "$VENV" ]] || die "Virtualenv not found: $VENV. Run: python3 -m venv $VENV && $VENV/bin/pip install -r $BACKEND_DIR/requirements.txt"
@@ -47,6 +64,8 @@ if [[ -d "$FRONTEND_DIR" ]]; then
 
     log "Building Next.js frontend..."
     npm --prefix "$FRONTEND_DIR" run build
+
+    sync_next_standalone_assets
 
     log "Clearing npm cache to save disk space..."
     npm --prefix "$FRONTEND_DIR" cache clean --force 2>/dev/null || true

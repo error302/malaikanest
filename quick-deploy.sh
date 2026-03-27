@@ -66,6 +66,21 @@ npm install --silent 2>/dev/null || npm install
 # Build
 npm run build
 
+# Keep standalone runtime assets available for `node .next/standalone/.../server.js`
+STANDALONE_DIR=".next/standalone"
+NESTED_APP_DIR="$STANDALONE_DIR/malaikanest/frontend"
+RUNTIME_DIR="$STANDALONE_DIR"
+
+if [ -d "$NESTED_APP_DIR" ]; then
+    RUNTIME_DIR="$NESTED_APP_DIR"
+fi
+
+if [ -d "$RUNTIME_DIR" ]; then
+    mkdir -p "$RUNTIME_DIR/.next/static" "$RUNTIME_DIR/public"
+    rsync -a --delete ".next/static/" "$RUNTIME_DIR/.next/static/"
+    rsync -a --delete "public/" "$RUNTIME_DIR/public/"
+fi
+
 # ====================
 # RESTART SERVICES
 # ====================
