@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
+import { useCart } from '@/lib/cartContext';
 
 interface Product {
   id: number;
@@ -34,6 +35,8 @@ function ProductCard({ product }: { product: Product }) {
   const [wishlisted, setWishlisted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { add } = useCart();
 
   const imageUrl = product.image ? getImageUrl(product.image) : null;
   const categoryName = product.category?.name ?? 'Products';
@@ -42,6 +45,27 @@ function ProductCard({ product }: { product: Product }) {
   const price = Number(product.price) || 0;
   const originalPrice = product.original_price ? Number(product.original_price) : null;
   const inStock = (product.stock ?? 0) > 0;
+
+  const handleAddToCart = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (!inStock || isAdding) return;
+
+    setIsAdding(true);
+    try {
+      await add({
+        id: product.id,
+        name: product.name,
+        price,
+        image: product.image || '',
+        slug: product.slug,
+        qty: 1,
+      });
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 1800);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <article className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#EDE3D8] hover:border-[#C9A96E]/50 hover:shadow-xl transition-all duration-300">
@@ -97,21 +121,16 @@ function ProductCard({ product }: { product: Product }) {
           </button>
           <button
             type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              if (!inStock) return;
-              setAddedToCart(true);
-              setTimeout(() => setAddedToCart(false), 1800);
-            }}
+            onClick={handleAddToCart}
             className={`relative z-10 flex-1 mx-2 max-w-[140px] h-9 rounded-full text-xs font-medium shadow-md flex items-center justify-center gap-1.5 transition-all ${
               addedToCart
                 ? 'bg-[#1A3A2A] text-[#E8C98A]'
                 : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
-            disabled={!inStock}
+            disabled={!inStock || isAdding}
           >
             <ShoppingBag size={13} />
-            {addedToCart ? 'Added!' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
@@ -166,11 +185,34 @@ function ProductCard({ product }: { product: Product }) {
 function FeaturedCard({ product }: { product: Product }) {
   const [imageError, setImageError] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { add } = useCart();
 
   const imageUrl = product.image ? getImageUrl(product.image) : null;
   const categoryName = product.category?.name ?? 'Products';
   const price = Number(product.price) || 0;
   const originalPrice = product.original_price ? Number(product.original_price) : null;
+  const inStock = (product.stock ?? 0) > 0;
+
+  const handleAddToCart = async () => {
+    if (!inStock || isAdding) return;
+
+    setIsAdding(true);
+    try {
+      await add({
+        id: product.id,
+        name: product.name,
+        price,
+        image: product.image || '',
+        slug: product.slug,
+        qty: 1,
+      });
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 1800);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div className="group relative rounded-3xl overflow-hidden bg-[#F5EFE6] flex flex-col justify-end min-h-[480px] lg:min-h-[560px]">
@@ -213,18 +255,17 @@ function FeaturedCard({ product }: { product: Product }) {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              setAddedToCart(true);
-              setTimeout(() => setAddedToCart(false), 1800);
-            }}
+            type="button"
+            onClick={handleAddToCart}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
               addedToCart
                 ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                : 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white'
+                : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
+            disabled={!inStock || isAdding}
           >
             <ShoppingBag size={14} />
-            {addedToCart ? 'Added!' : 'Add to Cart'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
