@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag, Search, User, Heart, ChevronDown, X, Menu, Shirt, Package, Home, Gamepad2, Car, Gift, Sparkles, Flame } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { useAuth } from '@/lib/authContext';
@@ -66,30 +66,10 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const shopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const pathname = usePathname();
   const { items } = useCart();
   const itemCount = items.length;
   const { user } = useAuth();
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-    setShopOpen(false);
-  }, [pathname]);
-
-  // Close mobile menu when clicking outside
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
-        setMobileOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [mobileOpen]);
 
   // Close mobile menu on scroll
   useEffect(() => {
@@ -248,10 +228,10 @@ export default function Navbar() {
 
             {/* Mobile hamburger */}
             <button
-              onClick={() => setMobileOpen(!mobileOpen)}
+              onClick={() => setMobileOpen(true)}
               className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
             >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              <Menu size={20} />
             </button>
           </div>
         </div>
@@ -386,7 +366,7 @@ export default function Navbar() {
 
       {/* ── MOBILE MENU ── */}
       {mobileOpen && (
-        <div ref={mobileMenuRef} className="fixed inset-0 z-[200] bg-white overflow-y-auto lg:hidden">
+        <div className="fixed inset-0 z-[200] bg-white overflow-y-auto lg:hidden">
           <div className="flex items-center justify-between px-6 h-16 border-b border-[#E8E0D5]">
             <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
               <Image src="/images/logo.png" alt="Malaika Nest" width={36} height={36} />
