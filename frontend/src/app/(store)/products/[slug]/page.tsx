@@ -57,8 +57,9 @@ export default function ProductDetailPage() {
     api
       .get(`/api/v1/products/products/${encodeURIComponent(slug)}/`)
       .then((res) => {
-        if (res.data) {
-          setProduct(res.data)
+        const payload = res.data?.data ?? res.data
+        if (payload) {
+          setProduct(payload)
           setError('')
         } else {
           setProduct(null)

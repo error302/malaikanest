@@ -153,18 +153,22 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+const isApiEnvelope = (payload: unknown): payload is Record<string, any> => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return false
+  return 'data' in payload && (
+    'success' in payload ||
+    'status' in payload ||
+    'error' in payload ||
+    'message' in payload
+  )
+}
+
 // Response interceptor with caching and retry
 api.interceptors.response.use(
   (response) => {
-    const payload = response.data;
-    const isStandardEnvelope =
-      payload &&
-      typeof payload === 'object' &&
-      'success' in payload &&
-      'data' in payload &&
-      'error' in payload;
+    const payload = response.data
 
-    if (isStandardEnvelope) {
+    if (isApiEnvelope(payload)) {
       const inner = payload.data;
 
       // Paginated response: preserve {count, next, previous, results} shape
@@ -183,7 +187,8 @@ api.interceptors.response.use(
       } else if (inner !== null && typeof inner === 'object') {
         // merge envelope-level fields: success, message, error remain accessible
         response.data = {
-          success: payload.success,
+          success: payload.success ?? payload.status === 'success',
+          status: payload.status,
           message: payload.message,
           error: payload.error,
           ...inner,
