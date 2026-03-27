@@ -34,11 +34,23 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+const REFRESH_MARKER_COOKIE = 'mn_refresh_present'
+
 const withTimeout = (promise: Promise<any>, ms: number) => {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
   ])
+}
+
+const hasRefreshMarker = (): boolean => {
+  if (typeof document === 'undefined') return false
+  return document.cookie.split('; ').some((cookie) => cookie === `${REFRESH_MARKER_COOKIE}=1`)
+}
+
+const clearRefreshMarker = () => {
+  if (typeof document === 'undefined') return
+  document.cookie = `${REFRESH_MARKER_COOKIE}=; Max-Age=0; path=/; SameSite=Strict`
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -69,6 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const bootstrap = async () => {
       setIsLoading(true)
+
+      if (!hasRefreshMarker()) {
+        clearAccessToken()
+        setUser(null)
+        setIsLoading(false)
+        return
+      }
+
       try {
         const refreshRes = await withTimeout(api.post('/api/v1/accounts/token/refresh/'), 3000)
         const newAccess = (refreshRes.data as any)?.access
@@ -76,10 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAccessToken(newAccess)
           await checkAuth()
         } else {
+          clearRefreshMarker()
           setIsLoading(false)
         }
       } catch {
         clearAccessToken()
+        clearRefreshMarker()
         setUser(null)
         setIsLoading(false)
       }
@@ -122,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Proceed with local logout regardless of network failure.
     } finally {
       clearAccessToken()
+      clearRefreshMarker()
       setUser(null)
     }
   }, [])

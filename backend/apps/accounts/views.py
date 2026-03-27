@@ -37,6 +37,24 @@ def _jwt_cookie_samesite() -> str:
     return str(settings.SIMPLE_JWT.get("AUTH_COOKIE_SAMESITE", "Strict"))
 
 
+def _set_refresh_state_cookie(resp: Response) -> None:
+    cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
+    lifetime = settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME")
+    seconds = int(lifetime.total_seconds()) if hasattr(lifetime, "total_seconds") else int(lifetime or 0)
+    expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds or (7 * 24 * 60 * 60))
+
+    resp.set_cookie(
+        "mn_refresh_present",
+        "1",
+        httponly=False,
+        secure=_jwt_cookie_secure(),
+        samesite=_jwt_cookie_samesite(),
+        expires=expires,
+        path="/",
+        domain=cookie_domain,
+    )
+
+
 def _set_refresh_cookie(resp: Response, refresh_token: str) -> None:
     cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
     lifetime = settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME")
@@ -53,12 +71,18 @@ def _set_refresh_cookie(resp: Response, refresh_token: str) -> None:
         path="/",
         domain=cookie_domain,
     )
+    _set_refresh_state_cookie(resp)
 
 
 def _clear_refresh_cookie(resp: Response) -> None:
     cookie_domain = getattr(settings, "AUTH_COOKIE_DOMAIN", None)
     resp.delete_cookie(
         settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"),
+        path="/",
+        domain=cookie_domain,
+    )
+    resp.delete_cookie(
+        "mn_refresh_present",
         path="/",
         domain=cookie_domain,
     )
@@ -427,4 +451,3 @@ def google_auth_view(request):
     except Exception as exc:
         logger.error("Google auth error: %s", exc)
         return Response({"detail": "Authentication failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
