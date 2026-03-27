@@ -10,7 +10,6 @@ from django.db.models import (
     Value,
 )
 from django.db.models.functions import Coalesce
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.core.cache import cache
 from rest_framework import filters, permissions, viewsets
@@ -173,6 +172,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    lookup_field = "slug"
+    lookup_url_kwarg = "slug"
     filter_backends = [
         filters.SearchFilter,
         DjangoFilterBackend,
@@ -327,8 +328,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         self._invalidate_products_cache()
 
     @action(detail=True, methods=["get"])
-    def inventory(self, request, pk=None):
-        product = get_object_or_404(Product, pk=pk)
+    def inventory(self, request, slug=None):
+        product = self.get_object()
         return Response(
             {
                 "stock": product.stock,
@@ -338,8 +339,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=["get"])
-    def variants(self, request, pk=None):
-        product = get_object_or_404(Product, pk=pk)
+    def variants(self, request, slug=None):
+        product = self.get_object()
         variants = product.variants.filter(is_active=True)
 
         sizes = {variant.size for variant in variants if variant.size}

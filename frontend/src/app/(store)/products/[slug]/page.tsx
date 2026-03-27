@@ -55,11 +55,10 @@ export default function ProductDetailPage() {
 
     setLoading(true)
     api
-      .get(`/api/v1/products/products/?slug=${slug}`)
+      .get(`/api/v1/products/products/${encodeURIComponent(slug)}/`)
       .then((res) => {
-        const rows = res.data?.results || res.data || []
-        if (rows.length > 0) {
-          setProduct(rows[0])
+        if (res.data) {
+          setProduct(res.data)
           setError('')
         } else {
           setProduct(null)
