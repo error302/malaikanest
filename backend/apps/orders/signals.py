@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -14,7 +15,10 @@ def order_status_changed(sender, instance, created, **kwargs):
     if not created:
         return
 
-    try:
-        send_order_confirmation.delay(instance.id)
-    except Exception as exc:
-        logger.error('Failed to enqueue order confirmation for order %s: %s', instance.id, exc)
+    def enqueue_confirmation():
+        try:
+            send_order_confirmation.delay(instance.id)
+        except Exception as exc:
+            logger.error('Failed to enqueue order confirmation for order %s: %s', instance.id, exc)
+
+    transaction.on_commit(enqueue_confirmation)
