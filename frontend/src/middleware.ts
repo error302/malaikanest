@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PROTECTED_PATHS = ['/dashboard', '/account', '/checkout', '/orders']
+const PROTECTED_PATHS = ['/dashboard', '/account', '/orders']
 const AUTH_COOKIE_NAMES = ['refresh_token', 'mn_refresh_present']
 
 const isProtectedPath = (pathname: string) =>

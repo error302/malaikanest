@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ShieldCheck } from 'lucide-react'
 
 import api, { handleApiError } from '@/lib/api'
+import { useAuth } from '@/lib/authContext'
 import MpesaCheckout from '@/components/MpesaCheckout'
 
 type CartData = {
@@ -38,9 +39,9 @@ const formatKsh = (value: string | number): string =>
   }).format(toMoneyNumber(value))
 
 function CheckoutContent() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [cart, setCart] = useState<CartData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [requiresAuth, setRequiresAuth] = useState(false)
   const [deliveryRegion, setDeliveryRegion] = useState('nairobi')
   const [isGift, setIsGift] = useState(false)
   const [giftMessage, setGiftMessage] = useState('')
@@ -52,27 +53,27 @@ function CheckoutContent() {
   const fetchCart = useCallback(async () => {
     setLoading(true)
     try {
-      await api.get('/api/v1/accounts/profile/')
       const res = await api.get('/api/v1/orders/cart/')
       setCart(res.data)
-      setRequiresAuth(false)
       setError('')
     } catch (err: unknown) {
-      const msg = handleApiError(err)
-      if (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid refresh token')) {
-        setRequiresAuth(true)
-        setError('')
-      } else {
-        setError(msg)
-      }
+      setError(handleApiError(err))
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
+    if (authLoading) return
+
+    if (!isAuthenticated) {
+      router.replace('/login?next=/checkout')
+      setLoading(false)
+      return
+    }
+
     fetchCart()
-  }, [fetchCart])
+  }, [authLoading, fetchCart, isAuthenticated, router])
 
   const subtotal = useMemo(() => toMoneyNumber(cart?.subtotal || '0'), [cart?.subtotal])
   const discount = useMemo(() => toMoneyNumber(cart?.discount || '0'), [cart?.discount])
@@ -106,7 +107,7 @@ function CheckoutContent() {
     }
   }, [deliveryRegion, giftMessage, isGift, orderId])
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="pb-20 pt-10">
         <div className="container-shell">
@@ -115,28 +116,6 @@ function CheckoutContent() {
             <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
               <div className="h-[520px] rounded-[12px] border border-default bg-surface" />
               <div className="h-[420px] rounded-[12px] border border-default bg-surface" />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (requiresAuth) {
-    return (
-      <div className="pb-20 pt-10">
-        <div className="container-shell">
-          <div className="card-soft mx-auto max-w-2xl p-10 text-center">
-            <h1 className="font-display text-[36px] text-[var(--text-primary)]">Create an account to continue checkout</h1>
-            <p className="mt-3 text-[18px] text-[var(--text-secondary)]">
-              Guests need an account to complete payment, track orders, and receive updates.
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/register?next=/checkout" className="btn-primary inline-flex px-7">Create Account</Link>
-              <Link href="/login?next=/checkout" className="btn-secondary inline-flex px-7">Sign In</Link>
-            </div>
-            <div className="mt-4">
-              <Link href="/cart" className="text-sm font-medium text-[var(--text-secondary)] underline">Back to Cart</Link>
             </div>
           </div>
         </div>
