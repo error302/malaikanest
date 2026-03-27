@@ -53,6 +53,8 @@ const clearRefreshMarker = () => {
   document.cookie = `${REFRESH_MARKER_COOKIE}=; Max-Age=0; path=/; SameSite=Strict`
 }
 
+const unwrapApiData = <T,>(payload: any): T => (payload?.data ?? payload) as T
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -60,14 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = useCallback(async () => {
     try {
       const res = await withTimeout(api.get('/api/v1/accounts/profile/'), 5000)
-      if (res.data) {
-        const fullName = [res.data.first_name, res.data.last_name].filter(Boolean).join(' ').trim()
+      const profile = unwrapApiData<any>(res.data)
+      if (profile) {
+        const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim()
         const userData = {
-          id: res.data.id,
-          email: res.data.email,
-          name: fullName || res.data.email,
-          role: res.data.role,
-          is_staff: res.data.is_staff,
+          id: profile.id,
+          email: profile.email,
+          name: fullName || profile.email,
+          role: profile.role,
+          is_staff: profile.is_staff,
         }
         setUser(userData)
       }
@@ -122,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Backend sets refresh cookie and returns access token in body.
     const res = await api.post('/api/v1/accounts/token/', payload)
-    const access = (res.data as any)?.access
+    const access = (res.data as any)?.access || (res.data as any)?.data?.access
     if (access) setAccessToken(access)
 
     // Merge current guest-session cart into user cart (server reads session cookie).
