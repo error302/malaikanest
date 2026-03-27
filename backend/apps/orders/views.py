@@ -371,6 +371,12 @@ class CartViewSet(viewsets.ViewSet):
         BUG-CART-01: Merge guest cart into user cart on login.
         Combines quantities for same products.
         """
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         session_key = (request.data.get("session_key") or request.session.session_key or "").strip()
         if not session_key:
             request.session.create()
