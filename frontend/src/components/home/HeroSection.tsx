@@ -8,6 +8,7 @@ import { getImageUrl } from '@/lib/media';
 
 interface Slide {
   image: string;
+  mobileImage?: string;
   tag: string;
   headline: string;
   sub: string;
@@ -21,7 +22,9 @@ interface Banner {
   id: number;
   title?: string;
   subtitle?: string;
+  button_text?: string;
   image: string;
+  mobile_image?: string;
   button_link?: string;
 }
 
@@ -66,12 +69,55 @@ const TRUST_BADGES = [
   { Icon: CheckCircle, label: 'Parent Approved' },
 ];
 
+const DEFAULT_BANNER_TAG = 'Welcome to Malaika Nest';
+
+function normalizeBannerLink(url?: string): string {
+  if (!url) return '/categories';
+
+  try {
+    const parsed = new URL(url);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+    if (siteUrl) {
+      const site = new URL(siteUrl);
+      if (parsed.origin === site.origin) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    }
+
+    if (parsed.hostname === 'malaikanest.duckdns.org' || parsed.hostname === 'www.malaikanest.duckdns.org') {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+
+    return url;
+  } catch {
+    return url.startsWith('/') ? url : `/${url.replace(/^\/+/, '')}`;
+  }
+}
+
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [banners, setBanners] = useState<Banner[]>([]);
   const [slides, setSlides] = useState<Slide[]>(STATIC_SLIDES);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const media = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobile(media.matches);
+    sync();
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', sync);
+      return () => media.removeEventListener('change', sync);
+    }
+
+    media.addListener(sync);
+    return () => media.removeListener(sync);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -80,16 +126,23 @@ export default function HeroSection() {
       .then(data => {
         const apiData = data?.data?.results ?? data?.results ?? [];
         if (mounted && apiData.length > 0) {
-          setBanners(apiData);
-          const bannerSlides: Slide[] = apiData.map((b: Banner) => ({
-            image: getImageUrl(b.image),
-            tag: b.title || 'Special Offer',
-            headline: b.subtitle || '',
-            sub: '',
-            cta: 'Shop Now',
-            ctaHref: b.button_link || '/categories',
-          }));
-          setSlides(bannerSlides);
+          const validBanners = apiData.filter((banner: Banner) => Boolean(banner?.image || banner?.mobile_image));
+
+          if (validBanners.length > 0) {
+            setBanners(validBanners);
+            const bannerSlides: Slide[] = validBanners.map((banner: Banner) => ({
+              image: getImageUrl(banner.image || banner.mobile_image),
+              mobileImage: banner.mobile_image ? getImageUrl(banner.mobile_image) : undefined,
+              tag: DEFAULT_BANNER_TAG,
+              headline: banner.title?.trim() || 'Dress Your Little One with Love',
+              sub:
+                banner.subtitle?.trim() ||
+                'Safe, affordable, and adorable baby clothing delivered across Kenya.',
+              cta: banner.button_text?.trim() || 'Shop Now',
+              ctaHref: normalizeBannerLink(banner.button_link),
+            }));
+            setSlides(bannerSlides);
+          }
         }
       })
       .catch(() => {});
@@ -129,8 +182,8 @@ export default function HeroSection() {
         >
           {!imageErrors[i] ? (
             <Image
-              src={s.image}
-              alt={s.headline}
+              src={isMobile && s.mobileImage ? s.mobileImage : s.image}
+              alt={s.headline || 'Malaika Nest banner'}
               fill
               priority={i === 0}
               loading={i === 0 ? 'eager' : 'lazy'}
