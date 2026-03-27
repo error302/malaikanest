@@ -1,28 +1,28 @@
 [Unit]
 Description=Celery Worker for Malaika Nest
 Documentation=https://docs.celeryq.dev
-After=network.target redis.service
-Wants=redis.service
+After=network.target redis-server.service
+Wants=redis-server.service
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
-WorkingDirectory=/var/www/malaikanest/backend
+User=appuser
+Group=appuser
+WorkingDirectory=/home/mohameddosho20/malaikanest/backend
 EnvironmentFile=-/var/www/malaikanest/backend/.env.production
 Environment=DJANGO_ENV=prod
-Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+Environment=DJANGO_SETTINGS_MODULE=config.settings
+Environment=PYTHONPATH=/home/mohameddosho20/malaikanest/backend
 
-ExecStart=/var/www/malaikanest/venv/bin/celery \
-    -A config \
+ExecStart=/home/mohameddosho20/malaikanest/backend/venv/bin/celery \
+    -A config.celery:app \
     worker \
     --loglevel=info \
-    --concurrency=4 \
-    --logfile=/var/log/malaikanest/celery-worker.log \
-    --pidfile=/run/celery/worker.pid \
-    --hostname=worker@%%h
+    --concurrency=4
 
-ExecStop=/var/www/malaikanest/venv/bin/celery -A config control shutdown
+ExecStop=/home/mohameddosho20/malaikanest/backend/venv/bin/celery \
+    -A config.celery:app \
+    control shutdown
 
 Restart=always
 RestartSec=5
@@ -30,7 +30,6 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=celery-malaikanest
 
-# Important for payment tasks: ensure late-acked tasks survive worker crashes
 KillMode=mixed
 TimeoutStopSec=30
 
