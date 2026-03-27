@@ -21,9 +21,17 @@ function LoginForm() {
 
   const redirectTo = searchParams.get('next') || searchParams.get('redirect') || '/'
 
+  const performRedirect = (target: string) => {
+    if (typeof window === 'undefined') {
+      router.replace(target)
+      return
+    }
+    window.location.assign(target)
+  }
+
   useEffect(() => {
     if (isLoading || !isAuthenticated) return
-    router.replace(isAdmin ? '/admin' : redirectTo)
+    performRedirect(isAdmin ? '/admin' : redirectTo)
   }, [isAdmin, isAuthenticated, isLoading, redirectTo, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,8 +41,7 @@ function LoginForm() {
 
     try {
       await login(email, password)
-      router.push(isAdmin ? '/admin' : redirectTo)
-      router.refresh()
+      performRedirect(isAdmin ? '/admin' : redirectTo)
     } catch (err: unknown) {
       setError(handleApiError(err, 'Invalid email or password'))
     } finally {
