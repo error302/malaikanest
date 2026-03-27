@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 
-from apps.products.models import Category, Product
+from apps.products.models import Category, Product, Tag
 
 
 class ProductSlugLookupTests(APITestCase):
@@ -15,6 +15,8 @@ class ProductSlugLookupTests(APITestCase):
             status="published",
             is_active=True,
         )
+        self.tag = Tag.objects.create(name="Bestseller")
+        self.product.tags.add(self.tag)
 
     def test_product_detail_resolves_by_slug(self):
         response = self.client.get(
@@ -23,6 +25,7 @@ class ProductSlugLookupTests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["slug"], self.product.slug)
+        self.assertEqual(response.data["tags"][0]["slug"], self.tag.slug)
 
     def test_product_inventory_action_resolves_by_slug(self):
         response = self.client.get(

@@ -107,7 +107,7 @@ class ProductSerializer(serializers.ModelSerializer):
     available_stock = serializers.ReadOnlyField()
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
+    tags = serializers.SerializerMethodField()
     meta_title = serializers.CharField(source="seo_title", read_only=True)
     meta_description = serializers.CharField(source="seo_description", read_only=True)
 
@@ -184,6 +184,9 @@ class ProductSerializer(serializers.ModelSerializer):
             return obj.available_stock > 0
         except Exception:
             return bool(getattr(obj, "stock", 0) > 0)
+
+    def get_tags(self, obj):
+        return list(obj.tags.values("id", "name", "slug"))
 
 
 class ProductListSerializer(serializers.ModelSerializer):
