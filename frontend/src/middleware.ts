@@ -7,6 +7,17 @@ const AUTH_COOKIE_NAMES = ['refresh_token']
 const isProtectedPath = (pathname: string) =>
   PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
+const getPublicUrl = (request: NextRequest, pathname: string) => {
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  const forwardedHost = request.headers.get('x-forwarded-host')
+
+  if (forwardedHost) {
+    return new URL(pathname, `${forwardedProto || 'https'}://${forwardedHost}`)
+  }
+
+  return new URL(pathname, request.url)
+}
+
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
@@ -23,7 +34,7 @@ export function middleware(request: NextRequest) {
     const hasRefreshCookie = AUTH_COOKIE_NAMES.some((name) => Boolean(request.cookies.get(name)?.value))
 
     if (!hasRefreshCookie) {
-      const loginUrl = new URL('/login', request.url)
+      const loginUrl = getPublicUrl(request, '/login')
       loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`)
       return NextResponse.redirect(loginUrl)
     }
