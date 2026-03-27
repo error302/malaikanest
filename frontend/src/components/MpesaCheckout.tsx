@@ -1,25 +1,34 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import api, { handleApiError } from "@/lib/api"
+
 interface MpesaCheckoutProps {
-  orderId: number;
-  totalAmount: number;
-  defaultPhone?: string;
-  onSuccess?: (receipt: string) => void;
-  onFailure?: () => void;
-  onInitiate?: (checkoutRequestId: string) => void;
+  orderId?: number | null
+  totalAmount: number
+  defaultPhone?: string
+  onSuccess?: (receipt: string, orderId: number) => void
+  onFailure?: (message?: string) => void
+  onInitiate?: (checkoutRequestId: string, orderId: number) => void
+  onPrepareOrder?: () => Promise<number>
 }
 
-type Stage = "idle" | "sending" | "waiting" | "success" | "failed";
+type Stage = "idle" | "sending" | "waiting" | "success" | "failed"
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatPhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("0")) return "254" + digits.slice(1);
-  if (digits.startsWith("254")) return digits;
-  return digits;
+  const digits = raw.replace(/\D/g, "")
+  if (digits.startsWith("0")) return `254${digits.slice(1)}`
+  if (digits.startsWith("254")) return digits
+  if (digits.length === 9) return `254${digits}`
+  return digits
+}
+
+function stripPhonePrefix(raw: string): string {
+  const digits = raw.replace(/\D/g, "")
+  if (digits.startsWith("254")) return digits.slice(3, 12)
+  if (digits.startsWith("0")) return digits.slice(1, 10)
+  return digits.slice(0, 9)
 }
 
 function formatKES(amount: number) {
@@ -27,10 +36,9 @@ function formatKES(amount: number) {
     style: "currency",
     currency: "KES",
     minimumFractionDigits: 0,
-  }).format(amount);
+  }).format(amount)
 }
 
-// ─── Animated dots ────────────────────────────────────────────────────────────
 function Dots() {
   return (
     <span className="dots-wrap" aria-hidden>
@@ -38,20 +46,19 @@ function Dots() {
       <span className="dot" />
       <span className="dot" />
     </span>
-  );
+  )
 }
 
-// ─── Step indicator ───────────────────────────────────────────────────────────
 function StepBubble({
   n,
   label,
   active,
   done,
 }: {
-  n: number;
-  label: string;
-  active: boolean;
-  done: boolean;
+  n: number
+  label: string
+  active: boolean
+  done: boolean
 }) {
   return (
     <div className={`step ${active ? "step--active" : ""} ${done ? "step--done" : ""}`}>
@@ -66,10 +73,9 @@ function StepBubble({
       </div>
       <span className="step__label">{label}</span>
     </div>
-  );
+  )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function MpesaCheckout({
   orderId,
   totalAmount,
@@ -77,106 +83,137 @@ export default function MpesaCheckout({
   onSuccess,
   onFailure,
   onInitiate,
+  onPrepareOrder,
 }: MpesaCheckoutProps) {
-  const [phone, setPhone] = useState(defaultPhone);
-  const [stage, setStage] = useState<Stage>("idle");
-  const [error, setError] = useState("");
-  const [receipt, setReceipt] = useState("");
-  const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [phone, setPhone] = useState(stripPhonePrefix(defaultPhone))
+  const [stage, setStage] = useState<Stage>("idle")
+  const [error, setError] = useState("")
+  const [receipt, setReceipt] = useState("")
+  const [elapsed, setElapsed] = useState(0)
+
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isMountedRef = useRef(true)
+
+  const normalizedPhone = useMemo(() => formatPhone(phone), [phone])
+
+  const clearTimers = useCallback(() => {
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current)
+      pollTimeoutRef.current = null
+    }
+    if (tickRef.current) {
+      clearInterval(tickRef.current)
+      tickRef.current = null
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }, [])
+
+  const failPayment = useCallback((message: string) => {
+    if (!isMountedRef.current) return
+    clearTimers()
+    setStage("failed")
+    setError(message)
+    onFailure?.(message)
+  }, [clearTimers, onFailure])
+
+  const startPolling = useCallback((checkoutRequestId: string, resolvedOrderId: number) => {
+    clearTimers()
+    setElapsed(0)
+    setStage("waiting")
+
+    tickRef.current = setInterval(() => {
+      if (!isMountedRef.current) return
+      setElapsed((current) => current + 1)
+    }, 1000)
+
+    const poll = async () => {
+      try {
+        const res = await api.get(`/api/v1/payments/verify/${encodeURIComponent(checkoutRequestId)}/`)
+        const payment = res.data
+
+        if (payment.status === "completed") {
+          clearTimers()
+          if (!isMountedRef.current) return
+
+          const receiptNumber = payment.mpesa_receipt_number || ""
+          setReceipt(receiptNumber)
+          setStage("success")
+          onSuccess?.(receiptNumber, resolvedOrderId)
+          return
+        }
+
+        if (["failed", "cancelled"].includes(payment.status)) {
+          failPayment("Payment was not completed. Tafadhali jaribu tena.")
+          return
+        }
+      } catch (err: unknown) {
+        failPayment(handleApiError(err, "We could not confirm your payment right now."))
+        return
+      }
+
+      pollTimeoutRef.current = setTimeout(poll, 3000)
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      failPayment("Payment verification timed out. If you were charged, your order will confirm shortly.")
+    }, 120000)
+
+    pollTimeoutRef.current = setTimeout(poll, 3000)
+  }, [clearTimers, failPayment, onSuccess])
+
+  useEffect(() => {
+    setPhone(stripPhonePrefix(defaultPhone))
+  }, [defaultPhone])
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, []);
-
-  const startPolling = async (checkoutRequestId: string) => {
-    setStage("waiting");
-    
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/v1/payments/${orderId}/status/`, {
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('access_token') || ''}`,
-          },
-          credentials: 'include',
-        });
-        const data = await res.json();
-        
-        if (data?.data?.payment_status === "completed") {
-          const receiptNum = data.data.mpesa_receipt_number || "";
-          setReceipt(receiptNum);
-          setStage("success");
-          onSuccess?.(receiptNum);
-          if (pollingRef.current) clearInterval(pollingRef.current);
-        }
-      } catch (e) {
-        // Continue polling on error
-      }
-    };
-
-    pollingRef.current = setInterval(poll, 3000);
-    
-    timerRef.current = setInterval(() => {
-      setElapsed((e) => e + 1);
-    }, 1000);
-
-    setTimeout(() => {
-      if (stage === "waiting") {
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        setStage("failed");
-        onFailure?.();
-      }
-    }, 120000);
-  };
+      isMountedRef.current = false
+      clearTimers()
+    }
+  }, [clearTimers])
 
   const handlePay = async () => {
-    setError("");
-    const formatted = formatPhone(phone);
-    if (!/^2547\d{8}$|^2541\d{8}$/.test(formatted)) {
-      setError("Please enter a valid Safaricom number (07XX or 01XX).");
-      return;
+    setError("")
+
+    if (!/^254[17]\d{8}$/.test(normalizedPhone)) {
+      setError("Please enter a valid Safaricom number (07XX or 01XX).")
+      return
     }
+
+    setStage("sending")
 
     try {
-      setStage("sending");
-      
-      const token = sessionStorage.getItem('access_token');
-      const response = await fetch('/api/v1/payments/mpesa/pay/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token || ''}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          order_id: orderId,
-          phone: formatted,
-        }),
-      });
+      let resolvedOrderId = orderId && orderId > 0 ? orderId : null
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.detail || 'Payment initiation failed');
+      if (!resolvedOrderId) {
+        if (!onPrepareOrder) {
+          throw new Error("Order is not ready for payment yet.")
+        }
+        resolvedOrderId = await onPrepareOrder()
       }
 
-      const checkoutRequestId = data.checkout_request_id || data.checkoutRequestID;
+      const response = await api.post("/api/v1/payments/mpesa/initiate/", {
+        order_id: resolvedOrderId,
+        phone: normalizedPhone,
+      })
+
+      const checkoutRequestId = response.data?.checkout_request_id
       if (!checkoutRequestId) {
-        throw new Error('No checkout request ID received');
+        throw new Error("No checkout request ID received.")
       }
 
-      onInitiate?.(checkoutRequestId);
-      await startPolling(checkoutRequestId);
-
-    } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
-      setStage("idle");
+      onInitiate?.(checkoutRequestId, resolvedOrderId)
+      startPolling(checkoutRequestId, resolvedOrderId)
+    } catch (err: unknown) {
+      setStage("idle")
+      setError(handleApiError(err, "Something went wrong. Please try again."))
     }
-  };
+  }
 
   const stepsState = {
     step1Done: ["waiting", "success"].includes(stage),
@@ -185,7 +222,7 @@ export default function MpesaCheckout({
     step2Active: stage === "waiting",
     step3Done: stage === "success",
     step3Active: false,
-  };
+  }
 
   return (
     <>
@@ -564,10 +601,8 @@ export default function MpesaCheckout({
                     type="tel"
                     inputMode="numeric"
                     placeholder="7XX XXX XXX"
-                    value={phone.replace(/^(\+?254|0)/, "")}
-                    onChange={(e) =>
-                      setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))
-                    }
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                     disabled={stage === "sending"}
                     maxLength={9}
                   />
@@ -605,16 +640,16 @@ export default function MpesaCheckout({
                   <div className="waiting-box__title">Check your phone</div>
                   <div className="waiting-box__sub">
                     Prompt sent to <strong>+{formatPhone(phone)}</strong><br />
-                    Enter PIN to complete payment
+                    Enter PIN to complete payment{elapsed > 0 ? ` • ${elapsed}s` : ""}
                   </div>
                 </div>
 
                 <button
                   className="pay-btn pay-btn--ghost"
-                  onClick={() => { 
-                    setStage("idle"); 
-                    setElapsed(0);
-                    if (pollingRef.current) clearInterval(pollingRef.current);
+                  onClick={() => {
+                    clearTimers()
+                    setStage("idle")
+                    setElapsed(0)
                   }}
                 >
                   ← Change number
@@ -646,14 +681,15 @@ export default function MpesaCheckout({
                 <div className="failed-icon">✕</div>
                 <div className="failed-box__title">Payment Failed</div>
                 <div className="failed-box__sub">
-                  The payment was cancelled or timed out.
+                  {error || "The payment was cancelled or timed out."}
                 </div>
                 <button
                   className="pay-btn"
-                  onClick={() => { 
-                    setStage("idle"); 
-                    setError(""); 
-                    if (pollingRef.current) clearInterval(pollingRef.current);
+                  onClick={() => {
+                    clearTimers()
+                    setStage("idle")
+                    setError("")
+                    setElapsed(0)
                   }}
                 >
                   Try Again
@@ -664,5 +700,5 @@ export default function MpesaCheckout({
         </div>
       </div>
     </>
-  );
+  )
 }

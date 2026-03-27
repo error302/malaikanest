@@ -84,7 +84,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'user', 'subtotal', 'delivery_fee', 'tax_amount', 'discount_amount',
             'total', 'status', 'items', 'created_at',
             'receipt_number', 'delivery_region', 'is_gift', 'gift_message',
-            'guest_email',
+            'guest_email', 'mpesa_receipt_number',
         )
 
 

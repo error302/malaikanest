@@ -1,22 +1,30 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
-import axios from 'axios'
+
+import { handleApiError } from '@/lib/api'
+import { useAuth } from '@/lib/authContext'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+  const { login, isAuthenticated, isAdmin, isLoading } = useAuth()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const redirect = searchParams.get('redirect') || '/'
+  const redirectTo = searchParams.get('next') || searchParams.get('redirect') || '/'
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return
+    router.replace(isAdmin ? '/admin' : redirectTo)
+  }, [isAdmin, isAuthenticated, isLoading, redirectTo, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,25 +32,11 @@ function LoginForm() {
     setLoading(true)
 
     try {
-      const res = await axios.post('/api/v1/accounts/token/', {
-        email,
-        password,
-      }, { withCredentials: true })
-
-      const data = res.data?.data || res.data
-      
-      if (data?.access) {
-        sessionStorage.setItem('access_token', data.access)
-      }
-
-      if (data?.user?.role === 'ADMIN' || data?.user?.is_staff) {
-        router.push('/admin')
-      } else {
-        router.push(redirect)
-      }
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail || err?.response?.data?.error?.detail
-      setError(detail || 'Invalid email or password')
+      await login(email, password)
+      router.push(isAdmin ? '/admin' : redirectTo)
+      router.refresh()
+    } catch (err: unknown) {
+      setError(handleApiError(err, 'Invalid email or password'))
     } finally {
       setLoading(false)
     }
@@ -113,6 +107,7 @@ function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A7060] hover:text-[#2C1810] transition-colors"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -121,12 +116,12 @@ function LoginForm() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isLoading}
             className="w-full bg-[#1A3A2A] hover:bg-[#254D38] text-[#E8C98A]
                        py-3 rounded-xl text-sm font-medium transition-colors
                        disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in...' : isLoading ? 'Loading...' : 'Sign In'}
           </button>
 
           <p className="text-center text-xs text-[#8A7060]">

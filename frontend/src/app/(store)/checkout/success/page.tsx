@@ -1,13 +1,13 @@
 "use client"
 
 import Link from 'next/link'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, type CSSProperties } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle2, Package, ShoppingBag } from 'lucide-react'
+
 import api from '@/lib/api'
 
-/* ── Confetti Effect ─────────────────────────────────────────── */
-function ConfettiPiece({ style }: { style: React.CSSProperties }) {
+function ConfettiPiece({ style }: { style: CSSProperties }) {
   return <div className="confetti-piece absolute" style={style} />
 }
 
@@ -38,31 +38,31 @@ function Confetti() {
   )
 }
 
-/* ── Success Content ─────────────────────────────────────────── */
 function SuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('order_id')
+  const receiptFromQuery = searchParams.get('receipt')
   const [order, setOrder] = useState<any>(null)
   const [showConfetti, setShowConfetti] = useState(true)
 
   useEffect(() => {
     if (orderId) {
       api.get(`/api/v1/orders/orders/${orderId}/`)
-        .then(res => setOrder(res.data))
+        .then((res) => setOrder(res.data))
         .catch(() => {})
     }
-    // Hide confetti after 3 seconds
-    const t = setTimeout(() => setShowConfetti(false), 3000)
-    return () => clearTimeout(t)
+
+    const timer = setTimeout(() => setShowConfetti(false), 3000)
+    return () => clearTimeout(timer)
   }, [orderId])
 
   const estimatedDelivery = (() => {
     const region = order?.delivery_region || 'nairobi'
     const days = region === 'mombasa' ? 0 : region === 'nairobi' ? 2 : 4
     if (days === 0) return 'Today (Same Day Delivery)'
-    const d = new Date()
-    d.setDate(d.getDate() + days)
-    return d.toLocaleDateString('en-KE', { weekday: 'long', month: 'long', day: 'numeric' })
+    const date = new Date()
+    date.setDate(date.getDate() + days)
+    return date.toLocaleDateString('en-KE', { weekday: 'long', month: 'long', day: 'numeric' })
   })()
 
   return (
@@ -71,19 +71,17 @@ function SuccessContent() {
         <div className="relative card-soft mx-auto max-w-2xl overflow-hidden p-8 text-center md:p-12">
           {showConfetti && <Confetti />}
 
-          {/* Success icon */}
           <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100 ring-4 ring-green-200">
             <CheckCircle2 size={40} className="text-green-600" />
           </div>
 
           <h1 className="font-display relative z-10 mt-6 text-[42px] text-[var(--text-primary)] md:text-[52px]">
-            Order Confirmed! 🎉
+            Order Confirmed!
           </h1>
           <p className="relative z-10 mx-auto mt-3 max-w-md text-[18px] text-[var(--text-secondary)]">
             Thank you for shopping with Malaika Nest. Your little one is going to love it!
           </p>
 
-          {/* Order details box */}
           <div className="relative z-10 mx-auto mt-8 max-w-sm space-y-3 rounded-[16px] border border-default bg-[var(--bg-soft)] p-5 text-left">
             {orderId && (
               <div className="flex items-center justify-between">
@@ -91,11 +89,11 @@ function SuccessContent() {
                 <span className="font-semibold text-[var(--text-primary)]">#{orderId}</span>
               </div>
             )}
-            {order?.mpesa_receipt_number && (
+            {(order?.mpesa_receipt_number || receiptFromQuery) && (
               <div className="flex items-center justify-between border-t border-default pt-3">
                 <span className="text-sm text-[var(--text-secondary)]">M-Pesa Receipt</span>
                 <span className="font-mono font-semibold text-[var(--text-primary)]">
-                  {order.mpesa_receipt_number}
+                  {order?.mpesa_receipt_number || receiptFromQuery}
                 </span>
               </div>
             )}
@@ -115,7 +113,6 @@ function SuccessContent() {
             )}
           </div>
 
-          {/* What's next */}
           <div className="relative z-10 mt-6 rounded-[12px] border border-default bg-blue-50 px-4 py-3 text-sm text-blue-700">
             <p className="font-medium">What happens next?</p>
             <p className="mt-1 text-blue-600">
@@ -139,7 +136,7 @@ function SuccessContent() {
 
           <div className="relative z-10 mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
-              href={orderId ? `/account/orders` : '/account/orders'}
+              href="/account/orders"
               className="btn-primary inline-flex items-center justify-center gap-2 px-7"
             >
               <Package size={18} />
