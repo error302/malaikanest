@@ -100,7 +100,6 @@ export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-  const [banners, setBanners] = useState<Banner[]>([]);
   const [slides, setSlides] = useState<Slide[]>(STATIC_SLIDES);
 
   useEffect(() => {
@@ -129,7 +128,6 @@ export default function HeroSection() {
           const validBanners = apiData.filter((banner: Banner) => Boolean(banner?.image || banner?.mobile_image));
 
           if (validBanners.length > 0) {
-            setBanners(validBanners);
             const bannerSlides: Slide[] = validBanners.map((banner: Banner) => ({
               image: getImageUrl(banner.image || banner.mobile_image),
               mobileImage: banner.mobile_image ? getImageUrl(banner.mobile_image) : undefined,
@@ -141,13 +139,24 @@ export default function HeroSection() {
               cta: banner.button_text?.trim() || 'Shop Now',
               ctaHref: normalizeBannerLink(banner.button_link),
             }));
-            setSlides(bannerSlides);
+            setSlides(
+              bannerSlides.length > 1
+                ? bannerSlides
+                : [bannerSlides[0], ...STATIC_SLIDES]
+            );
+            setCurrent(0);
           }
         }
       })
       .catch(() => {});
     return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    if (current >= slides.length) {
+      setCurrent(0);
+    }
+  }, [current, slides.length]);
 
   const goTo = useCallback(
     (index: number) => {
@@ -163,11 +172,13 @@ export default function HeroSection() {
 
   const prev = () => goTo(current - 1);
   const next = () => goTo(current + 1);
+  const hasMultipleSlides = slides.length > 1;
 
   useEffect(() => {
+    if (!hasMultipleSlides) return;
     const timer = setInterval(() => goTo(current + 1), 6000);
     return () => clearInterval(timer);
-  }, [current, goTo]);
+  }, [current, goTo, hasMultipleSlides]);
 
   const slide = slides[current];
 
@@ -256,33 +267,42 @@ export default function HeroSection() {
         </div>
       </div>
 
-      <button
-        onClick={prev}
-        aria-label="Previous slide"
-        className="absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
-      >
-        <ChevronLeft size={20} />
-      </button>
-      <button
-        onClick={next}
-        aria-label="Next slide"
-        className="absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
-      >
-        <ChevronRight size={20} />
-      </button>
-
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {slides.map((_, i) => (
+      {hasMultipleSlides && (
+        <>
           <button
-            key={i}
-            onClick={() => goTo(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === current ? 'w-8 bg-[#E8C98A]' : 'w-2 bg-white/40 hover:bg-white/60'
-            }`}
-          />
-        ))}
-      </div>
+            type="button"
+            onClick={prev}
+            aria-label="Previous slide"
+            className="absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={next}
+            aria-label="Next slide"
+            className="absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </>
+      )}
+
+      {hasMultipleSlides && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === current ? 'w-8 bg-[#E8C98A]' : 'w-2 bg-white/40 hover:bg-white/60'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

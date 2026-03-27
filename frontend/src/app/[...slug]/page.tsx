@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 
+import StoreLayout from '../(store)/layout'
 import CategoryCatalog from '../../components/CategoryCatalog'
 
 const RESERVED_SEGMENTS = new Set([
@@ -33,5 +34,9 @@ export default async function CategoryPathPage({ params }: { params: Promise<{ s
     notFound()
   }
 
-  return <CategoryCatalog initialCategoryPath={joined} />
+  return (
+    <StoreLayout>
+      <CategoryCatalog initialCategoryPath={joined} />
+    </StoreLayout>
+  )
 }
