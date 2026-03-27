@@ -78,7 +78,13 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({ email: '', password: '', phone: '', first_name: '', last_name: '' })
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    phone_number: '',
+    first_name: '',
+    last_name: '',
+  })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -146,7 +152,10 @@ export default function RegisterPage() {
     setSuccessMessage('')
 
     try {
-      const payload: Record<string, string> = { ...formData }
+      const payload: Record<string, string> = {
+        ...formData,
+        full_name: `${formData.first_name} ${formData.last_name}`.trim(),
+      }
       if (captchaRequired) payload.captcha_token = captchaToken
 
       const response = await api.post('/api/accounts/register/', payload)
@@ -210,7 +219,7 @@ export default function RegisterPage() {
 
             <label className="block text-sm font-medium text-[var(--text-primary)]">
               Phone Number
-              <input className="input-soft mt-2" name="phone" placeholder="2547..." value={formData.phone} onChange={handleChange} autoComplete="tel" required />
+              <input className="input-soft mt-2" name="phone_number" placeholder="2547..." value={formData.phone_number} onChange={handleChange} autoComplete="tel" required />
             </label>
 
             <label className="block text-sm font-medium text-[var(--text-primary)]">
