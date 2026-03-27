@@ -11,6 +11,13 @@ from .security import log_auth_event
 
 logger = logging.getLogger("apps.accounts")
 
+
+def _ensure_aware(dt):
+    if not dt:
+        return dt
+    return timezone.make_aware(dt, timezone.get_current_timezone()) if timezone.is_naive(dt) else dt
+
+
 class AuthService:
     @staticmethod
     def send_verification_email(user, token):
@@ -74,7 +81,8 @@ class AuthService:
             if user.is_active:
                 raise ValueError("Email already verified")
 
-            if user.verification_token_expires and user.verification_token_expires < timezone.now():
+            expires_at = _ensure_aware(user.verification_token_expires)
+            if expires_at and expires_at < timezone.now():
                 raise ValueError("Verification link has expired. Please request a new one.")
 
             user.is_active = True
@@ -160,7 +168,8 @@ class AuthService:
         except User.DoesNotExist:
             raise ValueError("Invalid token")
 
-        if not user.password_reset_expires or user.password_reset_expires < timezone.now():
+        expires_at = _ensure_aware(user.password_reset_expires)
+        if not expires_at or expires_at < timezone.now():
             raise ValueError("Token has expired")
 
         user.set_password(new_password)
