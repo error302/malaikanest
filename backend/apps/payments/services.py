@@ -229,7 +229,15 @@ class PaymentService:
             return task.delay(*args, **kwargs)
         except Exception as exc:
             logger.warning("Falling back to synchronous task execution for %s: %s", getattr(task, "__name__", task), exc)
-            return task(*args, **kwargs)
+            try:
+                return task(*args, **kwargs)
+            except Exception as sync_exc:
+                logger.error(
+                    "Synchronous fallback failed for %s: %s",
+                    getattr(task, "__name__", task),
+                    sync_exc,
+                )
+                return None
 
     @staticmethod
     def trigger_post_payment_tasks(order_id):
@@ -398,14 +406,14 @@ class PaymentService:
             if checkout_id:
                 payment = (
                     Payment.objects.select_for_update()
-                    .select_related("order", "order__user")
+                    .select_related("order")
                     .filter(mpesa_checkout_request_id=checkout_id)
                     .first()
                 )
             if not payment and merchant_request_id:
                 payment = (
                     Payment.objects.select_for_update()
-                    .select_related("order", "order__user")
+                    .select_related("order")
                     .filter(order__receipt_number=merchant_request_id)
                     .first()
                 )

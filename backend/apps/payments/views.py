@@ -294,7 +294,17 @@ class MpesaCallbackView(APIView):
         except Exception:
             pass
 
-        response_dict = PaymentService.process_callback(raw_payload, client_ip)
+        try:
+            response_dict = PaymentService.process_callback(raw_payload, client_ip)
+        except Exception as exc:
+            logger.exception("M-Pesa callback processing failed: %s", exc)
+            audit_log(
+                event_type="callback_failed",
+                payload=raw_payload,
+                request_ip=client_ip,
+                notes=f"Callback processing exception: {exc}",
+            )
+            response_dict = {"ResultCode": 0, "ResultDesc": "Accepted"}
         return JsonResponse(response_dict, status=200)
 
 class AdminReconcileCandidatesView(APIView):
