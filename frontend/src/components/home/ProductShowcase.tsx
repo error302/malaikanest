@@ -44,11 +44,13 @@ function ProductCard({ product }: { product: Product }) {
   const inStock = (product.stock ?? 0) > 0;
 
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#EDE3D8] hover:border-[#C9A96E]/50 hover:shadow-xl transition-all duration-300"
-    >
+    <article className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#EDE3D8] hover:border-[#C9A96E]/50 hover:shadow-xl transition-all duration-300">
       <div className="relative bg-[#F5EFE6] aspect-square overflow-hidden">
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={`View ${product.name}`}
+          className="absolute inset-0 z-0"
+        />
         {!imageError && imageUrl ? (
           <Image
             src={imageUrl}
@@ -80,11 +82,12 @@ function ProductCard({ product }: { product: Product }) {
 
         <div className="absolute inset-0 flex items-end justify-center gap-2 pb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               setWishlisted((w) => !w);
             }}
-            className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#FFF5F0] transition-colors"
+            className="relative z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#FFF5F0] transition-colors"
             aria-label="Add to wishlist"
           >
             <Heart
@@ -93,13 +96,14 @@ function ProductCard({ product }: { product: Product }) {
             />
           </button>
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               if (!inStock) return;
               setAddedToCart(true);
               setTimeout(() => setAddedToCart(false), 1800);
             }}
-            className={`flex-1 mx-2 max-w-[140px] h-9 rounded-full text-xs font-medium shadow-md flex items-center justify-center gap-1.5 transition-all ${
+            className={`relative z-10 flex-1 mx-2 max-w-[140px] h-9 rounded-full text-xs font-medium shadow-md flex items-center justify-center gap-1.5 transition-all ${
               addedToCart
                 ? 'bg-[#1A3A2A] text-[#E8C98A]'
                 : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
@@ -111,8 +115,7 @@ function ProductCard({ product }: { product: Product }) {
           </button>
           <Link
             href={`/products/${product.slug}`}
-            onClick={(e) => e.stopPropagation()}
-            className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#F5EFE6] transition-colors"
+            className="relative z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#F5EFE6] transition-colors"
             aria-label="Quick view"
           >
             <Eye size={15} className="text-[#5C4033]" />
@@ -124,9 +127,11 @@ function ProductCard({ product }: { product: Product }) {
         <p className="text-[10px] uppercase tracking-[0.1em] text-[#8A7060] mb-1">
           {categoryName}
         </p>
-        <h3 className="text-sm font-medium text-[#2C1810] leading-snug mb-2 line-clamp-2 group-hover:text-[#1A3A2A] transition-colors">
-          {product.name}
-        </h3>
+        <Link href={`/products/${product.slug}`} className="relative z-10">
+          <h3 className="text-sm font-medium text-[#2C1810] leading-snug mb-2 line-clamp-2 group-hover:text-[#1A3A2A] transition-colors">
+            {product.name}
+          </h3>
+        </Link>
 
         <div className="flex items-center gap-1 mb-3">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -154,7 +159,7 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
