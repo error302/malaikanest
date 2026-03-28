@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
 import { useCart } from '@/lib/cartContext';
+import { useWishlist } from '@/lib/wishlistContext';
 
 interface Product {
   id: number;
@@ -34,11 +35,11 @@ function discount(price: number, original: number) {
 }
 
 function ProductCard({ product }: { product: Product }) {
-  const [wishlisted, setWishlisted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const { add } = useCart();
+  const { toggle, contains } = useWishlist();
 
   const imageUrl = product.image ? getImageUrl(product.image) : null;
   const categoryName = product.category?.name ?? 'Products';
@@ -49,6 +50,19 @@ function ProductCard({ product }: { product: Product }) {
   const availableStock = Number(product.available_stock ?? product.stock ?? 0);
   const inStock = availableStock > 0;
   const hasVariants = Boolean(product.has_variants);
+  const wishlisted = contains(product.id);
+
+  const wishlistItem = {
+    id: `wishlist-${product.id}`,
+    productId: product.id,
+    name: product.name,
+    slug: product.slug,
+    price,
+    image: product.image,
+    categoryName: categoryName,
+    availableStock,
+    hasVariants,
+  };
 
   const handleAddToCart = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -117,7 +131,7 @@ function ProductCard({ product }: { product: Product }) {
             type="button"
             onClick={(e) => {
               e.preventDefault();
-              setWishlisted((w) => !w);
+              toggle(wishlistItem);
             }}
             className="relative z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#FFF5F0] transition-colors"
             aria-label="Add to wishlist"
@@ -191,7 +205,7 @@ function ProductCard({ product }: { product: Product }) {
             type="button"
             onClick={(e) => {
               e.preventDefault();
-              setWishlisted((w) => !w);
+              toggle(wishlistItem);
             }}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E2D6CA] bg-white text-[#5C4033] shadow-sm transition-colors hover:bg-[#FFF5F0]"
             aria-label="Add to wishlist"
@@ -406,7 +420,7 @@ export function ProductSection({
 
     const timer = window.setInterval(() => {
       setStartIndex((current) => (current + 1) % safeProducts.length);
-    }, 8000);
+    }, 60 * 60 * 1000);
 
     return () => window.clearInterval(timer);
   }, [isPaused, safeProducts.length, shouldRotate]);

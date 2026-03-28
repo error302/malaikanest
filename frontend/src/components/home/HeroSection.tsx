@@ -177,7 +177,7 @@ export default function HeroSection() {
 
   useEffect(() => {
     if (!hasMultipleSlides || isPaused) return;
-    const timer = setInterval(() => goTo(current + 1), 6000);
+    const timer = setInterval(() => goTo(current + 1), 30000);
     return () => clearInterval(timer);
   }, [current, goTo, hasMultipleSlides, isPaused]);
 

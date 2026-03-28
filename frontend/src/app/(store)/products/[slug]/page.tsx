@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
+import { CheckCircle2, Heart, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
 
 import api from '@/lib/api'
 import { shouldUseUnoptimizedImage } from '@/lib/media'
 import { useCart } from '@/lib/cartContext'
+import { useWishlist } from '@/lib/wishlistContext'
 import ReviewSection from '@/components/ReviewSection'
 
 interface Product {
@@ -55,6 +56,7 @@ export default function ProductDetailPage() {
   const slug = params?.slug as string
 
   const { add } = useCart()
+  const { toggle, contains } = useWishlist()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null)
@@ -104,6 +106,7 @@ export default function ProductDetailPage() {
     [product, selectedVariant]
   )
   const total = activePrice * quantity
+  const wishlisted = product ? contains(product.id) : false
 
   useEffect(() => {
     if (availableStock <= 0) {
@@ -140,6 +143,22 @@ export default function ProductDetailPage() {
     } finally {
       setAdding(false)
     }
+  }
+
+  const toggleWishlist = () => {
+    if (!product) return
+
+    toggle({
+      id: `wishlist-${product.id}`,
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: activePrice,
+      image: displayImage || product.image || '',
+      categoryName: product.category?.name,
+      availableStock,
+      hasVariants: Boolean(product.variants?.length),
+    })
   }
 
   if (loading) return <DetailSkeleton />
@@ -289,6 +308,15 @@ export default function ProductDetailPage() {
                 <span className="truncate">
                   {adding ? 'Adding...' : `Add to Cart - KES ${total.toLocaleString()}`}
                 </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleWishlist}
+                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-default px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-soft)] sm:w-auto sm:px-6"
+              >
+                <Heart size={16} className={wishlisted ? 'fill-current' : ''} />
+                <span>{wishlisted ? 'Saved' : 'Save for later'}</span>
               </button>
             </div>
 
