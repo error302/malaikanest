@@ -99,6 +99,7 @@ export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [slides, setSlides] = useState<Slide[]>(STATIC_SLIDES);
 
@@ -175,15 +176,22 @@ export default function HeroSection() {
   const hasMultipleSlides = slides.length > 1;
 
   useEffect(() => {
-    if (!hasMultipleSlides) return;
+    if (!hasMultipleSlides || isPaused) return;
     const timer = setInterval(() => goTo(current + 1), 6000);
     return () => clearInterval(timer);
-  }, [current, goTo, hasMultipleSlides]);
+  }, [current, goTo, hasMultipleSlides, isPaused]);
 
   const slide = slides[current];
 
   return (
-    <section className="relative w-full h-[88vh] min-h-[560px] max-h-[900px] overflow-hidden bg-[#1A3A2A]">
+    <section
+      className="relative w-full h-[88vh] min-h-[560px] max-h-[900px] overflow-hidden bg-[#1A3A2A]"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+      onTouchCancel={() => setIsPaused(false)}
+    >
       {slides.map((s, i) => (
         <div
           key={i}

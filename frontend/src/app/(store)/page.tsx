@@ -34,7 +34,7 @@ interface Product {
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?featured=true&limit=4`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?featured=true&limit=8`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
@@ -42,7 +42,7 @@ async function getFeaturedProducts(): Promise<Product[]> {
     const results = data.results ?? data.data?.results ?? [];
     if (!results.length) {
       const fallback = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=4`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=8`,
         { next: { revalidate: 60 } }
       );
       if (fallback.ok) {
@@ -67,7 +67,7 @@ async function getFeaturedProducts(): Promise<Product[]> {
 async function getBestSellers(): Promise<Product[]> {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=4`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=8`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];
@@ -85,7 +85,7 @@ async function getBestSellers(): Promise<Product[]> {
 async function getNewArrivals(): Promise<Product[]> {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=4`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=8`,
       { next: { revalidate: 60 } }
     );
     if (!res.ok) return [];

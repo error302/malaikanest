@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles } from 'lucide-react';
+import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
 import { useCart } from '@/lib/cartContext';
 
@@ -376,6 +376,14 @@ interface ProductSectionProps {
   layout?: 'grid4' | 'featured+3' | 'grid3';
 }
 
+function getCircularProducts(products: Product[], startIndex: number, visibleCount: number) {
+  if (products.length <= visibleCount) {
+    return products;
+  }
+
+  return Array.from({ length: visibleCount }, (_, offset) => products[(startIndex + offset) % products.length]);
+}
+
 export function ProductSection({
   title,
   label,
@@ -383,11 +391,56 @@ export function ProductSection({
   products,
   layout = 'grid4',
 }: ProductSectionProps) {
-  if (!products || products.length === 0) return null;
+  const safeProducts = useMemo(() => products ?? [], [products]);
+  const visibleCount = layout === 'grid3' ? 3 : 4;
+  const shouldRotate = safeProducts.length > visibleCount;
+  const [startIndex, setStartIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
-  if (layout === 'featured+3' && products.length >= 4) {
+  useEffect(() => {
+    setStartIndex(0);
+  }, [safeProducts.length, layout]);
+
+  useEffect(() => {
+    if (!shouldRotate || isPaused) return;
+
+    const timer = window.setInterval(() => {
+      setStartIndex((current) => (current + 1) % safeProducts.length);
+    }, 8000);
+
+    return () => window.clearInterval(timer);
+  }, [isPaused, safeProducts.length, shouldRotate]);
+
+  const visibleProducts = useMemo(
+    () => getCircularProducts(safeProducts, startIndex, visibleCount),
+    [safeProducts, startIndex, visibleCount]
+  );
+
+  if (safeProducts.length === 0) return null;
+
+  const goPrev = () => {
+    if (!shouldRotate) return;
+    setStartIndex((current) => (current - 1 + safeProducts.length) % safeProducts.length);
+  };
+
+  const goNext = () => {
+    if (!shouldRotate) return;
+    setStartIndex((current) => (current + 1) % safeProducts.length);
+  };
+
+  const interactionProps = shouldRotate
+    ? {
+        onMouseEnter: () => setIsPaused(true),
+        onMouseLeave: () => setIsPaused(false),
+        onTouchStart: () => setIsPaused(true),
+        onTouchEnd: () => setIsPaused(false),
+        onTouchCancel: () => setIsPaused(false),
+      }
+    : {};
+
+  if (layout === 'featured+3' && safeProducts.length >= 4) {
     return (
-      <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]">
+      <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]" {...interactionProps}>
         <div className="max-w-[1380px] mx-auto">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -401,18 +454,40 @@ export function ProductSection({
                 {title}
               </h2>
             </div>
-            <Link
-              href={viewAllHref}
-              className="hidden sm:flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
-            >
-              View all <ArrowRight size={15} />
-            </Link>
+            <div className="hidden sm:flex items-center gap-3">
+              {shouldRotate && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    aria-label={`Show previous ${title.toLowerCase()}`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    aria-label={`Show next ${title.toLowerCase()}`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+              <Link
+                href={viewAllHref}
+                className="flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
+              >
+                View all <ArrowRight size={15} />
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <FeaturedCard product={products[0]} />
+            <FeaturedCard product={visibleProducts[0]} />
             <div className="flex flex-col gap-5">
-              {products.slice(1, 4).map((p) => (
+              {visibleProducts.slice(1, 4).map((p) => (
                 <Link
                   key={p.id}
                   href={`/products/${p.slug}`}
@@ -456,13 +531,34 @@ export function ProductSection({
               ))}
             </div>
           </div>
+
+          {shouldRotate && (
+            <div className="mt-6 flex items-center justify-center gap-2 sm:hidden">
+              <button
+                type="button"
+                onClick={goPrev}
+                aria-label={`Show previous ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                aria-label={`Show next ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
         </div>
       </section>
     );
   }
 
   return (
-    <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]">
+    <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]" {...interactionProps}>
       <div className="max-w-[1380px] mx-auto">
         <div className="flex items-end justify-between mb-8">
           <div>
@@ -476,12 +572,34 @@ export function ProductSection({
               {title}
             </h2>
           </div>
-          <Link
-            href={viewAllHref}
-            className="hidden sm:flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
-          >
-            View all <ArrowRight size={15} />
-          </Link>
+          <div className="hidden sm:flex items-center gap-3">
+            {shouldRotate && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  aria-label={`Show previous ${title.toLowerCase()}`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  aria-label={`Show next ${title.toLowerCase()}`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+            <Link
+              href={viewAllHref}
+              className="flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
+            >
+              View all <ArrowRight size={15} />
+            </Link>
+          </div>
         </div>
 
         <div className={`grid gap-4 lg:gap-5 ${
@@ -489,17 +607,39 @@ export function ProductSection({
             ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
             : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4'
         }`}>
-          {products.slice(0, layout === 'grid3' ? 3 : 4).map((p) => (
+          {visibleProducts.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
 
-        <Link
-          href={viewAllHref}
-          className="sm:hidden mt-6 flex items-center justify-center gap-2 w-full py-3 border border-[#C9A96E]/30 rounded-full text-sm text-[#1A3A2A] font-medium hover:bg-[#F5EFE6] transition-colors"
-        >
-          View all <ArrowRight size={15} />
-        </Link>
+        <div className="mt-6 flex flex-col gap-3 sm:hidden">
+          {shouldRotate && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={goPrev}
+                aria-label={`Show previous ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                aria-label={`Show next ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+          <Link
+            href={viewAllHref}
+            className="flex items-center justify-center gap-2 w-full py-3 border border-[#C9A96E]/30 rounded-full text-sm text-[#1A3A2A] font-medium hover:bg-[#F5EFE6] transition-colors"
+          >
+            View all <ArrowRight size={15} />
+          </Link>
+        </div>
       </div>
     </section>
   );
