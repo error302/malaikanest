@@ -26,6 +26,7 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     queryset = (
         Product.objects.all()
         .select_related("category", "brand")
+        .prefetch_related("variants__inventory")
         .order_by("-created_at")
     )
     serializer_class = AdminProductSerializer

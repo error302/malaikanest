@@ -330,6 +330,31 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
 
   const responseData = e?.response?.data
 
+  const standardizedDetails = responseData?.error?.details
+  if (standardizedDetails) {
+    if (typeof standardizedDetails === 'string') return standardizedDetails
+    if (Array.isArray(standardizedDetails) && standardizedDetails.length > 0) {
+      return String(standardizedDetails[0])
+    }
+    if (typeof standardizedDetails === 'object') {
+      const detailEntries = Object.entries(standardizedDetails)
+      for (const [field, value] of detailEntries) {
+        if (typeof value === 'string' && value.trim()) {
+          return `${field.replace(/_/g, ' ')}: ${value}`
+        }
+        if (Array.isArray(value) && value.length > 0) {
+          return `${field.replace(/_/g, ' ')}: ${String(value[0])}`
+        }
+        if (value && typeof value === 'object') {
+          const nested = (value as any).detail || (value as any).message
+          if (nested) {
+            return `${field.replace(/_/g, ' ')}: ${Array.isArray(nested) ? nested[0] : String(nested)}`
+          }
+        }
+      }
+    }
+  }
+
   // Standardized backend envelope: { success, message, data, error: { status_code, detail } }
   const standardizedDetail = responseData?.error?.detail
   if (standardizedDetail) {

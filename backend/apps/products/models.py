@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from apps.core.models import BaseModel
 from django.db.models import Q
+from django.db.models import Sum
 from django.utils.text import slugify
 
 
@@ -349,7 +350,25 @@ class Product(BaseModel):
         return self.name
 
     @property
+    def has_variants(self):
+        return self.variants.filter(is_active=True).exists()
+
+    def _variant_inventory_summary(self):
+        summary = VariantInventory.objects.filter(
+            variant__product=self,
+            variant__is_active=True,
+        ).aggregate(
+            total_quantity=Sum("quantity"),
+            total_reserved=Sum("reserved"),
+        )
+        total_quantity = int(summary.get("total_quantity") or 0)
+        total_reserved = int(summary.get("total_reserved") or 0)
+        return total_quantity, total_reserved
+
+    @property
     def in_stock(self):
+        if self.has_variants:
+            return self.available_stock > 0
         try:
             return self.inventory.available() > 0
         except Exception:
@@ -357,6 +376,9 @@ class Product(BaseModel):
 
     @property
     def available_stock(self):
+        if self.has_variants:
+            total_quantity, total_reserved = self._variant_inventory_summary()
+            return max(total_quantity - total_reserved, 0)
         try:
             return self.inventory.available()
         except Exception:
@@ -419,6 +441,12 @@ class ProductVariant(BaseModel):
     )
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
     price_modifier = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    image = models.ImageField(
+        upload_to="products/variants/",
+        blank=True,
+        null=True,
+        validators=[validate_image_file],
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -435,6 +463,14 @@ class ProductVariant(BaseModel):
         if self.color:
             parts.append(self.color)
         return " - ".join(parts)
+
+    @property
+    def image_url(self):
+        if self.image:
+            return self.image.url
+        if self.product.image:
+            return self.product.image.url
+        return None
 
 
 class ProductImage(BaseModel):
@@ -474,6 +510,29 @@ class VariantInventory(BaseModel):
 
     def __str__(self):
         return f"{self.variant} inventory: {self.quantity}"
+
+
+def sync_product_stock(product):
+    product_id = product.pk if isinstance(product, Product) else product
+    if not product_id:
+        return
+
+    variant_summary = VariantInventory.objects.filter(
+        variant__product_id=product_id,
+        variant__is_active=True,
+    ).aggregate(
+        total_quantity=Sum("quantity"),
+        total_reserved=Sum("reserved"),
+    )
+    total_quantity = int(variant_summary.get("total_quantity") or 0)
+    total_reserved = int(variant_summary.get("total_reserved") or 0)
+
+    if total_quantity > 0 or ProductVariant.objects.filter(product_id=product_id, is_active=True).exists():
+        Product.objects.filter(pk=product_id).update(stock=total_quantity)
+        Inventory.objects.update_or_create(
+            product_id=product_id,
+            defaults={"quantity": total_quantity, "reserved": total_reserved},
+        )
 
 
 class InventoryLog(BaseModel):

@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
+import { CheckCircle2, Heart, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
 
 import api from '@/lib/api'
 import { shouldUseUnoptimizedImage } from '@/lib/media'
 import { useCart } from '@/lib/cartContext'
+import { useWishlist } from '@/lib/wishlistContext'
 import ReviewSection from '@/components/ReviewSection'
 
 interface Product {
@@ -20,6 +21,18 @@ interface Product {
   category?: { id: number; name: string; slug: string; full_slug?: string }
   image: string | null
   stock: number
+  available_stock?: number
+  variants?: Array<{
+    id: number
+    color?: string
+    color_label?: string
+    size?: string
+    size_label?: string
+    sku?: string
+    image?: string | null
+    effective_price?: string
+    available_stock?: number
+  }>
 }
 
 function DetailSkeleton() {
@@ -43,8 +56,10 @@ export default function ProductDetailPage() {
   const slug = params?.slug as string
 
   const { add } = useCart()
+  const { toggle, contains } = useWishlist()
 
   const [product, setProduct] = useState<Product | null>(null)
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [adding, setAdding] = useState(false)
@@ -74,23 +89,76 @@ export default function ProductDetailPage() {
   }, [slug])
 
   const parsedPrice = useMemo(() => (product ? Number(product.price) : 0), [product])
-  const total = parsedPrice * quantity
+  const selectedVariant = useMemo(
+    () => product?.variants?.find((variant) => variant.id === selectedVariantId) ?? null,
+    [product, selectedVariantId]
+  )
+  const activePrice = useMemo(
+    () => (selectedVariant?.effective_price ? Number(selectedVariant.effective_price) : parsedPrice),
+    [parsedPrice, selectedVariant]
+  )
+  const availableStock = useMemo(
+    () => (selectedVariant ? Number(selectedVariant.available_stock ?? 0) : product ? Number(product.available_stock ?? product.stock ?? 0) : 0),
+    [product, selectedVariant]
+  )
+  const displayImage = useMemo(
+    () => selectedVariant?.image || product?.image || null,
+    [product, selectedVariant]
+  )
+  const total = activePrice * quantity
+  const wishlisted = product ? contains(product.id) : false
+
+  useEffect(() => {
+    if (availableStock <= 0) {
+      setQuantity(1)
+      return
+    }
+    setQuantity((prev) => Math.min(prev, availableStock))
+  }, [availableStock])
+
+  useEffect(() => {
+    if (!product?.variants?.length) {
+      setSelectedVariantId(null)
+      return
+    }
+
+    const preferred = product.variants.find((variant) => Number(variant.available_stock ?? 0) > 0) ?? product.variants[0]
+    setSelectedVariantId(preferred.id)
+  }, [product])
 
   const addToCart = async () => {
-    if (!product || product.stock <= 0) return
+    if (!product || availableStock <= 0) return
     setAdding(true)
     try {
       await add({
-        id: product.id,
-        name: product.name,
-        price: parsedPrice,
-        image: product.image || '',
+        id: selectedVariant ? `variant-${selectedVariant.id}` : product.id,
+        product_id: product.id,
+        variant_id: selectedVariant?.id,
+        name: selectedVariant?.color_label ? `${product.name} - ${selectedVariant.color_label}` : product.name,
+        price: activePrice,
+        image: displayImage || '',
         slug: product.slug,
         qty: quantity,
       })
     } finally {
       setAdding(false)
     }
+  }
+
+  const toggleWishlist = () => {
+    if (!product) return
+
+    toggle({
+      id: `wishlist-${product.id}`,
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: activePrice,
+      image: displayImage || product.image || '',
+      categoryName: product.category?.name,
+      availableStock,
+      hasVariants: Boolean(product.variants?.length),
+    })
   }
 
   if (loading) return <DetailSkeleton />
@@ -127,8 +195,8 @@ export default function ProductDetailPage() {
         <div className="grid items-start gap-10 md:grid-cols-2">
           <div className="rounded-[12px] border border-default bg-surface p-4 shadow-[var(--shadow-soft)]">
             <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
-              {product.image ? (
-                <Image src={product.image} alt={product.name} fill className="object-cover" priority unoptimized={shouldUseUnoptimizedImage(product.image)} />
+              {displayImage ? (
+                <Image src={displayImage} alt={product.name} fill className="object-cover" priority unoptimized={shouldUseUnoptimizedImage(displayImage)} />
               ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
                   <span className="font-display text-7xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>
@@ -142,12 +210,64 @@ export default function ProductDetailPage() {
             <h1 className="font-display mt-2 text-[40px] text-[var(--text-primary)]">{product.name}</h1>
 
             <div className="mt-5 flex items-end gap-2">
-              <p className="text-3xl font-semibold text-[var(--text-primary)]">KES {parsedPrice.toLocaleString()}</p>
+              <p className="text-3xl font-semibold text-[var(--text-primary)]">KES {activePrice.toLocaleString()}</p>
             </div>
 
             <p className="mt-2 text-sm font-medium text-[var(--text-secondary)]">
-              {product.stock > 0 ? `In stock (${product.stock} available)` : 'Out of stock'}
+              {availableStock > 0 ? `In stock (${availableStock} available)` : 'Out of stock'}
             </p>
+
+            {product.variants && product.variants.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Color variations</p>
+                  {selectedVariant?.color_label && (
+                    <span className="text-sm text-[var(--text-secondary)]">Selected: {selectedVariant.color_label}</span>
+                  )}
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {product.variants.map((variant) => {
+                    const selected = variant.id === selectedVariantId
+                    const variantImage = variant.image || product.image || ''
+                    const variantStock = Number(variant.available_stock ?? 0)
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        onClick={() => setSelectedVariantId(variant.id)}
+                        className={`min-w-[118px] rounded-[14px] border p-2 text-left transition ${
+                          selected
+                            ? 'border-[var(--text-primary)] bg-[var(--bg-soft)] shadow-[var(--shadow-soft)]'
+                            : 'border-default bg-white hover:border-[var(--text-primary)]/40'
+                        }`}
+                      >
+                        <div className="relative mb-2 aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+                          {variantImage ? (
+                            <Image
+                              src={variantImage}
+                              alt={`${product.name} ${variant.color_label || variant.color || ''}`}
+                              fill
+                              className="object-cover"
+                              unoptimized={shouldUseUnoptimizedImage(variantImage)}
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center">
+                              <span className="font-display text-3xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="line-clamp-1 text-sm font-semibold text-[var(--text-primary)]">
+                          {variant.color_label || variant.color || 'Variant'}
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                          {variantStock > 0 ? `${variantStock} available` : 'Out of stock'}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             <p className="mt-6 whitespace-pre-line text-[16px] text-[var(--text-secondary)]">
               {product.description || 'No description available for this product yet.'}
@@ -160,18 +280,18 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                    className="btn-secondary w-11 px-0"
+                    className="btn-secondary h-12 w-12 rounded-full px-0"
                   >
                     -
                   </button>
-                  <span className="inline-flex h-11 min-w-12 items-center justify-center rounded-[12px] border border-default bg-[var(--bg-primary)] text-[var(--text-primary)]">
+                  <span className="inline-flex h-12 min-w-12 items-center justify-center rounded-full border border-default bg-[var(--bg-primary)] px-4 text-base font-semibold text-[var(--text-primary)]">
                     {quantity}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setQuantity((prev) => Math.min(product.stock || 1, prev + 1))}
-                    className="btn-secondary w-11 px-0"
-                    disabled={product.stock <= 0}
+                    onClick={() => setQuantity((prev) => Math.min(availableStock || 1, prev + 1))}
+                    className="btn-secondary h-12 w-12 rounded-full px-0"
+                    disabled={availableStock <= 0}
                   >
                     +
                   </button>
@@ -181,11 +301,22 @@ export default function ProductDetailPage() {
               <button
                 type="button"
                 onClick={addToCart}
-                disabled={product.stock <= 0 || adding}
-                className="btn-primary inline-flex flex-1 items-center justify-center gap-2 px-6"
+                disabled={availableStock <= 0 || adding}
+                className="btn-primary inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold leading-none sm:flex-1 sm:px-6"
               >
                 <ShoppingBag size={16} />
-                {adding ? 'Adding...' : `Add to Cart - KES ${total.toLocaleString()}`}
+                <span className="truncate">
+                  {adding ? 'Adding...' : `Add to Cart - KES ${total.toLocaleString()}`}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleWishlist}
+                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-default px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-soft)] sm:w-auto sm:px-6"
+              >
+                <Heart size={16} className={wishlisted ? 'fill-current' : ''} />
+                <span>{wishlisted ? 'Saved' : 'Save for later'}</span>
               </button>
             </div>
 

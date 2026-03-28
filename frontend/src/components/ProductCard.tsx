@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { useState } from 'react'
-import { ShoppingCart, X } from 'lucide-react'
+import { Heart, ShoppingCart, X } from 'lucide-react'
 
 import { useCart } from '../lib/cartContext'
+import { useWishlist } from '../lib/wishlistContext'
 import { getImageUrl } from '../lib/media'
 import SmartImage from './SmartImage'
 
@@ -12,19 +13,40 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const { add } = useCart()
+  const { toggle, contains } = useWishlist()
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  const inStock = product.stock === undefined || product.stock > 0
+  const availableStock = Number(product.available_stock ?? product.stock ?? 0)
+  const inStock = availableStock > 0
+  const hasVariants = Boolean(product.has_variants)
   const imageSrc = product.image || product.images?.[0] || null
   const imageUrl = getImageUrl(imageSrc)
+  const wishlisted = contains(product.id)
+
+  const wishlistItem = {
+    id: `wishlist-${product.id}`,
+    productId: product.id,
+    name: product.name,
+    slug: product.slug,
+    price: parseFloat(product.price),
+    image: imageSrc || '',
+    categoryName: product.category?.name,
+    availableStock,
+    hasVariants,
+  }
 
   const handleAddToCart = async (event: React.MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
+    if (hasVariants) {
+      window.location.href = `/products/${product.slug}`
+      return
+    }
     if (!inStock) return
 
     await add({
       id: product.id || product.slug,
+      product_id: product.id,
       name: product.name,
       price: parseFloat(product.price),
       image: imageSrc || '',
@@ -47,6 +69,19 @@ export default function ProductCard({ product }: Props) {
           className="relative aspect-[4/5] w-full cursor-zoom-in overflow-hidden bg-[var(--bg-secondary)]" 
           onClick={toggleFullscreen}
         >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              toggle(wishlistItem)
+            }}
+            aria-label="Add to wishlist"
+            className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-[#5C4033] shadow-sm transition hover:bg-[#FFF5F0]"
+          >
+            <Heart size={18} className={wishlisted ? 'fill-[#C4704A] text-[#C4704A]' : ''} />
+          </button>
+
           {imageUrl && imageUrl !== '/placeholder.svg' ? (
             <SmartImage 
               src={imageUrl} 
@@ -86,10 +121,10 @@ export default function ProductCard({ product }: Props) {
             disabled={!inStock}
             aria-label="Add to cart"
             title={inStock ? "Add to cart" : "Out of stock"}
-            className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-black bg-black px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 ${!inStock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-800'}`}
+            className={`mt-4 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-black bg-black px-4 py-3 text-sm font-semibold leading-none text-white transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 ${!inStock ? 'cursor-not-allowed opacity-50' : 'hover:bg-neutral-800'}`}
           >
             <ShoppingCart size={16} aria-hidden="true" />
-            <span>{inStock ? "Add to cart" : "Out of stock"}</span>
+            <span className="truncate">{hasVariants ? "Choose options" : inStock ? "Add to cart" : "Out of stock"}</span>
           </button>
         </div>
       </article>

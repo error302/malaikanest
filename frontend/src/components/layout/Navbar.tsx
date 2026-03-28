@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingBag, Search, User, Heart, ChevronDown, X, Menu, Shirt, Package, Home, Gamepad2, Car, Gift, Sparkles, Flame } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { useAuth } from '@/lib/authContext';
+import { useWishlist } from '@/lib/wishlistContext';
 
 const SHOP_CATEGORIES = [
   {
@@ -69,6 +70,7 @@ export default function Navbar() {
   const router = useRouter();
   const { items } = useCart();
   const itemCount = items.length;
+  const { count: wishlistCount } = useWishlist();
   const { user } = useAuth();
 
   // Close mobile menu on scroll
@@ -182,10 +184,15 @@ export default function Navbar() {
             {/* Wishlist */}
             <Link
               href="/wishlist"
-              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
+              className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
               aria-label="Wishlist"
             >
               <Heart size={18} />
+              {wishlistCount > 0 && (
+                <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#C4704A] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
 
             {/* Account */}

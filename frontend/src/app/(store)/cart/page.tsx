@@ -18,8 +18,19 @@ type CartItem = {
     price: string
     image: string
     stock: number
+    available_stock?: number
   }
+  variant?: {
+    id: number
+    color?: string
+    color_label?: string
+    size?: string
+    size_label?: string
+    image?: string
+    available_stock?: number
+  } | null
   quantity: number
+  unit_price?: string
 }
 
 type CartData = {
@@ -69,12 +80,12 @@ export default function CartPage() {
     fetchCart()
   }, [fetchCart])
 
-  const updateQuantity = async (productId: number, newQty: number) => {
+  const updateQuantity = async (productId: number, newQty: number, variantId?: number) => {
     if (newQty < 1) return
-    setUpdating(productId)
+    setUpdating(variantId || productId)
     setError('')
     try {
-      const res = await api.post('/api/v1/orders/cart/update/', { product_id: productId, quantity: newQty })
+      const res = await api.post('/api/v1/orders/cart/update/', { product_id: productId, variant_id: variantId, quantity: newQty })
       if (res?.data) {
         setCart(res.data)
       } else {
@@ -87,11 +98,11 @@ export default function CartPage() {
     }
   }
 
-  const removeItem = async (productId: number) => {
-    setUpdating(productId)
+  const removeItem = async (productId: number, variantId?: number) => {
+    setUpdating(variantId || productId)
     setError('')
     try {
-      const res = await api.post(`/api/v1/orders/cart/remove/${productId}/`)
+      const res = await api.post(`/api/v1/orders/cart/remove/${productId}/`, { variant_id: variantId })
       if (res?.data) {
         setCart(res.data)
       } else {
@@ -195,8 +206,12 @@ export default function CartPage() {
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <section className="space-y-4">
             {cart.items.map((item) => {
-              const lineTotal = toMoneyNumber(item.product.price) * item.quantity
-              const inStock = item.product.stock === undefined || item.product.stock > 0
+              const lineTotal = toMoneyNumber(item.unit_price || item.product.price) * item.quantity
+              const inStock = item.variant
+                ? Number(item.variant.available_stock ?? 0) > 0
+                : Number(item.product.available_stock ?? item.product.stock ?? 0) > 0
+              const actionKey = item.variant?.id || item.product.id
+              const displayImage = item.variant?.image || item.product.image
 
               return (
                 <article key={item.id} className="card-soft flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
@@ -204,8 +219,8 @@ export default function CartPage() {
                     href={`/products/${item.product.slug}`}
                     className="relative aspect-square w-full overflow-hidden rounded-[12px] border border-default bg-[var(--bg-soft)] sm:h-28 sm:w-28"
                   >
-                    {item.product.image ? (
-                      <Image src={item.product.image} alt={item.product.name} fill sizes="112px" className="object-cover" unoptimized={shouldUseUnoptimizedImage(item.product.image)} />
+                    {displayImage ? (
+                      <Image src={displayImage} alt={item.product.name} fill sizes="112px" className="object-cover" unoptimized={shouldUseUnoptimizedImage(displayImage)} />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
                         <span className="font-display text-4xl text-[var(--text-primary)]">{item.product.name.charAt(0)}</span>
@@ -220,13 +235,16 @@ export default function CartPage() {
                     >
                       {item.product.name}
                     </Link>
-                    <p className="mt-1 text-sm text-[var(--text-secondary)]">KES {formatKsh(item.product.price)} each</p>
+                    {item.variant?.color_label && (
+                      <p className="mt-1 text-sm text-[var(--text-secondary)]">Color: {item.variant.color_label}</p>
+                    )}
+                    <p className="mt-1 text-sm text-[var(--text-secondary)]">KES {formatKsh(item.unit_price || item.product.price)} each</p>
 
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                       <div className="inline-flex items-center rounded-[12px] border border-default bg-[var(--bg-soft)] p-1">
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                          disabled={updating === item.product.id || item.quantity <= 1}
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variant?.id)}
+                          disabled={updating === actionKey || item.quantity <= 1}
                           className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-40"
                           aria-label={`Decrease quantity for ${item.product.name}`}
                         >
@@ -236,8 +254,8 @@ export default function CartPage() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          disabled={updating === item.product.id || !inStock}
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variant?.id)}
+                          disabled={updating === actionKey || !inStock}
                           className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-40"
                           aria-label={`Increase quantity for ${item.product.name}`}
                         >
@@ -248,8 +266,8 @@ export default function CartPage() {
                       <div className="text-right">
                         <p className="text-[20px] font-semibold text-[var(--text-primary)]">KES {formatKsh(lineTotal)}</p>
                         <button
-                          onClick={() => removeItem(item.product.id)}
-                          disabled={updating === item.product.id}
+                          onClick={() => removeItem(item.product.id, item.variant?.id)}
+                          disabled={updating === actionKey}
                           className="mt-1 inline-flex items-center gap-1 text-sm text-[var(--text-secondary)] transition-colors hover:text-red-600 disabled:opacity-50"
                         >
                           <Trash2 size={14} />

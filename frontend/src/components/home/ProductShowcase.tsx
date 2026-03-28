@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles } from 'lucide-react';
+import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
+import { useCart } from '@/lib/cartContext';
+import { useWishlist } from '@/lib/wishlistContext';
 
 interface Product {
   id: number;
@@ -18,6 +20,8 @@ interface Product {
   review_count?: number;
   featured?: boolean;
   stock?: number;
+  available_stock?: number;
+  has_variants?: boolean;
   badge?: string;
   badge_color?: string;
 }
@@ -31,9 +35,11 @@ function discount(price: number, original: number) {
 }
 
 function ProductCard({ product }: { product: Product }) {
-  const [wishlisted, setWishlisted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { add } = useCart();
+  const { toggle, contains } = useWishlist();
 
   const imageUrl = product.image ? getImageUrl(product.image) : null;
   const categoryName = product.category?.name ?? 'Products';
@@ -41,14 +47,56 @@ function ProductCard({ product }: { product: Product }) {
   const reviewCount = product.review_count ?? 0;
   const price = Number(product.price) || 0;
   const originalPrice = product.original_price ? Number(product.original_price) : null;
-  const inStock = (product.stock ?? 0) > 0;
+  const availableStock = Number(product.available_stock ?? product.stock ?? 0);
+  const inStock = availableStock > 0;
+  const hasVariants = Boolean(product.has_variants);
+  const wishlisted = contains(product.id);
+
+  const wishlistItem = {
+    id: `wishlist-${product.id}`,
+    productId: product.id,
+    name: product.name,
+    slug: product.slug,
+    price,
+    image: product.image,
+    categoryName: categoryName,
+    availableStock,
+    hasVariants,
+  };
+
+  const handleAddToCart = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (hasVariants) {
+      window.location.href = `/products/${product.slug}`;
+      return;
+    }
+    if (!inStock || isAdding) return;
+
+    setIsAdding(true);
+    try {
+      await add({
+        id: product.id,
+        name: product.name,
+        price,
+        image: product.image || '',
+        slug: product.slug,
+        qty: 1,
+      });
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 1800);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#EDE3D8] hover:border-[#C9A96E]/50 hover:shadow-xl transition-all duration-300"
-    >
+    <article className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#EDE3D8] hover:border-[#C9A96E]/50 hover:shadow-xl transition-all duration-300">
       <div className="relative bg-[#F5EFE6] aspect-square overflow-hidden">
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={`View ${product.name}`}
+          className="absolute inset-0 z-0"
+        />
         {!imageError && imageUrl ? (
           <Image
             src={imageUrl}
@@ -78,13 +126,14 @@ function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        <div className="absolute inset-0 flex items-end justify-center gap-2 pb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
+        <div className="absolute inset-0 hidden items-end justify-center gap-2 pb-3 opacity-0 transition-all duration-200 translate-y-2 group-hover:translate-y-0 group-hover:opacity-100 md:flex">
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
-              setWishlisted((w) => !w);
+              toggle(wishlistItem);
             }}
-            className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#FFF5F0] transition-colors"
+            className="relative z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#FFF5F0] transition-colors"
             aria-label="Add to wishlist"
           >
             <Heart
@@ -93,26 +142,21 @@ function ProductCard({ product }: { product: Product }) {
             />
           </button>
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              if (!inStock) return;
-              setAddedToCart(true);
-              setTimeout(() => setAddedToCart(false), 1800);
-            }}
-            className={`flex-1 mx-2 max-w-[140px] h-9 rounded-full text-xs font-medium shadow-md flex items-center justify-center gap-1.5 transition-all ${
+            type="button"
+            onClick={handleAddToCart}
+            className={`relative z-10 flex-1 mx-2 max-w-[140px] h-9 rounded-full text-xs font-medium shadow-md flex items-center justify-center gap-1.5 transition-all ${
               addedToCart
                 ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                : hasVariants ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
-            disabled={!inStock}
+            disabled={(!inStock && !hasVariants) || isAdding}
           >
             <ShoppingBag size={13} />
-            {addedToCart ? 'Added!' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
-            onClick={(e) => e.stopPropagation()}
-            className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#F5EFE6] transition-colors"
+            className="relative z-10 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-[#F5EFE6] transition-colors"
             aria-label="Quick view"
           >
             <Eye size={15} className="text-[#5C4033]" />
@@ -124,9 +168,11 @@ function ProductCard({ product }: { product: Product }) {
         <p className="text-[10px] uppercase tracking-[0.1em] text-[#8A7060] mb-1">
           {categoryName}
         </p>
-        <h3 className="text-sm font-medium text-[#2C1810] leading-snug mb-2 line-clamp-2 group-hover:text-[#1A3A2A] transition-colors">
-          {product.name}
-        </h3>
+        <Link href={`/products/${product.slug}`} className="relative z-10">
+          <h3 className="text-sm font-medium text-[#2C1810] leading-snug mb-2 line-clamp-2 group-hover:text-[#1A3A2A] transition-colors">
+            {product.name}
+          </h3>
+        </Link>
 
         <div className="flex items-center gap-1 mb-3">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -153,19 +199,93 @@ function ProductCard({ product }: { product: Product }) {
             </span>
           )}
         </div>
+
+        <div className="mt-4 flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              toggle(wishlistItem);
+            }}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E2D6CA] bg-white text-[#5C4033] shadow-sm transition-colors hover:bg-[#FFF5F0]"
+            aria-label="Add to wishlist"
+          >
+            <Heart
+              size={18}
+              className={wishlisted ? 'fill-[#C4704A] text-[#C4704A]' : 'text-[#5C4033]'}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`inline-flex min-h-[48px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 py-3 text-[13px] font-semibold leading-none shadow-sm transition-all sm:px-4 sm:text-sm ${
+              addedToCart
+                  ? 'bg-[#1A3A2A] text-[#E8C98A]'
+                  : hasVariants
+                    ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white'
+                    : inStock
+                  ? 'bg-[#C4704A] text-white hover:bg-[#B45F3A]'
+                  : 'cursor-not-allowed bg-gray-200 text-gray-500'
+            }`}
+            disabled={(!inStock && !hasVariants) || isAdding}
+          >
+            <ShoppingBag size={16} />
+            <span className="min-w-0 truncate">
+              {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            </span>
+          </button>
+
+          <Link
+            href={`/products/${product.slug}`}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E2D6CA] bg-white text-[#5C4033] shadow-sm transition-colors hover:bg-[#F5EFE6]"
+            aria-label="View product"
+          >
+            <Eye size={18} />
+          </Link>
+        </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
 function FeaturedCard({ product }: { product: Product }) {
   const [imageError, setImageError] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { add } = useCart();
 
   const imageUrl = product.image ? getImageUrl(product.image) : null;
   const categoryName = product.category?.name ?? 'Products';
   const price = Number(product.price) || 0;
   const originalPrice = product.original_price ? Number(product.original_price) : null;
+  const availableStock = Number(product.available_stock ?? product.stock ?? 0);
+  const inStock = availableStock > 0;
+  const hasVariants = Boolean(product.has_variants);
+
+  const handleAddToCart = async () => {
+    if (hasVariants) {
+      window.location.href = `/products/${product.slug}`;
+      return;
+    }
+    if (!inStock || isAdding) return;
+
+    setIsAdding(true);
+    try {
+      await add({
+        id: product.id,
+        name: product.name,
+        price,
+        image: product.image || '',
+        slug: product.slug,
+        qty: 1,
+      });
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 1800);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div className="group relative rounded-3xl overflow-hidden bg-[#F5EFE6] flex flex-col justify-end min-h-[480px] lg:min-h-[560px]">
@@ -208,18 +328,17 @@ function FeaturedCard({ product }: { product: Product }) {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              setAddedToCart(true);
-              setTimeout(() => setAddedToCart(false), 1800);
-            }}
+            type="button"
+            onClick={handleAddToCart}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
               addedToCart
                 ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                : 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white'
+                : hasVariants ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
+            disabled={(!inStock && !hasVariants) || isAdding}
           >
             <ShoppingBag size={14} />
-            {addedToCart ? 'Added!' : 'Add to Cart'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
@@ -271,6 +390,14 @@ interface ProductSectionProps {
   layout?: 'grid4' | 'featured+3' | 'grid3';
 }
 
+function getCircularProducts(products: Product[], startIndex: number, visibleCount: number) {
+  if (products.length <= visibleCount) {
+    return products;
+  }
+
+  return Array.from({ length: visibleCount }, (_, offset) => products[(startIndex + offset) % products.length]);
+}
+
 export function ProductSection({
   title,
   label,
@@ -278,11 +405,56 @@ export function ProductSection({
   products,
   layout = 'grid4',
 }: ProductSectionProps) {
-  if (!products || products.length === 0) return null;
+  const safeProducts = useMemo(() => products ?? [], [products]);
+  const visibleCount = layout === 'grid3' ? 3 : 4;
+  const shouldRotate = safeProducts.length > visibleCount;
+  const [startIndex, setStartIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
-  if (layout === 'featured+3' && products.length >= 4) {
+  useEffect(() => {
+    setStartIndex(0);
+  }, [safeProducts.length, layout]);
+
+  useEffect(() => {
+    if (!shouldRotate || isPaused) return;
+
+    const timer = window.setInterval(() => {
+      setStartIndex((current) => (current + 1) % safeProducts.length);
+    }, 60 * 60 * 1000);
+
+    return () => window.clearInterval(timer);
+  }, [isPaused, safeProducts.length, shouldRotate]);
+
+  const visibleProducts = useMemo(
+    () => getCircularProducts(safeProducts, startIndex, visibleCount),
+    [safeProducts, startIndex, visibleCount]
+  );
+
+  if (safeProducts.length === 0) return null;
+
+  const goPrev = () => {
+    if (!shouldRotate) return;
+    setStartIndex((current) => (current - 1 + safeProducts.length) % safeProducts.length);
+  };
+
+  const goNext = () => {
+    if (!shouldRotate) return;
+    setStartIndex((current) => (current + 1) % safeProducts.length);
+  };
+
+  const interactionProps = shouldRotate
+    ? {
+        onMouseEnter: () => setIsPaused(true),
+        onMouseLeave: () => setIsPaused(false),
+        onTouchStart: () => setIsPaused(true),
+        onTouchEnd: () => setIsPaused(false),
+        onTouchCancel: () => setIsPaused(false),
+      }
+    : {};
+
+  if (layout === 'featured+3' && safeProducts.length >= 4) {
     return (
-      <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]">
+      <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]" {...interactionProps}>
         <div className="max-w-[1380px] mx-auto">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -296,18 +468,40 @@ export function ProductSection({
                 {title}
               </h2>
             </div>
-            <Link
-              href={viewAllHref}
-              className="hidden sm:flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
-            >
-              View all <ArrowRight size={15} />
-            </Link>
+            <div className="hidden sm:flex items-center gap-3">
+              {shouldRotate && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    aria-label={`Show previous ${title.toLowerCase()}`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    aria-label={`Show next ${title.toLowerCase()}`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+              <Link
+                href={viewAllHref}
+                className="flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
+              >
+                View all <ArrowRight size={15} />
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <FeaturedCard product={products[0]} />
+            <FeaturedCard product={visibleProducts[0]} />
             <div className="flex flex-col gap-5">
-              {products.slice(1, 4).map((p) => (
+              {visibleProducts.slice(1, 4).map((p) => (
                 <Link
                   key={p.id}
                   href={`/products/${p.slug}`}
@@ -351,13 +545,34 @@ export function ProductSection({
               ))}
             </div>
           </div>
+
+          {shouldRotate && (
+            <div className="mt-6 flex items-center justify-center gap-2 sm:hidden">
+              <button
+                type="button"
+                onClick={goPrev}
+                aria-label={`Show previous ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                aria-label={`Show next ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
         </div>
       </section>
     );
   }
 
   return (
-    <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]">
+    <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]" {...interactionProps}>
       <div className="max-w-[1380px] mx-auto">
         <div className="flex items-end justify-between mb-8">
           <div>
@@ -371,12 +586,34 @@ export function ProductSection({
               {title}
             </h2>
           </div>
-          <Link
-            href={viewAllHref}
-            className="hidden sm:flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
-          >
-            View all <ArrowRight size={15} />
-          </Link>
+          <div className="hidden sm:flex items-center gap-3">
+            {shouldRotate && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  aria-label={`Show previous ${title.toLowerCase()}`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  aria-label={`Show next ${title.toLowerCase()}`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+            <Link
+              href={viewAllHref}
+              className="flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
+            >
+              View all <ArrowRight size={15} />
+            </Link>
+          </div>
         </div>
 
         <div className={`grid gap-4 lg:gap-5 ${
@@ -384,17 +621,39 @@ export function ProductSection({
             ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
             : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4'
         }`}>
-          {products.slice(0, layout === 'grid3' ? 3 : 4).map((p) => (
+          {visibleProducts.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
 
-        <Link
-          href={viewAllHref}
-          className="sm:hidden mt-6 flex items-center justify-center gap-2 w-full py-3 border border-[#C9A96E]/30 rounded-full text-sm text-[#1A3A2A] font-medium hover:bg-[#F5EFE6] transition-colors"
-        >
-          View all <ArrowRight size={15} />
-        </Link>
+        <div className="mt-6 flex flex-col gap-3 sm:hidden">
+          {shouldRotate && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={goPrev}
+                aria-label={`Show previous ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                aria-label={`Show next ${title.toLowerCase()}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+          <Link
+            href={viewAllHref}
+            className="flex items-center justify-center gap-2 w-full py-3 border border-[#C9A96E]/30 rounded-full text-sm text-[#1A3A2A] font-medium hover:bg-[#F5EFE6] transition-colors"
+          >
+            View all <ArrowRight size={15} />
+          </Link>
+        </div>
       </div>
     </section>
   );
