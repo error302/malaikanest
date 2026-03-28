@@ -20,6 +20,7 @@ type VariantDraft = {
   stock: string
   sku: string
   price_modifier: string
+  image_url: string
   image: File | null
   imagePreview: string | null
 }
@@ -178,6 +179,7 @@ export default function NewProduct() {
         stock: '',
         sku: '',
         price_modifier: '0',
+        image_url: '',
         image: null,
         imagePreview: null,
       },
@@ -194,7 +196,9 @@ export default function NewProduct() {
   const handleVariantImageChange = (index: number, file: File | null) => {
     if (!file) {
       setVariants((current) => current.map((variant, variantIndex) => (
-        variantIndex === index ? { ...variant, image: null, imagePreview: null } : variant
+        variantIndex === index
+          ? { ...variant, image: null, imagePreview: variant.image_url || null }
+          : variant
       )))
       return
     }
@@ -211,6 +215,19 @@ export default function NewProduct() {
       )))
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleVariantImageUrlChange = (index: number, value: string) => {
+    setVariants((current) => current.map((variant, variantIndex) => {
+      if (variantIndex !== index) return variant
+
+      const normalizedUrl = value.trim()
+      return {
+        ...variant,
+        image_url: value,
+        imagePreview: variant.image ? variant.imagePreview : normalizedUrl || null,
+      }
+    }))
   }
 
   const removeVariant = (index: number) => {
@@ -266,6 +283,7 @@ export default function NewProduct() {
               stock: Number(variant.stock || 0),
               sku: variant.sku || null,
               price_modifier: variant.price_modifier || '0',
+              image_url: variant.image_url || null,
               is_active: true,
             }))
           )
@@ -486,6 +504,18 @@ export default function NewProduct() {
                         className="w-full text-sm"
                       />
                       <p className="text-xs text-slate-400">Optional image for this specific color.</p>
+                    </div>
+
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-xs font-medium text-slate-600">Variant Image URL (Cloudinary)</label>
+                      <input
+                        type="url"
+                        value={variant.image_url}
+                        onChange={(e) => handleVariantImageUrlChange(index, e.target.value)}
+                        className="w-full rounded-lg border px-4 py-3 text-sm"
+                        placeholder="https://res.cloudinary.com/.../image/upload/..."
+                      />
+                      <p className="text-xs text-slate-400">Paste a Cloudinary image URL if this color already has a hosted asset.</p>
                     </div>
                   </div>
 

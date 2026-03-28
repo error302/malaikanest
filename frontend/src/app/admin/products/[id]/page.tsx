@@ -22,6 +22,7 @@ type VariantDraft = {
   stock: string
   sku: string
   price_modifier: string
+  image_url: string
   image: File | null
   imagePreview: string | null
 }
@@ -183,6 +184,7 @@ export default function EditProductPage() {
             stock: String(variant.stock ?? 0),
             sku: variant.sku || '',
             price_modifier: variant.price_modifier || '0',
+            image_url: variant.image || '',
             image: null,
             imagePreview: variant.image || null,
           }))
@@ -246,7 +248,7 @@ export default function EditProductPage() {
   const addVariantRow = () => {
     setVariants((current) => [
       ...current,
-      { color: '', stock: '', sku: '', price_modifier: '0', image: null, imagePreview: null },
+      { color: '', stock: '', sku: '', price_modifier: '0', image_url: '', image: null, imagePreview: null },
     ])
   }
 
@@ -259,7 +261,9 @@ export default function EditProductPage() {
   const handleVariantImageChange = (index: number, file: File | null) => {
     if (!file) {
       setVariants((current) => current.map((variant, variantIndex) => (
-        variantIndex === index ? { ...variant, image: null } : variant
+        variantIndex === index
+          ? { ...variant, image: null, imagePreview: variant.image_url || null }
+          : variant
       )))
       return
     }
@@ -276,6 +280,21 @@ export default function EditProductPage() {
       )))
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleVariantImageUrlChange = (index: number, value: string) => {
+    setVariants((current) =>
+      current.map((variant, variantIndex) => {
+        if (variantIndex !== index) return variant
+
+        const normalizedUrl = value.trim()
+        return {
+          ...variant,
+          image_url: value,
+          imagePreview: variant.image ? variant.imagePreview : normalizedUrl || null,
+        }
+      })
+    )
   }
 
   const removeVariant = (index: number) => {
@@ -321,6 +340,7 @@ export default function EditProductPage() {
             stock: Number(variant.stock || 0),
             sku: variant.sku || null,
             price_modifier: variant.price_modifier || '0',
+            image_url: variant.image_url || null,
             is_active: true,
           }))
         )
@@ -514,6 +534,17 @@ export default function EditProductPage() {
                     <div className="space-y-1 md:col-span-2">
                       <label className="text-xs font-medium text-slate-600">Variant Image</label>
                       <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => handleVariantImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm" />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-xs font-medium text-slate-600">Variant Image URL (Cloudinary)</label>
+                      <input
+                        type="url"
+                        value={variant.image_url}
+                        onChange={(e) => handleVariantImageUrlChange(index, e.target.value)}
+                        placeholder="https://res.cloudinary.com/.../image/upload/..."
+                        className="w-full rounded-lg border px-4 py-3 text-sm"
+                      />
+                      <p className="text-xs text-slate-500">Paste a Cloudinary image URL if this color should use a hosted asset.</p>
                     </div>
                   </div>
 
