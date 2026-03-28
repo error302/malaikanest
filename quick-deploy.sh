@@ -68,12 +68,18 @@ npm run build
 
 # Keep standalone runtime assets available for `node .next/standalone/.../server.js`
 STANDALONE_DIR=".next/standalone"
-NESTED_APP_DIR="$STANDALONE_DIR/malaikanest/frontend"
 RUNTIME_DIR="$STANDALONE_DIR"
+NESTED_CANDIDATES=(
+    "$STANDALONE_DIR/malaikanest/frontend"
+    "$STANDALONE_DIR/www/frontend"
+)
 
-if [ -d "$NESTED_APP_DIR" ]; then
-    RUNTIME_DIR="$NESTED_APP_DIR"
-fi
+for candidate in "${NESTED_CANDIDATES[@]}"; do
+    if [ -f "$candidate/server.js" ]; then
+        RUNTIME_DIR="$candidate"
+        break
+    fi
+done
 
 if [ -d "$RUNTIME_DIR" ]; then
     mkdir -p "$RUNTIME_DIR/.next/static" "$RUNTIME_DIR/public"

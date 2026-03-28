@@ -21,12 +21,18 @@ die()  { echo -e "${RED}[error]${NC} $*" >&2; exit 1; }
 
 sync_next_standalone_assets() {
     local standalone_dir="$FRONTEND_DIR/.next/standalone"
-    local nested_app_dir="$standalone_dir/malaikanest/frontend"
     local runtime_dir="$standalone_dir"
+    local nested_candidates=(
+        "$standalone_dir/malaikanest/frontend"
+        "$standalone_dir/www/frontend"
+    )
 
-    if [[ -d "$nested_app_dir" ]]; then
-        runtime_dir="$nested_app_dir"
-    fi
+    for candidate in "${nested_candidates[@]}"; do
+        if [[ -f "$candidate/server.js" ]]; then
+            runtime_dir="$candidate"
+            break
+        fi
+    done
 
     [[ -d "$runtime_dir" ]] || die "Standalone output not found: $runtime_dir"
     mkdir -p "$runtime_dir/.next/static" "$runtime_dir/public"

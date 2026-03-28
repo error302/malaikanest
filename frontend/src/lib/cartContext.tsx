@@ -10,7 +10,7 @@ import React, {
   useCallback,
 } from 'react'
 
-import api from '@/lib/api'
+import api, { handleApiError } from '@/lib/api'
 import { showToast } from '@/components/Toast'
 
 type CartItem = {
@@ -21,6 +21,8 @@ type CartItem = {
   qty: number
   slug?: string
   product_id?: number
+  variant_id?: number
+  variant_label?: string
 }
 
 type ApiCartItem = {
@@ -32,7 +34,16 @@ type ApiCartItem = {
     price: string | number
     image?: string | null
   }
+  variant?: {
+    id: number
+    color?: string
+    color_label?: string
+    size?: string
+    size_label?: string
+    image?: string | null
+  } | null
   quantity: number
+  unit_price?: string | number
 }
 
 type CartData = {
@@ -62,14 +73,19 @@ type Action =
 const STORAGE_KEY = 'malaika_cart_v1'
 
 function normalizeCartItem(item: ApiCartItem): CartItem {
-  const price = typeof item.product?.price === 'number' ? item.product.price : Number(item.product?.price || 0)
+  const unitPrice = typeof item.unit_price === 'number'
+    ? item.unit_price
+    : Number(item.unit_price ?? item.product?.price ?? 0)
+  const cartKey = item.variant?.id ? `variant-${item.variant.id}` : `product-${item.product?.id ?? item.id}`
 
   return {
-    id: item.product?.id ?? item.id,
+    id: cartKey,
     product_id: item.product?.id,
-    name: item.product?.name || 'Product',
-    price: Number.isFinite(price) ? price : 0,
-    image: item.product?.image || '',
+    variant_id: item.variant?.id,
+    variant_label: item.variant?.color_label || item.variant?.size_label || undefined,
+    name: item.variant?.color_label ? `${item.product?.name || 'Product'} - ${item.variant.color_label}` : item.product?.name || 'Product',
+    price: Number.isFinite(unitPrice) ? unitPrice : 0,
+    image: item.variant?.image || item.product?.image || '',
     qty: item.quantity || 0,
     slug: item.product?.slug,
   }
@@ -164,13 +180,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     try {
       const res = await api.post('/api/v1/orders/cart/add/', {
-        product_id: item.id,
+        product_id: item.product_id ?? item.id,
+        variant_id: item.variant_id,
         quantity: fullItem.qty,
       })
       dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
     } catch (e: any) {
       console.error('Failed to add to cart', e)
-      const msg = e?.response?.data?.detail || 'Failed to add to cart'
+      const msg = handleApiError(e, 'Failed to add to cart')
       showToast(msg, 'error')
       await fetchCart()
     } finally {
@@ -180,10 +197,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const remove = useCallback(async (id: string | number) => {
     dispatch({ type: 'REMOVE', id })
+    const item = state.items.find((entry) => entry.id === id)
 
     setLoading(true)
     try {
-      const res = await api.post(`/api/v1/orders/cart/remove/${id}/`)
+      if (!item?.product_id) {
+        throw new Error('Cart item not found')
+      }
+      const res = await api.post(`/api/v1/orders/cart/remove/${item.product_id}/`, {
+        variant_id: item.variant_id,
+      })
       dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
     } catch (e) {
       console.error('Failed to remove from cart', e)
@@ -191,9 +214,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [fetchCart])
+  }, [fetchCart, state.items])
 
   const updateQty = useCallback(async (id: string | number, qty: number) => {
+    const item = state.items.find((entry) => entry.id === id)
     // Store previous state for rollback
     const previousItems = [...state.items]
     
@@ -214,8 +238,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     ;(window as any)[debounceKey] = setTimeout(async () => {
       setLoading(true)
       try {
+        if (!item?.product_id) {
+          throw new Error('Cart item not found')
+        }
         const res = await api.post(`/api/v1/orders/cart/update/`, {
-          product_id: id,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
           quantity: qty,
         })
         dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })

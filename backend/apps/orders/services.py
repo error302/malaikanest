@@ -1,11 +1,45 @@
 from django.db import transaction
 from django.db.models import F
 
-from apps.products.models import Inventory, InventoryLog, Product
+from apps.products.models import (
+    Inventory,
+    InventoryLog,
+    Product,
+    ProductVariant,
+    VariantInventory,
+    sync_product_stock,
+)
 from .models import DELIVERY_FEES
 
 
 class OrderService:
+    @staticmethod
+    def _get_locked_inventory(product):
+        inventory, _ = Inventory.objects.select_for_update().get_or_create(
+            product=product,
+            defaults={"quantity": product.stock},
+        )
+        return inventory
+
+    @staticmethod
+    def _get_locked_variant_inventory(variant):
+        inventory, _ = VariantInventory.objects.select_for_update().get_or_create(
+            variant=variant,
+            defaults={"quantity": 0},
+        )
+        return inventory
+
+    @staticmethod
+    def _get_locked_variant_inventory_by_reference(variant_reference):
+        if not variant_reference:
+            return None
+        return (
+            VariantInventory.objects.select_for_update()
+            .select_related("variant")
+            .filter(variant_id=variant_reference)
+            .first()
+        )
+
     @staticmethod
     def process_checkout(cart, user=None, guest_email=None, guest_phone=None, coupon=None, delivery_region="nairobi"):
         """
@@ -16,26 +50,49 @@ class OrderService:
             raise ValueError("Cart is empty")
 
         with transaction.atomic():
-            cart_items = cart.items.select_related("product").all()
+            cart_items = cart.items.select_related("product", "variant").all()
             product_ids = [ci.product_id for ci in cart_items]
+            variant_ids = [ci.variant_id for ci in cart_items if ci.variant_id]
 
             inventories = {
                 inv.product_id: inv
                 for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
+            }
+            variant_inventories = {
+                inv.variant_id: inv
+                for inv in VariantInventory.objects.select_for_update().filter(variant_id__in=variant_ids)
             }
 
             subtotal = 0
             items = []
 
             for ci in cart_items:
+                if ci.variant_id:
+                    variant = ci.variant
+                    inv = variant_inventories.get(ci.variant_id)
+                    if inv is None:
+                        inv = OrderService._get_locked_variant_inventory(variant)
+                        variant_inventories[ci.variant_id] = inv
+                    if inv.available() < ci.quantity:
+                        raise ValueError(
+                            f"Color {variant.get_color_display() if variant.color else variant.sku or variant.id} is out of stock. Available: {inv.available()}"
+                        )
+                    unit_price = ci.unit_price or (ci.product.price + variant.price_modifier)
+                    line_total = unit_price * ci.quantity
+                    subtotal += line_total
+                    items.append((ci.product, variant, ci.quantity, unit_price, inv, True))
+                    continue
+
                 inv = inventories.get(ci.product_id)
                 if inv is None:
-                    raise ValueError(f"No inventory record found for {ci.product.name}")
+                    inv = OrderService._get_locked_inventory(ci.product)
+                    inventories[ci.product_id] = inv
                 if inv.available() < ci.quantity:
                     raise ValueError(f"Product {ci.product.name} out of stock. Available: {inv.available()}")
-                line_total = ci.product.price * ci.quantity
+                unit_price = ci.unit_price or ci.product.price
+                line_total = unit_price * ci.quantity
                 subtotal += line_total
-                items.append((ci.product, ci.quantity, ci.product.price, inv))
+                items.append((ci.product, None, ci.quantity, unit_price, inv, False))
 
             discount_amount = coupon.calculate_discount(subtotal) if coupon and coupon.is_active and coupon.is_valid() else 0
             delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
@@ -57,22 +114,52 @@ class OrderService:
                 delivery_region=delivery_region,
             )
 
-            for product, qty, price, inv in items:
+            for product, variant, qty, price, inv, is_variant in items:
                 # Reserve stock only. Deduction happens after payment confirmation.
-                updated = Inventory.objects.filter(
-                    pk=inv.pk,
-                    quantity__gte=F("reserved") + qty,
-                ).update(reserved=F("reserved") + qty)
+                if is_variant:
+                    updated = VariantInventory.objects.filter(
+                        pk=inv.pk,
+                        quantity__gte=F("reserved") + qty,
+                    ).update(reserved=F("reserved") + qty)
+                else:
+                    updated = Inventory.objects.filter(
+                        pk=inv.pk,
+                        quantity__gte=F("reserved") + qty,
+                    ).update(reserved=F("reserved") + qty)
                 if updated != 1:
                     raise ValueError(f"Product {product.name} out of stock. Available: {inv.available()}")
-                OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    variant_reference=str(variant.pk) if variant else None,
+                    variant_details=(
+                        {
+                            "id": str(variant.pk),
+                            "color": variant.color,
+                            "color_label": variant.get_color_display() if variant.color else "",
+                            "size": variant.size,
+                            "size_label": variant.get_size_display() if variant.size else "",
+                            "sku": variant.sku,
+                        }
+                        if variant
+                        else None
+                    ),
+                    price=price,
+                    quantity=qty,
+                )
                 InventoryLog.objects.create(
                     product=product,
                     order=order,
                     change_type="order_placed",
                     quantity_change=0,
-                    reason=f"Stock reserved for order {order.receipt_number}",
+                    reason=(
+                        f"Stock reserved for {variant.get_color_display()} variant on order {order.receipt_number}"
+                        if variant and variant.color
+                        else f"Stock reserved for order {order.receipt_number}"
+                    ),
                 )
+                if is_variant:
+                    sync_product_stock(product)
 
             cart.items.all().delete()
             return order
@@ -90,16 +177,34 @@ class OrderService:
 
         with transaction.atomic():
             for item in order.items.select_related("product").all():
-                Inventory.objects.filter(
-                    product=item.product,
-                    reserved__gte=item.quantity,
-                ).update(reserved=F("reserved") - item.quantity)
+                if item.variant_reference:
+                    variant_inventory = OrderService._get_locked_variant_inventory_by_reference(item.variant_reference)
+                    if variant_inventory:
+                        VariantInventory.objects.filter(
+                            pk=variant_inventory.pk,
+                            reserved__gte=item.quantity,
+                        ).update(reserved=F("reserved") - item.quantity)
+                        sync_product_stock(item.product)
+                    color_label = ""
+                    if isinstance(item.variant_details, dict):
+                        color_label = item.variant_details.get("color_label") or item.variant_details.get("color") or ""
+                else:
+                    color_label = ""
+                if not item.variant_reference:
+                    Inventory.objects.filter(
+                        product=item.product,
+                        reserved__gte=item.quantity,
+                    ).update(reserved=F("reserved") - item.quantity)
                 InventoryLog.objects.create(
                     product=item.product,
                     order=order,
                     change_type="order_cancelled",
                     quantity_change=0,
-                    reason=f"Stock reservation released after cancellation of order {order.receipt_number}",
+                    reason=(
+                        f"Stock reservation released for {color_label} after cancellation of order {order.receipt_number}"
+                        if color_label
+                        else f"Stock reservation released after cancellation of order {order.receipt_number}"
+                    ),
                 )
             order.status = "cancelled"
             order.save(update_fields=["status"])

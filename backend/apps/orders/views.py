@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from apps.accounts.models import User
-from apps.products.models import Inventory
+from apps.products.models import Inventory, Product, ProductVariant, VariantInventory
 from .models import Cart, CartItem, Order, OrderItem, Coupon
 from .serializers import (
     CartSerializer,
@@ -32,8 +32,42 @@ class CartViewSet(viewsets.ViewSet):
 
     def _get_prefetched_cart(self, cart_id):
         return Cart.objects.select_related("coupon").prefetch_related(
-            "items__product__category", "items__product__brand", "items__product__tags"
+            "items__product__category",
+            "items__product__brand",
+            "items__product__tags",
+            "items__variant__inventory",
         ).get(id=cart_id)
+
+    def _get_locked_inventory(self, product_id):
+        product = (
+            Product.objects.select_for_update()
+            .filter(pk=product_id, is_active=True)
+            .first()
+        )
+        if not product:
+            raise Product.DoesNotExist
+
+        inventory, _ = Inventory.objects.select_for_update().get_or_create(
+            product=product,
+            defaults={"quantity": product.stock},
+        )
+        return inventory
+
+    def _get_locked_variant_inventory(self, variant_id):
+        variant = (
+            ProductVariant.objects.select_for_update()
+            .select_related("product")
+            .filter(pk=variant_id, is_active=True)
+            .first()
+        )
+        if not variant:
+            raise ProductVariant.DoesNotExist
+
+        inventory, _ = VariantInventory.objects.select_for_update().get_or_create(
+            variant=variant,
+            defaults={"quantity": 0},
+        )
+        return inventory
 
     def list(self, request):
         if request.user.is_authenticated:
@@ -55,6 +89,7 @@ class CartViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"])
     def add(self, request):
         product_id = request.data.get("product_id")
+        variant_id = request.data.get("variant_id")
         qty = int(request.data.get("quantity", 1))
 
         if qty < 1:
@@ -66,11 +101,18 @@ class CartViewSet(viewsets.ViewSet):
         # New locked implementation (kept early-return to avoid legacy code path).
         try:
             with transaction.atomic():
-                inv = (
-                    Inventory.objects.select_for_update()
-                    .select_related("product")
-                    .get(product_id=product_id)
-                )
+                variant = None
+                if variant_id:
+                    inv = self._get_locked_variant_inventory(variant_id)
+                    variant = inv.variant
+                    if product_id and int(product_id) != variant.product_id:
+                        return Response(
+                            {"detail": "Selected color does not belong to this product"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    product_id = variant.product_id
+                else:
+                    inv = self._get_locked_inventory(product_id)
 
                 if request.user.is_authenticated:
                     cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -79,11 +121,8 @@ class CartViewSet(viewsets.ViewSet):
 
                 cart = Cart.objects.select_for_update().get(pk=cart.pk)
 
-                ci = (
-                    CartItem.objects.select_for_update()
-                    .filter(cart=cart, product_id=product_id, variant__isnull=True)
-                    .first()
-                )
+                ci_query = CartItem.objects.select_for_update().filter(cart=cart)
+                ci = ci_query.filter(variant=variant).first() if variant else ci_query.filter(product_id=product_id, variant__isnull=True).first()
                 desired_qty = qty if not ci else (ci.quantity + qty)
 
                 if inv.available() < desired_qty:
@@ -95,20 +134,29 @@ class CartViewSet(viewsets.ViewSet):
                 if ci:
                     ci.quantity = desired_qty
                     if not ci.unit_price:
-                        ci.unit_price = inv.product.price
-                    ci.save(update_fields=["quantity", "unit_price"])
+                        ci.unit_price = (
+                            variant.product.price + variant.price_modifier
+                            if variant
+                            else inv.product.price
+                        )
+                    ci.save(update_fields=["quantity", "unit_price", "updated_at"])
                 else:
                     CartItem.objects.create(
                         cart=cart,
-                        product=inv.product,
+                        product=variant.product if variant else inv.product,
+                        variant=variant,
                         quantity=qty,
-                        unit_price=inv.product.price,
+                        unit_price=(
+                            variant.product.price + variant.price_modifier
+                            if variant
+                            else inv.product.price
+                        ),
                     )
 
             cart = self._get_prefetched_cart(cart.id)
             serializer = CartSerializer(cart)
             return Response(serializer.data)
-        except Inventory.DoesNotExist:
+        except (Inventory.DoesNotExist, Product.DoesNotExist, ProductVariant.DoesNotExist, VariantInventory.DoesNotExist):
             return Response(
                 {"detail": "Product not found or out of stock"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -277,7 +325,11 @@ class CartViewSet(viewsets.ViewSet):
                 )
             cart = get_object_or_404(Cart, session_key=session_key, user=None)
 
-        CartItem.objects.filter(cart=cart, product_id=product_id).delete()
+        variant_id = request.data.get("variant_id")
+        if variant_id:
+            CartItem.objects.filter(cart=cart, variant_id=variant_id).delete()
+        else:
+            CartItem.objects.filter(cart=cart, product_id=product_id, variant__isnull=True).delete()
         cart = self._get_prefetched_cart(cart.id)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
@@ -285,6 +337,7 @@ class CartViewSet(viewsets.ViewSet):
     def update_item(self, request):
         """Update quantity of a cart item"""
         product_id = request.data.get("product_id")
+        variant_id = request.data.get("variant_id")
         quantity = int(request.data.get("quantity", 1))
 
         if quantity < 1:
@@ -296,7 +349,13 @@ class CartViewSet(viewsets.ViewSet):
         # Locked implementation to prevent race conditions.
         try:
             with transaction.atomic():
-                inv = Inventory.objects.select_for_update().get(product_id=product_id)
+                variant = None
+                if variant_id:
+                    inv = self._get_locked_variant_inventory(variant_id)
+                    variant = inv.variant
+                    product_id = variant.product_id
+                else:
+                    inv = self._get_locked_inventory(product_id)
                 if inv.available() < quantity:
                     return Response(
                         {"detail": f"Only {inv.available()} items available in stock"},
@@ -315,11 +374,8 @@ class CartViewSet(viewsets.ViewSet):
                         Cart.objects.select_for_update(), session_key=session_key, user=None
                     )
 
-                cart_item = (
-                    CartItem.objects.select_for_update()
-                    .filter(cart=cart, product_id=product_id, variant__isnull=True)
-                    .first()
-                )
+                cart_item_query = CartItem.objects.select_for_update().filter(cart=cart)
+                cart_item = cart_item_query.filter(variant=variant).first() if variant else cart_item_query.filter(product_id=product_id, variant__isnull=True).first()
                 if not cart_item:
                     return Response(
                         {"detail": "Item not found in cart"}, status=status.HTTP_404_NOT_FOUND
@@ -327,13 +383,17 @@ class CartViewSet(viewsets.ViewSet):
 
                 cart_item.quantity = quantity
                 if not cart_item.unit_price:
-                    cart_item.unit_price = cart_item.product.price
-                cart_item.save(update_fields=["quantity", "unit_price"])
+                    cart_item.unit_price = (
+                        cart_item.product.price + cart_item.variant.price_modifier
+                        if cart_item.variant
+                        else cart_item.product.price
+                    )
+                cart_item.save(update_fields=["quantity", "unit_price", "updated_at"])
 
             cart = self._get_prefetched_cart(cart.id)
             serializer = CartSerializer(cart)
             return Response(serializer.data)
-        except Inventory.DoesNotExist:
+        except (Inventory.DoesNotExist, Product.DoesNotExist, ProductVariant.DoesNotExist, VariantInventory.DoesNotExist):
             return Response(
                 {"detail": "Product not found or out of stock"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -395,20 +455,48 @@ class CartViewSet(viewsets.ViewSet):
 
         with transaction.atomic():
             for item in guest_cart.items.all():
-                user_item, created = CartItem.objects.get_or_create(
-                    cart=user_cart,
-                    product=item.product,
-                    defaults={"quantity": item.quantity, "unit_price": item.unit_price or item.product.price}
+                if item.variant_id:
+                    defaults = {
+                        "product": item.product,
+                        "quantity": item.quantity,
+                        "unit_price": item.unit_price or (item.product.price + item.variant.price_modifier),
+                    }
+                else:
+                    defaults = {
+                        "quantity": item.quantity,
+                        "unit_price": item.unit_price or item.product.price,
+                    }
+
+                user_item = (
+                    CartItem.objects.select_for_update()
+                    .filter(cart=user_cart, variant=item.variant)
+                    .first()
+                    if item.variant_id
+                    else CartItem.objects.select_for_update()
+                    .filter(cart=user_cart, product=item.product, variant__isnull=True)
+                    .first()
                 )
+                created = user_item is None
+                if created:
+                    user_item = CartItem.objects.create(
+                        cart=user_cart,
+                        product=item.product,
+                        variant=item.variant,
+                        quantity=item.quantity,
+                        unit_price=defaults["unit_price"],
+                    )
                 if not created:
                     try:
-                        inv = Inventory.objects.get(product=item.product)
+                        if item.variant_id:
+                            inv = VariantInventory.objects.get(variant=item.variant)
+                        else:
+                            inv = Inventory.objects.get(product=item.product)
                         max_qty = inv.available()
                         user_item.quantity = min(user_item.quantity + item.quantity, max_qty)
-                    except Inventory.DoesNotExist:
+                    except (Inventory.DoesNotExist, VariantInventory.DoesNotExist):
                         user_item.quantity += item.quantity
                     if not user_item.unit_price:
-                        user_item.unit_price = item.unit_price or item.product.price
+                        user_item.unit_price = defaults["unit_price"]
                     user_item.save()
             guest_cart.delete()
 

@@ -1,9 +1,20 @@
+import json
+
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
 from apps.accounts.models import User
 from apps.orders.models import Order, OrderItem
-from apps.products.models import Banner, Category, Inventory, InventoryLog, Product
+from apps.products.models import (
+    Banner,
+    Category,
+    Inventory,
+    InventoryLog,
+    Product,
+    ProductVariant,
+    VariantInventory,
+    sync_product_stock,
+)
 
 
 class AdminCategorySerializer(serializers.ModelSerializer):
@@ -84,10 +95,12 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 
 
 class AdminProductSerializer(serializers.ModelSerializer):
+    slug = serializers.SlugField(required=True, validators=[])
     category_name = serializers.SerializerMethodField()
     image = serializers.ImageField(required=False, allow_null=True)
     image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     image_full_url = serializers.SerializerMethodField(read_only=True)
+    variants = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Product
@@ -114,10 +127,33 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "age_range",
             "size_label",
             "status",
+            "variants",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def to_internal_value(self, data):
+        if hasattr(data, "copy"):
+            mutable_data = data.copy()
+        else:
+            mutable_data = dict(data)
+
+        nullable_fields = [
+            "compare_price",
+            "discount_price",
+            "brand",
+            "age_group",
+            "age_range",
+            "size_label",
+            "image_url",
+            "sku",
+        ]
+        for field_name in nullable_fields:
+            if mutable_data.get(field_name) == "":
+                mutable_data[field_name] = None
+
+        return super().to_internal_value(mutable_data)
 
     def get_category_name(self, obj):
         category = getattr(obj, "category", None)
@@ -140,27 +176,162 @@ class AdminProductSerializer(serializers.ModelSerializer):
             return f"https://{host}{url}"
         return None
 
+    def get_variants(self, obj):
+        request = self.context.get("request")
+        variants = obj.variants.filter(is_active=True).select_related("inventory").order_by("color", "size", "id")
+        items = []
+        for variant in variants:
+            image_url = None
+            if variant.image:
+                image_url = variant.image.url
+                if request and not image_url.startswith(("http://", "https://")):
+                    image_url = request.build_absolute_uri(image_url)
+            items.append(
+                {
+                    "id": variant.id,
+                    "color": variant.color,
+                    "color_label": variant.get_color_display() if variant.color else "",
+                    "size": variant.size,
+                    "size_label": variant.get_size_display() if variant.size else "",
+                    "sku": variant.sku,
+                    "price_modifier": str(variant.price_modifier),
+                    "stock": getattr(getattr(variant, "inventory", None), "quantity", 0),
+                    "available_stock": variant.inventory.available() if hasattr(variant, "inventory") else 0,
+                    "image": image_url,
+                    "is_active": variant.is_active,
+                }
+            )
+        return items
+
+    def _download_image(self, image_url, default_name):
+        if not image_url:
+            return None
+        try:
+            import requests
+            from django.core.files.base import ContentFile
+            from urllib.parse import urlparse
+
+            response = requests.get(image_url, timeout=10)
+            if response.status_code == 200:
+                parsed = urlparse(image_url)
+                filename = parsed.path.split("/")[-1] or default_name
+                return ContentFile(response.content, name=filename)
+        except Exception:
+            return None
+        return None
+
+    def _parse_variants(self):
+        request = self.context.get("request")
+        if not request:
+            return None
+
+        raw_variants = request.data.get("variants")
+        if raw_variants in (None, "", "null"):
+            return None
+
+        try:
+            parsed = json.loads(raw_variants) if isinstance(raw_variants, str) else raw_variants
+        except json.JSONDecodeError:
+            raise serializers.ValidationError({"variants": ["Variants payload is not valid JSON."]})
+
+        if not isinstance(parsed, list):
+            raise serializers.ValidationError({"variants": ["Variants payload must be a list."]})
+
+        variants = []
+        for index, item in enumerate(parsed):
+            if not isinstance(item, dict):
+                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} is invalid."]})
+
+            color = (item.get("color") or "").strip()
+            stock = item.get("stock", 0)
+            if not color:
+                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} must include a color."]})
+
+            try:
+                stock_value = int(stock or 0)
+            except (TypeError, ValueError):
+                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} stock must be a number."]})
+
+            if stock_value < 0:
+                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} stock cannot be negative."]})
+
+            variants.append(
+                {
+                    "id": item.get("id"),
+                    "color": color,
+                    "size": (item.get("size") or "").strip() or None,
+                    "sku": (item.get("sku") or "").strip() or None,
+                    "price_modifier": item.get("price_modifier") or "0",
+                    "stock": stock_value,
+                    "is_active": bool(item.get("is_active", True)),
+                    "image_url": (item.get("image_url") or "").strip() or None,
+                    "image": request.FILES.get(f"variant_image_{index}"),
+                }
+            )
+
+        return variants
+
+    def _sync_variants(self, product, variants_payload):
+        if variants_payload is None:
+            return
+
+        seen_variant_ids = []
+        for index, item in enumerate(variants_payload):
+            variant_id = item.get("id")
+            stock_value = item.pop("stock", 0)
+            image = item.pop("image", None)
+            image_url = item.pop("image_url", None)
+
+            if not image and image_url:
+                image = self._download_image(image_url, f"variant_{index + 1}.jpg")
+
+            if variant_id:
+                variant = ProductVariant.objects.filter(pk=variant_id, product=product).first()
+                if not variant:
+                    raise serializers.ValidationError({"variants": [f"Variant #{index + 1} could not be found."]})
+                for field, value in item.items():
+                    setattr(variant, field, value)
+                if image:
+                    variant.image = image
+                variant.save()
+            else:
+                variant = ProductVariant.objects.create(
+                    product=product,
+                    image=image,
+                    **item,
+                )
+
+            inventory, _ = VariantInventory.objects.get_or_create(
+                variant=variant,
+                defaults={"quantity": stock_value, "reserved": 0},
+            )
+            inventory.quantity = max(stock_value, inventory.reserved)
+            if inventory.reserved > inventory.quantity:
+                inventory.reserved = inventory.quantity
+            inventory.save(update_fields=["quantity", "reserved", "updated_at"])
+            seen_variant_ids.append(variant.id)
+
+        ProductVariant.objects.filter(product=product).exclude(id__in=seen_variant_ids).update(is_active=False)
+        sync_product_stock(product)
+
+    def validate_slug(self, value):
+        queryset = Product.objects.filter(slug=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("This slug is already in use.")
+        return value
+
     def create(self, validated_data):
         image_url = validated_data.pop("image_url", None)
         stock = validated_data.get("stock", 0)
+        variants_payload = self._parse_variants()
 
         # If image_url is provided, download and save the image
         if image_url:
-            try:
-                import requests
-                from django.core.files.base import ContentFile
-
-                response = requests.get(image_url, timeout=10)
-                if response.status_code == 200:
-                    from urllib.parse import urlparse
-
-                    parsed = urlparse(image_url)
-                    filename = parsed.path.split("/")[-1] or "product_image.jpg"
-                    validated_data["image"] = ContentFile(
-                        response.content, name=filename
-                    )
-            except Exception:
-                pass  # If image download fails, continue without image
+            downloaded = self._download_image(image_url, "product_image.jpg")
+            if downloaded:
+                validated_data["image"] = downloaded
 
         try:
             with transaction.atomic():
@@ -175,6 +346,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
                         quantity_change=stock,
                         reason="Initial stock set from admin product creation",
                     )
+                self._sync_variants(product, variants_payload)
                 return product
         except IntegrityError as exc:
             message = str(exc).lower()
@@ -192,33 +364,24 @@ class AdminProductSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         image_url = validated_data.pop("image_url", None)
+        variants_payload = self._parse_variants()
 
         # If image_url is provided, download and save the image
         if image_url:
-            try:
-                import requests
-                from django.core.files.base import ContentFile
-
-                response = requests.get(image_url, timeout=10)
-                if response.status_code == 200:
-                    from urllib.parse import urlparse
-
-                    parsed = urlparse(image_url)
-                    filename = parsed.path.split("/")[-1] or "product_image.jpg"
-                    validated_data["image"] = ContentFile(
-                        response.content, name=filename
-                    )
-            except Exception:
-                pass  # If image download fails, continue without image
+            downloaded = self._download_image(image_url, "product_image.jpg")
+            if downloaded:
+                validated_data["image"] = downloaded
 
         previous_stock = instance.stock
         try:
             with transaction.atomic():
                 product = super().update(instance, validated_data)
+                self._sync_variants(product, variants_payload)
                 if "stock" in validated_data:
-                    Inventory.objects.update_or_create(
-                        product=product, defaults={"quantity": product.stock}
-                    )
+                    if not product.variants.filter(is_active=True).exists():
+                        Inventory.objects.update_or_create(
+                            product=product, defaults={"quantity": product.stock}
+                        )
                     diff = product.stock - previous_stock
                     if diff:
                         InventoryLog.objects.create(
@@ -277,6 +440,25 @@ class AdminBannerSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def to_internal_value(self, data):
+        if hasattr(data, "copy"):
+            mutable_data = data.copy()
+        else:
+            mutable_data = dict(data)
+
+        nullable_fields = [
+            "button_link",
+            "image_url",
+            "mobile_image_url",
+            "start_date",
+            "end_date",
+        ]
+        for field_name in nullable_fields:
+            if mutable_data.get(field_name) == "":
+                mutable_data[field_name] = None
+
+        return super().to_internal_value(mutable_data)
 
     def get_image_full_url(self, obj):
         if obj.image:

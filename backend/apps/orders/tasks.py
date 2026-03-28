@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from apps.orders.models import Order, Cart, Invoice
-from apps.products.models import Inventory
+from apps.products.models import Inventory, VariantInventory, sync_product_stock
 from django.db import transaction
 from django.db.models import F
 import logging
@@ -495,10 +495,21 @@ def cancel_stale_pending_orders():
     for order in stale_orders:
         with transaction.atomic():
             for item in order.items.all():
-                Inventory.objects.filter(product_id=item.product_id).update(
-                    quantity=F('quantity') + item.quantity,
-                    reserved=F('reserved') - item.quantity
-                )
+                if item.variant_reference:
+                    VariantInventory.objects.filter(
+                        variant_id=item.variant_reference,
+                        reserved__gte=item.quantity,
+                    ).update(
+                        reserved=F('reserved') - item.quantity
+                    )
+                    sync_product_stock(item.product_id)
+                else:
+                    Inventory.objects.filter(
+                        product_id=item.product_id,
+                        reserved__gte=item.quantity,
+                    ).update(
+                        reserved=F('reserved') - item.quantity
+                    )
             order.status = 'cancelled'
             order.save(update_fields=['status'])
             cancelled_count += 1
@@ -527,21 +538,33 @@ def reduce_inventory(self, order_id):
             from apps.products.models import Product
 
             for item in order.items.select_related('product').all():
-                updated = Inventory.objects.filter(
-                    product=item.product,
-                    reserved__gte=item.quantity,
-                    quantity__gte=item.quantity,
-                ).update(
-                    quantity=F("quantity") - item.quantity,
-                    reserved=F("reserved") - item.quantity,
-                )
+                if item.variant_reference:
+                    updated = VariantInventory.objects.filter(
+                        variant_id=item.variant_reference,
+                        reserved__gte=item.quantity,
+                        quantity__gte=item.quantity,
+                    ).update(
+                        quantity=F("quantity") - item.quantity,
+                        reserved=F("reserved") - item.quantity,
+                    )
+                    if updated == 1:
+                        sync_product_stock(item.product_id)
+                else:
+                    updated = Inventory.objects.filter(
+                        product=item.product,
+                        reserved__gte=item.quantity,
+                        quantity__gte=item.quantity,
+                    ).update(
+                        quantity=F("quantity") - item.quantity,
+                        reserved=F("reserved") - item.quantity,
+                    )
                 if updated != 1:
                     logger.info(
                         "reduce_inventory: skipped item product=%s qty=%s (already deducted or insufficient reserved)",
                         item.product_id,
                         item.quantity,
                     )
-                else:
+                elif not item.variant_reference:
                     Product.objects.filter(pk=item.product_id).update(stock=F("stock") - item.quantity)
         logger.info(f"Inventory reduced for order {order_id}")
         return "success"
@@ -571,6 +594,21 @@ def restore_inventory(self, order_id):
 
             for item in order.items.select_related('product').all():
                 # First try to release reservation (pre-payment cancellation / failure).
+                if item.variant_reference:
+                    released = VariantInventory.objects.filter(
+                        variant_id=item.variant_reference,
+                        reserved__gte=item.quantity,
+                    ).update(reserved=F("reserved") - item.quantity)
+                    if released == 1:
+                        sync_product_stock(item.product_id)
+                        continue
+
+                    VariantInventory.objects.filter(variant_id=item.variant_reference).update(
+                        quantity=F("quantity") + item.quantity
+                    )
+                    sync_product_stock(item.product_id)
+                    continue
+
                 released = Inventory.objects.filter(
                     product=item.product,
                     reserved__gte=item.quantity,

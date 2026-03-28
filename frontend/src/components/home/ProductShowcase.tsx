@@ -19,6 +19,8 @@ interface Product {
   review_count?: number;
   featured?: boolean;
   stock?: number;
+  available_stock?: number;
+  has_variants?: boolean;
   badge?: string;
   badge_color?: string;
 }
@@ -44,10 +46,16 @@ function ProductCard({ product }: { product: Product }) {
   const reviewCount = product.review_count ?? 0;
   const price = Number(product.price) || 0;
   const originalPrice = product.original_price ? Number(product.original_price) : null;
-  const inStock = (product.stock ?? 0) > 0;
+  const availableStock = Number(product.available_stock ?? product.stock ?? 0);
+  const inStock = availableStock > 0;
+  const hasVariants = Boolean(product.has_variants);
 
   const handleAddToCart = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    if (hasVariants) {
+      window.location.href = `/products/${product.slug}`;
+      return;
+    }
     if (!inStock || isAdding) return;
 
     setIsAdding(true);
@@ -104,7 +112,7 @@ function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        <div className="absolute inset-0 flex items-end justify-center gap-2 pb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
+        <div className="absolute inset-0 hidden items-end justify-center gap-2 pb-3 opacity-0 transition-all duration-200 translate-y-2 group-hover:translate-y-0 group-hover:opacity-100 md:flex">
           <button
             type="button"
             onClick={(e) => {
@@ -125,12 +133,12 @@ function ProductCard({ product }: { product: Product }) {
             className={`relative z-10 flex-1 mx-2 max-w-[140px] h-9 rounded-full text-xs font-medium shadow-md flex items-center justify-center gap-1.5 transition-all ${
               addedToCart
                 ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                : hasVariants ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
-            disabled={!inStock || isAdding}
+            disabled={(!inStock && !hasVariants) || isAdding}
           >
             <ShoppingBag size={13} />
-            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
@@ -177,6 +185,51 @@ function ProductCard({ product }: { product: Product }) {
             </span>
           )}
         </div>
+
+        <div className="mt-4 flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setWishlisted((w) => !w);
+            }}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E2D6CA] bg-white text-[#5C4033] shadow-sm transition-colors hover:bg-[#FFF5F0]"
+            aria-label="Add to wishlist"
+          >
+            <Heart
+              size={18}
+              className={wishlisted ? 'fill-[#C4704A] text-[#C4704A]' : 'text-[#5C4033]'}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`inline-flex min-h-[48px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 py-3 text-[13px] font-semibold leading-none shadow-sm transition-all sm:px-4 sm:text-sm ${
+              addedToCart
+                  ? 'bg-[#1A3A2A] text-[#E8C98A]'
+                  : hasVariants
+                    ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white'
+                    : inStock
+                  ? 'bg-[#C4704A] text-white hover:bg-[#B45F3A]'
+                  : 'cursor-not-allowed bg-gray-200 text-gray-500'
+            }`}
+            disabled={(!inStock && !hasVariants) || isAdding}
+          >
+            <ShoppingBag size={16} />
+            <span className="min-w-0 truncate">
+              {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            </span>
+          </button>
+
+          <Link
+            href={`/products/${product.slug}`}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E2D6CA] bg-white text-[#5C4033] shadow-sm transition-colors hover:bg-[#F5EFE6]"
+            aria-label="View product"
+          >
+            <Eye size={18} />
+          </Link>
+        </div>
       </div>
     </article>
   );
@@ -192,9 +245,15 @@ function FeaturedCard({ product }: { product: Product }) {
   const categoryName = product.category?.name ?? 'Products';
   const price = Number(product.price) || 0;
   const originalPrice = product.original_price ? Number(product.original_price) : null;
-  const inStock = (product.stock ?? 0) > 0;
+  const availableStock = Number(product.available_stock ?? product.stock ?? 0);
+  const inStock = availableStock > 0;
+  const hasVariants = Boolean(product.has_variants);
 
   const handleAddToCart = async () => {
+    if (hasVariants) {
+      window.location.href = `/products/${product.slug}`;
+      return;
+    }
     if (!inStock || isAdding) return;
 
     setIsAdding(true);
@@ -260,12 +319,12 @@ function FeaturedCard({ product }: { product: Product }) {
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
               addedToCart
                 ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                : hasVariants ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
-            disabled={!inStock || isAdding}
+            disabled={(!inStock && !hasVariants) || isAdding}
           >
             <ShoppingBag size={14} />
-            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}

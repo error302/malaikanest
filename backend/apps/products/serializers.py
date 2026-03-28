@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.orders.models import Order
 
-from .models import Banner, Brand, Category, Inventory, Product, Review, Wishlist, Tag
+from .models import Banner, Brand, Category, Inventory, Product, ProductVariant, Review, Wishlist, Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -110,6 +110,8 @@ class ProductSerializer(serializers.ModelSerializer):
     tags = serializers.SerializerMethodField()
     meta_title = serializers.CharField(source="seo_title", read_only=True)
     meta_description = serializers.CharField(source="seo_description", read_only=True)
+    variants = serializers.SerializerMethodField()
+    has_variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -144,6 +146,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "meta_description",
             "image",
             "is_active",
+            "has_variants",
+            "variants",
             "avg_rating",
             "review_count",
             "created_at",
@@ -188,6 +192,42 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_tags(self, obj):
         return list(obj.tags.values("id", "name", "slug"))
 
+    def get_has_variants(self, obj):
+        return obj.variants.filter(is_active=True).exists()
+
+    def get_variants(self, obj):
+        variants = obj.variants.filter(is_active=True).select_related("inventory").order_by("color", "size", "id")
+        request = self.context.get("request")
+        items = []
+        for variant in variants:
+            image_url = None
+            if variant.image:
+                image_url = variant.image.url
+                if request and not image_url.startswith(("http://", "https://")):
+                    image_url = request.build_absolute_uri(image_url)
+            elif obj.image:
+                image_url = self.get_image(obj)
+
+            effective_price = obj.price + variant.price_modifier
+            available_stock = variant.inventory.available() if hasattr(variant, "inventory") else 0
+            items.append(
+                {
+                    "id": variant.id,
+                    "color": variant.color,
+                    "color_label": variant.get_color_display() if variant.color else "",
+                    "size": variant.size,
+                    "size_label": variant.get_size_display() if variant.size else "",
+                    "sku": variant.sku,
+                    "price_modifier": str(variant.price_modifier),
+                    "effective_price": str(effective_price),
+                    "image": image_url,
+                    "quantity": getattr(getattr(variant, "inventory", None), "quantity", 0),
+                    "available_stock": available_stock,
+                    "is_active": variant.is_active,
+                }
+            )
+        return items
+
 
 class ProductListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
@@ -199,6 +239,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
     popularity = serializers.IntegerField(read_only=True)
+    has_variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -223,6 +264,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "size_label",
             "in_stock",
             "is_active",
+            "has_variants",
             "avg_rating",
             "review_count",
             "popularity",
@@ -238,6 +280,9 @@ class ProductListSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             return f"https://malaikanest.duckdns.org{url}"
         return None
+
+    def get_has_variants(self, obj):
+        return obj.variants.filter(is_active=True).exists()
 
 
 class InventorySerializer(serializers.ModelSerializer):

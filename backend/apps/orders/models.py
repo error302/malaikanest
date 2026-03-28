@@ -2,7 +2,7 @@ from django.db import models, transaction
 from apps.core.models import BaseModel
 from django.conf import settings
 from django.utils import timezone
-from apps.products.models import Product, ProductVariant, Inventory, InventoryLog, VariantInventory
+from apps.products.models import Product, ProductVariant, Inventory, InventoryLog, VariantInventory, sync_product_stock
 import uuid
 import random
 from datetime import datetime
@@ -422,10 +422,17 @@ class Order(BaseModel):
 class OrderItem(BaseModel):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    variant_reference = models.CharField(max_length=64, blank=True, null=True, db_index=True)
+    variant_details = models.JSONField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
+        color_label = ""
+        if isinstance(self.variant_details, dict):
+            color_label = self.variant_details.get("color_label") or self.variant_details.get("color") or ""
+        if color_label:
+            return f"{self.product.name} ({color_label}) x {self.quantity}"
         return f"{self.product.name} x {self.quantity}"
 
 
@@ -443,32 +450,56 @@ def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):
     """
     with transaction.atomic():
         # Lock all inventory rows at once to prevent race conditions
-        cart_items = cart.items.select_related('product').all()
+        cart_items = cart.items.select_related('product', 'variant').all()
         product_ids = [item.product_id for item in cart_items]
+        variant_ids = [item.variant_id for item in cart_items if item.variant_id]
         
         # Lock all inventory rows for the products in the cart
         inventories = {
             inv.product_id: inv 
             for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
         }
+        variant_inventories = {
+            inv.variant_id: inv
+            for inv in VariantInventory.objects.select_for_update().filter(variant_id__in=variant_ids)
+        }
         
         # Validate stock and calculate totals
-        subtotal = 0
+        subtotal = Decimal("0.00")
         items = []
         
         for ci in cart_items:
+            if ci.variant_id:
+                inv = variant_inventories.get(ci.variant_id)
+                if inv is None:
+                    inv, _ = VariantInventory.objects.select_for_update().get_or_create(
+                        variant=ci.variant,
+                        defaults={"quantity": 0, "reserved": 0},
+                    )
+                    variant_inventories[ci.variant_id] = inv
+
+                if inv.available() < ci.quantity:
+                    raise ValueError(
+                        f'Color {ci.variant.get_color_display() if ci.variant and ci.variant.color else ci.product.name} is out of stock. Available: {inv.available()}'
+                    )
+
+                unit_price = ci.unit_price or (ci.product.price + (ci.variant.price_modifier if ci.variant else Decimal("0.00")))
+                line_total = unit_price * ci.quantity
+                subtotal += line_total
+                items.append((ci.product, ci.variant, ci.quantity, unit_price, inv, True))
+                continue
+
             inv = inventories.get(ci.product_id)
-            
-            # Handle case where inventory record doesn't exist
             if inv is None:
                 raise ValueError(f'No inventory record found for {ci.product.name}')
-            
+
             if inv.available() < ci.quantity:
                 raise ValueError(f'Product {ci.product.name} is out of stock. Available: {inv.available()}')
-            
-            line_total = ci.product.price * ci.quantity
+
+            unit_price = ci.unit_price or ci.product.price
+            line_total = unit_price * ci.quantity
             subtotal += line_total
-            items.append((ci.product, ci.quantity, ci.product.price, inv))
+            items.append((ci.product, None, ci.quantity, unit_price, inv, False))
 
         discount_amount = Decimal("0.00")
         if coupon and getattr(coupon, "is_active", False) and hasattr(coupon, "calculate_discount") and coupon.is_valid():
@@ -493,14 +524,40 @@ def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):
         )
 
         # Reserve inventory (do not deduct stock until payment is confirmed).
-        for product, qty, price, inv in items:
-            updated = Inventory.objects.filter(
-                pk=inv.pk,
-                quantity__gte=models.F("reserved") + qty,
-            ).update(reserved=models.F("reserved") + qty)
+        for product, variant, qty, price, inv, is_variant in items:
+            if is_variant:
+                updated = VariantInventory.objects.filter(
+                    pk=inv.pk,
+                    quantity__gte=models.F("reserved") + qty,
+                ).update(reserved=models.F("reserved") + qty)
+            else:
+                updated = Inventory.objects.filter(
+                    pk=inv.pk,
+                    quantity__gte=models.F("reserved") + qty,
+                ).update(reserved=models.F("reserved") + qty)
             if updated != 1:
                 raise ValueError(f"Product {product.name} is out of stock.")
-            OrderItem.objects.create(order=order, product=product, price=price, quantity=qty)
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                variant_reference=str(variant.pk) if variant else None,
+                variant_details=(
+                    {
+                        "id": str(variant.pk),
+                        "color": variant.color,
+                        "color_label": variant.get_color_display() if variant.color else "",
+                        "size": variant.size,
+                        "size_label": variant.get_size_display() if variant.size else "",
+                        "sku": variant.sku,
+                    }
+                    if variant
+                    else None
+                ),
+                price=price,
+                quantity=qty,
+            )
+            if is_variant:
+                sync_product_stock(product)
 
         return order
 

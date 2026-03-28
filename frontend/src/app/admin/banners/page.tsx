@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import api, { clearCache, handleApiError } from '@/lib/api'
 import { getImageUrl } from '@/lib/media'
 
@@ -368,6 +369,9 @@ export default function BannersPage() {
                 <h3 className="font-bold">{banner.title || 'Untitled'}</h3>
                 <p className="text-slate-500 text-sm">{banner.subtitle}</p>
                 <div className="flex gap-2 mt-4">
+                  <Link href={`/admin/banners/${banner.id}`} className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-center text-sm">
+                    Edit
+                  </Link>
                   <button onClick={() => toggleActive(banner)} className="flex-1 px-3 py-2 bg-slate-100 rounded-lg text-sm">{banner.is_active ? 'Disable' : 'Enable'}</button>
                   <button onClick={() => handleDelete(banner.id)} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm">Delete</button>
                 </div>

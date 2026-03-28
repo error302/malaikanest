@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.html import strip_tags
 import logging
+from urllib.parse import urlencode
 
 from .models import User
 from .serializers import RegisterSerializer
@@ -18,11 +19,41 @@ def _ensure_aware(dt):
     return timezone.make_aware(dt, timezone.get_current_timezone()) if timezone.is_naive(dt) else dt
 
 
+def _get_frontend_origin():
+    candidates = [
+        getattr(settings, "FRONTEND_URL", ""),
+        getattr(settings, "SITE_URL", ""),
+        *(getattr(settings, "CORS_ALLOWED_ORIGINS", []) or []),
+    ]
+
+    allowed_hosts = [host for host in getattr(settings, "ALLOWED_HOSTS", []) if host and host not in {"*", "localhost", "127.0.0.1"}]
+    if allowed_hosts:
+        candidates.append(f"https://{allowed_hosts[0]}")
+
+    for candidate in candidates:
+        value = (candidate or "").strip().rstrip("/")
+        if not value:
+            continue
+        if value.startswith(("http://", "https://")):
+            return value
+        if "." in value:
+            return f"https://{value.lstrip('/')}"
+
+    return "https://malaikanest.duckdns.org"
+
+
+def _build_frontend_url(path, **params):
+    origin = _get_frontend_origin()
+    clean_path = "/" + str(path or "").lstrip("/")
+    query = urlencode({key: value for key, value in params.items() if value})
+    return f"{origin}{clean_path}" + (f"?{query}" if query else "")
+
+
 class AuthService:
     @staticmethod
     def send_verification_email(user, token):
         try:
-            verify_url = f"{getattr(settings, 'FRONTEND_URL', '')}/verify-email?token={token}"
+            verify_url = _build_frontend_url("verify-email", token=token, email=user.email)
 
             html_message = f"""
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -142,7 +173,7 @@ class AuthService:
         user.password_reset_expires = timezone.now() + timezone.timedelta(hours=24)
         user.save()
 
-        reset_url = f"{getattr(settings, 'FRONTEND_URL', '')}/reset-password?token={token}"
+        reset_url = _build_frontend_url("reset-password", token=token)
 
         try:
             send_mail(

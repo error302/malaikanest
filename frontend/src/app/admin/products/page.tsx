@@ -165,11 +165,14 @@ export default function ProductsPage() {
                   <td className="px-4 py-3 text-sm">{product.is_active ? 'Active' : 'Inactive'}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
+                      <Link href={`/admin/products/${product.id}`} className="px-3 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                        Edit
+                      </Link>
                       <label className="cursor-pointer px-3 py-1 bg-amber-50 text-amber-700 rounded text-xs">
                         {uploadingId === product.id ? 'Uploading...' : 'Upload'}
                         <input
                           type="file"
-                          accept="image/png,image/jpeg,image/webp,video/*"
+                          accept="image/png,image/jpeg,image/webp"
                           className="hidden"
                           disabled={uploadingId === product.id}
                           onChange={(e) => {

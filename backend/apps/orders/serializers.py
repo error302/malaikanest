@@ -7,10 +7,26 @@ from .models import DELIVERY_FEES
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
+    variant = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ('id', 'product', 'quantity', 'unit_price')
+        fields = ('id', 'product', 'variant', 'quantity', 'unit_price')
+
+    def get_variant(self, obj):
+        if not obj.variant:
+            return None
+        inventory = getattr(obj.variant, "inventory", None)
+        return {
+            "id": obj.variant_id,
+            "color": obj.variant.color,
+            "color_label": obj.variant.get_color_display() if obj.variant.color else "",
+            "size": obj.variant.size,
+            "size_label": obj.variant.get_size_display() if obj.variant.size else "",
+            "sku": obj.variant.sku,
+            "image": obj.variant.image_url,
+            "available_stock": inventory.available() if inventory else 0,
+        }
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -69,10 +85,16 @@ class CartSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
+    variant = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ('id', 'product', 'price', 'quantity')
+        fields = ('id', 'product', 'variant', 'price', 'quantity')
+
+    def get_variant(self, obj):
+        if not obj.variant_details:
+            return None
+        return obj.variant_details
 
 
 class OrderSerializer(serializers.ModelSerializer):

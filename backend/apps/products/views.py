@@ -207,7 +207,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             .select_related(
                 "category", "category__parent", "category__parent__parent", "brand"
             )
-            .prefetch_related("category__children")
+            .prefetch_related("category__children", "variants__inventory")
             .annotate(
                 avg_rating=Coalesce(
                     Avg("reviews__rating"), Value(0.0), output_field=FloatField()
