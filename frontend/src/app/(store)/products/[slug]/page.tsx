@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Heart, ShieldCheck, ShoppingBag, Truck } from 'lucide-react'
+import { CheckCircle2, Heart, ShieldCheck, ShoppingBasket, Truck } from 'lucide-react'
 
 import api from '@/lib/api'
 import { shouldUseUnoptimizedImage } from '@/lib/media'
@@ -304,9 +304,9 @@ export default function ProductDetailPage() {
                 disabled={availableStock <= 0 || adding}
                 className="btn-primary inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold leading-none sm:flex-1 sm:px-6"
               >
-                <ShoppingBag size={16} />
+                <ShoppingBasket size={16} />
                 <span className="truncate">
-                  {adding ? 'Adding...' : `Add to Cart - KES ${total.toLocaleString()}`}
+                  {adding ? 'Adding...' : `Add to Basket - KES ${total.toLocaleString()}`}
                 </span>
               </button>
 

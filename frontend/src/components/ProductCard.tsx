@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useState } from 'react'
-import { Heart, ShoppingCart, X } from 'lucide-react'
+import { Heart, ShoppingBasket, X } from 'lucide-react'
 
 import { useCart } from '../lib/cartContext'
 import { useWishlist } from '../lib/wishlistContext'
@@ -123,8 +123,8 @@ export default function ProductCard({ product }: Props) {
             title={inStock ? "Add to cart" : "Out of stock"}
             className={`mt-4 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-black bg-black px-4 py-3 text-sm font-semibold leading-none text-white transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 ${!inStock ? 'cursor-not-allowed opacity-50' : 'hover:bg-neutral-800'}`}
           >
-            <ShoppingCart size={16} aria-hidden="true" />
-            <span className="truncate">{hasVariants ? "Choose options" : inStock ? "Add to cart" : "Out of stock"}</span>
+            <ShoppingBasket size={16} aria-hidden="true" />
+            <span className="truncate">{hasVariants ? "Choose options" : inStock ? "Add to basket" : "Out of stock"}</span>
           </button>
         </div>
       </article>

@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Heart, ShoppingBag, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, ShoppingBasket, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
 import { useCart } from '@/lib/cartContext';
 import { useWishlist } from '@/lib/wishlistContext';
+import SmartImage from '@/components/SmartImage';
 
 interface Product {
   id: number;
@@ -98,8 +98,8 @@ function ProductCard({ product }: { product: Product }) {
           className="absolute inset-0 z-0"
         />
         {!imageError && imageUrl ? (
-          <Image
-            src={imageUrl}
+          <SmartImage
+            src={product.image}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -126,6 +126,29 @@ function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            toggle(wishlistItem);
+          }}
+          className="absolute bottom-3 left-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-white/95 text-[#5C4033] shadow-sm transition-colors hover:bg-[#FFF5F0] md:hidden"
+          aria-label="Add to wishlist"
+        >
+          <Heart
+            size={18}
+            className={wishlisted ? 'fill-[#C4704A] text-[#C4704A]' : 'text-[#5C4033]'}
+          />
+        </button>
+
+        <Link
+          href={`/products/${product.slug}`}
+          className="absolute bottom-3 right-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-white/95 text-[#5C4033] shadow-sm transition-colors hover:bg-[#F5EFE6] md:hidden"
+          aria-label="View product"
+        >
+          <Eye size={18} />
+        </Link>
+
         <div className="absolute inset-0 hidden items-end justify-center gap-2 pb-3 opacity-0 transition-all duration-200 translate-y-2 group-hover:translate-y-0 group-hover:opacity-100 md:flex">
           <button
             type="button"
@@ -151,8 +174,8 @@ function ProductCard({ product }: { product: Product }) {
             }`}
             disabled={(!inStock && !hasVariants) || isAdding}
           >
-            <ShoppingBag size={13} />
-            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            <ShoppingBasket size={13} />
+            {isAdding ? 'Adding...' : addedToCart ? 'Added to Basket' : hasVariants ? 'Choose Options' : inStock ? 'Add to Basket' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
@@ -200,49 +223,26 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        <div className="mt-4 flex items-center gap-2 md:hidden">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              toggle(wishlistItem);
-            }}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E2D6CA] bg-white text-[#5C4033] shadow-sm transition-colors hover:bg-[#FFF5F0]"
-            aria-label="Add to wishlist"
-          >
-            <Heart
-              size={18}
-              className={wishlisted ? 'fill-[#C4704A] text-[#C4704A]' : 'text-[#5C4033]'}
-            />
-          </button>
-
+        <div className="mt-4 md:hidden">
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`inline-flex min-h-[48px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 py-3 text-[13px] font-semibold leading-none shadow-sm transition-all sm:px-4 sm:text-sm ${
+            className={`inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold leading-none shadow-sm transition-all ${
               addedToCart
                   ? 'bg-[#1A3A2A] text-[#E8C98A]'
                   : hasVariants
-                    ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white'
+                    ? 'bg-white text-[#1A3A2A] ring-1 ring-[#D9C5B7] hover:bg-[#C4704A] hover:text-white'
                     : inStock
                   ? 'bg-[#C4704A] text-white hover:bg-[#B45F3A]'
                   : 'cursor-not-allowed bg-gray-200 text-gray-500'
             }`}
             disabled={(!inStock && !hasVariants) || isAdding}
           >
-            <ShoppingBag size={16} />
-            <span className="min-w-0 truncate">
-              {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            <ShoppingBasket size={18} />
+            <span className="truncate">
+              {isAdding ? 'Adding...' : addedToCart ? 'Added to Basket' : hasVariants ? 'Choose Options' : inStock ? 'Add to Basket' : 'Out of Stock'}
             </span>
           </button>
-
-          <Link
-            href={`/products/${product.slug}`}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#E2D6CA] bg-white text-[#5C4033] shadow-sm transition-colors hover:bg-[#F5EFE6]"
-            aria-label="View product"
-          >
-            <Eye size={18} />
-          </Link>
         </div>
       </div>
     </article>
@@ -289,19 +289,19 @@ function FeaturedCard({ product }: { product: Product }) {
 
   return (
     <div className="group relative rounded-3xl overflow-hidden bg-[#F5EFE6] flex flex-col justify-end min-h-[480px] lg:min-h-[560px]">
-      {!imageError && imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-700 group-hover:scale-103"
-          sizes="(max-width:1024px) 100vw, 50vw"
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#F5EFE6]">
-          <Sparkles className="w-20 h-20 text-[#C9A96E]" />
-        </div>
+        {!imageError && imageUrl ? (
+          <SmartImage
+            src={product.image}
+            alt={product.name}
+            fill
+            className="object-cover transition-transform duration-700 group-hover:scale-103"
+            sizes="(max-width:1024px) 100vw, 50vw"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#F5EFE6]">
+            <Sparkles className="w-20 h-20 text-[#C9A96E]" />
+          </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
@@ -337,8 +337,8 @@ function FeaturedCard({ product }: { product: Product }) {
             }`}
             disabled={(!inStock && !hasVariants) || isAdding}
           >
-            <ShoppingBag size={14} />
-            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
+            <ShoppingBasket size={14} />
+            {isAdding ? 'Adding...' : addedToCart ? 'Added to Basket' : hasVariants ? 'Choose Options' : inStock ? 'Add to Basket' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
@@ -509,8 +509,8 @@ export function ProductSection({
                 >
                   <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-[#F5EFE6]">
                     {p.image && (
-                      <Image
-                        src={getImageUrl(p.image)}
+                      <SmartImage
+                        src={p.image}
                         alt={p.name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
