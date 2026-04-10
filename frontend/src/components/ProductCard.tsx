@@ -166,7 +166,7 @@ export default function ProductCard({ product }: Props) {
             <span className="truncate">{hasVariants ? "Choose options" : inStock ? "Add to basket" : "Out of stock"}</span>
           </button>
         </div>
-      </article>
+      </motion.article>
 
       {/* Fullscreen Image Preview */}
       {isFullscreen && (
