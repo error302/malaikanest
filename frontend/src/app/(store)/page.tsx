@@ -11,7 +11,6 @@ import {
   ProductSection,
   ValuePropsSection,
   TestimonialsSection,
-  NewsletterSection,
 } from '@/components/home/ProductShowcase';
 import { getImageUrl } from '@/lib/media';
 
@@ -153,9 +152,6 @@ export default async function HomePage() {
         products={newArrivalProducts}
         layout="grid4"
       />
-
-      {/* 8. Newsletter */}
-      <NewsletterSection />
     </>
   );
 }

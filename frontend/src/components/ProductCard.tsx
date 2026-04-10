@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Heart, ShoppingBasket, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 import { useCart } from '../lib/cartContext'
 import { useWishlist } from '../lib/wishlistContext'
@@ -15,6 +16,8 @@ export default function ProductCard({ product }: Props) {
   const { add } = useCart()
   const { toggle, contains } = useWishlist()
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [imageIndex, setImageIndex] = useState(0)
 
   const availableStock = Number(product.available_stock ?? product.stock ?? 0)
   const inStock = availableStock > 0
@@ -63,13 +66,21 @@ export default function ProductCard({ product }: Props) {
 
   return (
     <>
-      <article className="w-full flex flex-col bg-white rounded-2xl border border-default overflow-hidden shadow-[0_1px_0_rgba(0,0,0,0.04)] transition-transform hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(0,0,0,0.08)]">
+      <motion.article 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -4 }}
+        transition={{ duration: 0.2 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="w-full flex flex-col bg-white rounded-2xl border border-default overflow-hidden shadow-[0_1px_0_rgba(0,0,0,0.04)] hover:shadow-[0_18px_40px_rgba(0,0,0,0.08)]"
+      >
         {/* Product Image */}
         <div 
           className="relative aspect-[4/5] w-full cursor-zoom-in overflow-hidden bg-[var(--bg-secondary)]" 
           onClick={toggleFullscreen}
         >
-          <button
+          <motion.button
             type="button"
             onClick={(e) => {
               e.preventDefault()
@@ -77,19 +88,47 @@ export default function ProductCard({ product }: Props) {
               toggle(wishlistItem)
             }}
             aria-label="Add to wishlist"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-[#5C4033] shadow-sm transition hover:bg-[#FFF5F0]"
           >
             <Heart size={18} className={wishlisted ? 'fill-[#C4704A] text-[#C4704A]' : ''} />
-          </button>
+          </motion.button>
+
+          {/* Quick Add Button on Hover */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 10 }}
+            className="absolute bottom-3 left-3 right-3 z-10"
+          >
+            <motion.button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!inStock}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-2.5 bg-white/95 backdrop-blur-sm text-[#2C1810] font-semibold text-sm rounded-full shadow-lg hover:bg-[#C4704A] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {hasVariants ? "View Options" : inStock ? "Quick Add" : "Out of Stock"}
+            </motion.button>
+          </motion.div>
 
           {imageUrl && imageUrl !== '/placeholder.svg' ? (
-            <SmartImage 
-              src={imageUrl} 
-              alt={product.name} 
-              fill 
-              className="object-cover" 
-              sizes="(max-width: 640px) 100vw, 300px" 
-            />
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+              className="h-full w-full"
+            >
+              <SmartImage 
+                src={imageUrl} 
+                alt={product.name} 
+                fill 
+                className="object-cover" 
+                sizes="(max-width: 640px) 100vw, 300px" 
+              />
+            </motion.div>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-bg-secondary">
               <span className="text-4xl text-text-muted">{String(product.name || 'P').charAt(0)}</span>
