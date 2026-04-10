@@ -268,18 +268,11 @@ class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Trust only Nginx-overwritten X-Real-IP (or REMOTE_ADDR fallback), never user-controlled X-Forwarded-For.
         client_ip = request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR")
 
-        # In development/tests we allow simulating Safaricom callbacks via X-Forwarded-For.
-        if getattr(settings, "DEBUG", False):
-            xff = request.META.get("HTTP_X_FORWARDED_FOR")
-            if xff:
-                client_ip = xff.split(",")[0].strip()
-
         is_safaricom = is_valid_mpesa_ip(client_ip)
-        if not getattr(settings, "DEBUG", False) and not is_safaricom:
-            audit_log(event_type="callback_blocked", payload=request.data, request_ip=client_ip, notes="Blocked non-Safaricom callback in production")
+        if not is_safaricom:
+            audit_log(event_type="callback_blocked", payload=request.data, request_ip=client_ip, notes="Blocked non-Safaricom callback")
             return JsonResponse({"ResultCode": 1, "ResultDesc": "Unauthorized"}, status=200)
 
         raw_payload = request.data

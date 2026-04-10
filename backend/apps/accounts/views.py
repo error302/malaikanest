@@ -413,9 +413,9 @@ def google_auth_view(request):
                     status=status.HTTP_409_CONFLICT,
                 )
             phone_number = normalize_kenyan_phone(phone_number)
-            if not re.match(r"^\\+2547\\d{8}$", phone_number):
+            if not re.match(r'^\+254[17]\d{8}$', phone_number):
                 return Response(
-                    {"detail": "Phone number must be in Kenyan format: +2547XXXXXXXX."},
+                    {"detail": "Phone number must be in Kenyan format: +2547XXXXXXXX or +2541XXXXXXXX."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

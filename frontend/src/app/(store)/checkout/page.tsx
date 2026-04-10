@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, ShieldCheck, User } from 'lucide-react'
 
 import api, { handleApiError } from '@/lib/api'
 import { useAuth } from '@/lib/authContext'
@@ -39,7 +39,7 @@ const formatKsh = (value: string | number): string =>
   }).format(toMoneyNumber(value))
 
 function CheckoutContent() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
   const [cart, setCart] = useState<CartData | null>(null)
   const [loading, setLoading] = useState(true)
   const [deliveryRegion, setDeliveryRegion] = useState('nairobi')
@@ -49,6 +49,15 @@ function CheckoutContent() {
   const [orderId, setOrderId] = useState<number | null>(null)
   const [paymentInitiated, setPaymentInitiated] = useState(false)
   const router = useRouter()
+
+  const [isGuestCheckout, setIsGuestCheckout] = useState(false)
+  const [guestEmail, setGuestEmail] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
+  const [shippingName, setShippingName] = useState('')
+  const [shippingPhone, setShippingPhone] = useState('')
+  const [shippingAddress, setShippingAddress] = useState('')
+  const [shippingCity, setShippingCity] = useState('')
+  const [notes, setNotes] = useState('')
 
   const fetchCart = useCallback(async () => {
     setLoading(true)
@@ -65,33 +74,91 @@ function CheckoutContent() {
 
   useEffect(() => {
     if (authLoading) return
-
-    if (!isAuthenticated) {
-      router.replace('/login?next=/checkout')
-      setLoading(false)
-      return
-    }
-
     fetchCart()
-  }, [authLoading, fetchCart, isAuthenticated, router])
+  }, [authLoading, fetchCart])
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setShippingName(user.full_name || user.first_name || '')
+      setShippingPhone(user.phone_number || '')
+    }
+  }, [isAuthenticated, user])
 
   const subtotal = useMemo(() => toMoneyNumber(cart?.subtotal || '0'), [cart?.subtotal])
   const discount = useMemo(() => toMoneyNumber(cart?.discount || '0'), [cart?.discount])
   const deliveryFee = useMemo(() => DELIVERY_FEES[deliveryRegion] ?? 0, [deliveryRegion])
   const payableTotal = useMemo(() => Math.max(subtotal - discount, 0) + deliveryFee, [subtotal, discount, deliveryFee])
-  const includedVat = useMemo(() => (subtotal - discount) - (subtotal - discount) / 1.16, [subtotal, discount])
+
+  const validateGuestForm = (): boolean => {
+    if (!isAuthenticated && !isGuestCheckout) {
+      setError('Please login or continue as guest')
+      return false
+    }
+    
+    if (isGuestCheckout) {
+      if (!guestEmail.trim()) {
+        setError('Email is required for guest checkout')
+        return false
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+        setError('Please enter a valid email address')
+        return false
+      }
+      if (!guestPhone.trim()) {
+        setError('Phone number is required for guest checkout')
+        return false
+      }
+      const phone = guestPhone.replace(/[\s\-+]/g, '')
+      if (!/^254[17]\d{8}$/.test(phone) && !/^0[17]\d{8}$/.test(phone)) {
+        setError('Please enter a valid Kenyan phone number')
+        return false
+      }
+    }
+    
+    if (!shippingName.trim()) {
+      setError('Shipping name is required')
+      return false
+    }
+    if (!shippingPhone.trim()) {
+      setError('Shipping phone is required')
+      return false
+    }
+    if (!shippingAddress.trim()) {
+      setError('Shipping address is required')
+      return false
+    }
+    
+    return true
+  }
 
   const prepareOrder = useCallback(async () => {
     if (orderId) return orderId
 
+    if (!validateGuestForm()) {
+      return null
+    }
+
     setError('')
 
     try {
-      const checkoutRes = await api.post('/api/v1/orders/cart/checkout/', {
+      const checkoutData: Record<string, any> = {
         delivery_region: deliveryRegion,
         is_gift: isGift,
         gift_message: giftMessage,
-      })
+        shipping_name: shippingName,
+        shipping_phone: shippingPhone,
+        shipping_address: shippingAddress,
+        shipping_city: shippingCity,
+        notes: notes,
+      }
+
+      if (isGuestCheckout) {
+        checkoutData.is_guest = true
+        checkoutData.guest_email = guestEmail
+        checkoutData.guest_phone = guestPhone
+      }
+
+      const checkoutRes = await api.post('/api/v1/orders/cart/checkout/', checkoutData)
 
       const createdOrderId = Number(checkoutRes.data?.id)
       if (!createdOrderId) {
@@ -105,7 +172,7 @@ function CheckoutContent() {
       setError(handleApiError(err))
       throw err
     }
-  }, [deliveryRegion, giftMessage, isGift, orderId])
+  }, [deliveryRegion, giftMessage, isGift, orderId, isGuestCheckout, guestEmail, guestPhone, shippingName, shippingPhone, shippingAddress, shippingCity, notes])
 
   if (authLoading || loading) {
     return (
@@ -160,19 +227,158 @@ function CheckoutContent() {
             <article className="card-soft p-6">
               <h2 className="font-display text-[28px] text-[var(--text-primary)]">Delivery Details</h2>
 
+              {!isAuthenticated && (
+                <div className="mt-5">
+                  <div className="flex gap-3 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsGuestCheckout(false)}
+                      className={`flex-1 py-2.5 px-4 rounded-lg border font-medium transition-all ${
+                        !isGuestCheckout
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                          : 'border-default text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
+                      }`}
+                    >
+                      <User className="inline h-4 w-4 mr-2" />
+                      Login
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsGuestCheckout(true)}
+                      className={`flex-1 py-2.5 px-4 rounded-lg border font-medium transition-all ${
+                        isGuestCheckout
+                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
+                          : 'border-default text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
+                      }`}
+                    >
+                      Continue as Guest
+                    </button>
+                  </div>
+
+                  {isGuestCheckout && (
+                    <div className="space-y-4 p-4 bg-[var(--bg-soft)] rounded-lg">
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
+                          placeholder="your@email.com"
+                          className="input-soft"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          value={guestPhone}
+                          onChange={(e) => setGuestPhone(e.target.value)}
+                          placeholder="0712 345 678 or +254712345678"
+                          className="input-soft"
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {!isGuestCheckout && (
+                    <Link
+                      href="/login?next=/checkout"
+                      className="block text-center py-2.5 px-4 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90"
+                    >
+                      Login to Continue
+                    </Link>
+                  )}
+                </div>
+              )}
+
               <div className="mt-5 space-y-4">
-                <label className="block text-sm font-medium text-[var(--text-primary)]">
-                  Delivery Region
-                  <select
-                    value={deliveryRegion}
-                    onChange={(e) => setDeliveryRegion(e.target.value)}
-                    className="input-soft mt-2"
-                  >
-                    <option value="mombasa">Mombasa (Free)</option>
-                    <option value="nairobi">Nairobi (+KES 300)</option>
-                    <option value="upcountry">Upcountry (+KES 500)</option>
-                  </select>
-                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingName}
+                      onChange={(e) => setShippingName(e.target.value)}
+                      placeholder="John Doe"
+                      className="input-soft"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      value={shippingPhone}
+                      onChange={(e) => setShippingPhone(e.target.value)}
+                      placeholder="0712 345 678"
+                      className="input-soft"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                    Street Address *
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(e.target.value)}
+                    placeholder="123 Main St, Apartment 4B"
+                    className="input-soft"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingCity}
+                      onChange={(e) => setShippingCity(e.target.value)}
+                      placeholder="Nairobi"
+                      className="input-soft"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                      Delivery Region *
+                    </label>
+                    <select
+                      value={deliveryRegion}
+                      onChange={(e) => setDeliveryRegion(e.target.value)}
+                      className="input-soft"
+                    >
+                      <option value="mombasa">Mombasa (Free)</option>
+                      <option value="nairobi">Nairobi (+KES 300)</option>
+                      <option value="upcountry">Upcountry (+KES 500)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                    Order Notes (optional)
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Special instructions for delivery..."
+                    rows={2}
+                    className="input-soft resize-none"
+                  />
+                </div>
 
                 <label className="inline-flex items-center gap-3 pt-1 text-[var(--text-primary)]">
                   <input
@@ -258,10 +464,6 @@ function CheckoutContent() {
                     <span className="text-green-700">- KES {formatKsh(discount)}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between text-[var(--text-secondary)] text-sm">
-                  <span>VAT (16% incl.)</span>
-                  <span>KES {formatKsh(includedVat)}</span>
-                </div>
                 <div className="flex items-center justify-between text-[var(--text-secondary)]">
                   <span>Shipping</span>
                   <span>KES {formatKsh(deliveryFee)}</span>

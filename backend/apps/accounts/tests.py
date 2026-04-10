@@ -119,3 +119,24 @@ class AuthCookieLoginTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data["detail"], "Admin access required")
+
+    def test_inactive_user_login_returns_verify_message(self):
+        password = "VerifyMe123!"
+        User.objects.create_user(
+            email="inactive@example.com",
+            phone_number="+254701111222",
+            password=password,
+            role="CUSTOMER",
+            is_active=False,
+        )
+
+        response = self.client.post(
+            "/api/accounts/token/",
+            {"email": "inactive@example.com", "password": password},
+            format="json",
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        detail = response.data.get("detail") or response.data.get("message", "")
+        self.assertIn("verify your email", str(detail).lower())

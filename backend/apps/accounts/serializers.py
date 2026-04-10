@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User
 import re
@@ -123,6 +124,12 @@ class TokenObtainPairWithUserSerializer(TokenObtainPairSerializer):
         return token
     
     def validate(self, attrs):
+        email = (attrs.get('email') or attrs.get('username') or '').strip().lower()
+        if email:
+            user = User.objects.filter(email=email).only('is_active').first()
+            if user and not user.is_active:
+                raise AuthenticationFailed('Please verify your email before signing in.')
+
         data = super().validate(attrs)
         
         # User is already loaded by authenticate() during token creation

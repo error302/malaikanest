@@ -8,6 +8,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useRef,
 } from 'react'
 
 import api, { handleApiError } from '@/lib/api'
@@ -149,6 +150,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, { items: [], cartData: null })
   const [loading, setLoading] = useState(false)
   const [synced, setSynced] = useState(false)
+  
+  const debounceTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   const fetchCart = useCallback(async () => {
     try {
@@ -163,6 +166,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchCart()
   }, [fetchCart])
+
+  useEffect(() => {
+    return () => {
+      debounceTimersRef.current.forEach((timer) => clearTimeout(timer))
+      debounceTimersRef.current.clear()
+    }
+  }, [])
 
   useEffect(() => {
     if (!synced) return
@@ -218,24 +228,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const updateQty = useCallback(async (id: string | number, qty: number) => {
     const item = state.items.find((entry) => entry.id === id)
-    // Store previous state for rollback
     const previousItems = [...state.items]
     
     if (qty < 1) {
       return remove(id)
     }
 
-    // Optimistic update - update UI immediately
     dispatch({ type: 'UPDATE', id, qty })
     
-    // Debounce the API call to prevent race conditions
-    const debounceKey = `cart_update_${id}`
-    const existingTimeout = (window as any)[debounceKey]
-    if (existingTimeout) {
-      clearTimeout(existingTimeout)
+    const debounceKey = String(id)
+    
+    const existingTimer = debounceTimersRef.current.get(debounceKey)
+    if (existingTimer) {
+      clearTimeout(existingTimer)
     }
     
-    ;(window as any)[debounceKey] = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setLoading(true)
       try {
         if (!item?.product_id) {
@@ -248,15 +256,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         })
         dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
       } catch (e) {
-        // Rollback on error
         dispatch({ type: 'HYDRATE', cartData: { items: previousItems, subtotal: '0', total: '0' } })
         console.error('Failed to update cart', e)
         await fetchCart()
       } finally {
         setLoading(false)
-        ;(window as any)[debounceKey] = null
+        debounceTimersRef.current.delete(debounceKey)
       }
-    }, 300) // 300ms debounce
+    }, 300)
+    
+    debounceTimersRef.current.set(debounceKey, timer)
   }, [state.items, remove, fetchCart])
 
   const clear = useCallback(async () => {

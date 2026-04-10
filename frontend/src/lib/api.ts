@@ -319,6 +319,29 @@ export default api
 // Enhanced error handler
 export const handleApiError = (error: unknown, fallback = 'An error occurred. Please try again.') => {
   const e = error as any
+  const responseData = e?.response?.data
+
+  const standardizedMessage = responseData?.error?.message
+  if (standardizedMessage) return standardizedMessage
+
+  const standardizedDetail = responseData?.error?.detail
+  if (standardizedDetail) {
+    if (typeof standardizedDetail === 'string') return standardizedDetail
+    if (typeof standardizedDetail === 'object') {
+      const nested = standardizedDetail.detail || standardizedDetail.message
+      if (nested) return Array.isArray(nested) ? nested[0] : String(nested)
+      try {
+        return JSON.stringify(standardizedDetail)
+      } catch {
+        return fallback
+      }
+    }
+  }
+
+  const detail = responseData?.detail
+  const message = responseData?.message
+  if (detail) return Array.isArray(detail) ? detail[0] : detail
+  if (message) return message
 
   if (e.code === 'ECONNABORTED') return 'Request timed out. Please check your connection.'
   if (e.code === 'ERR_NETWORK') return 'Network error. Please check your internet connection.'
@@ -327,8 +350,6 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
   if (e.response?.status === 404) return 'Resource not found.'
   if (e.response?.status === 429) return 'Too many requests. Please wait and try again.'
   if (e.response?.status >= 500) return 'Server error. We are working on it.'
-
-  const responseData = e?.response?.data
 
   const standardizedDetails = responseData?.error?.details
   if (standardizedDetails) {
@@ -354,27 +375,6 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
       }
     }
   }
-
-  // Standardized backend envelope: { success, message, data, error: { status_code, detail } }
-  const standardizedDetail = responseData?.error?.detail
-  if (standardizedDetail) {
-    if (typeof standardizedDetail === 'string') return standardizedDetail
-    if (typeof standardizedDetail === 'object') {
-      const nested = standardizedDetail.detail || standardizedDetail.message
-      if (nested) return Array.isArray(nested) ? nested[0] : String(nested)
-      // Fall back to a compact JSON string for validation dicts
-      try {
-        return JSON.stringify(standardizedDetail)
-      } catch {
-        return fallback
-      }
-    }
-  }
-
-  const detail = responseData?.detail
-  const message = responseData?.message
-  if (detail) return Array.isArray(detail) ? detail[0] : detail
-  if (message) return message
 
   return fallback
 }

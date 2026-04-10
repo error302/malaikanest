@@ -32,6 +32,9 @@ MPESA_SAFARICOM_IPS = {
 def is_valid_mpesa_ip(ip):
     if not ip:
         return False
+    # Allow localhost for local development/testing
+    if ip in ("127.0.0.1", "localhost", "::1"):
+        return True
     for net in MPESA_SAFARICOM_IPS:
         try:
             if ipaddress.ip_address(ip) in ipaddress.ip_network(net):
@@ -78,14 +81,37 @@ def audit_log(
         logger.warning("payment audit log write skipped: %s", exc)
 
 
+import re
+
 def normalize_phone(phone):
+    """
+    Normalize a phone number to Kenyan format (254XXXXXXXXX).
+    
+    Valid formats accepted:
+    - +2547XXXXXXXX
+    - 2547XXXXXXXX
+    - 07XXXXXXXX
+    - 7XXXXXXXX
+    
+    Raises:
+        ValueError: If phone number is not a valid Kenyan mobile number.
+    """
     if not phone:
         return ""
+    
     p = str(phone).replace("+254", "254").replace(" ", "").replace("-", "")
+    
     if p.startswith("0"):
         p = "254" + p[1:]
     elif not p.startswith("254"):
         p = "254" + p
+    
+    if not re.match(r'^254[17]\d{8}$', p):
+        raise ValueError(
+            f"Invalid Kenyan phone number: {phone}. "
+            "Expected format: +2547XXXXXXXX, 07XXXXXXXX, or 7XXXXXXXX (10 digits after country code)."
+        )
+    
     return p
 
 

@@ -243,6 +243,16 @@ class CartViewSet(viewsets.ViewSet):
         guest_phone = request.data.get("guest_phone")
         coupon_code = request.data.get("coupon")
         delivery_region = request.data.get("delivery_region", "nairobi")
+        
+        is_gift = request.data.get("is_gift", False)
+        gift_message = request.data.get("gift_message", "")
+        
+        shipping_name = request.data.get("shipping_name", "")
+        shipping_phone = request.data.get("shipping_phone", "")
+        shipping_address = request.data.get("shipping_address", "")
+        shipping_city = request.data.get("shipping_city", "")
+        shipping_postal_code = request.data.get("shipping_postal_code", "")
+        notes = request.data.get("notes", "")
 
         coupon = None
         if coupon_code:
@@ -280,6 +290,15 @@ class CartViewSet(viewsets.ViewSet):
                     guest_phone=guest_phone,
                     coupon=coupon,
                     delivery_region=delivery_region,
+                    is_gift=is_gift,
+                    gift_message=gift_message,
+                    shipping_name=shipping_name,
+                    shipping_phone=shipping_phone,
+                    shipping_address=shipping_address,
+                    shipping_city=shipping_city,
+                    shipping_county=shipping_county,
+                    shipping_postal_code=shipping_postal_code,
+                    notes=notes,
                 )
             except ValueError as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -306,6 +325,15 @@ class CartViewSet(viewsets.ViewSet):
                 user=request.user,
                 coupon=coupon,
                 delivery_region=delivery_region,
+                is_gift=is_gift,
+                gift_message=gift_message,
+                shipping_name=shipping_name,
+                shipping_phone=shipping_phone,
+                shipping_address=shipping_address,
+                shipping_city=shipping_city,
+                shipping_county=shipping_county,
+                shipping_postal_code=shipping_postal_code,
+                notes=notes,
             )
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -593,17 +621,18 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Get invoice for an order.
         Returns the invoice PDF or generates one if not exists.
+        
+        FIXED: Handles both local file storage and Cloudinary URLs.
         """
         from .invoice import generate_invoice_pdf, get_invoice_pdf_url
-        from django.http import HttpResponse
+        from django.http import HttpResponse, FileResponse
+        import requests
 
         order = self.get_object()
 
-        # Check if invoice exists
         try:
             invoice = order.invoice
         except Order.invoice.RelatedObjectDoesNotExist:
-            # Generate invoice if not exists
             pdf_result, invoice_number = generate_invoice_pdf(order)
             if pdf_result:
                 return HttpResponse(pdf_result, content_type="application/pdf")
@@ -613,20 +642,50 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        # If invoice has PDF, serve it
         if invoice.pdf_file:
-            pdf_path = invoice.pdf_file.path
-            with open(pdf_path, "rb") as f:
-                pdf_content = f.read()
-            invoice.download_count += 1
-            invoice.save(update_fields=["download_count"])
-            response = HttpResponse(pdf_content, content_type="application/pdf")
-            response["Content-Disposition"] = (
-                f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
-            )
-            return response
+            pdf_url = None
+            
+            if hasattr(invoice.pdf_file, 'url'):
+                pdf_url = invoice.pdf_file.url
+            elif isinstance(invoice.pdf_file, str) and invoice.pdf_file.startswith(('http://', 'https://')):
+                pdf_url = invoice.pdf_file
+            
+            if pdf_url:
+                try:
+                    remote_response = requests.get(pdf_url, timeout=30)
+                    if remote_response.status_code == 200:
+                        pdf_content = remote_response.content
+                        invoice.download_count += 1
+                        invoice.save(update_fields=["download_count"])
+                        response = HttpResponse(pdf_content, content_type="application/pdf")
+                        response["Content-Disposition"] = (
+                            f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+                        )
+                        return response
+                except requests.RequestException as e:
+                    logger.error("Error fetching invoice from URL: %s", e)
+                    return Response(
+                        {"detail": "Failed to retrieve invoice"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+            
+            try:
+                invoice.download_count += 1
+                invoice.save(update_fields=["download_count"])
+                
+                if hasattr(invoice.pdf_file, 'open'):
+                    invoice.pdf_file.open('rb')
+                    return FileResponse(invoice.pdf_file, content_type="application/pdf")
+                else:
+                    pdf_path = invoice.pdf_file.path
+                    return FileResponse(open(pdf_path, 'rb'), content_type="application/pdf")
+            except Exception as e:
+                logger.error("Error serving invoice file: %s", e)
+                return Response(
+                    {"detail": "Failed to retrieve invoice"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
-        # Generate PDF if no file exists
         pdf_result, invoice_number = generate_invoice_pdf(order, invoice.invoice_number)
         if pdf_result:
             response = HttpResponse(pdf_result, content_type="application/pdf")

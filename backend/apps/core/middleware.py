@@ -146,9 +146,20 @@ class RateLimitMiddleware:
         return max(0, limit - current)
     
     def _get_retry_after(self, key):
-        """Get seconds until rate limit resets"""
-        # This is an approximation
-        return 3600  # 1 hour
+        """Get seconds until rate limit resets."""
+        cache_key = f"ratelimit:{key}"
+        try:
+            ttl = cache.ttl(cache_key)
+            if ttl and ttl > 0:
+                return int(ttl)
+        except (AttributeError, NotImplementedError):
+            pass
+        except Exception:
+            logger.warning("Rate limit cache unavailable while reading TTL for %s", key)
+        
+        if "auth" in key or "password" in key:
+            return 60
+        return 3600
     
     def _parse_rate_limit(self, rate_limit):
         """Parse rate limit string (e.g., '100/hour') into (count, seconds)"""
@@ -169,18 +180,36 @@ class RateLimitMiddleware:
 class SecurityHeadersMiddleware:
     """Add security headers to all responses"""
     
+    CSP_DIRECTIVES = {
+        'default-src': "'self'",
+        'script-src': "'self' 'unsafe-inline' https://js-api.safaricom.co.ke",
+        'connect-src': "'self' https://api.safaricom.co.ke https://res.cloudinary.com",
+        'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com",
+        'img-src': "'self' data: https: blob:",
+        'font-src': "'self' https://fonts.gstatic.com",
+        'frame-ancestors': "'none'",
+        'base-uri': "'self'",
+        'form-action': "'self'",
+    }
+    
     def __init__(self, get_response):
         self.get_response = get_response
     
     def __call__(self, request):
         response = self.get_response(request)
         
-        # Only add headers to API responses
         if request.path.startswith('/api/'):
             response['X-Content-Type-Options'] = 'nosniff'
             response['X-Frame-Options'] = 'DENY'
             response['X-XSS-Protection'] = '1; mode=block'
             response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+            
+            csp_value = '; '.join(f'{k} {v}' for k, v in self.CSP_DIRECTIVES.items())
+            response['Content-Security-Policy'] = csp_value
+            
+            response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+            response['Cross-Origin-Opener-Policy'] = 'same-origin'
+            response['Cross-Origin-Resource-Policy'] = 'same-origin'
         
         return response
 

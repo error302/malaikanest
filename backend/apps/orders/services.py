@@ -41,7 +41,22 @@ class OrderService:
         )
 
     @staticmethod
-    def process_checkout(cart, user=None, guest_email=None, guest_phone=None, coupon=None, delivery_region="nairobi"):
+    def process_checkout(
+        cart,
+        user=None,
+        guest_email=None,
+        guest_phone=None,
+        coupon=None,
+        delivery_region="nairobi",
+        is_gift=False,
+        gift_message="",
+        shipping_name="",
+        shipping_phone="",
+        shipping_address="",
+        shipping_city="",
+        shipping_postal_code="",
+        notes="",
+    ):
         """
         Handles the business logic of creating an order from a cart, atomic inventory locking,
         and pricing logic.
@@ -112,6 +127,14 @@ class OrderService:
                 guest_email=guest_email,
                 guest_phone=guest_phone,
                 delivery_region=delivery_region,
+                is_gift=is_gift,
+                gift_message=gift_message if is_gift else "",
+                shipping_name=shipping_name or (user.get_full_name() if user else ""),
+                shipping_phone=shipping_phone or (user.phone_number if user and hasattr(user, 'phone_number') else guest_phone or ""),
+                shipping_address=shipping_address,
+                shipping_city=shipping_city,
+                shipping_postal_code=shipping_postal_code,
+                shipping_notes=notes,
             )
 
             for product, variant, qty, price, inv, is_variant in items:

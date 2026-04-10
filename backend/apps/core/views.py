@@ -71,6 +71,9 @@ class ContactFormView(APIView):
     throttle_classes = [ContactFormThrottle]
 
     def post(self, request):
+        from django.core.validators import EmailValidator
+        from django.core.exceptions import ValidationError
+        
         name = (request.data.get("name") or "").strip()
         email = (request.data.get("email") or "").strip()
         phone = (request.data.get("phone") or "").strip()
@@ -81,6 +84,30 @@ class ContactFormView(APIView):
             return Response(
                 {"detail": "Name, email, and message are required."},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        email_validator = EmailValidator(message="Please enter a valid email address.")
+        try:
+            email_validator(email)
+        except ValidationError as e:
+            return Response(
+                {"detail": str(e.message)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if len(message) > 5000:
+            return Response(
+                {"detail": "Message is too long. Maximum 5000 characters allowed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        spam_keywords = ['viagra', 'casino', 'lottery', 'winner', 'click here', 'free money']
+        message_lower = message.lower()
+        if any(keyword in message_lower for keyword in spam_keywords):
+            logger.warning("Potential spam contact form submission from %s", email)
+            return Response(
+                {"detail": "Message sent successfully."},
+                status=status.HTTP_200_OK,
             )
 
         recipient = getattr(settings, "DEFAULT_FROM_EMAIL", "malaikanest7@gmail.com")
@@ -170,16 +197,57 @@ class PublicSettingsView(APIView):
 
 
 class Pm2LogsView(APIView):
-    permission_classes = [AllowAny]
+    """
+    Admin-only endpoint to view PM2 error logs.
+    SECURITY: Requires admin authentication and optionally IP allowlisting.
+    """
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
-        import os
+        allowed_ips = getattr(settings, 'LOGS_ALLOWED_IPS', [])
+        if allowed_ips:
+            client_ip = request.META.get('REMOTE_ADDR')
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                client_ip = x_forwarded_for.split(',')[0].strip()
+            
+            if client_ip not in allowed_ips:
+                logger.warning(
+                    "Pm2LogsView: IP %s attempted access (not in allowlist)",
+                    client_ip
+                )
+                return Response(
+                    {"detail": "Access denied from this IP address."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
+        import os
         log_path = os.path.expanduser("~/.pm2/logs/frontend-error.log")
+        
+        if not os.path.exists(log_path):
+            return Response(
+                {"error": "Log file not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
         try:
             with open(log_path, "r") as f:
-                lines = f.readlines()
-                return Response({"logs": lines[-200:]})
-        except Exception:
-            logger.warning("PM2 logs endpoint: failed to read log file")
-            return Response({"error": "Unable to read log file"})
+                lines = f.readlines()[-500:]
+            
+            sensitive_patterns = ['password', 'token', 'secret', 'key', 'credential']
+            sanitized_lines = []
+            for line in lines:
+                line_lower = line.lower()
+                if any(pattern in line_lower for pattern in sensitive_patterns):
+                    sanitized_lines.append("[REDACTED - Contains sensitive data]")
+                else:
+                    sanitized_lines.append(line)
+            
+            logger.info("Pm2LogsView: Admin %s accessed logs", request.user.email)
+            return Response({"logs": sanitized_lines})
+        except Exception as e:
+            logger.error("Pm2LogsView: Failed to read log file: %s", str(e))
+            return Response(
+                {"error": "Unable to read log file"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

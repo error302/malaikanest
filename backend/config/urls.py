@@ -15,7 +15,6 @@ urlpatterns = [
     path('api/v1/products/', include('apps.products.urls')),
     path('api/v1/orders/', include('apps.orders.urls')),
     path('api/v1/payments/', include('apps.payments.urls')),
-    path('api/v1/ai/', include('apps.ai.urls')),
     path('api/v1/core/', include('apps.core.urls')),
 
     # Compatibility aliases (legacy, non-versioned)
@@ -23,7 +22,6 @@ urlpatterns = [
     path('api/products/', include('apps.products.urls')),
     path('api/orders/', include('apps.orders.urls')),
     path('api/payments/', include('apps.payments.urls')),
-    path('api/ai/', include('apps.ai.urls')),
     path('api/core/', include('apps.core.urls')),
 
     # Health

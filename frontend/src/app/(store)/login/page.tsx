@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
 
-import { handleApiError } from '@/lib/api'
+import api, { handleApiError } from '@/lib/api'
 import { useAuth } from '@/lib/authContext'
 
 function LoginForm() {
@@ -17,6 +17,8 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resendingVerification, setResendingVerification] = useState(false)
+  const [infoMessage, setInfoMessage] = useState('')
   const [error, setError] = useState('')
 
   const redirectTo = searchParams.get('next') || searchParams.get('redirect') || '/'
@@ -37,6 +39,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setInfoMessage('')
     setLoading(true)
 
     try {
@@ -46,6 +49,29 @@ function LoginForm() {
       setError(handleApiError(err, 'Invalid email or password'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const canResendVerification =
+    !!email &&
+    /verify your email|not active yet|verification/i.test(error)
+
+  const handleResendVerification = async () => {
+    if (!email || resendingVerification) return
+
+    setResendingVerification(true)
+    setInfoMessage('')
+
+    try {
+      const response = await api.post('/api/v1/accounts/resend-verification/', { email })
+      setError('')
+      setInfoMessage(
+        response.data?.message || 'A fresh verification link has been sent to your email.'
+      )
+    } catch (err: unknown) {
+      setError(handleApiError(err, 'We could not resend the verification email right now.'))
+    } finally {
+      setResendingVerification(false)
     }
   }
 
@@ -68,6 +94,12 @@ function LoginForm() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
               {error}
+            </div>
+          )}
+
+          {infoMessage && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-xl">
+              {infoMessage}
             </div>
           )}
 
@@ -130,6 +162,20 @@ function LoginForm() {
           >
             {loading ? 'Signing in...' : isLoading ? 'Loading...' : 'Sign In'}
           </button>
+
+          {canResendVerification && (
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={resendingVerification}
+              className="w-full border border-[#E0D5C8] bg-[#FAF4EC] text-[#2C1810]
+                         py-3 rounded-xl text-sm font-medium transition-colors
+                         hover:border-[#C4704A] hover:text-[#C4704A]
+                         disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {resendingVerification ? 'Sending verification link...' : 'Resend verification email'}
+            </button>
+          )}
 
           <p className="text-center text-xs text-[#8A7060]">
             Don&apos;t have an account?{' '}
