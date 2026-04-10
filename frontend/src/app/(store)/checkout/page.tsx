@@ -79,8 +79,7 @@ function CheckoutContent() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setShippingName(user.full_name || user.first_name || '')
-      setShippingPhone(user.phone_number || '')
+      setShippingName(user.name || '')
     }
   }, [isAuthenticated, user])
 
