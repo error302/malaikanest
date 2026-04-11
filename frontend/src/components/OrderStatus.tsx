@@ -10,7 +10,7 @@ export default function OrderStatus({ orderId }: { orderId: string }) {
 
     const fetchStatus = async () => {
       try {
-        const res = await api.get(`/api/orders/orders/${orderId}/`)
+        const res = await api.get(`/api/v1/orders/orders/${orderId}/`)
         if (mounted) setStatus(res.data.status)
       } catch (err) {
         console.error('Failed to fetch order status:', handleApiError(err))

@@ -29,7 +29,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     api
-      .get('/api/orders/orders/')
+      .get('/api/v1/orders/orders/')
       .then((r) => {
         setOrders(r.data.results || r.data)
         setLoading(false)

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Heart, ShoppingBasket, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -19,6 +19,15 @@ export default function ProductCard({ product }: Props) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
 
+  useEffect(() => {
+    if (!isFullscreen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen])
+
   const availableStock = Number(product.available_stock ?? product.stock ?? 0)
   const inStock = availableStock > 0
   const hasVariants = Boolean(product.has_variants)
@@ -31,7 +40,7 @@ export default function ProductCard({ product }: Props) {
     productId: product.id,
     name: product.name,
     slug: product.slug,
-    price: parseFloat(product.price),
+    price: parseFloat(product.price ?? 0),
     image: imageSrc || '',
     categoryName: product.category?.name,
     availableStock,
@@ -51,7 +60,7 @@ export default function ProductCard({ product }: Props) {
       id: product.id || product.slug,
       product_id: product.id,
       name: product.name,
-      price: parseFloat(product.price),
+      price: parseFloat(product.price ?? 0),
       image: imageSrc || '',
       qty: 1,
       slug: product.slug,
@@ -151,7 +160,7 @@ export default function ProductCard({ product }: Props) {
           </Link>
           
           <p className="mt-2 text-[16px] font-semibold text-text-primary">
-            KES {parseFloat(product.price).toLocaleString()}
+            KES {parseFloat(product.price ?? 0).toLocaleString()}
           </p>
 
           <button

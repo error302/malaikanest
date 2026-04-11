@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 import uuid
@@ -76,6 +76,7 @@ def product_recommendations(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def generate_bundle(request):
     bundle_type = request.data.get('type', 'newborn_starter')
     budget = request.data.get('budget')
@@ -112,6 +113,7 @@ def bundle_suggestions(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def generate_description(request):
     product_id = request.data.get('product_id')
     
@@ -134,6 +136,7 @@ def generate_description(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def bulk_generate_descriptions(request):
     category_id = request.data.get('category_id')
     limit = int(request.data.get('limit', 20))
@@ -148,6 +151,7 @@ def bulk_generate_descriptions(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def generate_seo(request):
     product_id = request.data.get('product_id')
     
@@ -170,6 +174,7 @@ def generate_seo(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def index_embeddings(request):
     limit = int(request.data.get('limit', 100))
     count = embeddings.index_all_products(limit=limit)

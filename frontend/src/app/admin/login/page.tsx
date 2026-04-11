@@ -25,7 +25,7 @@ export default function AdminLogin() {
     try {
       const payload: Record<string, string> = { email, password }
       if (captchaRequired) payload.captcha_token = captchaToken
-      await api.post('/api/accounts/admin/login/', payload)
+      await api.post('/api/v1/accounts/admin/login/', payload)
 
       // Admin auth is cookie-based (httpOnly). Ensure we don't keep any legacy
       // localStorage token/placeholder that could override cookie auth.

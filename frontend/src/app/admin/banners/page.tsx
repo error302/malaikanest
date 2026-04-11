@@ -55,7 +55,7 @@ export default function BannersPage() {
   const fetchBanners = async () => {
     try {
       setError(null)
-      const res = await api.get('/api/products/admin/banners/')
+      const res = await api.get('/api/v1/products/admin/banners/')
       setBanners(res.data || [])
     } catch (error) {
       console.error('Error fetching banners:', error)
@@ -125,7 +125,7 @@ export default function BannersPage() {
         formData.append('mobile_image', mobileImage)
       }
 
-      await api.post('/api/products/admin/banners/', formData)
+      await api.post('/api/v1/products/admin/banners/', formData)
       clearCache('/api/products/banners/')
       setShowForm(false)
       resetForm()
@@ -148,7 +148,7 @@ export default function BannersPage() {
     setBanners((current) => current.filter((banner) => banner.id !== id))
 
     try {
-      await api.delete(`/api/products/admin/banners/${id}/`)
+      await api.delete(`/api/v1/products/admin/banners/${id}/`)
       clearCache('/api/products/banners/')
       setSuccess('Banner deleted.')
     } catch (error) {
@@ -163,7 +163,7 @@ export default function BannersPage() {
     setSuccess(null)
 
     try {
-      await api.patch(`/api/products/admin/banners/${banner.id}/`, { is_active: !banner.is_active })
+      await api.patch(`/api/v1/products/admin/banners/${banner.id}/`, { is_active: !banner.is_active })
       clearCache('/api/products/banners/')
       setSuccess(`Banner ${banner.is_active ? 'disabled' : 'enabled'}.`)
       await fetchBanners()

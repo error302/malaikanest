@@ -44,7 +44,7 @@ export default function CategoriesPage() {
   const fetchCategories = useCallback(async () => {
     try {
       setError('')
-      const res = await api.get('/api/products/admin/categories/')
+      const res = await api.get('/api/v1/products/admin/categories/')
       setCategories(Array.isArray(res.data) ? res.data : [])
     } catch (fetchError: any) {
       const status = fetchError?.response?.status
@@ -77,7 +77,7 @@ export default function CategoriesPage() {
     setSuccess('')
 
     try {
-      await api.post('/api/products/admin/categories/seed/')
+      await api.post('/api/v1/products/admin/categories/seed/')
       await fetchCategories()
       setSuccess('Default categories restored.')
     } catch (seedError) {
@@ -110,7 +110,7 @@ export default function CategoriesPage() {
       if (imageFile) payload.append('image', imageFile)
       if (imageUrl.trim()) payload.append('image_url', imageUrl.trim())
 
-      const res = await api.post('/api/products/admin/categories/', payload)
+      const res = await api.post('/api/v1/products/admin/categories/', payload)
       setCategories((current) => [...current, res.data])
       resetCreateForm()
       setSuccess('Category saved.')
@@ -131,7 +131,7 @@ export default function CategoriesPage() {
     setCategories((current) => current.filter((category) => category.id !== id))
 
     try {
-      await api.delete(`/api/products/admin/categories/${id}/`)
+      await api.delete(`/api/v1/products/admin/categories/${id}/`)
       setSuccess('Category deleted.')
     } catch (deleteError) {
       console.error('Error deleting category:', deleteError)
@@ -161,7 +161,7 @@ export default function CategoriesPage() {
     try {
       const payload = new FormData()
       payload.append('image', file)
-      const res = await api.patch(`/api/products/admin/categories/${category.id}/`, payload)
+      const res = await api.patch(`/api/v1/products/admin/categories/${category.id}/`, payload)
       setCategories((current) => current.map((item) => (item.id === category.id ? res.data : item)))
       setSuccess(`Updated image for ${category.name}.`)
     } catch (uploadError) {

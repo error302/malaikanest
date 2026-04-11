@@ -20,7 +20,7 @@ class AdminAnalyticsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        paid_orders = Order.objects.filter(status="paid")
+        paid_orders = Order.objects.filter(status__in=['paid', 'processing', 'shipped', 'delivered'])
         total_revenue = paid_orders.aggregate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))))["total"]
         total_orders = Order.objects.count()
         pending_orders = Order.objects.filter(status="pending").count()
@@ -92,7 +92,7 @@ class AdminReportsView(APIView):
         start_date = datetime.date.today() - datetime.timedelta(days=days)
 
         orders = Order.objects.filter(created_at__date__gte=start_date)
-        paid_orders = orders.filter(status="paid")
+        paid_orders = orders.filter(status__in=['paid', 'processing', 'shipped', 'delivered'])
         total_revenue = paid_orders.aggregate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))))["total"] or 0
         total_orders = orders.count()
         paid_order_count = paid_orders.count()
@@ -118,7 +118,7 @@ class AdminReportsView(APIView):
 
         six_months_ago = datetime.date.today() - datetime.timedelta(days=180)
         monthly = (
-            Order.objects.filter(status="paid", created_at__date__gte=six_months_ago)
+            Order.objects.filter(status__in=['paid', 'processing', 'shipped', 'delivered'], created_at__date__gte=six_months_ago)
             .annotate(month=TruncMonth("created_at"))
             .values("month")
             .annotate(revenue=Coalesce(Sum("total"), Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))))
@@ -196,7 +196,7 @@ class InvoiceListView(APIView):
         invoice_status = (request.query_params.get("invoice_status") or "").strip().lower()
         payment_status = (request.query_params.get("payment_status") or "").strip().lower()
 
-        invoices = list(Invoice.objects.select_related("order", "order__user").order_by("-generated_at"))
+        invoices = list(Invoice.objects.select_related("order", "order__user").order_by("-created_at"))
 
         if search:
             invoices = [

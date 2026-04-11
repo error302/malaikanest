@@ -203,6 +203,12 @@ class AuthService:
         if not expires_at or expires_at < timezone.now():
             raise ValueError("Token has expired")
 
+        from .serializers import validate_password_strength
+        try:
+            validate_password_strength(new_password)
+        except Exception as e:
+            raise ValueError(str(e))
+
         user.set_password(new_password)
         user.password_reset_token = None
         user.password_reset_expires = None

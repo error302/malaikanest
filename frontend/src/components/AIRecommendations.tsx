@@ -27,8 +27,8 @@ export default function AIRecommendations({ productId, title = 'You May Also Lik
     const fetchRecommendations = async () => {
       try {
         const url = productId 
-          ? `/api/ai/recommendations/?product_id=${productId}`
-          : `/api/ai/recommendations/`
+          ? `/api/v1/ai/recommendations/?product_id=${productId}`
+          : `/api/v1/ai/recommendations/`
         
         const res = await api.get(url)
         setProducts(res.data.recommendations || [])

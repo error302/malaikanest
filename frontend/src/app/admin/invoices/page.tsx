@@ -56,7 +56,7 @@ export default function AdminInvoicesPage() {
       if (filterStatus) params.invoice_status = filterStatus
       if (filterPayment) params.payment_status = filterPayment
 
-      const res = await api.get('/api/orders/admin/invoices/', { params })
+      const res = await api.get('/api/v1/orders/admin/invoices/', { params })
       setInvoices(res.data.results || res.data || [])
       setTotalPages(Math.ceil((res.data.count || res.data.length || 1) / 25))
     } catch (error) {
@@ -91,7 +91,7 @@ export default function AdminInvoicesPage() {
   const handleDownload = async (invoice: Invoice) => {
     setActionLoading(invoice.id)
     try {
-      const res = await api.get(`/api/orders/admin/invoices/${invoice.id}/download/`, {
+      const res = await api.get(`/api/v1/orders/admin/invoices/${invoice.id}/download/`, {
         responseType: 'blob',
       })
       const url = window.URL.createObjectURL(new Blob([res.data]))
@@ -111,7 +111,7 @@ export default function AdminInvoicesPage() {
   const handleResend = async (invoice: Invoice) => {
     setActionLoading(invoice.id)
     try {
-      await api.post(`/api/orders/admin/invoices/${invoice.id}/resend/`)
+      await api.post(`/api/v1/orders/admin/invoices/${invoice.id}/resend/`)
       alert('Invoice email sent successfully!')
     } catch (error) {
       console.error('Failed to resend invoice:', error)
@@ -124,7 +124,7 @@ export default function AdminInvoicesPage() {
   const handleRegenerate = async (invoice: Invoice) => {
     setActionLoading(invoice.id)
     try {
-      await api.post(`/api/orders/admin/invoices/${invoice.id}/regenerate/`)
+      await api.post(`/api/v1/orders/admin/invoices/${invoice.id}/regenerate/`)
       alert('Invoice regenerated successfully!')
       await fetchInvoices()
     } catch (error) {

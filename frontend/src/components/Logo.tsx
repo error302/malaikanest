@@ -37,7 +37,7 @@ export default function Logo({ compact = false, className = '' }: LogoProps) {
     }
 
     api
-      .get('/api/core/settings/public/')
+      .get('/api/v1/core/settings/public/')
       .then((res) => {
         const nextName = res.data?.site_name || 'Malaika Nest'
         const nextLogo = res.data?.logo_url || null

@@ -103,7 +103,7 @@ export default function RegisterPage() {
     setError('')
 
     try {
-      await api.post('/api/accounts/google/', {
+      await api.post('/api/v1/accounts/google/', {
         token: response.credential,
       })
       router.push('/')
@@ -158,7 +158,7 @@ export default function RegisterPage() {
       }
       if (captchaRequired) payload.captcha_token = captchaToken
 
-      const response = await api.post('/api/accounts/register/', payload)
+      const response = await api.post('/api/v1/accounts/register/', payload)
       setSuccessMessage(
         response.data?.warning || 'Account created! Check your email to verify your account before signing in.'
       )

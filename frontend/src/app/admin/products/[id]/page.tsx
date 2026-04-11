@@ -149,8 +149,8 @@ export default function EditProductPage() {
       try {
         setError(null)
         const [categoriesRes, productRes] = await Promise.all([
-          api.get('/api/products/admin/categories/'),
-          api.get(`/api/products/admin/products/${productId}/`),
+          api.get('/api/v1/products/admin/categories/'),
+          api.get(`/api/v1/products/admin/products/${productId}/`),
         ])
 
         const nextCategories = Array.isArray(categoriesRes.data) ? categoriesRes.data : []
@@ -352,7 +352,7 @@ export default function EditProductPage() {
         }
       })
 
-      await api.patch(`/api/products/admin/products/${productId}/`, payload)
+      await api.patch(`/api/v1/products/admin/products/${productId}/`, payload)
       router.push('/admin/products')
     } catch (submitError: any) {
       const nextFieldErrors = buildFieldErrors(submitError?.response?.data)

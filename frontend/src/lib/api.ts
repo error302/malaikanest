@@ -206,6 +206,11 @@ api.interceptors.response.use(
         data: response.data,
         timestamp: Date.now(),
       })
+      // Evict oldest entries when cache exceeds 100 items
+      if (responseCache.size > 100) {
+        const oldestKey = responseCache.keys().next().value
+        if (oldestKey !== undefined) responseCache.delete(oldestKey)
+      }
     }
 
     return response
@@ -228,6 +233,11 @@ api.interceptors.response.use(
     if (shouldRetry && originalRequest) {
       originalRequest._retry = true
       return retryWithBackoff(() => api(originalRequest))
+    }
+
+    // If request has X-No-Auth-Redirect header, don't redirect on 401
+    if (error.response?.status === 401 && originalRequest?.headers?.['X-No-Auth-Redirect']) {
+      return Promise.reject(error)
     }
 
     const shouldAttemptRefresh = error.response?.status === 401 &&

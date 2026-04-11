@@ -28,7 +28,7 @@ export default function FeaturedProducts() {
 
   useEffect(() => {
     let mounted = true
-    api.get('/api/products/products/')
+    api.get('/api/v1/products/products/')
       .then(res => {
         if (mounted) {
           const data = res.data

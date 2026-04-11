@@ -61,7 +61,7 @@ export default function BundleBuilderPage() {
   const generateBundle = async () => {
     setLoading(true)
     try {
-      const res = await api.post('/api/ai/bundle/generate/', {
+      const res = await api.post('/api/v1/ai/bundle/generate/', {
         type: selections.bundleType || 'newborn_starter',
         budget: selections.budget,
         age_group: selections.ageGroup,
@@ -82,7 +82,7 @@ export default function BundleBuilderPage() {
 
     for (const product of bundle.products) {
       try {
-        await api.post('/api/orders/cart/add/', {
+        await api.post('/api/v1/orders/cart/add/', {
           product_id: product.id,
           quantity: 1,
         })

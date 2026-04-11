@@ -24,7 +24,7 @@ export default function CustomersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/api/products/admin/users/')
+      const res = await api.get('/api/v1/products/admin/users/')
       const data = Array.isArray(res.data) ? res.data : res.data?.results || []
       setUsers(data)
     } catch {

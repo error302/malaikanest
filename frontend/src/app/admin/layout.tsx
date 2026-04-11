@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import api from '@/lib/api'
+import { clearAccessToken } from '@/lib/authToken'
 import { Menu, X } from 'lucide-react'
 
 const navItems = [
@@ -26,10 +27,11 @@ function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: an
   const handleLogout = async () => {
     setLoggingOut(true)
     try {
-      await api.post('/api/accounts/logout/')
+      await api.post('/api/v1/accounts/logout/')
     } catch (_e) {
       // Ignore logout errors, but still force navigation out of admin
     } finally {
+      clearAccessToken()
       // Cookies are httpOnly and cleared by backend logout response
       router.refresh()
       router.replace('/admin/login')
@@ -53,8 +55,8 @@ function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: an
       )}
 
       {/* Sidebar sidebar */}
-      <aside 
-        className={`bg-[var(--bg-card)] shadow-xl fixed h-full top-0 left-0 z-50 border-r border-[var(--border)] flex flex-col transition-all duration-300 
+      <aside
+        className={`relative bg-[var(--bg-card)] shadow-xl fixed h-full top-0 left-0 z-50 border-r border-[var(--border)] flex flex-col transition-all duration-300
           ${collapsed ? 'w-20' : 'w-64'} 
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} 
           lg:translate-x-0`}
@@ -199,7 +201,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
 
     const verifyAdmin = async () => {
       try {
-        await api.get('/api/accounts/admin/session/')
+        await api.get('/api/v1/accounts/admin/session/')
       } catch (_err) {
         router.replace('/admin/login')
       } finally {

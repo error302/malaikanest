@@ -108,7 +108,7 @@ export default function NewProduct() {
   })
 
   useEffect(() => {
-    api.get('/api/products/admin/categories/').then((res) => setCategories(Array.isArray(res.data) ? res.data : [])).catch(() => setCategories([]))
+    api.get('/api/v1/products/admin/categories/').then((res) => setCategories(Array.isArray(res.data) ? res.data : [])).catch(() => setCategories([]))
   }, [])
 
   const sortedCategories = useMemo(
@@ -295,7 +295,7 @@ export default function NewProduct() {
         })
       }
 
-      await api.post('/api/products/admin/products/', form)
+      await api.post('/api/v1/products/admin/products/', form)
       router.push('/admin/products')
     } catch (err: any) {
       const nextFieldErrors = buildFieldErrors(err?.response?.data)

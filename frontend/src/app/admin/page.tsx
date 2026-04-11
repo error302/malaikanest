@@ -44,7 +44,7 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const res = await api.get('/api/orders/admin/analytics/')
+      const res = await api.get('/api/v1/orders/admin/analytics/')
       const data = res.data || {}
 
       setStats({
@@ -67,7 +67,10 @@ export default function AdminDashboard() {
   }
 
   const formatDate = (dateStr: string) => {
-    return new Intl.DateTimeFormat('en-KE', { month: 'short', day: 'numeric' }).format(new Date(dateStr))
+    if (!dateStr) return 'N/A'
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'N/A'
+    return new Intl.DateTimeFormat('en-KE', { month: 'short', day: 'numeric' }).format(date)
   }
 
   const formatCurrency = (amount: number) => {

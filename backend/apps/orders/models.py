@@ -45,23 +45,19 @@ class Invoice(BaseModel):
         """Generate a unique invoice number: INV-YYYY-XXXXXX"""
         today = datetime.now()
         year = today.strftime('%Y')
-        
-        # Get the last invoice number for this year
-        last_invoice = cls.objects.filter(
-            invoice_number__startswith=f'INV-{year}-'
-        ).order_by('-invoice_number').first()
-        
-        if last_invoice:
-            try:
-                last_seq = int(last_invoice.invoice_number.split('-')[-1])
-                new_seq = last_seq + 1
-            except (ValueError, IndexError):
+        with transaction.atomic():
+            last_invoice = cls.objects.select_for_update().filter(
+                invoice_number__startswith=f'INV-{year}-'
+            ).order_by('-invoice_number').first()
+            if last_invoice:
+                try:
+                    last_seq = int(last_invoice.invoice_number.split('-')[-1])
+                    new_seq = last_seq + 1
+                except (ValueError, IndexError):
+                    new_seq = 1
+            else:
                 new_seq = 1
-        else:
-            new_seq = 1
-        
-        # Format: INV-2026-000184
-        return f"INV-{year}-{new_seq:06d}"
+            return f"INV-{year}-{new_seq:06d}"
 
 
 class Coupon(BaseModel):

@@ -31,7 +31,7 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     try {
       setError(null)
-      const res = await api.get('/api/products/admin/products/')
+      const res = await api.get('/api/v1/products/admin/products/')
       const data = Array.isArray(res.data) ? res.data : res.data?.results || []
       setProducts(data)
     } catch (error) {
@@ -53,7 +53,7 @@ export default function ProductsPage() {
     setProducts((current) => current.filter((product) => product.id !== id))
 
     try {
-      await api.delete(`/api/products/admin/products/${id}/`)
+      await api.delete(`/api/v1/products/admin/products/${id}/`)
       setSuccess('Product deleted.')
     } catch (error) {
       console.error('Error deleting product:', error)
@@ -67,7 +67,7 @@ export default function ProductsPage() {
     setSuccess(null)
 
     try {
-      await api.patch(`/api/products/admin/products/${product.id}/`, { is_active: !product.is_active })
+      await api.patch(`/api/v1/products/admin/products/${product.id}/`, { is_active: !product.is_active })
       setProducts((current) => current.map((item) => (
         item.id === product.id ? { ...item, is_active: !item.is_active } : item
       )))
@@ -88,7 +88,7 @@ export default function ProductsPage() {
     try {
       const payload = new FormData()
       payload.append('image', file)
-      const res = await api.patch(`/api/products/admin/products/${product.id}/`, payload)
+      const res = await api.patch(`/api/v1/products/admin/products/${product.id}/`, payload)
       setProducts((current) => current.map((item) => (item.id === product.id ? res.data : item)))
       setSuccess(`Updated image for ${product.name}.`)
     } catch (error) {
