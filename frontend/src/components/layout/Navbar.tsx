@@ -4,10 +4,42 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Search, User, Heart, ChevronDown, X, Menu, Shirt, Package, Home, Gamepad2, Car, Gift, Sparkles, Flame } from 'lucide-react';
+import { 
+  ShoppingBag, 
+  Search, 
+  User, 
+  Heart, 
+  ChevronDown, 
+  X, 
+  Menu, 
+  Shirt, 
+  Package, 
+  Home, 
+  Gamepad2, 
+  Car, 
+  Gift, 
+  Sparkles, 
+  Flame,
+  Baby,
+  ChevronRight,
+  MapPin,
+  ShoppingCart
+} from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { useAuth } from '@/lib/authContext';
 import { useWishlist } from '@/lib/wishlistContext';
+
+const SHOP_BY_AGE = [
+  { name: 'Newborn', href: '/categories?age=newborn', image: '/images/age-newborn.jpg' },
+  { name: '0-3 Months', href: '/categories?age=0-3', image: '/images/age-0-3.jpg' },
+  { name: '3-6 Months', href: '/categories?age=3-6', image: '/images/age-3-6.jpg' },
+  { name: '6-9 Months', href: '/categories?age=6-9', image: '/images/age-6-9.jpg' },
+  { name: '1-12 Years', href: '/categories?age=1-12', image: '/images/age-1-12.jpg' },
+  { name: '2-4 Years', href: '/categories?age=2-4', image: '/images/age-2-4.jpg' },
+  { name: '4-6 Years', href: '/categories?age=4-6', image: '/images/age-4-6.jpg' },
+  { name: '6-9 Years', href: '/categories?age=6-9', image: '/images/age-6-9.jpg' },
+  { name: '9-12 Years', href: '/categories?age=9-12', image: '/images/age-9-12.jpg' },
+];
 
 const SHOP_CATEGORIES = [
   {
@@ -60,8 +92,16 @@ const SHOP_CATEGORIES = [
   },
 ];
 
+const NAV_LINKS = [
+  { name: 'Home', href: '/' },
+  { name: 'Clothes', href: '/categories', hasDropdown: true },
+  { name: 'Newborn', href: '/categories?age=newborn' },
+  { name: 'Best Sellers', href: '/best-sellers' },
+];
+
 export default function Navbar() {
   const [shopOpen, setShopOpen] = useState(false);
+  const [ageMenuOpen, setAgeMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,10 +123,21 @@ export default function Navbar() {
   const openShop = () => {
     if (shopTimeoutRef.current) clearTimeout(shopTimeoutRef.current);
     setShopOpen(true);
+    setAgeMenuOpen(false);
   };
 
   const closeShop = () => {
     shopTimeoutRef.current = setTimeout(() => setShopOpen(false), 120);
+  };
+
+  const openAgeMenu = () => {
+    if (shopTimeoutRef.current) clearTimeout(shopTimeoutRef.current);
+    setAgeMenuOpen(true);
+    setShopOpen(false);
+  };
+
+  const closeAgeMenu = () => {
+    shopTimeoutRef.current = setTimeout(() => setAgeMenuOpen(false), 120);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -101,7 +152,7 @@ export default function Navbar() {
   return (
     <>
       {/* Announcement bar */}
-      <div className="bg-[#1A3A2A] text-[#E8C98A] text-center text-xs py-2.5 px-4 font-light tracking-wide">
+      <div className="bg-[#8B6914] text-white text-center text-xs py-2.5 px-4 font-light tracking-wide">
         Free delivery on orders over <strong className="font-semibold">KES 3,000</strong>
         &nbsp;·&nbsp; M-Pesa Till: <strong className="font-semibold">3370347</strong>
         &nbsp;·&nbsp; Same-day delivery in Mombasa
@@ -111,71 +162,102 @@ export default function Navbar() {
       <nav
         className={`sticky top-0 z-50 transition-all duration-200 ${
           scrolled
-            ? 'bg-white/98 backdrop-blur-md shadow-sm border-b border-[#C9A96E]/15'
-            : 'bg-[#FDF8F3] border-b border-[#C9A96E]/10'
+            ? 'bg-white/98 backdrop-blur-md shadow-warm-sm border-b border-[#E8E0D5]'
+            : 'bg-[#FDF8F3] border-b border-[#E8E0D5]/50'
         }`}
       >
-        <div className="max-w-[1380px] mx-auto px-6 lg:px-10 flex items-center h-[68px] gap-8">
+        <div className="max-w-[1380px] mx-auto px-6 lg:px-10 flex items-center h-[72px] gap-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-            <Image
-              src="/images/logo.png"
-              alt="Malaika Nest"
-              width={44}
-              height={44}
-              className="object-contain"
-            />
+            <div className="relative w-10 h-10">
+              <Image
+                src="/images/logo.png"
+                alt="Malaika Nest"
+                width={40}
+                height={40}
+                className="object-contain"
+              />
+            </div>
             <div className="hidden sm:block leading-tight">
-              <div className="font-serif text-xl font-semibold text-[#1A3A2A] tracking-tight">
+              <div className="font-serif text-xl font-semibold text-[#2C1810] tracking-tight">
                 Malaika Nest
               </div>
               <div className="text-[9px] uppercase tracking-[0.14em] text-[#8A7060] font-light">
-                Baby &amp; Maternity
+                Baby & Maternity
               </div>
             </div>
           </Link>
 
           {/* Desktop nav links */}
-          <div className="hidden lg:flex items-center gap-7 flex-1">
-            <Link
-              href="/"
-              className="text-sm text-[#5C4033] hover:text-[#1A3A2A] transition-colors"
-            >
-              Home
-            </Link>
+          <div className="hidden lg:flex items-center gap-8 flex-1">
+            {NAV_LINKS.map((link) => (
+              <div key={link.name} className="relative">
+                {link.hasDropdown ? (
+                  <div
+                    onMouseEnter={openShop}
+                    onMouseLeave={closeShop}
+                  >
+                    <button
+                      className="flex items-center gap-1 text-sm text-[#5C4033] hover:text-[#8B6914] transition-colors font-medium"
+                      aria-expanded={shopOpen}
+                    >
+                      {link.name}
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    href={link.href}
+                    className="text-sm text-[#5C4033] hover:text-[#8B6914] transition-colors font-medium"
+                  >
+                    {link.name}
+                  </Link>
+                )}
+              </div>
+            ))}
 
-            {/* Shop mega menu trigger */}
+            {/* Shop by Age dropdown */}
             <div
+              onMouseEnter={openAgeMenu}
+              onMouseLeave={closeAgeMenu}
               className="relative"
-              onMouseEnter={openShop}
-              onMouseLeave={closeShop}
             >
               <button
-                className="flex items-center gap-1 text-sm text-[#5C4033] hover:text-[#1A3A2A] transition-colors font-medium"
-                aria-expanded={shopOpen}
+                className="flex items-center gap-1 text-sm text-[#5C4033] hover:text-[#8B6914] transition-colors font-medium"
+                aria-expanded={ageMenuOpen}
               >
-                Shop
+                Shop by Age
                 <ChevronDown
                   size={14}
-                  className={`transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`}
+                  className={`transition-transform duration-200 ${ageMenuOpen ? 'rotate-180' : ''}`}
                 />
               </button>
             </div>
+          </div>
 
-            <Link
-              href="/best-sellers"
-              className="text-sm text-[#5C4033] hover:text-[#1A3A2A] transition-colors"
-            >
-              Best Sellers
-            </Link>
+          {/* Search bar */}
+          <div className="hidden md:flex flex-1 max-w-md">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="AI Search"
+                className="w-full bg-[#F5EFE6] border border-[#E8E0D5] rounded-full px-4 py-2 pl-10 text-sm text-[#2C1810] placeholder:text-[#8A7060] focus:outline-none focus:border-[#8B6914] transition-colors"
+              />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A7060]" />
+            </form>
           </div>
 
           {/* Right side icons */}
           <div className="flex items-center gap-2 ml-auto">
-            {/* Search */}
+            {/* Search mobile */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
               aria-label="Search"
             >
               <Search size={18} />
@@ -184,7 +266,7 @@ export default function Navbar() {
             {/* Wishlist */}
             <Link
               href="/wishlist"
-              className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
+              className="relative hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
               aria-label="Wishlist"
             >
               <Heart size={18} />
@@ -196,39 +278,23 @@ export default function Navbar() {
             </Link>
 
             {/* Account */}
-            {user ? (
-              <Link
-                href="/account"
-                className="hidden md:flex items-center gap-2 h-9 px-3 rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033] text-sm"
-              >
-                <User size={16} />
-                <span className="text-xs leading-tight">
-                  <span className="block font-medium">Account</span>
-                  <span className="text-[10px] text-[#8A7060]">{user.email}</span>
-                </span>
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="hidden md:flex items-center gap-2 h-9 px-3 rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033] text-sm"
-              >
-                <User size={16} />
-                <span className="text-xs leading-tight">
-                  <span className="block font-medium">Account</span>
-                  <span className="text-[10px] text-[#8A7060]">Login / Register</span>
-                </span>
-              </Link>
-            )}
+            <Link
+              href={user ? "/account" : "/login"}
+              className="hidden md:flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
+              aria-label="Account"
+            >
+              <User size={18} />
+            </Link>
 
             {/* Cart */}
             <Link
               href="/cart"
-              className="flex items-center gap-2 h-9 px-3 rounded-full border border-[#1A3A2A]/20 hover:border-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A] transition-all text-[#1A3A2A] text-sm group"
+              className="relative flex items-center gap-2 h-10 px-4 rounded-full border border-[#8B6914] bg-[#8B6914] text-white text-sm font-medium hover:bg-[#6B5310] transition-all"
               aria-label="Cart"
             >
-              <ShoppingBag size={16} />
-              <span className="hidden sm:inline text-xs font-medium">Cart</span>
-              <span className="w-5 h-5 bg-[#C4704A] text-white rounded-full text-[10px] flex items-center justify-center font-semibold">
+              <ShoppingCart size={16} />
+              <span className="hidden sm:inline">Cart</span>
+              <span className="w-5 h-5 bg-white text-[#8B6914] rounded-full text-[10px] flex items-center justify-center font-semibold">
                 {itemCount}
               </span>
             </Link>
@@ -236,18 +302,56 @@ export default function Navbar() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
+              className="lg:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#F5EFE6] transition-colors text-[#5C4033]"
             >
               <Menu size={20} />
             </button>
           </div>
         </div>
 
-        {/* ── MEGA MENU DROPDOWN ── */}
+        {/* ── SHOP BY AGE MEGA MENU ── */}
+        <div
+          onMouseEnter={openAgeMenu}
+          onMouseLeave={closeAgeMenu}
+          className={`absolute top-full left-0 right-0 bg-white border-t border-[#E8E0D5] shadow-warm-lg transition-all duration-200 origin-top ${
+            ageMenuOpen
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 -translate-y-2 pointer-events-none'
+          }`}
+        >
+          <div className="max-w-[1380px] mx-auto px-10 py-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-serif text-2xl font-semibold text-[#2C1810]">Shop by Age</h3>
+              <Link 
+                href="/categories" 
+                className="flex items-center gap-1 text-sm text-[#8B6914] font-medium hover:gap-2 transition-all"
+              >
+                View All <ChevronRight size={14} />
+              </Link>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+              {SHOP_BY_AGE.map((age) => (
+                <Link
+                  key={age.name}
+                  href={age.href}
+                  onClick={() => setAgeMenuOpen(false)}
+                  className="group flex-shrink-0 flex flex-col items-center gap-3 p-4 rounded-2xl border border-[#E8E0D5] hover:border-[#8B6914] hover:shadow-warm-md transition-all duration-200 bg-white min-w-[120px]"
+                >
+                  <div className="w-16 h-16 rounded-full bg-[#F5EFE6] flex items-center justify-center group-hover:bg-[#8B6914]/10 transition-colors">
+                    <Baby className="w-7 h-7 text-[#8B6914]" />
+                  </div>
+                  <span className="text-sm font-medium text-[#2C1810] whitespace-nowrap">{age.name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── CATEGORIES MEGA MENU ── */}
         <div
           onMouseEnter={openShop}
           onMouseLeave={closeShop}
-          className={`absolute top-full left-0 right-0 bg-white border-t border-[#C9A96E]/20 shadow-2xl transition-all duration-200 origin-top ${
+          className={`absolute top-full left-0 right-0 bg-white border-t border-[#E8E0D5] shadow-warm-lg transition-all duration-200 origin-top ${
             shopOpen
               ? 'opacity-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 -translate-y-2 pointer-events-none'
@@ -260,15 +364,15 @@ export default function Navbar() {
                   key={cat.name}
                   href={cat.href}
                   onClick={() => setShopOpen(false)}
-                  className="group flex flex-col rounded-2xl border border-[#E8E0D5] hover:border-[#C9A96E]/60 hover:shadow-md transition-all duration-200 overflow-hidden bg-white"
+                  className="group flex flex-col rounded-2xl border border-[#E8E0D5] hover:border-[#8B6914]/40 hover:shadow-warm-md transition-all duration-200 overflow-hidden bg-white"
                 >
                   <div
                     className={`${cat.color} h-28 flex items-center justify-center transition-transform duration-200 group-hover:scale-105`}
                   >
-                    <cat.Icon className="w-10 h-10 text-[#1A3A2A]" />
+                    <cat.Icon className="w-10 h-10 text-[#8B6914]" />
                   </div>
                   <div className="p-3">
-                    <div className="text-sm font-semibold text-[#1A3A2A] group-hover:text-[#C4704A] transition-colors">
+                    <div className="text-sm font-semibold text-[#2C1810] group-hover:text-[#8B6914] transition-colors">
                       {cat.name}
                     </div>
                     <div className="text-[11px] text-[#8A7060] mt-0.5 leading-snug">
@@ -278,7 +382,7 @@ export default function Navbar() {
                       {cat.featured.map((item) => (
                         <li
                           key={item}
-                          className="text-[11px] text-[#5C4033] hover:text-[#C4704A] transition-colors leading-relaxed"
+                          className="text-[11px] text-[#5C4033] hover:text-[#8B6914] transition-colors leading-relaxed"
                         >
                           {item}
                         </li>
@@ -290,26 +394,26 @@ export default function Navbar() {
             </div>
 
             {/* Bottom strip */}
-            <div className="mt-6 pt-5 border-t border-[#F0E8DE] flex items-center justify-between">
-              <div className="flex gap-4">
+            <div className="mt-6 pt-5 border-t border-[#E8E0D5] flex items-center justify-between">
+              <div className="flex gap-6">
                 <Link
                   href="/best-sellers"
                   onClick={() => setShopOpen(false)}
-                  className="flex items-center gap-1 text-sm text-[#C4704A] font-medium hover:underline"
+                  className="flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:underline"
                 >
                   <Flame size={14} /> Best Sellers
                 </Link>
                 <Link
                   href="/categories"
                   onClick={() => setShopOpen(false)}
-                  className="flex items-center gap-1 text-sm text-[#5C4033] hover:text-[#C4704A] transition-colors"
+                  className="flex items-center gap-1.5 text-sm text-[#5C4033] hover:text-[#8B6914] transition-colors"
                 >
                   <Sparkles size={14} /> New Arrivals
                 </Link>
                 <Link
                   href="/categories"
                   onClick={() => setShopOpen(false)}
-                  className="flex items-center gap-1 text-sm text-[#5C4033] hover:text-[#C4704A] transition-colors"
+                  className="flex items-center gap-1.5 text-sm text-[#5C4033] hover:text-[#8B6914] transition-colors"
                 >
                   <Gift size={14} /> Gift Ideas
                 </Link>
@@ -317,7 +421,7 @@ export default function Navbar() {
               <Link
                 href="/categories"
                 onClick={() => setShopOpen(false)}
-                className="text-xs font-medium text-[#1A3A2A] bg-[#F5EFE6] hover:bg-[#1A3A2A] hover:text-[#E8C98A] px-4 py-2 rounded-full transition-all"
+                className="text-xs font-medium text-[#2C1810] bg-[#F5EFE6] hover:bg-[#8B6914] hover:text-white px-4 py-2 rounded-full transition-all"
               >
                 View All Products →
               </Link>
@@ -329,10 +433,10 @@ export default function Navbar() {
       {/* ── SEARCH OVERLAY ── */}
       {searchOpen && (
         <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex items-start justify-center pt-24 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 relative">
+          <div className="bg-white rounded-2xl shadow-warm-xl w-full max-w-2xl p-6 relative">
             <button
               onClick={() => setSearchOpen(false)}
-              className="absolute top-4 right-4 text-[#8A7060] hover:text-[#1A3A2A] transition-colors"
+              className="absolute top-4 right-4 text-[#8A7060] hover:text-[#2C1810] transition-colors"
             >
               <X size={20} />
             </button>
@@ -344,11 +448,11 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="e.g. baby onesie, feeding bottle…"
-                className="flex-1 border border-[#E8E0D5] rounded-xl px-4 py-3 text-sm text-[#2C1810] placeholder:text-[#B0A090] focus:outline-none focus:border-[#1A3A2A] transition-colors"
+                className="flex-1 border border-[#E8E0D5] rounded-xl px-4 py-3 text-sm text-[#2C1810] placeholder:text-[#8A7060] focus:outline-none focus:border-[#8B6914] transition-colors"
               />
               <button
                 type="submit"
-                className="bg-[#1A3A2A] text-[#E8C98A] px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#254D38] transition-colors"
+                className="bg-[#8B6914] text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-[#6B5310] transition-colors"
               >
                 Search
               </button>
@@ -377,15 +481,34 @@ export default function Navbar() {
           <div className="flex items-center justify-between px-6 h-16 border-b border-[#E8E0D5]">
             <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
               <Image src="/images/logo.png" alt="Malaika Nest" width={36} height={36} />
-              <span className="font-serif font-semibold text-[#1A3A2A]">Malaika Nest</span>
+              <span className="font-serif font-semibold text-[#2C1810]">Malaika Nest</span>
             </Link>
             <button onClick={() => setMobileOpen(false)}>
               <X size={22} className="text-[#5C4033]" />
             </button>
           </div>
           <div className="px-6 py-6 space-y-6">
-            <Link href="/" onClick={() => setMobileOpen(false)} className="block text-lg font-medium text-[#1A3A2A]">Home</Link>
-            <Link href="/best-sellers" onClick={() => setMobileOpen(false)} className="block text-lg font-medium text-[#1A3A2A]">Best Sellers</Link>
+            <Link href="/" onClick={() => setMobileOpen(false)} className="block text-lg font-medium text-[#2C1810]">Home</Link>
+            <Link href="/best-sellers" onClick={() => setMobileOpen(false)} className="block text-lg font-medium text-[#2C1810]">Best Sellers</Link>
+            
+            {/* Shop by Age Mobile */}
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#8A7060] mb-3">Shop by Age</p>
+              <div className="flex flex-wrap gap-2">
+                {SHOP_BY_AGE.slice(0, 6).map((age) => (
+                  <Link
+                    key={age.name}
+                    href={age.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="px-4 py-2 rounded-full border border-[#E8E0D5] text-sm text-[#5C4033] hover:bg-[#F5EFE6] hover:border-[#8B6914] transition-all"
+                  >
+                    {age.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Categories Mobile */}
             <div>
               <p className="text-xs uppercase tracking-widest text-[#8A7060] mb-3">Shop Categories</p>
               <div className="grid grid-cols-2 gap-3">
@@ -396,8 +519,8 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-3 p-3 rounded-xl bg-[#F5EFE6] hover:bg-[#EDE3D8] transition-colors"
                   >
-                    <cat.Icon className="w-6 h-6 text-[#1A3A2A]" />
-                    <span className="text-sm font-medium text-[#1A3A2A]">{cat.name}</span>
+                    <cat.Icon className="w-6 h-6 text-[#8B6914]" />
+                    <span className="text-sm font-medium text-[#2C1810]">{cat.name}</span>
                   </Link>
                 ))}
               </div>

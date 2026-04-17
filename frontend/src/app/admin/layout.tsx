@@ -4,18 +4,18 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import api from '@/lib/api'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, LayoutDashboard, Package, ShoppingBag, FileText, Users, List, Image as ImageIcon, BarChart3, Settings, LogOut, ExternalLink } from 'lucide-react'
 
 const navItems = [
-  { href: '/admin', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', label: 'Dashboard', exact: true },
-  { href: '/admin/products', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', label: 'Products' },
-  { href: '/admin/orders', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', label: 'Orders' },
-  { href: '/admin/invoices', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', label: 'Invoices' },
-  { href: '/admin/customers', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', label: 'Customers' },
-  { href: '/admin/categories', icon: 'M4 6h16M4 10h16M4 14h16M4 18h16', label: 'Categories' },
-  { href: '/admin/banners', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', label: 'Banners' },
-  { href: '/admin/reports', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', label: 'Reports' },
-  { href: '/admin/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', label: 'Settings' },
+  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+  { href: '/admin/products', icon: Package, label: 'Products' },
+  { href: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
+  { href: '/admin/invoices', icon: FileText, label: 'Invoices' },
+  { href: '/admin/customers', icon: Users, label: 'Customers' },
+  { href: '/admin/categories', icon: List, label: 'Categories' },
+  { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
+  { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
+  { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ]
 
 function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: any) {
@@ -28,9 +28,8 @@ function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: an
     try {
       await api.post('/api/accounts/logout/')
     } catch (_e) {
-      // Ignore logout errors, but still force navigation out of admin
+      // Ignore logout errors
     } finally {
-      // Cookies are httpOnly and cleared by backend logout response
       router.refresh()
       router.replace('/admin/login')
       setLoggingOut(false)
@@ -46,92 +45,90 @@ function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: an
     <>
       {/* Mobile Overlay */}
       {mobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar sidebar */}
-      <aside 
-        className={`bg-[var(--bg-card)] shadow-xl fixed h-full top-0 left-0 z-50 border-r border-[var(--border)] flex flex-col transition-all duration-300 
-          ${collapsed ? 'w-20' : 'w-64'} 
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} 
-          lg:translate-x-0`}
+      {/* Sidebar */}
+      <aside
+        className={`bg-white shadow-xl fixed h-full top-0 left-0 z-50 border-r border-[#E8E0D5] flex flex-col transition-all duration-300
+        ${collapsed ? 'w-20' : 'w-64'}
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0`}
       >
-        <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
+        <div className="p-6 border-b border-[#E8E0D5] flex items-center justify-between">
           <Link href="/admin" className="block truncate">
-            <span className="text-2xl font-bold text-[var(--accent)]" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <span className={`text-2xl font-bold text-[#8B6914] font-serif`}>
               {collapsed ? 'M' : 'Malaika Nest'}
             </span>
             {!collapsed && (
-              <p className="text-xs text-[var(--text-muted)] mt-1 uppercase tracking-wider block" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+              <p className="text-xs text-[#8A7060] mt-1 uppercase tracking-wider block">
                 Admin Dashboard
               </p>
             )}
           </Link>
-          <button className="lg:hidden text-[var(--text-secondary)]" onClick={() => setMobileOpen(false)}>
+          <button className="lg:hidden text-[#5C4033]" onClick={() => setMobileOpen(false)}>
             <X size={24} />
           </button>
         </div>
-        
+
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                isActive(item.href, item.exact)
-                  ? 'bg-[var(--accent)]/10 text-[var(--accent)] font-medium'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]'
-              }`}
-              title={collapsed ? item.label : undefined}
-            >
-              <svg className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive(item.href, item.exact) ? 'text-[var(--accent)]' : 'group-hover:text-[var(--accent)]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-              </svg>
-              {!collapsed && (
-                <span className="text-sm truncate" style={{ fontFamily: 'Montserrat, sans-serif' }}>{item.label}</span>
-              )}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.href, item.exact)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  active
+                    ? 'bg-[#8B6914]/10 text-[#8B6914] font-medium'
+                    : 'text-[#5C4033] hover:bg-[#F5EFE6] hover:text-[#2C1810]'
+                }`}
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-[#8B6914]' : 'group-hover:text-[#8B6914]'}`} />
+                {!collapsed && (
+                  <span className="text-sm truncate">{item.label}</span>
+                )}
+              </Link>
+            )
+          })}
         </nav>
 
-        <div className="p-3 border-t border-[var(--border)] space-y-1">
-          <Link 
-            href="/" 
+        <div className="p-3 border-t border-[#E8E0D5] space-y-1">
+          <Link
+            href="/"
             target="_blank"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)] transition-all duration-200 group"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#5C4033] hover:bg-[#F5EFE6] hover:text-[#2C1810] transition-all duration-200 group"
             title={collapsed ? 'View Store' : undefined}
           >
-            <svg className="w-5 h-5 flex-shrink-0 group-hover:text-[var(--accent)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
+            <ExternalLink className="w-5 h-5 flex-shrink-0 group-hover:text-[#8B6914] transition-colors" />
             {!collapsed && (
-              <span className="text-sm truncate" style={{ fontFamily: 'Montserrat, sans-serif' }}>View Store</span>
+              <span className="text-sm truncate">View Store</span>
             )}
           </Link>
-          
+
           <button
             onClick={handleLogout}
             disabled={loggingOut}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition-all duration-200 group disabled:opacity-50"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#5C4033] hover:bg-red-50 hover:text-red-600 transition-all duration-200 group disabled:opacity-50"
             title={collapsed ? 'Logout' : undefined}
           >
-            <svg className="w-5 h-5 flex-shrink-0 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
+            <LogOut className="w-5 h-5 flex-shrink-0 group-hover:text-red-600 transition-colors" />
             {!collapsed && (
-              <span className="text-sm truncate" style={{ fontFamily: 'Montserrat, sans-serif' }}>{loggingOut ? 'Logging out...' : 'Logout'}</span>
+              <span className="text-sm truncate">{loggingOut ? 'Logging out...' : 'Logout'}</span>
             )}
           </button>
         </div>
-        
+
         {/* Desktop Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex absolute top-6 -right-3 w-6 h-6 bg-[var(--accent)] text-white rounded-full items-center justify-center shadow-md hover:bg-[var(--accent-hover)] transition-all"
+          className="hidden lg:flex absolute top-6 -right-3 w-6 h-6 bg-[#8B6914] text-white rounded-full items-center justify-center shadow-md hover:bg-[#6B5310] transition-all"
         >
           <svg className={`w-3 h-3 transition-transform ${collapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -144,43 +141,34 @@ function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: an
 
 function AdminHeader({ setMobileOpen }: any) {
   return (
-    <header className="bg-[var(--bg-card)] shadow-sm border-b border-[var(--border)] px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+    <header className="bg-white shadow-sm border-b border-[#E8E0D5] px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-4 flex-1">
-        <button 
-          className="lg:hidden p-2 -ml-2 text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-lg"
+        <button
+          className="lg:hidden p-2 -ml-2 text-[#5C4033] hover:bg-[#F5EFE6] rounded-lg"
           onClick={() => setMobileOpen(true)}
         >
           <Menu size={24} />
         </button>
         <div className="relative w-full max-w-md hidden sm:block">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8A7060]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <input 
-            type="text" 
-            placeholder="Search products, orders, customers..." 
-            className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 focus:bg-[var(--bg-card)] transition-all"
+          <input
+            type="text"
+            placeholder="Search products, orders, customers..."
+            className="w-full pl-10 pr-4 py-2.5 bg-[#F5EFE6] border border-[#E8E0D5] rounded-xl text-sm text-[#2C1810] placeholder-[#8A7060] focus:outline-none focus:ring-2 focus:ring-[#8B6914]/50 focus:bg-white transition-all"
           />
         </div>
       </div>
-      
+
       <div className="flex items-center gap-2 sm:gap-4 ml-4">
-        <button className="relative p-2.5 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[var(--accent)] rounded-full border-2 border-[var(--bg-card)]"></span>
-        </button>
-        
-        <div className="h-8 w-px bg-[var(--border)]"></div>
-        
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--pastel-pink)] flex items-center justify-center text-white font-semibold shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8B6914] to-[#C4704A] flex items-center justify-center text-white font-semibold shadow-lg">
             A
           </div>
           <div className="hidden md:block">
-            <p className="text-sm font-semibold text-[var(--text-primary)]" style={{ fontFamily: 'Montserrat, sans-serif' }}>Admin</p>
-            <p className="text-xs text-[var(--text-muted)]">Administrator</p>
+            <p className="text-sm font-semibold text-[#2C1810]">Admin</p>
+            <p className="text-xs text-[#8A7060]">Administrator</p>
           </div>
         </div>
       </div>
@@ -208,17 +196,22 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
     }
 
     verifyAdmin()
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [router])
 
   if (authChecking) {
-    return <div className="min-h-screen flex items-center justify-center text-[var(--text-secondary)]">Checking admin session...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDF8F3] text-[#5C4033]">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-[#8B6914] border-t-transparent rounded-full animate-spin" />
+          Checking admin session...
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--bg-secondary)] overflow-x-hidden">
+    <div className="flex min-h-screen bg-[#FDF8F3] overflow-x-hidden">
       <AdminSidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <div className={`flex-1 transition-all duration-300 min-w-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         <AdminHeader setMobileOpen={setMobileOpen} />

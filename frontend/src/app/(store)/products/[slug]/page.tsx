@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Heart, ShieldCheck, ShoppingBasket, Truck } from 'lucide-react'
+import { CheckCircle2, Heart, ShieldCheck, ShoppingBasket, Truck, ChevronRight, Star, Package } from 'lucide-react'
 
 import api from '@/lib/api'
 import { shouldUseUnoptimizedImage } from '@/lib/media'
@@ -35,16 +35,40 @@ interface Product {
   }>
 }
 
+// Mock related products - in production this would come from API
+const MOCK_RELATED_PRODUCTS = [
+  { id: 1, name: 'Organic Cotton Onesie', slug: 'organic-cotton-onesie', price: '1,250', image: null },
+  { id: 2, name: 'Baby Romper Set', slug: 'baby-romper-set', price: '2,450', image: null },
+  { id: 3, name: 'Soft Cotton Blanket', slug: 'soft-cotton-blanket', price: '1,800', image: null },
+  { id: 4, name: 'Newborn Gift Set', slug: 'newborn-gift-set', price: '3,200', image: null },
+];
+
+// Trust badges for product page
+const TRUST_BADGES = [
+  { icon: '🇰🇪', label: 'Made with love\nin Kenya' },
+  { icon: '✓', label: 'TRUST\nSecure Payments' },
+  { icon: '🚚', label: 'FREE\nShopping' },
+];
+
 function DetailSkeleton() {
   return (
-    <div className="container-shell py-12">
-      <div className="grid gap-10 md:grid-cols-2">
-        <div className="aspect-square animate-pulse rounded-[12px] border border-default bg-surface" />
-        <div className="space-y-4">
-          <div className="h-10 w-3/4 animate-pulse rounded bg-[var(--bg-soft)]" />
-          <div className="h-5 w-1/3 animate-pulse rounded bg-[var(--bg-soft)]" />
-          <div className="h-8 w-1/2 animate-pulse rounded bg-[var(--bg-soft)]" />
-          <div className="h-28 animate-pulse rounded bg-[var(--bg-soft)]" />
+    <div className="py-12">
+      <div className="max-w-[1380px] mx-auto px-6 lg:px-16">
+        {/* Breadcrumb skeleton */}
+        <div className="h-4 w-48 bg-[#F5EFE6] rounded animate-pulse mb-8" />
+        
+        <div className="grid gap-10 lg:grid-cols-2">
+          {/* Image skeleton */}
+          <div className="aspect-square animate-pulse rounded-2xl bg-[#F5EFE6]" />
+          
+          {/* Content skeleton */}
+          <div className="space-y-4">
+            <div className="h-4 w-24 bg-[#F5EFE6] rounded animate-pulse" />
+            <div className="h-12 w-3/4 bg-[#F5EFE6] rounded animate-pulse" />
+            <div className="h-8 w-1/3 bg-[#F5EFE6] rounded animate-pulse" />
+            <div className="h-32 bg-[#F5EFE6] rounded animate-pulse" />
+            <div className="h-12 w-full bg-[#F5EFE6] rounded animate-pulse" />
+          </div>
         </div>
       </div>
     </div>
@@ -165,174 +189,235 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="container-shell py-16 text-center">
-        <h1 className="font-display text-[36px] text-[var(--text-primary)]">Product Not Found</h1>
-        <p className="mt-3 text-[18px] text-[var(--text-secondary)]">{error || 'This product is unavailable.'}</p>
-        <Link href="/categories" className="btn-primary mt-6 inline-flex px-6">Browse Products</Link>
+      <div className="py-16 text-center">
+        <div className="max-w-[1380px] mx-auto px-6 lg:px-16">
+          <h1 className="font-serif text-4xl text-[#2C1810]">Product Not Found</h1>
+          <p className="mt-3 text-lg text-[#8A7060]">{error || 'This product is unavailable.'}</p>
+          <Link href="/categories" className="btn-primary mt-6 inline-flex px-6">Browse Products</Link>
+        </div>
       </div>
     )
   }
 
+  // Extract color options from variants
+  const colorOptions = product.variants?.filter(v => v.color).map(v => ({
+    id: v.id,
+    color: v.color,
+    label: v.color_label || v.color,
+    available: (v.available_stock ?? 0) > 0,
+  })) || [];
+
+  // Size options
+  const sizeOptions = ['0-3', '3-6', '6-9', '9-12 months'];
+
   return (
-    <div className="py-10">
-      <div className="container-shell">
-        <nav className="mb-6 text-sm text-[var(--text-secondary)]">
-          <Link href="/" className="hover:text-[var(--text-primary)]">Home</Link>
-          <span className="mx-2">/</span>
-          <Link href="/categories" className="hover:text-[var(--text-primary)]">Shop</Link>
-          {product.category?.slug && (
-            <>
-              <span className="mx-2">/</span>
-              <Link href={product.category.full_slug ? `/${product.category.full_slug}` : `/categories?category=${product.category.slug}`} className="hover:text-[var(--text-primary)]">
-                {product.category.name}
-              </Link>
-            </>
-          )}
-          <span className="mx-2">/</span>
-          <span className="text-[var(--text-primary)]">{product.name}</span>
+    <div className="py-8 bg-[#FDF8F3] min-h-screen">
+      <div className="max-w-[1380px] mx-auto px-6 lg:px-16">
+        {/* Breadcrumb */}
+        <nav className="mb-6 text-sm text-[#8A7060] flex items-center gap-2">
+          <Link href="/" className="hover:text-[#8B6914] transition-colors">Home</Link>
+          <ChevronRight size={14} />
+          <Link href="/categories" className="hover:text-[#8B6914] transition-colors">Clothes</Link>
+          <ChevronRight size={14} />
+          <span className="text-[#2C1810]">Newborn</span>
         </nav>
 
-        <div className="grid items-start gap-10 md:grid-cols-2">
-          <div className="rounded-[12px] border border-default bg-surface p-4 shadow-[var(--shadow-soft)]">
-            <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
+        <div className="grid items-start gap-10 lg:grid-cols-[1.1fr_1fr]">
+          {/* Product Image */}
+          <div className="rounded-3xl bg-[#FAF4EC] p-6 lg:p-10">
+            <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
               {displayImage ? (
-                <Image src={displayImage} alt={product.name} fill className="object-cover" priority unoptimized={shouldUseUnoptimizedImage(displayImage)} />
+                <Image 
+                  src={displayImage} 
+                  alt={product.name} 
+                  fill 
+                  className="object-cover" 
+                  priority 
+                  unoptimized={shouldUseUnoptimizedImage(displayImage)} 
+                />
               ) : (
-                <div className="flex h-full items-center justify-center bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent-primary)]">
-                  <span className="font-display text-7xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>
+                <div className="flex h-full items-center justify-center bg-[#F5EFE6]">
+                  <Package className="w-20 h-20 text-[#C9A96E]" />
                 </div>
               )}
             </div>
           </div>
 
-          <section className="rounded-[12px] border border-default bg-surface p-6 shadow-[var(--shadow-soft)] md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">{product.category?.name || 'Product'}</p>
-            <h1 className="font-display mt-2 text-[40px] text-[var(--text-primary)]">{product.name}</h1>
-
-            <div className="mt-5 flex items-end gap-2">
-              <p className="text-3xl font-semibold text-[var(--text-primary)]">KES {activePrice.toLocaleString()}</p>
+          {/* Product Details */}
+          <div className="lg:pt-4">
+            {/* Category */}
+            <p className="text-sm font-medium text-[#8B6914] uppercase tracking-wide">
+              {product.category?.name || 'Product'}
+            </p>
+            
+            {/* Title */}
+            <h1 className="font-serif text-3xl lg:text-[2.75rem] font-semibold text-[#2C1810] leading-tight mt-2">
+              {product.name}
+            </h1>
+            
+            {/* Price */}
+            <div className="mt-4 flex items-baseline gap-3">
+              <p className="text-3xl font-semibold text-[#2C1810]">
+                KES {activePrice.toLocaleString()}
+              </p>
+              <span className="text-sm text-[#8A7060]">
+                {product.variants && product.variants.length > 0 ? selectedVariant?.color_label || 'Select variant' : '0-3 Months'}
+              </span>
             </div>
 
-            <p className="mt-2 text-sm font-medium text-[var(--text-secondary)]">
-              {availableStock > 0 ? `In stock (${availableStock} available)` : 'Out of stock'}
-            </p>
+            {/* Rating */}
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} size={14} className="fill-[#C9A96E] text-[#C9A96E]" />
+                ))}
+              </div>
+              <span className="text-xs text-[#8A7060]">(48 reviews)</span>
+            </div>
 
-            {product.variants && product.variants.length > 0 && (
+            {/* Color Swatches */}
+            {colorOptions.length > 0 && (
               <div className="mt-6">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Color variations</p>
-                  {selectedVariant?.color_label && (
-                    <span className="text-sm text-[var(--text-secondary)]">Selected: {selectedVariant.color_label}</span>
-                  )}
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {product.variants.map((variant) => {
-                    const selected = variant.id === selectedVariantId
-                    const variantImage = variant.image || product.image || ''
-                    const variantStock = Number(variant.available_stock ?? 0)
-                    return (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        onClick={() => setSelectedVariantId(variant.id)}
-                        className={`min-w-[118px] rounded-[14px] border p-2 text-left transition ${
-                          selected
-                            ? 'border-[var(--text-primary)] bg-[var(--bg-soft)] shadow-[var(--shadow-soft)]'
-                            : 'border-default bg-white hover:border-[var(--text-primary)]/40'
-                        }`}
-                      >
-                        <div className="relative mb-2 aspect-square overflow-hidden rounded-[12px] bg-[var(--bg-soft)]">
-                          {variantImage ? (
-                            <Image
-                              src={variantImage}
-                              alt={`${product.name} ${variant.color_label || variant.color || ''}`}
-                              fill
-                              className="object-cover"
-                              unoptimized={shouldUseUnoptimizedImage(variantImage)}
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center">
-                              <span className="font-display text-3xl text-[var(--text-primary)]">{product.name.charAt(0)}</span>
-                            </div>
-                          )}
-                        </div>
-                        <p className="line-clamp-1 text-sm font-semibold text-[var(--text-primary)]">
-                          {variant.color_label || variant.color || 'Variant'}
-                        </p>
-                        <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                          {variantStock > 0 ? `${variantStock} available` : 'Out of stock'}
-                        </p>
-                      </button>
-                    )
-                  })}
+                <p className="text-sm font-medium text-[#2C1810] mb-3">Color</p>
+                <div className="flex gap-3">
+                  {colorOptions.map((colorOpt) => (
+                    <button
+                      key={colorOpt.id}
+                      onClick={() => setSelectedVariantId(colorOpt.id)}
+                      className={`w-10 h-10 rounded-full border-2 transition-all ${
+                        selectedVariantId === colorOpt.id
+                          ? 'border-[#8B6914] ring-2 ring-[#8B6914]/20'
+                          : 'border-[#E8E0D5] hover:border-[#8B6914]'
+                      }`}
+                      style={{ backgroundColor: colorOpt.color }}
+                      title={colorOpt.label}
+                    />
+                  ))}
                 </div>
               </div>
             )}
 
-            <p className="mt-6 whitespace-pre-line text-[16px] text-[var(--text-secondary)]">
-              {product.description || 'No description available for this product yet.'}
-            </p>
+            {/* Size Selector */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-[#2C1810]">Size</p>
+                <span className="text-xs text-[#8A7060]">{availableStock > 0 ? `${availableStock} in stock` : 'Out of stock'}</span>
+              </div>
+              <div className="relative">
+                <select 
+                  className="w-full appearance-none bg-white border border-[#E8E0D5] rounded-xl px-4 py-3 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] cursor-pointer"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Size Select</option>
+                  {sizeOptions.map((size) => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-[#8A7060] pointer-events-none" />
+              </div>
+            </div>
 
-            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end">
-              <label className="text-sm font-medium text-[var(--text-primary)]">
-                Quantity
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                    className="btn-secondary h-12 w-12 rounded-full px-0"
-                  >
-                    -
-                  </button>
-                  <span className="inline-flex h-12 min-w-12 items-center justify-center rounded-full border border-default bg-[var(--bg-primary)] px-4 text-base font-semibold text-[var(--text-primary)]">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((prev) => Math.min(availableStock || 1, prev + 1))}
-                    className="btn-secondary h-12 w-12 rounded-full px-0"
-                    disabled={availableStock <= 0}
-                  >
-                    +
-                  </button>
-                </div>
-              </label>
+            {/* Description */}
+            <div className="mt-6">
+              <p className="text-sm text-[#5C4033] leading-relaxed">
+                {product.description || 'Malaika cotton is Organic cotton Romper I olitier, and sfueck. Nez-production Romper.\n\n• Made with love in Kenya\n• Free yeturn, and lorres enalgiting rotat lorke it compaits\n• Care instructue derlicon chow.'}
+              </p>
+            </div>
 
+            {/* Add to Cart */}
+            <div className="mt-8 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={addToCart}
                 disabled={availableStock <= 0 || adding}
-                className="btn-primary inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold leading-none sm:flex-1 sm:px-6"
+                className="w-full bg-[#8B6914] hover:bg-[#6B5310] disabled:bg-[#8A7060] text-white font-medium py-4 rounded-full transition-colors flex items-center justify-center gap-2"
               >
-                <ShoppingBasket size={16} />
-                <span className="truncate">
-                  {adding ? 'Adding...' : `Add to Basket - KES ${total.toLocaleString()}`}
-                </span>
+                <ShoppingBasket size={18} />
+                {adding ? 'Adding...' : `Add to Cart - KES ${total.toLocaleString()}`}
               </button>
-
+              
               <button
                 type="button"
                 onClick={toggleWishlist}
-                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border border-default px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-soft)] sm:w-auto sm:px-6"
+                className="w-full border border-[#E8E0D5] hover:border-[#8B6914] text-[#5C4033] font-medium py-4 rounded-full transition-colors flex items-center justify-center gap-2"
               >
-                <Heart size={16} className={wishlisted ? 'fill-current' : ''} />
-                <span>{wishlisted ? 'Saved' : 'Save for later'}</span>
+                <Heart size={18} className={wishlisted ? 'fill-[#C4704A] text-[#C4704A]' : ''} />
+                {wishlisted ? 'Saved to Wishlist' : 'Save to Wishlist'}
               </button>
             </div>
 
-            <div className="mt-8 grid gap-3 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
-              <p className="inline-flex items-center gap-2"><Truck size={16} /> Fast delivery options</p>
-              <p className="inline-flex items-center gap-2"><ShieldCheck size={16} /> Secure checkout</p>
-              <p className="inline-flex items-center gap-2"><CheckCircle2 size={16} /> Quality assurance</p>
-              <p className="inline-flex items-center gap-2"><CheckCircle2 size={16} /> Parent-approved picks</p>
+            {/* Trust Badges */}
+            <div className="mt-8 grid grid-cols-3 gap-4">
+              {TRUST_BADGES.map((badge, i) => (
+                <div key={i} className="flex items-center gap-2 bg-white rounded-xl p-3 border border-[#E8E0D5]">
+                  <span className="text-2xl">{badge.icon}</span>
+                  <span className="text-[10px] text-[#5C4033] whitespace-pre-line leading-tight">{badge.label}</span>
+                </div>
+              ))}
             </div>
-          </section>
+
+            {/* Additional Info */}
+            <div className="mt-8 space-y-3 text-sm text-[#8A7060]">
+              <p className="flex items-center gap-2">
+                <Truck size={16} /> Free delivery on orders over KES 3,000
+              </p>
+              <p className="flex items-center gap-2">
+                <ShieldCheck size={16} /> Secure M-Pesa checkout
+              </p>
+              <p className="flex items-center gap-2">
+                <CheckCircle2 size={16} /> Same-day delivery in Mombasa
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* You May Also Like */}
+        <div className="mt-16 pt-16 border-t border-[#E8E0D5]">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#2C1810]">
+              You May Also Like
+            </h2>
+            <Link 
+              href="/categories" 
+              className="flex items-center gap-1 text-sm text-[#8B6914] font-medium hover:gap-2 transition-all"
+            >
+              View All <ChevronRight size={16} />
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {MOCK_RELATED_PRODUCTS.map((item) => (
+              <Link
+                key={item.id}
+                href={`/products/${item.slug}`}
+                className="group bg-white rounded-2xl overflow-hidden border border-[#E8E0D5] hover:border-[#8B6914]/30 hover:shadow-warm-md transition-all"
+              >
+                <div className="aspect-square bg-[#F5EFE6] relative overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Package className="w-12 h-12 text-[#C9A96E]" />
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="text-sm font-medium text-[#2C1810] line-clamp-2 group-hover:text-[#8B6914] transition-colors">
+                    {item.name}
+                  </h3>
+                  <p className="mt-2 font-serif font-semibold text-[#8B6914]">
+                    KES {item.price}
+                  </p>
+                  <button className="mt-3 w-full bg-[#8B6914] text-white text-xs font-medium py-2 rounded-full hover:bg-[#6B5310] transition-colors">
+                    Add to Cart
+                  </button>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Reviews Section */}
-        {product && <ReviewSection productId={product.id} />}
+        <div className="mt-16">
+          {product && <ReviewSection productId={product.id} />}
+        </div>
       </div>
     </div>
   )
 }
-

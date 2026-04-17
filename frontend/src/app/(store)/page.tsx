@@ -7,10 +7,12 @@
 
 import HeroSection from '@/components/home/HeroSection';
 import {
+  ShopByAgeSection,
   CategoryQuickLinks,
   ProductSection,
   ValuePropsSection,
   TestimonialsSection,
+  NewsletterSection,
 } from '@/components/home/ProductShowcase';
 import { getImageUrl } from '@/lib/media';
 
@@ -26,6 +28,8 @@ interface Product {
   review_count?: number;
   featured?: boolean;
   stock?: number;
+  available_stock?: number;
+  has_variants?: boolean;
   badge?: string;
   badge_color?: string;
 }
@@ -99,8 +103,6 @@ async function getNewArrivals(): Promise<Product[]> {
   }
 }
 
-
-
 export default async function HomePage() {
   const [featured, bestSellers, newArrivals] = await Promise.all([
     getFeaturedProducts(),
@@ -114,13 +116,16 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* 1. Full-bleed slideshow hero (includes banners) */}
+      {/* 1. Hero Section with new warm aesthetic */}
       <HeroSection />
 
-      {/* 2. Category quick-links */}
+      {/* 2. Shop by Age - new horizontal scroll section */}
+      <ShopByAgeSection />
+
+      {/* 3. Category quick-links */}
       <CategoryQuickLinks />
 
-      {/* 3. Featured — large + side list */}
+      {/* 4. Featured — large + side list */}
       <ProductSection
         label="Hand-picked"
         title="Featured Products"
@@ -129,10 +134,10 @@ export default async function HomePage() {
         layout="featured+3"
       />
 
-      {/* 4. Value props */}
+      {/* 5. Value props */}
       <ValuePropsSection />
 
-      {/* 5. Best sellers — 4 column grid */}
+      {/* 6. Best sellers — 4 column grid */}
       <ProductSection
         label="Most loved"
         title="Best Sellers"
@@ -141,10 +146,10 @@ export default async function HomePage() {
         layout="grid4"
       />
 
-      {/* 6. Testimonials */}
+      {/* 7. Testimonials */}
       <TestimonialsSection />
 
-      {/* 7. New arrivals — 4 column grid */}
+      {/* 8. New arrivals — 4 column grid */}
       <ProductSection
         label="Just landed"
         title="New Arrivals"
@@ -152,6 +157,9 @@ export default async function HomePage() {
         products={newArrivalProducts}
         layout="grid4"
       />
+
+      {/* 9. Newsletter */}
+      <NewsletterSection />
     </>
   );
 }

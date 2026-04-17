@@ -6,6 +6,7 @@ import { WishlistProvider } from '@/lib/wishlistContext'
 import Navbar from '@/components/layout/Navbar'
 import TrustBar from '@/components/layout/TrustBar'
 import Footer from '@/components/layout/Footer'
+import MobileNav from '@/components/layout/MobileNav'
 import { ToastContainer } from '@/components/Toast'
 import Chatbot from '@/components/Chatbot'
 
@@ -14,12 +15,13 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
     <AuthProvider>
       <WishlistProvider>
         <CartProvider>
-          <div className="min-h-screen flex flex-col">
+          <div className="min-h-screen flex flex-col bg-[#FDF8F3]">
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-20 lg:pb-0">{children}</main>
             <TrustBar />
             <Footer />
           </div>
+          <MobileNav />
           <Chatbot />
           <ToastContainer />
         </CartProvider>

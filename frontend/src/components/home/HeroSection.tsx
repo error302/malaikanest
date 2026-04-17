@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, CreditCard, Truck, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CreditCard, Truck, CheckCircle, Baby } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
 
 interface Slide {
@@ -31,42 +31,45 @@ interface Banner {
 const STATIC_SLIDES: Slide[] = [
   {
     image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=1920&q=80',
-    tag: 'New Season Arrivals',
-    headline: 'Everything your\nlittle one needs.',
-    sub: 'Premium baby essentials, carefully chosen for Kenyan families. Safe, affordable, delivered.',
-    cta: 'Shop Collection',
-    ctaHref: '/categories',
-    ctaSecondary: 'Best Sellers',
-    ctaSecondaryHref: '/best-sellers',
+    mobileImage: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80',
+    tag: 'Premium Baby Care',
+    headline: 'Premium Nest for\nLittle Ones',
+    sub: 'Handcrafted organic clothing, accessories & toys made with love in Kenya. For ages 0-12 years.',
+    cta: 'Shop Newborn',
+    ctaHref: '/categories?age=newborn',
+    ctaSecondary: 'Shop Everything',
+    ctaSecondaryHref: '/categories',
   },
   {
     image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1920&q=80',
-    tag: 'Safe & Tested',
-    headline: 'Clothing made\nfor soft skin.',
-    sub: 'Organic cotton onesies, rompers and sets — gentle on newborns, kind to parents budgets.',
+    mobileImage: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80',
+    tag: 'Organic Collection',
+    headline: 'Organic Cotton\nfor Soft Skin',
+    sub: 'Gentle, breathable fabrics made from 100% organic cotton. Perfect for your baby\'s delicate skin.',
     cta: 'Shop Clothing',
     ctaHref: '/categories',
   },
   {
     image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=1920&q=80',
+    mobileImage: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&q=80',
     tag: 'Gift Ideas',
-    headline: 'The perfect gift\nfor every baby.',
-    sub: 'Beautifully curated gift sets for baby showers, newborns and milestones.',
-    cta: 'Browse Gift Sets',
+    headline: 'The Perfect\nBaby Gift',
+    sub: 'Beautifully curated gift sets for baby showers, newborns and special milestones.',
+    cta: 'Browse Gifts',
     ctaHref: '/categories',
   },
 ];
 
 const FALLBACK_GRADIENTS = [
+  'from-[#3D2B1F] via-[#5C4033] to-[#3D2B1F]',
   'from-[#1A3A2A] via-[#254D38] to-[#1A3A2A]',
-  'from-[#3D2B1F] via-[#5C3D2E] to-[#3D2B1F]',
-  'from-[#1C2E4A] via-[#253D5E] to-[#1C2E4A]',
+  'from-[#2C1810] via-[#3D2B1F] to-[#2C1810]',
 ];
 
 const TRUST_BADGES = [
-  { Icon: CreditCard, label: 'Secure M-Pesa' },
-  { Icon: Truck, label: 'Fast Delivery' },
-  { Icon: CheckCircle, label: 'Parent Approved' },
+  { Icon: Baby, label: 'Made with love in Kenya' },
+  { Icon: Truck, label: 'FREE Shipping on KES 3,000+' },
+  { Icon: CheckCircle, label: 'Secure Payments' },
 ];
 
 const DEFAULT_BANNER_TAG = 'Welcome to Malaika Nest';
@@ -185,13 +188,14 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative w-full h-[88vh] min-h-[560px] max-h-[900px] overflow-hidden bg-[#1A3A2A]"
+      className="relative w-full h-[85vh] min-h-[600px] max-h-[900px] overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
       onTouchCancel={() => setIsPaused(false)}
     >
+      {/* Background Images */}
       {slides.map((s, i) => (
         <div
           key={i}
@@ -215,37 +219,44 @@ export default function HeroSection() {
               className={`w-full h-full bg-gradient-to-br ${FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length]}`}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent" />
+          {/* Soft overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
       ))}
 
+      {/* Content */}
       <div className="relative z-10 h-full flex items-center">
         <div className="max-w-[1380px] w-full mx-auto px-6 lg:px-16">
           <div
-            className={`max-w-xl transition-all duration-500 ${
+            className={`max-w-2xl transition-all duration-500 ${
               isTransitioning
                 ? 'opacity-0 translate-y-4'
                 : 'opacity-100 translate-y-0'
             }`}
           >
+            {/* Tag */}
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs uppercase tracking-[0.12em] px-4 py-1.5 rounded-full mb-5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#E8C98A] block" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E8D5B5] block" />
               {slide.tag}
             </div>
 
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.6rem] font-semibold text-white leading-[1.08] mb-5 whitespace-pre-line tracking-tight">
+            {/* Headline */}
+            <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.8rem] font-semibold text-white leading-[1.05] mb-5 whitespace-pre-line tracking-tight">
               {slide.headline}
+              <span className="text-[#E8D5B5]"> • 0-12 Years</span>
             </h1>
 
-            <p className="text-white/75 text-base sm:text-lg font-light leading-relaxed mb-8 max-w-md">
+            {/* Subtext */}
+            <p className="text-white/80 text-base sm:text-lg font-light leading-relaxed mb-8 max-w-lg">
               {slide.sub}
             </p>
 
+            {/* CTAs */}
             <div className="flex flex-wrap gap-3 items-center">
               <Link
                 href={slide.ctaHref}
-                className="inline-flex items-center gap-2 bg-[#C4704A] hover:bg-[#D4835E] text-white font-medium text-sm px-7 py-3.5 rounded-full transition-colors tracking-wide"
+                className="inline-flex items-center gap-2 bg-[#8B6914] hover:bg-[#6B5310] text-white font-medium text-sm px-8 py-4 rounded-full transition-colors tracking-wide"
               >
                 {slide.cta}
                 <ChevronRight size={16} />
@@ -253,18 +264,19 @@ export default function HeroSection() {
               {slide.ctaSecondary && (
                 <Link
                   href={slide.ctaSecondaryHref!}
-                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/30 text-white hover:bg-white/20 font-light text-sm px-7 py-3.5 rounded-full transition-all tracking-wide"
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/30 text-white hover:bg-white/20 font-light text-sm px-8 py-4 rounded-full transition-all tracking-wide"
                 >
                   {slide.ctaSecondary}
                 </Link>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-8 pt-6 border-t border-white/10">
+            {/* Trust badges */}
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-10 pt-6 border-t border-white/10">
               {TRUST_BADGES.map(({ Icon, label }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-1.5 text-white/60 text-xs tracking-wide"
+                  className="flex items-center gap-2 text-white/70 text-xs tracking-wide"
                 >
                   <Icon size={14} />
                   {label}
@@ -275,42 +287,51 @@ export default function HeroSection() {
         </div>
       </div>
 
+      {/* Navigation Arrows */}
       {hasMultipleSlides && (
         <>
           <button
             type="button"
             onClick={prev}
             aria-label="Previous slide"
-            className="absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
+            className="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={22} />
           </button>
           <button
             type="button"
             onClick={next}
             aria-label="Next slide"
-            className="absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
+            className="absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={22} />
           </button>
         </>
       )}
 
+      {/* Pagination Dots */}
       {hasMultipleSlides && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {slides.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => goTo(i)}
               aria-label={`Go to slide ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === current ? 'w-8 bg-[#E8C98A]' : 'w-2 bg-white/40 hover:bg-white/60'
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === current ? 'w-8 bg-[#E8D5B5]' : 'w-2 bg-white/40 hover:bg-white/60'
               }`}
             />
           ))}
         </div>
       )}
+
+      {/* Color dots decoration - matching the design */}
+      <div className="absolute bottom-8 left-8 z-20 hidden lg:flex gap-2">
+        <div className="w-3 h-3 rounded-full bg-[#8B6914]" />
+        <div className="w-3 h-3 rounded-full bg-[#C4704A]" />
+        <div className="w-3 h-3 rounded-full bg-[#E8D5B5]" />
+      </div>
     </section>
   );
 }

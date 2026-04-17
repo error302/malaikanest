@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Heart, ShoppingBasket, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, ShoppingBasket, Star, ArrowRight, Eye, Package, Truck, Shield, CreditCard, Gift, Shirt, Home, Gamepad2, Car, Sparkles, ChevronLeft, ChevronRight, Baby, ChevronRight as ArrowRightIcon } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
 import { useCart } from '@/lib/cartContext';
 import { useWishlist } from '@/lib/wishlistContext';
@@ -32,6 +32,63 @@ function priceKES(n: number) {
 
 function discount(price: number, original: number) {
   return Math.round(((original - price) / original) * 100);
+}
+
+// ── SHOP BY AGE SECTION ──
+const AGE_RANGES = [
+  { name: 'Newborn', slug: 'newborn', image: '/images/age-newborn.jpg' },
+  { name: '0-3 Months', slug: '0-3', image: '/images/age-0-3.jpg' },
+  { name: '3-6 Months', slug: '3-6', image: '/images/age-3-6.jpg' },
+  { name: '6-9 Months', slug: '6-9', image: '/images/age-6-9.jpg' },
+  { name: '1-12 Years', slug: '1-12', image: '/images/age-1-12.jpg' },
+  { name: '2-4 Years', slug: '2-4', image: '/images/age-2-4.jpg' },
+  { name: '4-6 Years', slug: '4-6', image: '/images/age-4-6.jpg' },
+  { name: '6-9 Years', slug: '6-9', image: '/images/age-6-9.jpg' },
+  { name: '9-12 Years', slug: '9-12', image: '/images/age-9-12.jpg' },
+];
+
+export function ShopByAgeSection() {
+  return (
+    <section className="py-12 px-6 lg:px-16 bg-[#FDF8F3]">
+      <div className="max-w-[1380px] mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#2C1810]">
+            Shop by Age
+          </h2>
+          <Link 
+            href="/categories" 
+            className="flex items-center gap-1 text-sm text-[#8B6914] font-medium hover:gap-2 transition-all"
+          >
+            View All <ChevronRight size={16} />
+          </Link>
+        </div>
+        
+        <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6 lg:mx-0 lg:px-0">
+          {AGE_RANGES.map((age) => (
+            <Link
+              key={age.slug}
+              href={`/categories?age=${age.slug}`}
+              className="group flex-shrink-0 flex flex-col items-center gap-3"
+            >
+              <div className="relative w-20 h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden bg-[#F5EFE6] border-2 border-transparent group-hover:border-[#8B6914] transition-all">
+                <div className="absolute inset-0 flex items-center justify-center bg-[#F5EFE6] group-hover:bg-[#8B6914]/10 transition-colors">
+                  <Baby className="w-8 h-8 text-[#8B6914]" />
+                </div>
+              </div>
+              <span className="text-sm font-medium text-[#2C1810] whitespace-nowrap">{age.name}</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Color indicator dots */}
+        <div className="flex gap-2 mt-6">
+          <div className="w-3 h-3 rounded-full bg-[#8B6914]" />
+          <div className="w-3 h-3 rounded-full bg-[#C4704A]" />
+          <div className="w-3 h-3 rounded-full bg-[#E8D5B5]" />
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function ProductCard({ product }: { product: Product }) {
@@ -90,7 +147,7 @@ function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <article className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#EDE3D8] hover:border-[#C9A96E]/50 hover:shadow-xl transition-all duration-300">
+    <article className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#EDE3D8] hover:border-[#8B6914]/30 hover:shadow-warm-md transition-all duration-300">
       <div className="relative bg-[#F5EFE6] aspect-square overflow-hidden">
         <Link
           href={`/products/${product.slug}`}
@@ -114,7 +171,7 @@ function ProductCard({ product }: { product: Product }) {
 
         {product.badge && (
           <div className={`absolute top-3 left-3 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-            product.badge_color ?? 'bg-[#1A3A2A] text-[#E8C98A]'
+            product.badge_color ?? 'bg-[#8B6914] text-white'
           }`}>
             {product.badge}
           </div>
@@ -169,13 +226,13 @@ function ProductCard({ product }: { product: Product }) {
             onClick={handleAddToCart}
             className={`relative z-10 flex-1 mx-2 max-w-[140px] h-9 rounded-full text-xs font-medium shadow-md flex items-center justify-center gap-1.5 transition-all ${
               addedToCart
-                ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                : hasVariants ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#1A3A2A] hover:text-[#E8C98A]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                ? 'bg-[#8B6914] text-white'
+                : hasVariants ? 'bg-white text-[#8B6914] hover:bg-[#8B6914] hover:text-white' : inStock ? 'bg-white text-[#8B6914] hover:bg-[#8B6914] hover:text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
             disabled={(!inStock && !hasVariants) || isAdding}
           >
             <ShoppingBasket size={13} />
-            {isAdding ? 'Adding...' : addedToCart ? 'Added to Basket' : hasVariants ? 'Choose Options' : inStock ? 'Add to Basket' : 'Out of Stock'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added' : hasVariants ? 'Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
@@ -192,7 +249,7 @@ function ProductCard({ product }: { product: Product }) {
           {categoryName}
         </p>
         <Link href={`/products/${product.slug}`} className="relative z-10">
-          <h3 className="text-sm font-medium text-[#2C1810] leading-snug mb-2 line-clamp-2 group-hover:text-[#1A3A2A] transition-colors">
+          <h3 className="text-sm font-medium text-[#2C1810] leading-snug mb-2 line-clamp-2 group-hover:text-[#8B6914] transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -213,7 +270,7 @@ function ProductCard({ product }: { product: Product }) {
         </div>
 
         <div className="mt-auto flex items-baseline gap-2">
-          <span className="font-serif text-lg font-semibold text-[#1A3A2A]">
+          <span className="font-serif text-lg font-semibold text-[#8B6914]">
             {priceKES(price)}
           </span>
           {originalPrice && originalPrice > price && (
@@ -227,20 +284,20 @@ function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold leading-none shadow-sm transition-all ${
+            className={`inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold leading-none shadow-sm transition-all ${
               addedToCart
-                  ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                  : hasVariants
-                    ? 'bg-white text-[#1A3A2A] ring-1 ring-[#D9C5B7] hover:bg-[#C4704A] hover:text-white'
-                    : inStock
-                  ? 'bg-[#C4704A] text-white hover:bg-[#B45F3A]'
-                  : 'cursor-not-allowed bg-gray-200 text-gray-500'
+                ? 'bg-[#8B6914] text-white'
+                : hasVariants
+                ? 'bg-white text-[#8B6914] ring-1 ring-[#D9C5B7] hover:bg-[#C4704A] hover:text-white hover:ring-0'
+                : inStock
+                ? 'bg-[#C4704A] text-white hover:bg-[#B45F3A]'
+                : 'cursor-not-allowed bg-gray-200 text-gray-500'
             }`}
             disabled={(!inStock && !hasVariants) || isAdding}
           >
             <ShoppingBasket size={18} />
             <span className="truncate">
-              {isAdding ? 'Adding...' : addedToCart ? 'Added to Basket' : hasVariants ? 'Choose Options' : inStock ? 'Add to Basket' : 'Out of Stock'}
+              {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
             </span>
           </button>
         </div>
@@ -289,19 +346,19 @@ function FeaturedCard({ product }: { product: Product }) {
 
   return (
     <div className="group relative rounded-3xl overflow-hidden bg-[#F5EFE6] flex flex-col justify-end min-h-[480px] lg:min-h-[560px]">
-        {!imageError && imageUrl ? (
-          <SmartImage
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-103"
-            sizes="(max-width:1024px) 100vw, 50vw"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#F5EFE6]">
-            <Sparkles className="w-20 h-20 text-[#C9A96E]" />
-          </div>
+      {!imageError && imageUrl ? (
+        <SmartImage
+          src={product.image}
+          alt={product.name}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-103"
+          sizes="(max-width:1024px) 100vw, 50vw"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#F5EFE6]">
+          <Sparkles className="w-20 h-20 text-[#C9A96E]" />
+        </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
@@ -317,7 +374,7 @@ function FeaturedCard({ product }: { product: Product }) {
           {product.name}
         </h3>
         <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-[#E8C98A] font-serif text-2xl font-semibold">
+          <span className="text-[#E8D5B5] font-serif text-2xl font-semibold">
             {priceKES(price)}
           </span>
           {originalPrice && originalPrice > price && (
@@ -332,13 +389,13 @@ function FeaturedCard({ product }: { product: Product }) {
             onClick={handleAddToCart}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
               addedToCart
-                ? 'bg-[#1A3A2A] text-[#E8C98A]'
-                : hasVariants ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : inStock ? 'bg-white text-[#1A3A2A] hover:bg-[#C4704A] hover:text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                ? 'bg-[#8B6914] text-white'
+                : hasVariants ? 'bg-white text-[#8B6914] hover:bg-[#C4704A] hover:text-white' : inStock ? 'bg-white text-[#8B6914] hover:bg-[#C4704A] hover:text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
             disabled={(!inStock && !hasVariants) || isAdding}
           >
             <ShoppingBasket size={14} />
-            {isAdding ? 'Adding...' : addedToCart ? 'Added to Basket' : hasVariants ? 'Choose Options' : inStock ? 'Add to Basket' : 'Out of Stock'}
+            {isAdding ? 'Adding...' : addedToCart ? 'Added!' : hasVariants ? 'Choose Options' : inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <Link
             href={`/products/${product.slug}`}
@@ -352,6 +409,7 @@ function FeaturedCard({ product }: { product: Product }) {
   );
 }
 
+// Category quick links - horizontal scroll on mobile
 const CATEGORIES = [
   { name: 'Clothing', href: '/categories', Icon: Shirt, color: 'bg-rose-50 hover:bg-rose-100' },
   { name: 'Essentials', href: '/categories', Icon: Package, color: 'bg-amber-50 hover:bg-amber-100' },
@@ -363,17 +421,17 @@ const CATEGORIES = [
 
 export function CategoryQuickLinks() {
   return (
-    <section className="bg-[#FAF4EC] py-10 px-6 lg:px-16">
+    <section className="bg-[#FAF4EC] py-8 px-6 lg:px-16">
       <div className="max-w-[1380px] mx-auto">
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-6 px-6 lg:mx-0 lg:px-0">
           {CATEGORIES.map(({ name, href, Icon, color }) => (
             <Link
               key={name}
               href={href}
-              className={`${color} rounded-2xl py-5 flex flex-col items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md border border-transparent hover:border-[#C9A96E]/20`}
+              className={`${color} rounded-full px-5 py-3 flex items-center gap-2 transition-all duration-200 hover:shadow-warm-sm border border-transparent whitespace-nowrap`}
             >
-              <Icon className="w-7 h-7 text-[#1A3A2A]" />
-              <span className="text-xs font-medium text-[#2C1810]">{name}</span>
+              <Icon className="w-5 h-5 text-[#8B6914]" />
+              <span className="text-sm font-medium text-[#2C1810]">{name}</span>
             </Link>
           ))}
         </div>
@@ -459,12 +517,12 @@ export function ProductSection({
           <div className="flex items-end justify-between mb-8">
             <div>
               {label && (
-                <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[#C4704A] font-medium mb-1.5">
-                  <span className="block w-5 h-px bg-[#C4704A]" />
+                <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[#8B6914] font-medium mb-1.5">
+                  <span className="block w-5 h-px bg-[#8B6914]" />
                   {label}
                 </p>
               )}
-              <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#1A3A2A]">
+              <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#2C1810]">
                 {title}
               </h2>
             </div>
@@ -475,7 +533,7 @@ export function ProductSection({
                     type="button"
                     onClick={goPrev}
                     aria-label={`Show previous ${title.toLowerCase()}`}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
                   >
                     <ChevronLeft size={16} />
                   </button>
@@ -483,7 +541,7 @@ export function ProductSection({
                     type="button"
                     onClick={goNext}
                     aria-label={`Show next ${title.toLowerCase()}`}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -491,7 +549,7 @@ export function ProductSection({
               )}
               <Link
                 href={viewAllHref}
-                className="flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
+                className="flex items-center gap-1.5 text-sm text-[#8B6914] font-medium hover:gap-2.5 transition-all"
               >
                 View all <ArrowRight size={15} />
               </Link>
@@ -505,7 +563,7 @@ export function ProductSection({
                 <Link
                   key={p.id}
                   href={`/products/${p.slug}`}
-                  className="group flex gap-4 bg-white rounded-2xl p-4 border border-[#EDE3D8] hover:border-[#C9A96E]/40 hover:shadow-lg transition-all"
+                  className="group flex gap-4 bg-white rounded-2xl p-4 border border-[#EDE3D8] hover:border-[#8B6914]/30 hover:shadow-warm-md transition-all"
                 >
                   <div className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-[#F5EFE6]">
                     {p.image && (
@@ -522,11 +580,11 @@ export function ProductSection({
                     <p className="text-[10px] uppercase tracking-widest text-[#8A7060] mb-0.5">
                       {p.category?.name ?? 'Products'}
                     </p>
-                    <h3 className="text-sm font-medium text-[#2C1810] line-clamp-2 leading-snug mb-1 group-hover:text-[#1A3A2A]">
+                    <h3 className="text-sm font-medium text-[#2C1810] line-clamp-2 leading-snug mb-1 group-hover:text-[#8B6914]">
                       {p.name}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <span className="font-serif text-base font-semibold text-[#1A3A2A]">
+                      <span className="font-serif text-base font-semibold text-[#8B6914]">
                         KES {Number(p.price).toLocaleString('en-KE')}
                       </span>
                       {p.original_price && Number(p.original_price) > Number(p.price) && (
@@ -552,7 +610,7 @@ export function ProductSection({
                 type="button"
                 onClick={goPrev}
                 aria-label={`Show previous ${title.toLowerCase()}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -560,7 +618,7 @@ export function ProductSection({
                 type="button"
                 onClick={goNext}
                 aria-label={`Show next ${title.toLowerCase()}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
               >
                 <ChevronRight size={18} />
               </button>
@@ -577,12 +635,12 @@ export function ProductSection({
         <div className="flex items-end justify-between mb-8">
           <div>
             {label && (
-              <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[#C4704A] font-medium mb-1.5">
-                <span className="block w-5 h-px bg-[#C4704A]" />
+              <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[#8B6914] font-medium mb-1.5">
+                <span className="block w-5 h-px bg-[#8B6914]" />
                 {label}
               </p>
             )}
-            <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#1A3A2A]">
+            <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#2C1810]">
               {title}
             </h2>
           </div>
@@ -593,7 +651,7 @@ export function ProductSection({
                   type="button"
                   onClick={goPrev}
                   aria-label={`Show previous ${title.toLowerCase()}`}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -601,7 +659,7 @@ export function ProductSection({
                   type="button"
                   onClick={goNext}
                   aria-label={`Show next ${title.toLowerCase()}`}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -609,7 +667,7 @@ export function ProductSection({
             )}
             <Link
               href={viewAllHref}
-              className="flex items-center gap-1.5 text-sm text-[#C4704A] font-medium hover:gap-2.5 transition-all"
+              className="flex items-center gap-1.5 text-sm text-[#8B6914] font-medium hover:gap-2.5 transition-all"
             >
               View all <ArrowRight size={15} />
             </Link>
@@ -617,7 +675,7 @@ export function ProductSection({
         </div>
 
         <div className={`grid gap-4 lg:gap-5 ${
-          layout === 'grid3' 
+          layout === 'grid3'
             ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
             : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4'
         }`}>
@@ -633,7 +691,7 @@ export function ProductSection({
                 type="button"
                 onClick={goPrev}
                 aria-label={`Show previous ${title.toLowerCase()}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -641,7 +699,7 @@ export function ProductSection({
                 type="button"
                 onClick={goNext}
                 aria-label={`Show next ${title.toLowerCase()}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#1A3A2A] transition-colors hover:bg-[#F5EFE6]"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#DCC7B4] bg-white text-[#8B6914] transition-colors hover:bg-[#F5EFE6]"
               >
                 <ChevronRight size={18} />
               </button>
@@ -649,7 +707,7 @@ export function ProductSection({
           )}
           <Link
             href={viewAllHref}
-            className="flex items-center justify-center gap-2 w-full py-3 border border-[#C9A96E]/30 rounded-full text-sm text-[#1A3A2A] font-medium hover:bg-[#F5EFE6] transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 border border-[#8B6914]/30 rounded-full text-sm text-[#8B6914] font-medium hover:bg-[#F5EFE6] transition-colors"
           >
             View all <ArrowRight size={15} />
           </Link>
@@ -671,8 +729,8 @@ export function ValuePropsSection() {
     <section className="py-14 px-6 lg:px-16 bg-[#FAF4EC]">
       <div className="max-w-[1380px] mx-auto">
         <div className="text-center mb-10">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[#C4704A] font-medium mb-2">Why Malaika Nest</p>
-          <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#1A3A2A]">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-[#8B6914] font-medium mb-2">Why Malaika Nest</p>
+          <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#2C1810]">
             Built for Kenyan parents
           </h2>
         </div>
@@ -680,10 +738,10 @@ export function ValuePropsSection() {
           {VALUE_PROPS.map(({ Icon, title, body }) => (
             <div
               key={title}
-              className="bg-white rounded-2xl p-6 border border-[#EDE3D8] hover:border-[#C9A96E]/40 hover:shadow-md transition-all"
+              className="bg-white rounded-2xl p-6 border border-[#EDE3D8] hover:border-[#8B6914]/30 hover:shadow-warm-sm transition-all"
             >
-              <Icon className="w-8 h-8 text-[#C4704A] mb-4" />
-              <h3 className="font-semibold text-[#1A3A2A] mb-2">{title}</h3>
+              <Icon className="w-8 h-8 text-[#8B6914] mb-4" />
+              <h3 className="font-semibold text-[#2C1810] mb-2">{title}</h3>
               <p className="text-sm text-[#5C4033] leading-relaxed font-light">{body}</p>
             </div>
           ))}
@@ -704,11 +762,11 @@ export function TestimonialsSection() {
     <section className="py-14 px-6 lg:px-16 bg-[#FDF8F3]">
       <div className="max-w-[1380px] mx-auto">
         <div className="mb-8">
-          <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[#C4704A] font-medium mb-1.5">
-            <span className="block w-5 h-px bg-[#C4704A]" />
+          <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[#8B6914] font-medium mb-1.5">
+            <span className="block w-5 h-px bg-[#8B6914]" />
             Customer Reviews
           </p>
-          <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#1A3A2A]">
+          <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-[#2C1810]">
             What Kenyan parents are saying
           </h2>
         </div>
@@ -727,7 +785,7 @@ export function TestimonialsSection() {
                 &ldquo;{r.text}&rdquo;
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#1A3A2A] flex items-center justify-center font-serif text-sm font-semibold text-[#E8C98A]">
+                <div className="w-10 h-10 rounded-full bg-[#8B6914] flex items-center justify-center font-serif text-sm font-semibold text-white">
                   {r.initials}
                 </div>
                 <div>
@@ -755,9 +813,9 @@ export function NewsletterSection() {
   };
 
   return (
-    <section className="py-14 px-6 lg:px-16 bg-[#1A3A2A]">
+    <section className="py-14 px-6 lg:px-16 bg-[#2C1810]">
       <div className="max-w-[640px] mx-auto text-center">
-        <p className="text-[11px] uppercase tracking-[0.14em] text-[#E8C98A] font-medium mb-3">Stay connected</p>
+        <p className="text-[11px] uppercase tracking-[0.14em] text-[#E8D5B5] font-medium mb-3">Stay connected</p>
         <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-white mb-3">
           New arrivals &amp; exclusive offers
         </h2>
@@ -765,7 +823,7 @@ export function NewsletterSection() {
           Join 2,400+ Kenyan parents. No spam, just good products and honest deals.
         </p>
         {submitted ? (
-          <div className="bg-[#E8C98A]/10 border border-[#E8C98A]/30 rounded-xl py-4 px-6 text-[#E8C98A] text-sm font-medium">
+          <div className="bg-[#E8D5B5]/10 border border-[#E8D5B5]/30 rounded-xl py-4 px-6 text-[#E8D5B5] text-sm font-medium">
             Welcome to the Malaika Nest family.
           </div>
         ) : (
@@ -776,11 +834,11 @@ export function NewsletterSection() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              className="flex-1 bg-white/10 border border-white/20 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#E8C98A]/50"
+              className="flex-1 bg-white/10 border border-white/20 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#E8D5B5]/50"
             />
             <button
               type="submit"
-              className="bg-[#C4704A] hover:bg-[#D4835E] text-white text-sm font-medium px-6 py-3 rounded-full transition-colors whitespace-nowrap"
+              className="bg-[#8B6914] hover:bg-[#6B5310] text-white text-sm font-medium px-6 py-3 rounded-full transition-colors whitespace-nowrap"
             >
               Subscribe
             </button>

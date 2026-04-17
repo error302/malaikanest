@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { TrendingUp, ShoppingBag, Package, Users, DollarSign, Plus, Eye, User, ArrowRight } from 'lucide-react'
 import api from '@/lib/api'
 
 interface Stats {
@@ -106,8 +107,8 @@ export default function AdminDashboard() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="relative">
-          <div className="w-16 h-16 rounded-full border-4 border-amber-100"></div>
-          <div className="absolute top-0 left-0 w-16 h-16 rounded-full border-4 border-amber-600 border-t-transparent animate-spin"></div>
+          <div className="w-16 h-16 rounded-full border-4 border-[#E8D5B5]"></div>
+          <div className="absolute top-0 left-0 w-16 h-16 rounded-full border-4 border-[#8B6914] border-t-transparent animate-spin"></div>
         </div>
       </div>
     )
@@ -117,54 +118,30 @@ export default function AdminDashboard() {
     {
       label: 'Total Revenue',
       value: formatCurrency(stats.totalRevenue),
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      bg: 'linear-gradient(135deg, #E6F2FF 0%, #DBEAFE 100%)',
-      iconBg: 'bg-blue-500',
-      trend: 'Live',
-      trendUp: true,
+      icon: DollarSign,
+      bg: 'bg-gradient-to-br from-[#8B6914]/10 to-[#C9A96E]/10',
+      iconBg: 'bg-[#8B6914]',
     },
     {
       label: 'Total Orders',
       value: stats.totalOrders,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
-      ),
-      bg: 'linear-gradient(135deg, #FCE4EC 0%, #F8BBD9 100%)',
-      iconBg: 'bg-rose-500',
-      trend: 'Live',
-      trendUp: true,
+      icon: ShoppingBag,
+      bg: 'bg-gradient-to-br from-[#C4704A]/10 to-[#E8A88A]/10',
+      iconBg: 'bg-[#C4704A]',
     },
     {
       label: 'Pending Orders',
       value: stats.pendingOrders,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      bg: 'linear-gradient(135deg, #FFF8E7 0%, #FEF3C7 100%)',
+      icon: Package,
+      bg: 'bg-gradient-to-br from-amber-100 to-amber-50',
       iconBg: 'bg-amber-500',
-      trend: 'Live',
-      trendUp: false,
     },
     {
       label: 'Total Products',
       value: stats.totalProducts,
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-      ),
-      bg: 'linear-gradient(135deg, #E8F8F5 0%, #A7F3D0 100%)',
+      icon: TrendingUp,
+      bg: 'bg-gradient-to-br from-emerald-100 to-emerald-50',
       iconBg: 'bg-emerald-500',
-      trend: 'Live',
-      trendUp: true,
     },
   ]
 
@@ -172,35 +149,23 @@ export default function AdminDashboard() {
     {
       label: 'Add Product',
       desc: 'Create new listing',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-      ),
+      icon: Plus,
       href: '/admin/products/new',
-      gradient: 'from-amber-600 to-amber-700',
+      gradient: 'from-[#8B6914] to-[#6B5310]',
     },
     {
       label: 'View Orders',
       desc: 'Process pending orders',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-      ),
+      icon: Eye,
       href: '/admin/orders',
-      gradient: 'from-slate-600 to-slate-700',
+      gradient: 'from-[#5C4033] to-[#3D2B1F]',
     },
     {
       label: 'Customers',
       desc: 'Manage customers',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
+      icon: User,
       href: '/admin/customers',
-      gradient: 'from-violet-600 to-violet-700',
+      gradient: 'from-[#C4704A] to-[#B45F3A]',
     },
   ]
 
@@ -208,135 +173,135 @@ export default function AdminDashboard() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>Dashboard</h2>
-          <p className="text-slate-500 mt-1">Welcome back! Here&apos;s what&apos;s happening today.</p>
+          <h2 className="text-3xl font-bold text-[#2C1810] font-serif">Dashboard</h2>
+          <p className="text-[#8A7060] mt-1">Welcome back! Here&apos;s what&apos;s happening today.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-[#8A7060]">
             Last updated: {new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
       </div>
 
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {kpiCards.map((kpi, idx) => (
-          <div key={idx} className="relative overflow-hidden rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group" style={{ background: kpi.bg }}>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-600 mb-1">{kpi.label}</p>
-                <p className="text-3xl font-bold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>{kpi.value}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <span className={`text-xs font-semibold ${kpi.trendUp ? 'text-emerald-600' : 'text-rose-600'}`}>{kpi.trend}</span>
-                  <span className="text-xs text-slate-400">analytics</span>
+        {kpiCards.map((kpi, idx) => {
+          const Icon = kpi.icon
+          return (
+            <div key={idx} className={`relative overflow-hidden rounded-2xl p-6 shadow-warm-sm hover:shadow-warm-md transition-all duration-300 group ${kpi.bg}`}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#5C4033] mb-1">{kpi.label}</p>
+                  <p className="text-3xl font-bold text-[#2C1810] font-serif">{kpi.value}</p>
+                </div>
+                <div className={`${kpi.iconBg} p-3 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="w-6 h-6" />
                 </div>
               </div>
-              <div className={`${kpi.iconBg} p-3 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                {kpi.icon}
-              </div>
+              <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/30 blur-2xl"></div>
             </div>
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/20 blur-2xl"></div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        {/* Sales Chart */}
+        <div className="xl:col-span-2 bg-white rounded-2xl shadow-warm-sm border border-[#E8E0D5] p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>Sales Overview</h3>
-            <span className="text-sm text-slate-500">Last 6 months</span>
+            <h3 className="text-lg font-semibold text-[#2C1810] font-serif">Sales Overview</h3>
+            <span className="text-sm text-[#8A7060]">Last 6 months</span>
           </div>
           <div className="h-64 flex items-end justify-between gap-3">
             {salesChartData.data.map((value, idx) => (
               <div key={idx} className="flex-1 flex flex-col items-center gap-2">
                 <div className="w-full flex flex-col items-center gap-1">
-                  <span className="text-xs font-medium text-slate-500">{formatCurrency(value)}</span>
+                  <span className="text-xs font-medium text-[#8A7060]">{formatCurrency(value)}</span>
                   <div
-                    className="w-full max-w-[40px] bg-gradient-to-t from-amber-500 to-amber-400 rounded-t-lg transition-all duration-500 hover:from-amber-600 hover:to-amber-500"
+                    className="w-full max-w-[40px] bg-gradient-to-t from-[#8B6914] to-[#C9A96E] rounded-t-lg transition-all duration-500 hover:from-[#6B5310] hover:to-[#8B6914]"
                     style={{ height: `${(value / maxChartValue) * 160}px`, minHeight: value > 0 ? '8px' : '0' }}
                   ></div>
                 </div>
-                <span className="text-xs font-medium text-slate-400">{salesChartData.labels[idx]}</span>
+                <span className="text-xs font-medium text-[#8A7060]">{salesChartData.labels[idx]}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-6" style={{ fontFamily: 'Montserrat, sans-serif' }}>Quick Actions</h3>
+        {/* Quick Actions */}
+        <div className="bg-white rounded-2xl shadow-warm-sm border border-[#E8E0D5] p-6">
+          <h3 className="text-lg font-semibold text-[#2C1810] font-serif mb-6">Quick Actions</h3>
           <div className="space-y-3">
-            {quickActions.map((action, idx) => (
-              <Link key={idx} href={action.href} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200 group">
-                <div className={`p-2.5 rounded-xl text-white shadow-lg ${action.gradient} group-hover:scale-110 transition-transform duration-200`}>
-                  {action.icon}
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-800">{action.label}</p>
-                  <p className="text-sm text-slate-500">{action.desc}</p>
-                </div>
-                <svg className="w-5 h-5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            ))}
+            {quickActions.map((action, idx) => {
+              const Icon = action.icon
+              return (
+                <Link key={idx} href={action.href} className="flex items-center gap-4 p-4 rounded-xl border border-[#E8E0D5] hover:border-[#8B6914]/30 hover:shadow-warm-sm transition-all duration-200 group">
+                  <div className={`p-2.5 rounded-xl text-white shadow-lg bg-gradient-to-br ${action.gradient} group-hover:scale-110 transition-transform duration-200`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-[#2C1810]">{action.label}</p>
+                    <p className="text-sm text-[#8A7060]">{action.desc}</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-[#E8E0D5] group-hover:text-[#8B6914] group-hover:translate-x-1 transition-all" />
+                </Link>
+              )
+            })}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+      {/* Recent Orders */}
+      <div className="bg-white rounded-2xl shadow-warm-sm border border-[#E8E0D5] overflow-hidden">
+        <div className="p-6 border-b border-[#E8E0D5] flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-slate-800" style={{ fontFamily: 'Montserrat, sans-serif' }}>Recent Orders</h3>
-            <p className="text-sm text-slate-500 mt-0.5">Latest transactions from your store</p>
+            <h3 className="text-lg font-semibold text-[#2C1810] font-serif">Recent Orders</h3>
+            <p className="text-sm text-[#8A7060] mt-0.5">Latest transactions from your store</p>
           </div>
-          <Link href="/admin/orders" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-xl font-medium text-sm hover:bg-amber-100 transition-colors focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+          <Link href="/admin/orders" className="inline-flex items-center gap-2 px-4 py-2 bg-[#F5EFE6] text-[#8B6914] rounded-xl font-medium text-sm hover:bg-[#E8D5B5] transition-colors">
             View All
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
         {recentOrders.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-50 flex items-center justify-center">
-              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F5EFE6] flex items-center justify-center">
+              <ShoppingBag className="w-8 h-8 text-[#C9A96E]" />
             </div>
-            <p className="text-slate-600 font-medium">No orders yet</p>
-            <p className="text-sm text-slate-400 mt-1">Orders will appear here when customers purchase</p>
+            <p className="text-[#5C4033] font-medium">No orders yet</p>
+            <p className="text-sm text-[#8A7060] mt-1">Orders will appear here when customers purchase</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50/50">
+              <thead className="bg-[#FAF4EC]">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Order</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C4033] uppercase tracking-wider">Order</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C4033] uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C4033] uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C4033] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#5C4033] uppercase tracking-wider">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E8E0D5]">
                 {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={order.id} className="hover:bg-[#FAF4EC]/50 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-800">#{order.order_number}</span>
+                      <span className="font-semibold text-[#2C1810]">#{order.order_number}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-semibold">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B6914] to-[#C4704A] flex items-center justify-center text-white text-xs font-semibold">
                           {order.customer_name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <div>
-                          <span className="text-sm text-slate-600 block">{order.customer_name}</span>
-                          {order.customer_email && <span className="text-xs text-slate-400">{order.customer_email}</span>}
+                          <span className="text-sm text-[#5C4033] block">{order.customer_name}</span>
+                          {order.customer_email && <span className="text-xs text-[#8A7060]">{order.customer_email}</span>}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-800">{formatCurrency(parseFloat(order.total) || 0)}</span>
+                      <span className="font-semibold text-[#2C1810]">{formatCurrency(parseFloat(order.total) || 0)}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
@@ -344,7 +309,7 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-slate-500">{formatDate(order.created_at)}</span>
+                      <span className="text-sm text-[#8A7060]">{formatDate(order.created_at)}</span>
                     </td>
                   </tr>
                 ))}
