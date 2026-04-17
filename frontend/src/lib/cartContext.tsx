@@ -155,7 +155,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCart = useCallback(async () => {
     try {
-      const res = await api.get('/api/v1/orders/cart/', { headers: { 'Cache-Control': 'no-store' } })
+      const res = await api.get('/api/v1/orders/cart/', { headers: { 'Cache-Control': 'no-store', 'X-No-Auth-Redirect': 'true' } })
       dispatch({ type: 'HYDRATE', cartData: normalizeCartData(res.data) })
       setSynced(true)
     } catch (e) {

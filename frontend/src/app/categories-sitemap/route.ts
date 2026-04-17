@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetch(
-      `${apiUrl}/api/products/categories/?page_size=${PAGE_SIZE}&page=${page}`,
+      `${apiUrl}/api/v1/products/categories/?page_size=${PAGE_SIZE}&page=${page}`,
       { next: { revalidate: 3600 } }
     )
     

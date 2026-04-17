@@ -493,26 +493,28 @@ def cancel_stale_pending_orders():
 
     cancelled_count = 0
     for order in stale_orders:
-        with transaction.atomic():
-            for item in order.items.all():
-                if item.variant_reference:
-                    VariantInventory.objects.filter(
-                        variant_id=item.variant_reference,
-                        reserved__gte=item.quantity,
-                    ).update(
-                        reserved=F('reserved') - item.quantity
-                    )
-                    sync_product_stock(item.product_id)
-                else:
-                    Inventory.objects.filter(
-                        product_id=item.product_id,
-                        reserved__gte=item.quantity,
-                    ).update(
-                        reserved=F('reserved') - item.quantity
-                    )
-            order.status = 'cancelled'
-            order.save(update_fields=['status'])
+        success, error_msg = order.transition_to(Order.STATUS_CANCELLED, save=True)
+        if success:
+            with transaction.atomic():
+                for item in order.items.all():
+                    if item.variant_reference:
+                        VariantInventory.objects.filter(
+                            variant_id=item.variant_reference,
+                            reserved__gte=item.quantity,
+                        ).update(
+                            reserved=F('reserved') - item.quantity
+                        )
+                        sync_product_stock(item.product_id)
+                    else:
+                        Inventory.objects.filter(
+                            product_id=item.product_id,
+                            reserved__gte=item.quantity,
+                        ).update(
+                            reserved=F('reserved') - item.quantity
+                        )
             cancelled_count += 1
+        else:
+            logger.error(f"Failed to cancel stale order {order.id}: {error_msg}")
 
     if cancelled_count > 0:
         logger.info(f"Cancelled {cancelled_count} stale pending orders and restored inventory.")
@@ -667,6 +669,7 @@ def handle_order_status_change(order_id, old_status, new_status):
     # Define status change events
     status_events = {
         ('pending', 'paid'): [
+            ('reduce_inventory', reduce_inventory),
             ('generate_invoice', generate_invoice),
             ('send_payment_confirmation', send_payment_confirmation),
         ],

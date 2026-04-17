@@ -63,7 +63,7 @@ export default function SettingsPage() {
     setSessionExpired(false)
 
     api
-      .get('/api/core/settings/')
+      .get('/api/v1/core/settings/')
       .then((res) => {
         if (!mounted) return
         setSettings({ ...DEFAULTS, ...res.data })
@@ -104,7 +104,7 @@ export default function SettingsPage() {
       form.append('minimum_order_amount', String(settings.minimum_order_amount ?? ''))
       if (logoFile) form.append('logo', logoFile)
 
-      const res = await api.patch('/api/core/settings/', form)
+      const res = await api.patch('/api/v1/core/settings/', form)
       setSettings({ ...DEFAULTS, ...res.data })
       setLogoFile(null)
       showToast('Settings saved.', 'success')

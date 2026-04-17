@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ShieldCheck, User } from 'lucide-react'
@@ -130,14 +130,17 @@ function CheckoutContent() {
     return true
   }
 
+  const preparingRef = useRef(false)
+
   const prepareOrder = useCallback(async () => {
-    if (orderId) return orderId
+    if (orderId || preparingRef.current) return orderId
 
     if (!validateGuestForm()) {
       return null
     }
 
     setError('')
+    preparingRef.current = true
 
     try {
       const checkoutData: Record<string, any> = {
@@ -168,6 +171,7 @@ function CheckoutContent() {
       setPaymentInitiated(true)
       return createdOrderId
     } catch (err: unknown) {
+      preparingRef.current = false
       setError(handleApiError(err))
       throw err
     }

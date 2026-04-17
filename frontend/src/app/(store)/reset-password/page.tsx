@@ -42,7 +42,7 @@ function ResetPasswordForm() {
     setLoading(true)
 
     try {
-      await api.post('/api/accounts/password/reset/confirm/', {
+      await api.post('/api/v1/accounts/password/reset/confirm/', {
         token,
         email,
         new_password: password,

@@ -85,7 +85,7 @@ export default function BestSellersPage() {
 
   useEffect(() => {
     api
-      .get("/api/products/brands/")
+      .get("/api/v1/products/brands/")
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
         setBrands(rows)
@@ -111,7 +111,7 @@ export default function BestSellersPage() {
     if (search) params.search = search
 
     api
-      .get("/api/products/products/", { params })
+      .get("/api/v1/products/products/", { params })
       .then((res) => {
         const rows = Array.isArray(res.data) ? res.data : res.data?.results || []
         setProducts(rows)

@@ -54,7 +54,7 @@ export default function EditBannerPage() {
   useEffect(() => {
     const loadBanner = async () => {
       try {
-        const res = await api.get(`/api/products/admin/banners/${bannerId}/`)
+        const res = await api.get(`/api/v1/products/admin/banners/${bannerId}/`)
         const banner: Banner = res.data
 
         setForm({
@@ -122,7 +122,7 @@ export default function EditBannerPage() {
         payload.append('mobile_image', mobileImage)
       }
 
-      await api.patch(`/api/products/admin/banners/${bannerId}/`, payload)
+      await api.patch(`/api/v1/products/admin/banners/${bannerId}/`, payload)
       clearCache('/api/products/banners/')
       router.push('/admin/banners')
     } catch (submitError) {

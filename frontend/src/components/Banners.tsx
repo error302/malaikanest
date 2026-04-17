@@ -19,7 +19,7 @@ export default function Banners() {
   useEffect(() => {
     let mounted = true
     console.log('Fetching banners...')
-    api.get('/api/products/banners/')
+    api.get('/api/v1/products/banners/')
       .then((res) => {
         console.log('Banners response:', res.data)
         // Handle standardized API response: { success, data: { count, results }, error }

@@ -30,7 +30,7 @@ export default function ProductsList({ queryParams }: { queryParams?: QueryParam
     }
 
     api
-      .get('/api/products/products/', { params: { page, page_size: PAGE_SIZE, ...parsedQueryParams } })
+      .get('/api/v1/products/products/', { params: { page, page_size: PAGE_SIZE, ...parsedQueryParams } })
       .then((res) => {
         if (!mounted) return
         const data = res.data

@@ -16,7 +16,6 @@ from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from django.conf import settings
 
 try:
@@ -82,15 +81,27 @@ class BrandViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
-        cache.clear()
+        try:
+            for key in cache.keys('products_list_*'):
+                cache.delete(key)
+        except Exception:
+            cache.clear()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        cache.clear()
+        try:
+            for key in cache.keys('products_list_*'):
+                cache.delete(key)
+        except Exception:
+            cache.clear()
 
     def perform_destroy(self, instance):
         super().perform_destroy(instance)
-        cache.clear()
+        try:
+            for key in cache.keys('products_list_*'):
+                cache.delete(key)
+        except Exception:
+            cache.clear()
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -191,7 +202,10 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def list(self, request, *args, **kwargs):
-        cache_key = f"products_list_{request.GET.urlencode()}"
+        from urllib.parse import urlencode, parse_qs
+        params = parse_qs(request.GET.urlencode(), keep_blank_values=True)
+        sorted_params = urlencode(sorted(params.items()), doseq=True)
+        cache_key = f"products_list_{sorted_params}"
         cached_data = cache.get(cache_key)
 
         if cached_data is not None:
@@ -256,9 +270,10 @@ class ProductViewSet(viewsets.ModelViewSet):
         if featured:
             queryset = queryset.filter(featured=featured.lower() == "true")
 
-        status_value = self.request.query_params.get("status")
-        if status_value:
-            queryset = queryset.filter(status=status_value)
+        # FIX: Remove public status filter to prevent draft product leakage
+        # status_value = self.request.query_params.get("status")
+        # if status_value:
+        #     queryset = queryset.filter(status=status_value)
 
         slug = self.request.query_params.get("slug")
         if slug:

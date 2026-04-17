@@ -39,7 +39,7 @@ export default function OrdersPage() {
 
   const fetchOrders = async (): Promise<Order[]> => {
     try {
-      const res = await api.get('/api/products/admin/orders/')
+      const res = await api.get('/api/v1/orders/admin/orders/')
       const data = Array.isArray(res.data) ? res.data : res.data?.results || []
       setOrders(data)
       return data
@@ -57,7 +57,7 @@ export default function OrdersPage() {
     setActionError('')
 
     try {
-      await api.patch(`/api/products/admin/orders/${selectedOrder.id}/update_status/`, { status: newStatus })
+      await api.patch(`/api/v1/orders/admin/orders/${selectedOrder.id}/update_status/`, { status: newStatus })
       const latest = await fetchOrders()
       const refreshed = latest.find((o) => o.id === selectedOrder.id)
       setSelectedOrder(refreshed || null)
@@ -100,7 +100,14 @@ export default function OrdersPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map((order) => (
+            {filteredOrders.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-500">
+                  No orders found{filter !== 'all' ? ` with status "${filter}".` : '.'}
+                </td>
+              </tr>
+            ) : (
+              filteredOrders.map((order) => (
               <tr key={order.id} className="border-t">
                 <td className="px-4 py-3 text-sm">{order.order_number || `#${order.id}`}</td>
                 <td className="px-4 py-3 text-sm">{order.customer_name || order.user_email}</td>
@@ -110,7 +117,8 @@ export default function OrdersPage() {
                 <td className="px-4 py-3 text-sm">{order.mpesa_receipt_number || '-'}</td>
                 <td className="px-4 py-3"><button onClick={() => setSelectedOrder(order)} className="px-3 py-1 bg-slate-100 rounded text-xs">View</button></td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>

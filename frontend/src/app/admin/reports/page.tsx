@@ -30,7 +30,7 @@ export default function ReportsPage() {
   const fetchReportData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.get(`/api/orders/admin/reports/?days=${dateRange}`)
+      const res = await api.get(`/api/v1/orders/admin/reports/?days=${dateRange}`)
       setReportData(res.data)
     } catch (error) {
       console.error('Error fetching reports:', error)
@@ -47,7 +47,7 @@ export default function ReportsPage() {
   const exportToCSV = async () => {
     setExporting(true)
     try {
-      const response = await api.get('/api/orders/admin/orders/export/', {
+      const response = await api.get('/api/v1/orders/admin/orders/export/', {
         responseType: 'blob',
       })
       const url = window.URL.createObjectURL(new Blob([response.data]))

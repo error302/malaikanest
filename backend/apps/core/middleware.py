@@ -156,8 +156,10 @@ class RateLimitMiddleware:
             pass
         except Exception:
             logger.warning("Rate limit cache unavailable while reading TTL for %s", key)
-        
-        if "auth" in key or "password" in key:
+
+        if 'password_reset' in key:
+            return 3600
+        if ':auth:' in key:
             return 60
         return 3600
     

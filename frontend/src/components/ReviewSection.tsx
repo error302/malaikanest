@@ -56,7 +56,7 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await api.get(`/api/products/reviews/?product=${productId}`)
+      const res = await api.get(`/api/v1/products/reviews/?product=${productId}`)
       const reviewList = res.data.results || res.data || []
       setReviews(reviewList)
 
@@ -106,7 +106,7 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
 
     try {
       setSubmitting(true)
-      await api.post('/api/products/reviews/', {
+      await api.post('/api/v1/products/reviews/', {
         product: productId,
         rating,
         title: title.trim(),

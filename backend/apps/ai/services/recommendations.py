@@ -58,7 +58,7 @@ def get_personalized_recommendations(
     from apps.orders.models import Order, OrderItem
     
     try:
-        orders = Order.objects.filter(email=user_email, status='completed')
+        orders = Order.objects.filter(user__email=user_email, status='delivered')
         order_items = OrderItem.objects.filter(order__in=orders)
         
         purchased_categories = Product.objects.filter(
@@ -81,7 +81,7 @@ def get_trending_products(limit: int = 10) -> List[Dict[str, Any]]:
     from apps.orders.models import OrderItem
     
     product_ids = OrderItem.objects.filter(
-        order__status='completed'
+        order__status='delivered'
     ).values_list('product_id', flat=True)
     
     from django.db.models import Count

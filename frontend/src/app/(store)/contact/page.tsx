@@ -22,7 +22,7 @@ export default function ContactPage() {
     setError('')
 
     try {
-      await api.post('/api/core/contact/', formData)
+      await api.post('/api/v1/core/contact/', formData)
       setSent(true)
     } catch (err: unknown) {
       const detail =

@@ -86,6 +86,14 @@ class ContactFormView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return Response(
+                {"detail": "Please provide a valid email address."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         email_validator = EmailValidator(message="Please enter a valid email address.")
         try:
             email_validator(email)

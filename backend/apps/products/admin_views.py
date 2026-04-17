@@ -52,9 +52,12 @@ class AdminProductViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        if OrderItem.objects.filter(product=instance).exists():
+            raise ValidationError(
+                {"detail": "Cannot delete this product because it is referenced by existing orders. Deactivate it instead."}
+            )
         with transaction.atomic():
             CartItem.objects.filter(product=instance).delete()
-            OrderItem.objects.filter(product=instance).delete()
             self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -197,7 +200,16 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
                 {"detail": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST
             )
 
+        old_status = order.status
         order.status = new_status
         order.save(update_fields=["status", "updated_at"])
+
+        try:
+            from apps.orders.tasks import handle_order_status_change
+            handle_order_status_change.delay(order.id, old_status, new_status)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to trigger status change tasks for order {order.id}: {e}")
 
         return Response(self.get_serializer(order).data)
