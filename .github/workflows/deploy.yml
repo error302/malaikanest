@@ -38,9 +38,12 @@ jobs:
             git pull --ff-only origin main
 
             if id appuser >/dev/null 2>&1; then
-              sudo install -d -m 775 -o appuser -g appuser "$APP_DIR/backend/logs"
+              DEPLOY_USER="$(id -un)"
+              sudo install -d -m 2775 -o "$DEPLOY_USER" -g appuser "$APP_DIR/backend/logs"
               sudo touch "$APP_DIR/backend/logs/kenya_ecom.log" "$APP_DIR/backend/logs/production.json.log" "$APP_DIR/backend/logs/security.log"
-              sudo chown appuser:appuser "$APP_DIR/backend/logs" "$APP_DIR/backend/logs/"*
+              sudo chown "$DEPLOY_USER":appuser "$APP_DIR/backend/logs" "$APP_DIR/backend/logs/"*
+              sudo find "$APP_DIR/backend/logs" -type d -exec chmod 2775 {} \;
+              sudo find "$APP_DIR/backend/logs" -type f -exec chmod 664 {} \;
             fi
 
             cd "$APP_DIR/backend"
