@@ -53,6 +53,10 @@ def payload_hash(payload):
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
+def make_json_serializable(payload):
+    return json.loads(json.dumps(payload, sort_keys=True, default=str))
+
+
 def audit_log(
     event_type,
     payload,
@@ -64,6 +68,7 @@ def audit_log(
     notes="",
     source="api",
 ):
+    safe_payload = make_json_serializable(payload)
     try:
         PaymentAuditLog.objects.create(
             payment=payment,
@@ -73,8 +78,8 @@ def audit_log(
             checkout_request_id=checkout_request_id,
             merchant_request_id=merchant_request_id,
             result_code=str(result_code) if result_code is not None else None,
-            payload_hash=payload_hash(payload),
-            payload=payload,
+            payload_hash=payload_hash(safe_payload),
+            payload=safe_payload,
             notes=notes,
         )
     except Exception as exc:

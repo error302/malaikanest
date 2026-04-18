@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const path = require('path')
+const apiProxyTarget =
+  process.env.INTERNAL_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:8000'
 
 const nextConfig = {
   reactStrictMode: true,
@@ -155,6 +159,15 @@ const nextConfig = {
             value: 'public, max-age=15552000',
           },
         ],
+      },
+    ]
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${apiProxyTarget}/api/:path*`,
       },
     ]
   },

@@ -10,15 +10,46 @@ import { useAuth } from '@/lib/authContext'
 import MpesaCheckout from '@/components/MpesaCheckout'
 
 type CartData = {
-  id: number
+  id: string
   items: Array<{
-    id: number
-    product: { id: number; name: string; price: string; image: string }
+    id: string
+    product: { id: string; name: string; price: string; image: string }
     quantity: number
   }>
   subtotal: string
   discount?: string
   total: string
+}
+
+const normalizeCartData = (payload: unknown): CartData | null => {
+  if (!payload || typeof payload !== 'object') return null
+
+  const data = payload as Partial<CartData> & {
+    items?: Array<{
+      id?: string
+      product?: { id?: string; name?: string; price?: string; image?: string }
+      quantity?: number
+    }>
+  }
+
+  return {
+    id: String(data.id ?? ''),
+    items: Array.isArray(data.items)
+      ? data.items.map((item) => ({
+          id: String(item.id ?? ''),
+          product: {
+            id: String(item.product?.id ?? ''),
+            name: item.product?.name || 'Product',
+            price: String(item.product?.price ?? '0'),
+            image: item.product?.image || '',
+          },
+          quantity: Number(item.quantity ?? 0),
+        }))
+      : [],
+    subtotal: String(data.subtotal ?? '0'),
+    discount: String(data.discount ?? '0'),
+    total: String(data.total ?? '0'),
+  }
 }
 
 const DELIVERY_FEES: Record<string, number> = {
@@ -46,7 +77,7 @@ function CheckoutContent() {
   const [isGift, setIsGift] = useState(false)
   const [giftMessage, setGiftMessage] = useState('')
   const [error, setError] = useState('')
-  const [orderId, setOrderId] = useState<number | null>(null)
+  const [orderId, setOrderId] = useState<string | null>(null)
   const [paymentInitiated, setPaymentInitiated] = useState(false)
   const router = useRouter()
 
@@ -63,7 +94,7 @@ function CheckoutContent() {
     setLoading(true)
     try {
       const res = await api.get('/api/v1/orders/cart/')
-      setCart(res.data)
+      setCart(normalizeCartData(res.data))
       setError('')
     } catch (err: unknown) {
       setError(handleApiError(err))
@@ -162,7 +193,7 @@ function CheckoutContent() {
 
       const checkoutRes = await api.post('/api/v1/orders/cart/checkout/', checkoutData)
 
-      const createdOrderId = Number(checkoutRes.data?.id)
+      const createdOrderId = String(checkoutRes.data?.id || '').trim()
       if (!createdOrderId) {
         throw new Error('Order could not be created.')
       }
@@ -193,7 +224,7 @@ function CheckoutContent() {
     )
   }
 
-  if (!cart || cart.items.length === 0) {
+  if (!cart || (cart.items?.length ?? 0) === 0) {
     return (
       <div className="pb-20 pt-10">
         <div className="container-shell">
@@ -419,6 +450,7 @@ function CheckoutContent() {
                 <MpesaCheckout
                   orderId={orderId}
                   totalAmount={payableTotal}
+                  guestEmail={isGuestCheckout ? guestEmail : ''}
                   onPrepareOrder={prepareOrder}
                   onInitiate={(_checkoutRequestId, createdOrderId) => {
                     setOrderId(createdOrderId)
@@ -426,8 +458,13 @@ function CheckoutContent() {
                     setError('')
                   }}
                   onSuccess={(receipt, createdOrderId) => {
-                    const params = new URLSearchParams({ order_id: String(createdOrderId) })
+                    const params = new URLSearchParams({
+                      order_id: String(createdOrderId),
+                      delivery_region: deliveryRegion,
+                      total: String(payableTotal),
+                    })
                     if (receipt) params.set('receipt', receipt)
+                    if (isGuestCheckout) params.set('guest', '1')
                     router.push(`/checkout/success?${params.toString()}`)
                   }}
                   onFailure={(message) => {

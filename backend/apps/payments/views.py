@@ -26,6 +26,19 @@ logger = logging.getLogger("apps.payments")
 
 from .services import PaymentService, normalize_phone, is_valid_mpesa_ip, audit_log
 
+
+def resolve_order_for_request(request, order_id):
+    order_qs = Order.objects.filter(pk=order_id)
+
+    if request.user.is_authenticated:
+        return order_qs.filter(user=request.user).first()
+
+    guest_email = (request.data.get("guest_email") or request.query_params.get("guest_email") or "").strip().lower()
+    if not guest_email:
+        return None
+
+    return order_qs.filter(guest_email__iexact=guest_email).first()
+
 class InitiatePaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -139,7 +152,7 @@ class MpesaInitiateView(APIView):
     - Returns CheckoutRequestID
     """
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     throttle_scope = "payments"
 
     def post(self, request):
@@ -148,7 +161,7 @@ class MpesaInitiateView(APIView):
         if not order_id or not phone:
             return Response({"detail": "order_id and phone are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order.objects.filter(pk=order_id, user=request.user).first()
+        order = resolve_order_for_request(request, order_id)
         if not order:
             return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
         if order.status != "pending":
@@ -187,15 +200,20 @@ class MpesaInitiateView(APIView):
 
 
 class PaymentVerifyView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     throttle_scope = "payments"
 
     def get(self, request, checkout_request_id):
-        payment = (
-            Payment.objects.select_related("order")
-            .filter(mpesa_checkout_request_id=checkout_request_id, order__user=request.user)
-            .first()
+        payment_qs = Payment.objects.select_related("order").filter(
+            mpesa_checkout_request_id=checkout_request_id
         )
+
+        if request.user.is_authenticated:
+            payment = payment_qs.filter(order__user=request.user).first()
+        else:
+            guest_email = (request.query_params.get("guest_email") or "").strip().lower()
+            payment = payment_qs.filter(order__guest_email__iexact=guest_email).first() if guest_email else None
+
         if not payment:
             return Response({"detail": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 

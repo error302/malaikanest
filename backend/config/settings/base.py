@@ -199,6 +199,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "cache-control",
     "pragma",
     "expires",
+    "x-no-auth-redirect",
 ]
 
 _csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")

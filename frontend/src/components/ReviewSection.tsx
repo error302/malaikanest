@@ -53,11 +53,20 @@ export default function ReviewSection({ productId }: ReviewSectionProps) {
   const { isAuthenticated, user } = useAuth()
   const userHasReviewed = user ? reviews.some((r) => r.user === user.id) : false
 
+  const normalizeReviews = (payload: unknown): Review[] => {
+    if (Array.isArray(payload)) return payload as Review[]
+    if (payload && typeof payload === 'object') {
+      const maybeResults = (payload as { results?: unknown }).results
+      if (Array.isArray(maybeResults)) return maybeResults as Review[]
+    }
+    return []
+  }
+
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
       const res = await api.get(`/api/v1/products/reviews/?product=${productId}`)
-      const reviewList = res.data.results || res.data || []
+      const reviewList = normalizeReviews(res.data)
       setReviews(reviewList)
 
       if (reviewList.length > 0) {

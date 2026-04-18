@@ -251,6 +251,7 @@ class CartViewSet(viewsets.ViewSet):
         shipping_phone = request.data.get("shipping_phone", "")
         shipping_address = request.data.get("shipping_address", "")
         shipping_city = request.data.get("shipping_city", "")
+        shipping_county = request.data.get("shipping_county", "")
         shipping_postal_code = request.data.get("shipping_postal_code", "")
         notes = request.data.get("notes", "")
 

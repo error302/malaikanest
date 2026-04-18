@@ -14,6 +14,20 @@ from .models import DELIVERY_FEES
 
 class OrderService:
     @staticmethod
+    def _split_shipping_name(shipping_name, user=None):
+        full_name = (shipping_name or "").strip()
+        if not full_name and user:
+            full_name = (user.get_full_name() or "").strip()
+
+        if not full_name:
+            return "", ""
+
+        parts = full_name.split(None, 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+        return first_name, last_name
+
+    @staticmethod
     def _get_locked_inventory(product):
         inventory, _ = Inventory.objects.select_for_update().get_or_create(
             product=product,
@@ -54,6 +68,7 @@ class OrderService:
         shipping_phone="",
         shipping_address="",
         shipping_city="",
+        shipping_county="",
         shipping_postal_code="",
         notes="",
     ):
@@ -65,6 +80,10 @@ class OrderService:
             raise ValueError("Cart is empty")
 
         with transaction.atomic():
+            shipping_first_name, shipping_last_name = OrderService._split_shipping_name(
+                shipping_name,
+                user=user,
+            )
             cart_items = cart.items.select_related("product", "variant").all()
             product_ids = [ci.product_id for ci in cart_items]
             variant_ids = [ci.variant_id for ci in cart_items if ci.variant_id]
@@ -129,10 +148,12 @@ class OrderService:
                 delivery_region=delivery_region,
                 is_gift=is_gift,
                 gift_message=gift_message if is_gift else "",
-                shipping_name=shipping_name or (user.get_full_name() if user else ""),
+                shipping_first_name=shipping_first_name,
+                shipping_last_name=shipping_last_name,
                 shipping_phone=shipping_phone or (user.phone_number if user and hasattr(user, 'phone_number') else guest_phone or ""),
                 shipping_address=shipping_address,
                 shipping_city=shipping_city,
+                shipping_region=shipping_county,
                 shipping_postal_code=shipping_postal_code,
                 shipping_notes=notes,
             )

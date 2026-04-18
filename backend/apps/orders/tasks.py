@@ -19,6 +19,27 @@ import logging
 logger = logging.getLogger("apps.orders")
 
 
+def _attach_invoice_pdf(message, invoice):
+    if not invoice or not invoice.pdf_file:
+        return
+
+    filename = getattr(invoice.pdf_file, "name", "") or f"invoice-{invoice.invoice_number}.pdf"
+    filename = filename.split("/")[-1]
+
+    if hasattr(invoice.pdf_file, "open"):
+        invoice.pdf_file.open("rb")
+        try:
+            message.attach(filename, invoice.pdf_file.read(), "application/pdf")
+        finally:
+            try:
+                invoice.pdf_file.close()
+            except Exception:
+                pass
+        return
+
+    message.attach_file(invoice.pdf_file.path)
+
+
 # ==================== ORDER EMAIL TASKS ====================
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -124,7 +145,7 @@ Thank you for shopping with Malaika Nest!
         # Attach PDF invoice if available
         if invoice and invoice.pdf_file:
             try:
-                msg.attach_file(invoice.pdf_file.path)
+                _attach_invoice_pdf(msg, invoice)
             except Exception as e:
                 logger.warning(f"Could not attach invoice PDF: {e}")
         
@@ -314,7 +335,7 @@ def resend_invoice_email(self, order_id):
         # Attach PDF if exists
         if invoice and invoice.pdf_file:
             try:
-                msg.attach_file(invoice.pdf_file.path)
+                _attach_invoice_pdf(msg, invoice)
             except Exception as e:
                 logger.warning(f"Could not attach invoice PDF: {e}")
         

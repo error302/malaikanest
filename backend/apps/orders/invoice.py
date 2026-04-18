@@ -195,18 +195,11 @@ def save_invoice_pdf(order):
         pdf_content, invoice_number = generate_invoice_pdf(order, invoice.invoice_number)
 
         if pdf_content:
-            media_root = settings.MEDIA_ROOT
-            invoice_dir = media_root / 'invoices' / datetime.now().strftime('%Y') / datetime.now().strftime('%m')
-            invoice_dir.mkdir(parents=True, exist_ok=True)
-
+            from django.core.files.base import ContentFile
             filename = f"{invoice_number}.pdf"
-            file_path = invoice_dir / filename
-
-            with open(file_path, 'wb') as file_handle:
-                file_handle.write(pdf_content)
 
             invoice.invoice_number = invoice_number
-            invoice.pdf_file = f'invoices/{datetime.now().strftime("%Y")}/{datetime.now().strftime("%m")}/{filename}'
+            invoice.pdf_file.save(filename, ContentFile(pdf_content), save=False)
             invoice.save()
 
             logger.info('Generated invoice %s for order %s', invoice_number, order.id)

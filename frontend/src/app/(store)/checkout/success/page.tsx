@@ -42,28 +42,35 @@ function SuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('order_id')
   const receiptFromQuery = searchParams.get('receipt')
+  const deliveryRegionFromQuery = searchParams.get('delivery_region')
+  const totalFromQuery = searchParams.get('total')
+  const isGuestCheckout = searchParams.get('guest') === '1'
   const [order, setOrder] = useState<any>(null)
   const [showConfetti, setShowConfetti] = useState(true)
 
   useEffect(() => {
-    if (orderId) {
-      api.get(`/api/v1/orders/orders/${orderId}/`)
+    if (orderId && !isGuestCheckout) {
+      api.get(`/api/v1/orders/orders/${orderId}/`, {
+        headers: { 'X-No-Auth-Redirect': 'true' },
+      })
         .then((res) => setOrder(res.data))
         .catch(() => {})
     }
 
     const timer = setTimeout(() => setShowConfetti(false), 3000)
     return () => clearTimeout(timer)
-  }, [orderId])
+  }, [isGuestCheckout, orderId])
 
   const estimatedDelivery = (() => {
-    const region = order?.delivery_region || 'nairobi'
+    const region = order?.delivery_region || deliveryRegionFromQuery || 'nairobi'
     const days = region === 'mombasa' ? 0 : region === 'nairobi' ? 2 : 4
     if (days === 0) return 'Today (Same Day Delivery)'
     const date = new Date()
     date.setDate(date.getDate() + days)
     return date.toLocaleDateString('en-KE', { weekday: 'long', month: 'long', day: 'numeric' })
   })()
+
+  const totalPaid = order?.total ?? totalFromQuery
 
   return (
     <div className="pb-20 pt-10">
@@ -103,11 +110,11 @@ function SuccessContent() {
                 {estimatedDelivery}
               </span>
             </div>
-            {order?.total && (
+            {totalPaid && (
               <div className="flex items-center justify-between border-t border-default pt-3">
                 <span className="text-sm text-[var(--text-secondary)]">Total Paid</span>
                 <span className="font-semibold text-green-600">
-                  KES {Number(order.total).toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+                  KES {Number(totalPaid).toLocaleString('en-KE', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             )}
@@ -135,13 +142,16 @@ function SuccessContent() {
           </p>
 
           <div className="relative z-10 mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/account/orders"
-              className="btn-primary inline-flex items-center justify-center gap-2 px-7"
-            >
-              <Package size={18} />
-              View My Orders
-            </Link>
+            {!isGuestCheckout && (
+              <Link
+                href="/account/orders"
+                prefetch={false}
+                className="btn-primary inline-flex items-center justify-center gap-2 px-7"
+              >
+                <Package size={18} />
+                View My Orders
+              </Link>
+            )}
             <Link
               href="/categories"
               className="btn-secondary inline-flex items-center justify-center gap-2 px-7"

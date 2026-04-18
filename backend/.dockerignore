@@ -1,2 +1,13 @@
 fly.toml
 .git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+media/
+staticfiles/
+logs/
+tmp-*.log
+nohup.out

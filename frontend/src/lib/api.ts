@@ -85,23 +85,41 @@ const retryWithBackoff = async <T>(
 }
 
 const normalizeHost = (host: string) => host.replace(/^www\./i, '').toLowerCase()
+const getEffectivePort = (url: URL) => {
+  if (url.port) return url.port
+  if (url.protocol === 'https:') return '443'
+  if (url.protocol === 'http:') return '80'
+  return ''
+}
 
 const getBaseUrl = (): string => {
   // In the browser, prefer same-origin requests so auth cookies always attach
   // (especially important when users hit either www/non-www).
   if (typeof window !== 'undefined') {
     const origin = window.location.origin
+    const pageUrl = new URL(origin)
 
-    // If API_URL is unset, use relative URLs.
-    if (!API_URL) return ''
+    // Local Docker/browser testing needs an explicit backend port because
+    // the frontend runs on :3000 while Django is exposed on :8000.
+    if (!API_URL) {
+      if (['localhost', '127.0.0.1'].includes(pageUrl.hostname)) {
+        return `${pageUrl.protocol}//${pageUrl.hostname}:8000`
+      }
+      return ''
+    }
 
     // If API_URL points to the same "site host" (ignoring leading www), also use relative URLs.
     try {
-      const apiOrigin = new URL(API_URL).origin
-      const apiHost = normalizeHost(new URL(API_URL).hostname)
-      const pageHost = normalizeHost(new URL(origin).hostname)
+      const apiUrl = new URL(API_URL)
+      const apiOrigin = apiUrl.origin
+      const apiHost = normalizeHost(apiUrl.hostname)
+      const pageHost = normalizeHost(pageUrl.hostname)
+      const apiPort = getEffectivePort(apiUrl)
+      const pagePort = getEffectivePort(pageUrl)
 
-      if (apiHost === pageHost) return ''
+      if (apiHost === pageHost && apiPort === pagePort && apiUrl.protocol === pageUrl.protocol) {
+        return ''
+      }
 
       // Different origins (local dev, separate domains): use explicit API_URL.
       if (apiOrigin !== origin) return API_URL
@@ -171,17 +189,34 @@ api.interceptors.response.use(
     if (isApiEnvelope(payload)) {
       const inner = payload.data;
 
-      // Paginated response: preserve {count, next, previous, results} shape
-      // so components can read res.data.results / res.data.count
-      const isPaginated =
+      // Paginated response: preserve a flat {results, count, next, previous}
+      // shape for both classic DRF pagination and the project's {results, meta}
+      // envelope so components can always read res.data.results safely.
+      const isCountPaginated =
         inner &&
         typeof inner === 'object' &&
         !Array.isArray(inner) &&
         'results' in inner &&
         'count' in inner;
 
-      if (isPaginated) {
+      const isMetaPaginated =
+        inner &&
+        typeof inner === 'object' &&
+        !Array.isArray(inner) &&
+        'results' in inner &&
+        'meta' in inner &&
+        inner.meta &&
+        typeof inner.meta === 'object';
+
+      if (isCountPaginated) {
         response.data = inner; // {count, next, previous, results}
+      } else if (isMetaPaginated) {
+        response.data = {
+          ...inner,
+          count: (inner.meta as any).count ?? 0,
+          next: (inner.meta as any).next ?? null,
+          previous: (inner.meta as any).previous ?? null,
+        };
       } else if (Array.isArray(inner)) {
         response.data = inner; // bare array
       } else if (inner !== null && typeof inner === 'object') {

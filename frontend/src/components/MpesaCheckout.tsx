@@ -5,13 +5,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import api, { handleApiError } from "@/lib/api"
 
 interface MpesaCheckoutProps {
-  orderId?: number | null
+  orderId?: string | null
   totalAmount: number
   defaultPhone?: string
-  onSuccess?: (receipt: string, orderId: number) => void
+  guestEmail?: string
+  onSuccess?: (receipt: string, orderId: string) => void
   onFailure?: (message?: string) => void
-  onInitiate?: (checkoutRequestId: string, orderId: number) => void
-  onPrepareOrder?: () => Promise<number>
+  onInitiate?: (checkoutRequestId: string, orderId: string) => void
+  onPrepareOrder?: () => Promise<string | null>
 }
 
 type Stage = "idle" | "sending" | "waiting" | "success" | "failed"
@@ -80,6 +81,7 @@ export default function MpesaCheckout({
   orderId,
   totalAmount,
   defaultPhone = "",
+  guestEmail = "",
   onSuccess,
   onFailure,
   onInitiate,
@@ -121,7 +123,7 @@ export default function MpesaCheckout({
     onFailure?.(message)
   }, [clearTimers, onFailure])
 
-  const startPolling = useCallback((checkoutRequestId: string, resolvedOrderId: number) => {
+  const startPolling = useCallback((checkoutRequestId: string, resolvedOrderId: string) => {
     clearTimers()
     setElapsed(0)
     setStage("waiting")
@@ -133,7 +135,9 @@ export default function MpesaCheckout({
 
     const poll = async () => {
       try {
-        const res = await api.get(`/api/v1/payments/verify/${encodeURIComponent(checkoutRequestId)}/`)
+        const res = await api.get(`/api/v1/payments/verify/${encodeURIComponent(checkoutRequestId)}/`, {
+          params: guestEmail ? { guest_email: guestEmail } : undefined,
+        })
         const payment = res.data
 
         if (payment.status === "completed") {
@@ -164,7 +168,7 @@ export default function MpesaCheckout({
     }, 120000)
 
     pollTimeoutRef.current = setTimeout(poll, 3000)
-  }, [clearTimers, failPayment, onSuccess])
+  }, [clearTimers, failPayment, guestEmail, onSuccess])
 
   useEffect(() => {
     setPhone(stripPhonePrefix(defaultPhone))
@@ -188,7 +192,7 @@ export default function MpesaCheckout({
     setStage("sending")
 
     try {
-      let resolvedOrderId = orderId && orderId > 0 ? orderId : null
+      let resolvedOrderId = orderId ? String(orderId) : null
 
       if (!resolvedOrderId) {
         if (!onPrepareOrder) {
@@ -200,6 +204,7 @@ export default function MpesaCheckout({
       const response = await api.post("/api/v1/payments/mpesa/initiate/", {
         order_id: resolvedOrderId,
         phone: normalizedPhone,
+        guest_email: guestEmail || undefined,
       })
 
       const checkoutRequestId = response.data?.checkout_request_id

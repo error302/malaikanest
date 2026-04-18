@@ -7,7 +7,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     h.strip()
-    for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for h in os.getenv(
+        "ALLOWED_HOSTS",
+        "localhost,127.0.0.1,0.0.0.0,backend,frontend,host.docker.internal",
+    ).split(",")
     if h.strip()
 ]
 

@@ -16,6 +16,9 @@ import {
 } from '@/components/home/ProductShowcase';
 import { getImageUrl } from '@/lib/media';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface Product {
   id: number;
   name: string;
@@ -34,19 +37,28 @@ interface Product {
   badge_color?: string;
 }
 
+function getApiBaseUrl(): string {
+  return (
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'https://malaikanest.duckdns.org'
+  );
+}
+
 async function getFeaturedProducts(): Promise<Product[]> {
+  const apiBaseUrl = getApiBaseUrl();
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?featured=true&limit=8`,
-      { next: { revalidate: 60 } }
+      `${apiBaseUrl}/api/v1/products/products/?featured=true&limit=8`,
+      { cache: 'no-store' }
     );
     if (!res.ok) return [];
     const data = await res.json();
     const results = data.results ?? data.data?.results ?? [];
     if (!results.length) {
       const fallback = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=8`,
-        { next: { revalidate: 60 } }
+        `${apiBaseUrl}/api/v1/products/products/?ordering=-created_at&limit=8`,
+        { cache: 'no-store' }
       );
       if (fallback.ok) {
         const fd = await fallback.json();
@@ -68,10 +80,11 @@ async function getFeaturedProducts(): Promise<Product[]> {
 }
 
 async function getBestSellers(): Promise<Product[]> {
+  const apiBaseUrl = getApiBaseUrl();
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=8`,
-      { next: { revalidate: 60 } }
+      `${apiBaseUrl}/api/v1/products/products/?ordering=-created_at&limit=8`,
+      { cache: 'no-store' }
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -86,10 +99,11 @@ async function getBestSellers(): Promise<Product[]> {
 }
 
 async function getNewArrivals(): Promise<Product[]> {
+  const apiBaseUrl = getApiBaseUrl();
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/products/products/?ordering=-created_at&limit=8`,
-      { next: { revalidate: 60 } }
+      `${apiBaseUrl}/api/v1/products/products/?ordering=-created_at&limit=8`,
+      { cache: 'no-store' }
     );
     if (!res.ok) return [];
     const data = await res.json();

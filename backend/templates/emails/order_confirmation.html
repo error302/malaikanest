@@ -109,7 +109,7 @@
 
         <!-- Body -->
         <div class="body">
-          <p class="greeting">Hi {{ order.customer_name|default:order.user.first_name|default:"Valued Customer" }},</p>
+          <p class="greeting">Hi {{ customer_name|default:"Valued Customer" }},</p>
           <p style="margin-top:12px; color:#444;">
             We've received your order and it's now being processed. Keep this email safe — it contains your order details.
           </p>
