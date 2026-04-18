@@ -282,6 +282,24 @@ def logout_view(request):
         except Exception as exc:
             logger.warning("Logout refresh token blacklist failed: %s", exc)
 
+    # P0 Security Check: Blacklist Access Token
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if auth_header.startswith('Bearer '):
+        access_token = auth_header.split(' ')[1]
+        try:
+            from rest_framework_simplejwt.tokens import AccessToken
+            from django.core.cache import cache
+            token = AccessToken(access_token)
+            jti = token.payload.get('jti')
+            exp = token.payload.get('exp')
+            if jti and exp:
+                now = datetime.datetime.utcnow().timestamp()
+                ttl = int(exp - now)
+                if ttl > 0:
+                    cache.set(f"blacklisted_jti_{jti}", "1", timeout=ttl)
+        except Exception as exc:
+            logger.warning("Logout access token blacklist failed: %s", exc)
+
     resp = Response({"detail": "Logged out"})
     _clear_refresh_cookie(resp)
     return resp

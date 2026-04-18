@@ -11,10 +11,11 @@ from uuid import uuid4
 import requests
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-from django.conf import settings
-from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from apps.orders.models import Order
 from .models import Payment, PaymentAuditLog
 from .tasks import verify_mpesa_payment_async

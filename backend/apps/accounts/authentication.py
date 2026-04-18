@@ -36,6 +36,15 @@ class CookieJWTAuthentication(JWTAuthentication):
         # Otherwise public endpoints and the refresh endpoint get stuck in 401 loops.
         try:
             validated_token = self.get_validated_token(raw_token)
+            
+            # P0 Security Check: Validate against Redis blacklist
+            from django.core.cache import cache
+            jti = validated_token.payload.get('jti')
+            if jti and cache.get(f"blacklisted_jti_{jti}"):
+                if header is not None:
+                    raise InvalidToken("Token has been blacklisted")
+                return None
+                
         except (InvalidToken, TokenError):
             # If the client explicitly sent an Authorization header, keep strict behavior.
             if header is not None:

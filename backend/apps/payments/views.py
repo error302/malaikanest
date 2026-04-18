@@ -305,6 +305,19 @@ class MpesaCallbackView(APIView):
         except Exception:
             pass
 
+        # P0 Security Check: M-Pesa Signature Verification
+        from apps.payments.services import verify_mpesa_signature
+        signature = request.META.get("HTTP_X_SAFARICOM_CALLBACK_SIGNATURE") or request.META.get("HTTP_X_MAC")
+        
+        is_strict_mode = os.getenv("MPESA_STRICT_SIGNATURE", "false").lower() in ("true", "1", "yes")
+        if signature:
+            if not verify_mpesa_signature(signature, body_bytes):
+                audit_log(event_type="callback_signature_failed", payload=raw_payload, request_ip=client_ip, notes="Blocked due to invalid signature cryptographic verification")
+                return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid Signature"}, status=200)
+        elif is_strict_mode:
+            audit_log(event_type="callback_signature_missing", payload=raw_payload, request_ip=client_ip, notes="Blocked due to missing signature header in strict mode")
+            return JsonResponse({"ResultCode": 1, "ResultDesc": "Missing Signature Required"}, status=200)
+
         try:
             response_dict = PaymentService.process_callback(raw_payload, client_ip)
         except Exception as exc:

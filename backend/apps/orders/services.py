@@ -80,6 +80,10 @@ class OrderService:
             raise ValueError("Cart is empty")
 
         with transaction.atomic():
+            # Lock the cart to prevent concurrent duplicate checkouts
+            from apps.orders.models import Cart
+            cart = Cart.objects.select_for_update().get(pk=cart.pk)
+            
             shipping_first_name, shipping_last_name = OrderService._split_shipping_name(
                 shipping_name,
                 user=user,

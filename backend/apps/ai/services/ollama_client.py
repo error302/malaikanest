@@ -23,7 +23,7 @@ class OllamaClient:
                 "Ollama API key not set. Proceeding without authentication (local Ollama)."
             )
 
-    def _make_request(self, endpoint: str, payload: Dict[str, Any], timeout: float = 180.0) -> Dict[str, Any]:
+    def _make_request(self, endpoint: str, payload: Dict[str, Any], timeout: float = 10.0) -> Dict[str, Any]:
         try:
             response = requests.post(
                 f"{self.base_url}{endpoint}",
@@ -65,7 +65,7 @@ class OllamaClient:
 
         result = self._make_request("/api/chat", payload)
         if not result:
-            return ""
+            return "I apologize, but I am currently experiencing high latency. How else may I assist you today?"
         
         return result.get("message", {}).get("content", "")
 
@@ -92,7 +92,7 @@ class OllamaClient:
 
         result = self._make_request("/api/chat", payload)
         if not result:
-            return {"error": "AI service unavailable", "raw": ""}
+            return {"error": "AI service unavailable, using fallback", "fallback": True, "raw": ""}
 
         content = result.get("message", {}).get("content", "")
 

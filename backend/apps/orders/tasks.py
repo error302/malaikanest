@@ -1,5 +1,6 @@
 try:
     from celery import shared_task
+    from celery.signals import task_failure
 except ImportError:
     def shared_task(func):
         return func
@@ -17,6 +18,24 @@ from django.db.models import F
 import logging
 
 logger = logging.getLogger("apps.orders")
+
+@task_failure.connect
+def route_to_dlq(sender=None, task_id=None, exception=None, args=None, kwargs=None, traceback=None, einfo=None, **kw):
+    """
+    Celery Dead-Letter Queue router.
+    Routes permanently failed tasks to our process_failed_task DLQ handler.
+    """
+    if sender and getattr(sender, "name", "") != 'apps.orders.tasks.process_failed_task':
+        logger_dlq = logging.getLogger("apps.orders")
+        logger_dlq.error(f"Task {sender.name}[{task_id}] failed permanently: {exception}")
+        try:
+            from apps.orders.tasks import process_failed_task
+            process_failed_task.apply_async(
+                args=[sender.name, args, kwargs, str(exception)],
+            )
+        except Exception as queue_exc:
+            logger_dlq.critical(f"DLQ Routing failed: {queue_exc}")
+
 
 
 def _attach_invoice_pdf(message, invoice):
@@ -42,7 +61,7 @@ def _attach_invoice_pdf(message, invoice):
 
 # ==================== ORDER EMAIL TASKS ====================
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def send_order_confirmation(self, order_id):
     """
     Send order confirmation email after order is created.
@@ -89,13 +108,10 @@ Thank you for shopping with Malaika Nest!
         
     except Exception as e:
         logger.error(f"Failed to send order confirmation for order {order_id}: {e}")
-        try:
-            raise self.retry(exc=e)
-        except Exception:
-            return f"failed: {str(e)}"
+        raise e
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def send_payment_confirmation(self, order_id):
     """
     Send payment confirmation email with invoice attached.
@@ -161,13 +177,10 @@ Thank you for shopping with Malaika Nest!
         
     except Exception as e:
         logger.error(f"Failed to send payment confirmation for order {order_id}: {e}")
-        try:
-            raise self.retry(exc=e)
-        except Exception:
-            return f"failed: {str(e)}"
+        raise e
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def send_order_shipped(self, order_id):
     """
     Send order shipped notification email.
@@ -215,13 +228,10 @@ Thank you for shopping with Malaika Nest!
         
     except Exception as e:
         logger.error(f"Failed to send shipped notification for order {order_id}: {e}")
-        try:
-            raise self.retry(exc=e)
-        except Exception:
-            return f"failed: {str(e)}"
+        raise e
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def send_order_delivered(self, order_id):
     """
     Send order delivered confirmation email.
@@ -266,15 +276,12 @@ Thank you for shopping with Malaika Nest!
         
     except Exception as e:
         logger.error(f"Failed to send delivered notification for order {order_id}: {e}")
-        try:
-            raise self.retry(exc=e)
-        except Exception:
-            return f"failed: {str(e)}"
+        raise e
 
 
 # ==================== INVOICE TASKS ====================
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def generate_invoice(self, order_id):
     """
     Generate PDF invoice for an order.
@@ -296,13 +303,10 @@ def generate_invoice(self, order_id):
             return "failed: could not generate PDF"
     except Exception as e:
         logger.error(f"Failed to generate invoice for order {order_id}: {e}")
-        try:
-            raise self.retry(exc=e)
-        except Exception:
-            return f"failed: {str(e)}"
+        raise e
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def resend_invoice_email(self, order_id):
     """
     Resend invoice email to customer.
@@ -356,7 +360,7 @@ def resend_invoice_email(self, order_id):
 
 # ==================== REVIEW REQUEST TASKS ====================
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=300)
+@shared_task(bind=True, max_retries=3, default_retry_delay=300, autoretry_for=(Exception,), retry_backoff=True)
 def send_review_request(self, order_id):
     """
     Send product review request email after order is delivered.
@@ -544,7 +548,7 @@ def cancel_stale_pending_orders():
 
 # ==================== INVENTORY TASKS ====================
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def reduce_inventory(self, order_id):
     """
     Deduct inventory when payment is confirmed.
@@ -593,13 +597,10 @@ def reduce_inventory(self, order_id):
         return "success"
     except Exception as e:
         logger.error(f"Failed to reduce inventory for order {order_id}: {e}")
-        try:
-            raise self.retry(exc=e)
-        except Exception:
-            return f"failed: {str(e)}"
+        raise e
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def restore_inventory(self, order_id):
     """
     Release reserved inventory when order is cancelled/payment fails.
@@ -730,7 +731,7 @@ def handle_order_status_change(order_id, old_status, new_status):
 
 # ==================== FAILED QUEUE HANDLING ====================
 
-@shared_task(bind=True, max_retries=5, default_retry_delay=300)
+@shared_task(bind=True, max_retries=5, default_retry_delay=300, autoretry_for=(Exception,), retry_backoff=True)
 def process_failed_task(self, task_name, task_args, task_kwargs, error_message):
     """
     Process failed tasks from the dead letter queue.
@@ -785,7 +786,7 @@ def cleanup_failed_tasks():
     return "Cleanup completed"
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
 def send_critical_alert(self, alert_type, message, context=None):
     """
     Send critical alert to administrators when something fails.

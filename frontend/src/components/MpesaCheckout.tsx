@@ -642,10 +642,16 @@ export default function MpesaCheckout({
                       <line x1="12" y1="18" x2="12.01" y2="18" />
                     </svg>
                   </div>
-                  <div className="waiting-box__title">Check your phone</div>
-                  <div className="waiting-box__sub">
-                    Prompt sent to <strong>+{formatPhone(phone)}</strong><br />
-                    Enter PIN to complete payment{elapsed > 0 ? ` • ${elapsed}s` : ""}
+                  <div className="waiting-box__title">Complete Payment on your Phone</div>
+                  <div className="waiting-box__sub" style={{ marginTop: '12px', textAlign: 'left' }}>
+                    <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <li>Check your phone (<strong>+{formatPhone(phone)}</strong>) for an M-PESA prompt.</li>
+                      <li>Enter your M-PESA PIN to authorize <strong>{formatKES(totalAmount)}</strong>.</li>
+                      <li>Wait here for the confirmation.{elapsed > 0 ? ` (${elapsed}s)` : ""}</li>
+                    </ol>
+                    <div style={{ marginTop: '16px', fontSize: '11px', color: '#568069', textAlign: 'center', background: 'rgba(255,255,255,0.5)', padding: '8px', borderRadius: '8px' }}>
+                      <em>Don't see a prompt? Dial <strong>*334#</strong> to approve from pending transactions.</em>
+                    </div>
                   </div>
                 </div>
 
