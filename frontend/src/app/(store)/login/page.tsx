@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
@@ -23,18 +23,18 @@ function LoginForm() {
 
   const redirectTo = searchParams.get('next') || searchParams.get('redirect') || '/'
 
-  const performRedirect = (target: string) => {
+  const performRedirect = useCallback((target: string) => {
     if (typeof window === 'undefined') {
       router.replace(target)
       return
     }
     window.location.assign(target)
-  }
+  }, [router])
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return
     performRedirect(isAdmin ? '/admin' : redirectTo)
-  }, [isAdmin, isAuthenticated, isLoading, redirectTo, router])
+  }, [isAdmin, isAuthenticated, isLoading, performRedirect, redirectTo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,7 +44,6 @@ function LoginForm() {
 
     try {
       await login(email, password)
-      performRedirect(isAdmin ? '/admin' : redirectTo)
     } catch (err: unknown) {
       setError(handleApiError(err, 'Invalid email or password'))
     } finally {

@@ -19,30 +19,23 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
           script: |
-            cd /home/mohameddosho20/malaikanest
-            
-            # Pull latest code
-            git pull origin main
-            
-            # Deploy frontend
-            cd frontend
-            npm install
-            npm run build
-            
-            # Restart frontend
-            pkill -f "next-server" || true
-            pkill -f "npm start" || true
-            sleep 1
-            nohup npm start > /tmp/frontend.log 2>&1 &
-            
-            # Deploy backend
-            cd ../backend
-            source ../venv/bin/activate
-            python manage.py migrate --noinput
-            python manage.py collectstatic --noinput -q || true
-            
-            # Restart backend
-            sudo systemctl restart malaika-gunicorn
-            
-            echo "Deployment completed!"
+            set -euo pipefail
+
+            APP_DIR="/var/www/malaikanest"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "Expected deployment repo at $APP_DIR but it was not found."
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+            git pull --ff-only origin main
+
+            if [ ! -x "$APP_DIR/deploy.sh" ]; then
+              chmod +x "$APP_DIR/deploy.sh"
+            fi
+
+            bash "$APP_DIR/deploy.sh"
+
+            curl --fail --silent --show-error https://malaikanest.duckdns.org/api/health/

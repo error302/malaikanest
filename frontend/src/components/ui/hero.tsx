@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import Image from "next/image"
@@ -51,14 +51,14 @@ export default function AnimatedHero() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({})
 
-  const goTo = (index: number) => {
+  const goTo = useCallback((index: number) => {
     if (isTransitioning) return
     setIsTransitioning(true)
     setTimeout(() => {
       setCurrent((index + SLIDES.length) % SLIDES.length)
       setIsTransitioning(false)
     }, 500)
-  }
+  }, [isTransitioning])
 
   const prev = () => goTo(current - 1)
   const next = () => goTo(current + 1)
@@ -66,7 +66,7 @@ export default function AnimatedHero() {
   useEffect(() => {
     const timer = setInterval(() => goTo(current + 1), 6000)
     return () => clearInterval(timer)
-  }, [current])
+  }, [current, goTo])
 
   const slide = SLIDES[current]
 

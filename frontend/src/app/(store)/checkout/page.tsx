@@ -88,7 +88,7 @@ function CheckoutContent() {
   const deliveryFee = useMemo(() => DELIVERY_FEES[deliveryRegion] ?? 0, [deliveryRegion])
   const payableTotal = useMemo(() => Math.max(subtotal - discount, 0) + deliveryFee, [subtotal, discount, deliveryFee])
 
-  const validateGuestForm = (): boolean => {
+  const validateGuestForm = useCallback((): boolean => {
     if (!isAuthenticated && !isGuestCheckout) {
       setError('Please login or continue as guest')
       return false
@@ -128,7 +128,7 @@ function CheckoutContent() {
     }
     
     return true
-  }
+  }, [guestEmail, guestPhone, isAuthenticated, isGuestCheckout, shippingAddress, shippingName, shippingPhone])
 
   const preparingRef = useRef(false)
 
@@ -175,7 +175,7 @@ function CheckoutContent() {
       setError(handleApiError(err))
       throw err
     }
-  }, [deliveryRegion, giftMessage, isGift, orderId, isGuestCheckout, guestEmail, guestPhone, shippingName, shippingPhone, shippingAddress, shippingCity, notes])
+  }, [deliveryRegion, giftMessage, isGift, orderId, isGuestCheckout, guestEmail, guestPhone, shippingName, shippingPhone, shippingAddress, shippingCity, notes, validateGuestForm])
 
   if (authLoading || loading) {
     return (

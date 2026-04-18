@@ -168,9 +168,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [fetchCart])
 
   useEffect(() => {
+    const debounceTimers = debounceTimersRef.current
     return () => {
-      debounceTimersRef.current.forEach((timer) => clearTimeout(timer))
-      debounceTimersRef.current.clear()
+      debounceTimers.forEach((timer) => clearTimeout(timer))
+      debounceTimers.clear()
     }
   }, [])
 

@@ -8,7 +8,6 @@ import TrustBar from '@/components/layout/TrustBar'
 import Footer from '@/components/layout/Footer'
 import MobileNav from '@/components/layout/MobileNav'
 import { ToastContainer } from '@/components/Toast'
-import Chatbot from '@/components/Chatbot'
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,7 +21,6 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
             <Footer />
           </div>
           <MobileNav />
-          <Chatbot />
           <ToastContainer />
         </CartProvider>
       </WishlistProvider>
