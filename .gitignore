@@ -96,3 +96,9 @@ nohup.out
 backend/wipe_db.py
 backend/fix_base.py
 backend/refactor_models.py
+
+# Build and Tool Artifacts
+.playwright-cli/
+_deps/
+_incoming/
+_wheelhouse/

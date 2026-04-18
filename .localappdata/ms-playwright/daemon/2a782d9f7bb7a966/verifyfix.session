@@ -1,0 +1,53 @@
+{
+  "name": "verifyfix",
+  "version": "1.59.0-alpha-1771104257000",
+  "timestamp": 1774633926613,
+  "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-verifyfix.sock",
+  "cli": {},
+  "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-verifyfix",
+  "resolvedConfig": {
+    "browser": {
+      "browserName": "chromium",
+      "launchOptions": {
+        "channel": "chrome",
+        "headless": true,
+        "assistantMode": true,
+        "chromiumSandbox": true,
+        "cdpPort": 60712
+      },
+      "contextOptions": {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "isolated": true,
+      "cdpHeaders": {},
+      "userDataDir": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-verifyfix-chrome"
+    },
+    "console": {
+      "level": "info"
+    },
+    "network": {},
+    "server": {},
+    "saveTrace": false,
+    "snapshot": {
+      "mode": "full",
+      "output": "stdout"
+    },
+    "timeouts": {
+      "action": 5000,
+      "navigation": 60000
+    },
+    "outputMode": "file",
+    "sessionConfig": {
+      "name": "verifyfix",
+      "version": "1.59.0-alpha-1771104257000",
+      "timestamp": 1774633924328,
+      "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-verifyfix.sock",
+      "cli": {},
+      "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-verifyfix"
+    },
+    "skillMode": true
+  }
+}

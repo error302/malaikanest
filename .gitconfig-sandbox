@@ -1,0 +1,9 @@
+[safe]
+	directory = C:/Users/ADMIN/Desktop/PROJECT BABY/malaika nest
+	directory = C:/Users/ADMIN/Desktop/PROJECT BABY/malaika nest
+[user]
+	name = error302
+	email = error302@users.noreply.github.com
+[http]
+	sslBackend = openssl
+	sslCAInfo = C:/Program Files/Git/mingw64/etc/ssl/certs/ca-bundle.crt

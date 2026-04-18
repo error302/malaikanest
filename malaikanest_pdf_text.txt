@@ -1,0 +1,39 @@
+
+
+===== PAGE 1 =====
+ 
+1. the navbar is ok I like it one problem when I hover on shop dropdown it doesn’t list the 
+categories of products that are sold  
+2. When a user is logged in you cant actually see that you are logged in  
+ 
+3. The only reason I am sharing this lulu baby is because I want my banner section exactly like 
+
+
+
+===== PAGE 2 =====
+this with auto rotation for when I post several banner images  
+ 
+4. I want my product display to match this ill share 1 more screenshot so you can get the context 
+ 
+
+
+
+===== PAGE 3 =====
+ 
+the shop by category section is unnecessary and will be replaced just by featured products users 
+will be able to shop by category when they hover on shop dropdown and it list the categories 
+5. I want that part that says safe materials fast delivery… to be above the footer and the footer 
+reduced to not occupy a huge space 
+ 
+
+
+
+===== PAGE 4 =====
+ 
+on the admin dashboard I still experience this error session expired please log in again even 
+though I had just logged in  
+ 
+on the admin dashboard on settings the save changes button does not work so are other 
+buttons in the settings page and its not supposed to be dark where you are supposed to type 
+store name ….. 
+add a setting that you can upload a logo for the website for future adjustments  

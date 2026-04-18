@@ -1,0 +1,53 @@
+{
+  "name": "homefix",
+  "version": "1.59.0-alpha-1771104257000",
+  "timestamp": 1774630027183,
+  "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-homefix.sock",
+  "cli": {},
+  "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-homefix",
+  "resolvedConfig": {
+    "browser": {
+      "browserName": "chromium",
+      "launchOptions": {
+        "channel": "chrome",
+        "headless": true,
+        "assistantMode": true,
+        "chromiumSandbox": true,
+        "cdpPort": 59715
+      },
+      "contextOptions": {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "isolated": true,
+      "cdpHeaders": {},
+      "userDataDir": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-homefix-chrome"
+    },
+    "console": {
+      "level": "info"
+    },
+    "network": {},
+    "server": {},
+    "saveTrace": false,
+    "snapshot": {
+      "mode": "full",
+      "output": "stdout"
+    },
+    "timeouts": {
+      "action": 5000,
+      "navigation": 60000
+    },
+    "outputMode": "file",
+    "sessionConfig": {
+      "name": "homefix",
+      "version": "1.59.0-alpha-1771104257000",
+      "timestamp": 1774630024839,
+      "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-homefix.sock",
+      "cli": {},
+      "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-homefix"
+    },
+    "skillMode": true
+  }
+}

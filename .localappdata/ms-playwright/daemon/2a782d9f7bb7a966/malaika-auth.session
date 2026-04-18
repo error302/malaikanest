@@ -1,0 +1,53 @@
+{
+  "name": "malaika-auth",
+  "version": "1.59.0-alpha-1771104257000",
+  "timestamp": 1774625432995,
+  "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-malaika-auth.sock",
+  "cli": {},
+  "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-malaika-auth",
+  "resolvedConfig": {
+    "browser": {
+      "browserName": "chromium",
+      "launchOptions": {
+        "channel": "chrome",
+        "headless": true,
+        "assistantMode": true,
+        "chromiumSandbox": true,
+        "cdpPort": 56663
+      },
+      "contextOptions": {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "isolated": true,
+      "cdpHeaders": {},
+      "userDataDir": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-malaika-auth-chrome"
+    },
+    "console": {
+      "level": "info"
+    },
+    "network": {},
+    "server": {},
+    "saveTrace": false,
+    "snapshot": {
+      "mode": "full",
+      "output": "stdout"
+    },
+    "timeouts": {
+      "action": 5000,
+      "navigation": 60000
+    },
+    "outputMode": "file",
+    "sessionConfig": {
+      "name": "malaika-auth",
+      "version": "1.59.0-alpha-1771104257000",
+      "timestamp": 1774625431897,
+      "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-malaika-auth.sock",
+      "cli": {},
+      "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-malaika-auth"
+    },
+    "skillMode": true
+  }
+}

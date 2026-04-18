@@ -1,0 +1,53 @@
+{
+  "name": "cartfix",
+  "version": "1.59.0-alpha-1771104257000",
+  "timestamp": 1774631028018,
+  "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-cartfix.sock",
+  "cli": {},
+  "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-cartfix",
+  "resolvedConfig": {
+    "browser": {
+      "browserName": "chromium",
+      "launchOptions": {
+        "channel": "chrome",
+        "headless": true,
+        "assistantMode": true,
+        "chromiumSandbox": true,
+        "cdpPort": 49214
+      },
+      "contextOptions": {
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        }
+      },
+      "isolated": true,
+      "cdpHeaders": {},
+      "userDataDir": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-cartfix-chrome"
+    },
+    "console": {
+      "level": "info"
+    },
+    "network": {},
+    "server": {},
+    "saveTrace": false,
+    "snapshot": {
+      "mode": "full",
+      "output": "stdout"
+    },
+    "timeouts": {
+      "action": 5000,
+      "navigation": 60000
+    },
+    "outputMode": "file",
+    "sessionConfig": {
+      "name": "cartfix",
+      "version": "1.59.0-alpha-1771104257000",
+      "timestamp": 1774631025769,
+      "socketPath": "\\\\.\\pipe\\2a782d9f7bb7a966-cartfix.sock",
+      "cli": {},
+      "userDataDirPrefix": "C:\\Users\\ADMIN\\Desktop\\PROJECT BABY\\.localappdata\\ms-playwright\\daemon\\2a782d9f7bb7a966\\ud-cartfix"
+    },
+    "skillMode": true
+  }
+}
