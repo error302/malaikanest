@@ -23,19 +23,38 @@ jobs:
           script: |
             set -euo pipefail
 
-            APP_DIR="/var/www/malaikanest"
+            APP_DIR="/home/mohameddosho20/malaikanest"
+            if [ ! -d "$APP_DIR/.git" ] && [ -d "/var/www/malaikanest/.git" ]; then
+              APP_DIR="/var/www/malaikanest"
+            fi
+
             if [ ! -d "$APP_DIR/.git" ]; then
               echo "Expected deployment repo at $APP_DIR but it was not found."
               exit 1
             fi
 
             cd "$APP_DIR"
+            git stash push --include-untracked -m "github-actions-predeploy-$(date +%Y%m%d%H%M%S)" || true
             git pull --ff-only origin main
 
-            if [ ! -x "$APP_DIR/deploy.sh" ]; then
-              chmod +x "$APP_DIR/deploy.sh"
+            if id appuser >/dev/null 2>&1; then
+              sudo install -d -m 775 -o appuser -g appuser "$APP_DIR/backend/logs"
+              sudo touch "$APP_DIR/backend/logs/kenya_ecom.log" "$APP_DIR/backend/logs/production.json.log" "$APP_DIR/backend/logs/security.log"
+              sudo chown appuser:appuser "$APP_DIR/backend/logs" "$APP_DIR/backend/logs/"*
             fi
 
-            bash "$APP_DIR/deploy.sh"
+            cd "$APP_DIR/backend"
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput -q || true
+            sudo systemctl restart malaika-gunicorn || sudo systemctl restart gunicorn
 
+            cd "$APP_DIR/frontend"
+            npm ci --prefer-offline
+            npm run build
+            sudo -u appuser pkill -f "next-server" || true
+            sudo -u appuser bash -lc "cd '$APP_DIR/frontend' && nohup npm start > /tmp/malaikanest-frontend.log 2>&1 &"
+
+            curl --fail --silent --show-error http://127.0.0.1:8000/api/health/
             curl --fail --silent --show-error https://malaikanest.duckdns.org/api/health/
