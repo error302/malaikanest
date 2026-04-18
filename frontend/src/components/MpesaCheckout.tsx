@@ -650,7 +650,7 @@ export default function MpesaCheckout({
                       <li>Wait here for the confirmation.{elapsed > 0 ? ` (${elapsed}s)` : ""}</li>
                     </ol>
                     <div style={{ marginTop: '16px', fontSize: '11px', color: '#568069', textAlign: 'center', background: 'rgba(255,255,255,0.5)', padding: '8px', borderRadius: '8px' }}>
-                      <em>Don't see a prompt? Dial <strong>*334#</strong> to approve from pending transactions.</em>
+                      <em>Don&apos;t see a prompt? Dial <strong>*334#</strong> to approve from pending transactions.</em>
                     </div>
                   </div>
                 </div>
