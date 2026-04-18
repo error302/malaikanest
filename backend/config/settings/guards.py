@@ -69,13 +69,12 @@ def validate_production_env(env):
     if to_bool(env.get("DEBUG", "False")):
         errors.append("DEBUG must be False in production.")
 
+    # Only enforce vars that have no computed fallback in prod.py.
+    # DATABASE_URL is optional because individual DB_* vars are also supported.
+    # FRONTEND_URL, CORS_ALLOWED_ORIGINS, CSRF_TRUSTED_ORIGINS have computed defaults.
     required_secure_vars = [
         "SECRET_KEY",
-        "DATABASE_URL",
         "ALLOWED_HOSTS",
-        "FRONTEND_URL",
-        "CORS_ALLOWED_ORIGINS",
-        "CSRF_TRUSTED_ORIGINS",
         "EMAIL_HOST_USER",
         "EMAIL_HOST_PASSWORD",
     ]

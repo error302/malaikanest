@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import requests
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from django.core.cache import cache
 
 from django.db import transaction
 from django.utils import timezone
@@ -52,6 +53,50 @@ def format_mpesa_amount(amount):
 def payload_hash(payload):
     serialized = json.dumps(payload, sort_keys=True, default=str, separators=(",", ":"))
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def verify_mpesa_signature(signature_b64: str, body: bytes) -> bool:
+    """
+    Verify Safaricom M-Pesa callback signature using their public certificate.
+
+    The signature is RSA-SHA256 of the raw request body, base64-encoded.
+    The public key is loaded from the PEM file at MPESA_PUBLIC_KEY_PATH.
+
+    Returns True if verification succeeds, or True if no public key is
+    configured (warn-only mode for pre-launch).
+    """
+    key_path = os.getenv("MPESA_PUBLIC_KEY_PATH", "").strip()
+    if not key_path:
+        logger.warning(
+            "MPESA_PUBLIC_KEY_PATH not set — skipping signature verification (warn-only mode)"
+        )
+        return True
+
+    try:
+        with open(key_path, "rb") as f:
+            public_key = load_pem_public_key(f.read())
+    except FileNotFoundError:
+        logger.error("Safaricom public key file not found at %s", key_path)
+        return True  # Don't block payments if cert is missing
+    except Exception as exc:
+        logger.error("Failed to load Safaricom public key: %s", exc)
+        return True
+
+    if not signature_b64 or not body:
+        return False
+
+    try:
+        signature_bytes = base64.b64decode(signature_b64)
+        public_key.verify(
+            signature_bytes,
+            body if isinstance(body, bytes) else body.encode("utf-8"),
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+        return True
+    except Exception as exc:
+        logger.warning("M-Pesa signature verification failed: %s", exc)
+        return False
 
 
 def make_json_serializable(payload):

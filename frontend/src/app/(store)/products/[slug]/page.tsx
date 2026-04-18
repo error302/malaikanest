@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -35,13 +35,13 @@ interface Product {
   }>
 }
 
-// Mock related products - in production this would come from API
-const MOCK_RELATED_PRODUCTS = [
-  { id: 1, name: 'Organic Cotton Onesie', slug: 'organic-cotton-onesie', price: '1,250', image: null },
-  { id: 2, name: 'Baby Romper Set', slug: 'baby-romper-set', price: '2,450', image: null },
-  { id: 3, name: 'Soft Cotton Blanket', slug: 'soft-cotton-blanket', price: '1,800', image: null },
-  { id: 4, name: 'Newborn Gift Set', slug: 'newborn-gift-set', price: '3,200', image: null },
-];
+interface RelatedProduct {
+  id: number
+  name: string
+  slug: string
+  price: string
+  image: string | null
+}
 
 // Trust badges for product page
 const TRUST_BADGES = [
@@ -88,6 +88,24 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
+  const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([])
+
+  const fetchRelatedProducts = useCallback(async (categorySlug?: string, currentId?: number) => {
+    try {
+      const endpoint = categorySlug
+        ? `/api/v1/products/products/?category=${encodeURIComponent(categorySlug)}&limit=4`
+        : `/api/v1/products/products/?ordering=-created_at&limit=4`
+      const res = await api.get(endpoint)
+      const results = res.data?.results ?? res.data ?? []
+      setRelatedProducts(
+        (Array.isArray(results) ? results : [])
+          .filter((p: RelatedProduct) => p.id !== currentId)
+          .slice(0, 4)
+      )
+    } catch {
+      setRelatedProducts([])
+    }
+  }, [])
 
   useEffect(() => {
     if (!slug) return
@@ -100,6 +118,7 @@ export default function ProductDetailPage() {
         if (payload) {
           setProduct(payload)
           setError('')
+          fetchRelatedProducts(payload.category?.slug, payload.id)
         } else {
           setProduct(null)
           setError('Product not found')
@@ -110,7 +129,7 @@ export default function ProductDetailPage() {
         setError('Failed to load product')
       })
       .finally(() => setLoading(false))
-  }, [slug])
+  }, [slug, fetchRelatedProducts])
 
   const parsedPrice = useMemo(() => (product ? Number(product.price) : 0), [product])
   const selectedVariant = useMemo(
@@ -272,7 +291,7 @@ export default function ProductDetailPage() {
                   <Star key={star} size={14} className="fill-[#C9A96E] text-[#C9A96E]" />
                 ))}
               </div>
-              <span className="text-xs text-[#8A7060]">(48 reviews)</span>
+              <span className="text-xs text-[#8A7060]">New product</span>
             </div>
 
             {/* Color Swatches */}
@@ -319,8 +338,8 @@ export default function ProductDetailPage() {
 
             {/* Description */}
             <div className="mt-6">
-              <p className="text-sm text-[#5C4033] leading-relaxed">
-                {product.description || 'Malaika cotton is Organic cotton Romper I olitier, and sfueck. Nez-production Romper.\n\n• Made with love in Kenya\n• Free yeturn, and lorres enalgiting rotat lorke it compaits\n• Care instructue derlicon chow.'}
+              <p className="text-sm text-[#5C4033] leading-relaxed whitespace-pre-line">
+                {product.description || 'Premium quality baby product from Malaika Nest.\n\n• Made with love in Kenya\n• Free delivery on orders over KES 3,000\n• Easy returns within 7 days'}
               </p>
             </div>
 
@@ -400,32 +419,37 @@ export default function ProductDetailPage() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            {MOCK_RELATED_PRODUCTS.map((item) => (
-              <Link
-                key={item.id}
-                href={`/products/${item.slug}`}
-                className="group bg-white rounded-2xl overflow-hidden border border-[#E8E0D5] hover:border-[#8B6914]/30 hover:shadow-warm-md transition-all"
-              >
-                <div className="aspect-square bg-[#F5EFE6] relative overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Package className="w-12 h-12 text-[#C9A96E]" />
+          {relatedProducts.length > 0 ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              {relatedProducts.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/products/${item.slug}`}
+                  className="group bg-white rounded-2xl overflow-hidden border border-[#E8E0D5] hover:border-[#8B6914]/30 hover:shadow-warm-md transition-all"
+                >
+                  <div className="aspect-square bg-[#F5EFE6] relative overflow-hidden">
+                    {item.image ? (
+                      <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized={shouldUseUnoptimizedImage(item.image)} />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Package className="w-12 h-12 text-[#C9A96E]" />
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="text-sm font-medium text-[#2C1810] line-clamp-2 group-hover:text-[#8B6914] transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="mt-2 font-serif font-semibold text-[#8B6914]">
-                    KES {item.price}
-                  </p>
-                  <button className="mt-3 w-full bg-[#8B6914] text-white text-xs font-medium py-2 rounded-full hover:bg-[#6B5310] transition-colors">
-                    Add to Cart
-                  </button>
-                </div>
-              </Link>
-            ))}
-          </div>
+                  <div className="p-4">
+                    <h3 className="text-sm font-medium text-[#2C1810] line-clamp-2 group-hover:text-[#8B6914] transition-colors">
+                      {item.name}
+                    </h3>
+                    <p className="mt-2 font-serif font-semibold text-[#8B6914]">
+                      KES {Number(item.price).toLocaleString()}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-[#8A7060] py-8">More products coming soon!</p>
+          )}
         </div>
 
         {/* Reviews Section */}

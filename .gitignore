@@ -71,8 +71,9 @@ skills-lock.json
 .zencoder/
 skills/
 
-# Keep example files
+# Keep example files and frontend env (public URLs only, no secrets)
 !.env.example
+!frontend/.env.production
 
 # Debug/temp scripts — never commit these
 backend/temp_script*.py
@@ -85,3 +86,13 @@ test_traceback.txt
 
 # TypeScript incremental build artifacts
 *.tsbuildinfo
+
+# Production logs and temp files
+*.err.log
+*.out.log
+nohup.out
+
+# Legacy debug/migration scripts
+backend/wipe_db.py
+backend/fix_base.py
+backend/refactor_models.py
