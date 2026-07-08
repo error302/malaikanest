@@ -146,3 +146,40 @@ model BlogPost {
   @@index([category, isPublished])
   @@map("blog_posts")
 }
+
+// ── Loyalty / Rewards Program ────────────────────────────────────────────────
+// Tracks points for each customer. 100 points = KES 50 discount.
+// Points are earned on purchases (1 point per KES 10 spent) and can be
+// redeemed at checkout. Admin can manually adjust points.
+
+model LoyaltyAccount {
+  id           String   @id @default(cuid())
+  userEmail    String   @unique        // links to Django User.email
+  points       Int      @default(0)    // current balance
+  totalEarned  Int      @default(0)    // lifetime points earned
+  totalRedeemed Int     @default(0)    // lifetime points redeemed
+  tier         String   @default("bronze")  // bronze | silver | gold
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transactions LoyaltyTransaction[]
+
+  @@index([userEmail])
+  @@index([tier])
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type        String   // "earn" | "redeem" | "adjust"
+  points      Int      // positive for earn, negative for redeem
+  reason      String   @default("")  // e.g. "Order MN-ABC123", "Manual adjustment"
+  orderId     String?
+  createdAt   DateTime @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([type])
+  @@map("loyalty_transactions")
+}

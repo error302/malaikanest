@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Logo } from './logo';
 import { AnnouncementBar } from './announcement-bar';
+import { LanguageToggle } from './language-toggle';
 
 const NAV_LINKS = [
   { name: 'Home', href: '#home' },
@@ -215,6 +216,9 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
 
           {/* Right icons */}
           <div className="flex items-center gap-1 sm:gap-1.5 ml-auto md:ml-2">
+            {/* Language toggle */}
+            <LanguageToggle className="hidden sm:inline-flex" />
+
             <button
               type="button"
               onClick={() => setSearchOpen(true)}

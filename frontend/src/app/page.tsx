@@ -11,6 +11,7 @@ import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
 import { StoreShell } from '@/components/malaika/store-shell';
 import { ThriftedSection } from '@/components/malaika/thrifted-section';
 import { CartRecoveryBanner } from '@/components/malaika/cart-recovery-banner';
+import { RecentlyViewedSection } from '@/components/malaika/recently-viewed-section';
 import {
   getFeaturedProducts,
   getBestSellers,
@@ -56,6 +57,10 @@ export default async function Home() {
 
       <main id="main" className="flex-1">
         <Hero banners={banners} content={content} />
+
+        {/* Recently viewed (only shows for returning visitors) */}
+        <RecentlyViewedSection />
+
         <ShopByAge content={content} />
         <CategoryQuickLinks content={content} />
 

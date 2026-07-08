@@ -22,6 +22,7 @@ import {
   Sparkles,
   FileText,
   ShoppingCart,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useState } from 'react';
@@ -33,6 +34,7 @@ const NAV = [
   { href: '/admin/orders', label: 'Orders', Icon: ShoppingCart },
   { href: '/admin/abandoned-carts', label: 'Abandoned Carts', Icon: ShoppingCart },
   { href: '/admin/customers', label: 'Customers', Icon: Users },
+  { href: '/admin/loyalty', label: 'Loyalty Program', Icon: Award },
   { href: '/admin/categories', label: 'Categories', Icon: FolderTree },
   { href: '/admin/blog', label: 'Blog', Icon: FileText },
   { href: '/admin/banners', label: 'Banners', Icon: Image },

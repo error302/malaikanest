@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { User, Package, Heart, LogOut, MapPin, Settings } from 'lucide-react';
+import { User, Package, Heart, LogOut, MapPin, Settings, Award } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useWishlist } from '@/lib/wishlistContext';
 import { showToast } from '@/lib/toast';
@@ -33,6 +33,7 @@ export default function AccountPage() {
 
   const cards = [
     { href: '/account/orders', Icon: Package, title: 'My Orders', desc: 'Track and review your purchases' },
+    { href: '/account/loyalty', Icon: Award, title: 'Loyalty Rewards', desc: 'View points & tier benefits' },
     { href: '/wishlist', Icon: Heart, title: 'Wishlist', desc: `${wishlistCount} saved item${wishlistCount === 1 ? '' : 's'}` },
     { href: '#addresses', Icon: MapPin, title: 'Addresses', desc: 'Manage shipping addresses' },
     { href: '#settings', Icon: Settings, title: 'Settings', desc: 'Update your preferences' },

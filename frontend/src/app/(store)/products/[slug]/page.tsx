@@ -5,6 +5,8 @@ import { ChevronRight, ShoppingBasket, Heart, Truck, Shield, RotateCcw } from 'l
 import { getImageUrl } from '@/lib/media';
 import { ProductDetailClient } from './product-detail-client';
 import { ReviewSection } from '@/components/malaika/review-section';
+import { RelatedProducts } from '@/components/malaika/related-products';
+import { getRelatedProducts } from '@/lib/related-products';
 
 export const dynamic = 'force-dynamic';
 
@@ -128,6 +130,7 @@ export default async function ProductDetailPage({ params }: Props) {
     : 0;
   const inStock = (product.available_stock ?? product.stock ?? 0) > 0;
   const jsonLdSchemas = buildJsonLd(product, slug);
+  const related = await getRelatedProducts(slug, 4);
 
   return (
     <div className="container-shell py-6 sm:py-10">
@@ -263,6 +266,9 @@ export default async function ProductDetailPage({ params }: Props) {
 
       {/* Customer Reviews */}
       <ReviewSection productSlug={slug} />
+
+      {/* Related products (AI-powered similarity) */}
+      <RelatedProducts products={related} />
     </div>
   );
 }

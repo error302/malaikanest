@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingBasket, Heart, Check } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { useWishlist } from '@/lib/wishlistContext';
 import { showToast } from '@/lib/toast';
+import { trackRecentlyViewed } from '@/lib/recently-viewed';
 
 interface Props {
   product: {
@@ -23,6 +24,17 @@ export function ProductDetailClient({ product }: Props) {
   const { toggle, contains } = useWishlist();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
+
+  // Track this product view for "Recently Viewed"
+  useEffect(() => {
+    trackRecentlyViewed({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      image: product.image,
+    });
+  }, [product.id, product.name, product.slug, product.price, product.image]);
 
   const handleAdd = async () => {
     if (!product.inStock) return;
