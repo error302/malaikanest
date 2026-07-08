@@ -3,6 +3,54 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'FAQ',
   description: 'Frequently asked questions about orders, delivery, payments and returns at Malaika Nest.',
+  alternates: { canonical: 'https://malaikanest.duckdns.org/faq' },
+};
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How long does delivery take?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Same-day delivery within Mombasa for orders placed before 11am. Nairobi: 1–2 business days. Upcountry: 2–3 business days. You\'ll receive a tracking number once your order ships.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'What payment methods do you accept?',
+      acceptedAnswer: { '@type': 'Answer', text: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), bank transfer, and cash on delivery within Mombasa. All online payments are secured by 256-bit SSL encryption.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is delivery really free?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Yes — delivery is FREE for all orders above KES 3,000 within Kenya. Below that, a flat fee applies: KES 300 for Nairobi and KES 500 for upcountry. Mombasa delivery is always free.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is your return policy?',
+      acceptedAnswer: { '@type': 'Answer', text: 'We accept returns within 7 days of delivery for unused items in original packaging. Refunds are processed to your original payment method within 5–7 business days. Custom-made items are non-returnable.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'Are your products safe for newborns?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Absolutely. All our organic cotton is OEKO-TEX certified, free from harmful chemicals and dyes. We test every batch for skin safety and our workshop follows strict hygiene protocols.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I track my order?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Yes. Once your order ships, you\'ll receive an SMS and email with a tracking number. You can also view all your orders and their status in your account under "My Orders".' },
+    },
+    {
+      '@type': 'Question',
+      name: 'Do you offer gift wrapping?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Yes! We offer complimentary gift wrapping on all gift sets. You can also add a personalised gift message at checkout — perfect for baby showers and newborn gifts.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I care for organic cotton?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Machine wash cold with like colours, tumble dry low or hang to dry. Avoid bleach and fabric softeners — they break down organic fibres. Iron on low if needed.' },
+    },
+  ],
 };
 
 const FAQS = [
@@ -43,6 +91,7 @@ const FAQS = [
 export default function FAQPage() {
   return (
     <div className="container-shell py-10 sm:py-16 max-w-3xl">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="text-center mb-10">
         <h1 className="font-serif text-4xl sm:text-5xl font-semibold mb-3" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
           Frequently Asked Questions

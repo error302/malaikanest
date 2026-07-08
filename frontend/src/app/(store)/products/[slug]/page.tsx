@@ -36,15 +36,82 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) return { title: 'Product not found' };
+  const title = product.name;
+  const description = product.seo_description || product.description?.slice(0, 160) || product.name;
+  const imageUrl = product.image ? getImageUrl(product.image) : undefined;
   return {
-    title: product.name,
-    description: product.seo_description || product.description?.slice(0, 160) || product.name,
+    title,
+    description,
+    alternates: { canonical: `https://malaikanest.duckdns.org/products/${slug}` },
     openGraph: {
-      title: product.name,
-      description: product.seo_description || product.name,
-      images: product.image ? [getImageUrl(product.image)] : [],
+      title,
+      description,
+      url: `https://malaikanest.duckdns.org/products/${slug}`,
+      images: imageUrl ? [{ url: imageUrl, width: 600, height: 600, alt: title }] : [],
+      type: 'product',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : [],
     },
   };
+}
+
+/** Build Product + Breadcrumb JSON-LD for rich search results. */
+function buildJsonLd(product: any, slug: string) {
+  const imageUrl = product.image ? getImageUrl(product.image) : undefined;
+  const price = parseFloat(product.price ?? '0');
+  const inStock = (product.available_stock ?? product.stock ?? 0) > 0;
+
+  const productSchema: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.seo_description || product.description?.slice(0, 300) || '',
+    sku: product.sku || slug,
+    brand: {
+      '@type': 'Brand',
+      name: product.brand?.name || 'Malaika Nest',
+    },
+    category: product.category?.name || 'Baby Clothing',
+    image: imageUrl ? [imageUrl] : undefined,
+    offers: {
+      '@type': 'Offer',
+      url: `https://malaikanest.duckdns.org/products/${slug}`,
+      priceCurrency: 'KES',
+      price: price.toFixed(2),
+      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@type': 'Organization', name: 'Malaika Nest' },
+    },
+  };
+
+  if (product.rating && product.review_count) {
+    productSchema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: product.rating,
+      reviewCount: product.review_count,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://malaikanest.duckdns.org/' },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: 'https://malaikanest.duckdns.org/categories' },
+      ...(product.category?.name
+        ? [{ '@type': 'ListItem', position: 3, name: product.category.name }]
+        : []),
+      { '@type': 'ListItem', position: product.category?.name ? 4 : 3, name: product.name },
+    ],
+  };
+
+  return [productSchema, breadcrumbSchema];
 }
 
 export default async function ProductDetailPage({ params }: Props) {
@@ -59,9 +126,14 @@ export default async function ProductDetailPage({ params }: Props) {
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
   const inStock = (product.available_stock ?? product.stock ?? 0) > 0;
+  const jsonLdSchemas = buildJsonLd(product, slug);
 
   return (
     <div className="container-shell py-6 sm:py-10">
+      {/* JSON-LD structured data for Google rich results */}
+      {jsonLdSchemas.map((schema, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      ))}
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-1.5 text-xs flex-wrap">
         <Link href="/" className="hover:text-[var(--brand-gold)]" style={{ color: 'var(--brand-text-muted)' }}>Home</Link>

@@ -1,0 +1,49 @@
+import type { MetadataRoute } from 'next';
+import { db } from '@/lib/db';
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://malaikanest.duckdns.org';
+
+/**
+ * Dynamic sitemap — includes all static pages, plus product and thrifted URLs
+ * from the database so new items are indexed automatically.
+ */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+
+  // Static pages
+  const staticPages: MetadataRoute.Sitemap = [
+    { url: `${BASE_URL}/`, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${BASE_URL}/categories`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE_URL}/thrifted`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${BASE_URL}/best-sellers`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE_URL}/find-us`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/shipping`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE_URL}/returns`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE_URL}/login`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${BASE_URL}/register`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${BASE_URL}/wishlist`, lastModified: now, changeFrequency: 'weekly', priority: 0.3 },
+    { url: `${BASE_URL}/cart`, lastModified: now, changeFrequency: 'weekly', priority: 0.3 },
+  ];
+
+  // Thrifted products (from local Prisma DB)
+  let thriftedUrls: MetadataRoute.Sitemap = [];
+  try {
+    const thrifted = await db.thriftedProduct.findMany({
+      where: { isActive: true },
+      select: { slug: true, updatedAt: true },
+    });
+    thriftedUrls = thrifted.map((t) => ({
+      url: `${BASE_URL}/thrifted/${t.slug}`,
+      lastModified: t.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }));
+  } catch {
+    // DB not available — skip
+  }
+
+  return [...staticPages, ...thriftedUrls];
+}

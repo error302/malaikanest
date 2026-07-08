@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CreditCard, Smartphone, Banknote, Lock, ArrowRight } from 'lucide-react';
+import { CreditCard, Smartphone, Banknote, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
+import api, { handleApiError } from '@/lib/api';
 
 const DELIVERY_REGIONS = [
   { value: 'mombasa', label: 'Mombasa (Same Day)', fee: 0 },
@@ -38,13 +39,67 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+
     try {
-      // Simulate order creation — replace with real POST to /api/v1/orders/create/
-      await new Promise((r) => setTimeout(r, 1200));
-      showToast('Order placed successfully!', 'success');
-      router.push('/checkout/success');
-    } catch {
-      showToast('Failed to place order. Please try again.', 'error');
+      // Step 1: Create the order via Django backend
+      const orderPayload = {
+        delivery_region: region,
+        shipping_first_name: form.firstName,
+        shipping_last_name: form.lastName,
+        shipping_phone: form.phone,
+        shipping_address: form.address,
+        shipping_city: form.city,
+        shipping_postal_code: form.postalCode,
+        guest_email: form.email,
+        guest_phone: form.phone,
+        payment_method: payment,
+      };
+
+      const orderRes = await api.post('/api/v1/orders/create/', orderPayload);
+      const orderData = orderRes.data?.data ?? orderRes.data;
+      const orderId = orderData?.id || orderData?.order_id;
+      const receiptNumber = orderData?.receipt_number;
+
+      if (!orderId) {
+        throw new Error('No order ID returned from server');
+      }
+
+      showToast('Order created! Processing payment…', 'success');
+
+      // Step 2: Initiate payment based on method
+      if (payment === 'mpesa') {
+        // Initiate M-Pesa STK push
+        const mpesaRes = await api.post('/api/v1/payments/mpesa/initiate/', {
+          order_id: orderId,
+          phone_number: form.phone,
+        });
+        const mpesaData = mpesaRes.data?.data ?? mpesaRes.data;
+
+        // Check if STK push was initiated
+        if (mpesaData?.checkout_request_id || mpesaRes.status === 200) {
+          showToast('M-Pesa prompt sent to your phone. Enter your PIN to complete payment.', 'success');
+          // Redirect to success page — the backend will confirm payment via callback
+          router.push(`/checkout/success?order=${receiptNumber}`);
+        } else {
+          throw new Error(mpesaData?.message || 'M-Pesa initiation failed');
+        }
+      } else if (payment === 'card') {
+        // Card payment — redirect to payment gateway if URL provided
+        const cardData = orderData;
+        if (cardData?.payment_url) {
+          window.location.href = cardData.payment_url;
+        } else {
+          showToast('Order placed! We will send payment instructions by email.', 'success');
+          router.push(`/checkout/success?order=${receiptNumber}`);
+        }
+      } else {
+        // Cash on delivery or bank transfer
+        showToast('Order placed! We will contact you to arrange payment.', 'success');
+        router.push(`/checkout/success?order=${receiptNumber}`);
+      }
+    } catch (err: any) {
+      const msg = handleApiError(err, 'Failed to place order. Please try again.');
+      showToast(msg, 'error');
     } finally {
       setSubmitting(false);
     }
