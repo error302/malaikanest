@@ -9,6 +9,7 @@ import { Newsletter } from '@/components/malaika/newsletter';
 import { Footer } from '@/components/malaika/footer';
 import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
 import { StoreShell } from '@/components/malaika/store-shell';
+import { ThriftedSection } from '@/components/malaika/thrifted-section';
 import {
   getFeaturedProducts,
   getBestSellers,
@@ -16,12 +17,13 @@ import {
   getActiveBanners,
 } from '@/lib/products';
 import { getSiteSettings, getValueProps, getTestimonials } from '@/lib/settings';
+import { getFeaturedThrifted } from '@/lib/thrifted';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Home() {
-  const [featured, bestSellers, newArrivals, banners, settings, valueProps, testimonials] = await Promise.all([
+  const [featured, bestSellers, newArrivals, banners, settings, valueProps, testimonials, thrifted] = await Promise.all([
     getFeaturedProducts(),
     getBestSellers(),
     getNewArrivals(),
@@ -29,6 +31,7 @@ export default async function Home() {
     getSiteSettings(),
     getValueProps(),
     getTestimonials(),
+    getFeaturedThrifted(4),
   ]);
 
   const { branding, content } = settings;
@@ -75,6 +78,8 @@ export default async function Home() {
           columns={4}
           background="cream"
         />
+
+        <ThriftedSection products={thrifted} />
 
         <Testimonials content={content} testimonials={testimonials} />
 

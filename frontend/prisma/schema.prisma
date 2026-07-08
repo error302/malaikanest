@@ -85,3 +85,38 @@ model ValueProp {
   @@index([isActive, position])
   @@map("value_props")
 }
+
+// ── Thrifted / Mtumba Products ───────────────────────────────────────────────
+// One-of-a-kind secondhand clothing. Each item is unique (stock = 1) and gets
+// marked isSold=true when purchased. Has condition grading + original brand.
+// Separate from the regular Product catalog (which lives in Django).
+
+model ThriftedProduct {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String   @default("")
+  price         Decimal
+  originalPrice Decimal? // estimated retail when new
+  condition     String   @default("good")   // "like_new" | "good" | "fair"
+  brand         String   @default("")       // original brand (e.g. "Next", "H&M")
+  size          String   @default("")       // "0-3m", "2y", "6y", etc.
+  gender        String   @default("unisex") // "boy" | "girl" | "unisex"
+  ageGroup      String   @default("")       // "baby" | "toddler" | "kids"
+  image         String
+  image2        String?
+  image3        String?
+  isAvailable   Boolean  @default(true)     // false once sold
+  isFeatured    Boolean  @default(false)    // show on homepage thrifted section
+  isActive      Boolean  @default(true)     // admin can hide without deleting
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isAvailable, isActive])
+  @@index([isFeatured, isActive])
+  @@index([condition])
+  @@index([gender])
+  @@index([ageGroup])
+  @@index([createdAt])
+  @@map("thrifted_products")
+}

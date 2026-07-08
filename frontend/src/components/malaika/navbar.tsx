@@ -27,7 +27,7 @@ import { AnnouncementBar } from './announcement-bar';
 const NAV_LINKS = [
   { name: 'Home', href: '#home' },
   { name: 'Shop', href: '#shop', hasDropdown: true },
-  { name: 'Newborn', href: '#newborn' },
+  { name: 'Mtumba', href: '/thrifted' },
   { name: 'Best Sellers', href: '#best-sellers' },
   { name: 'About', href: '#about' },
 ];

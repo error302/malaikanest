@@ -12,10 +12,10 @@ interface FooterProps {
 const SHOP_LINKS = [
   { label: 'All Products', href: '#shop' },
   { label: 'Clothing', href: '#shop' },
+  { label: 'Mtumba / Thrifted', href: '/thrifted' },
   { label: 'Baby Essentials', href: '#shop' },
   { label: 'Nursery', href: '#shop' },
   { label: 'Toys & Learning', href: '#shop' },
-  { label: 'Travel & Safety', href: '#shop' },
   { label: 'Gifts', href: '#gifts' },
 ];
 
