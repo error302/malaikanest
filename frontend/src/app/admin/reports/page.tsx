@@ -1,241 +1,114 @@
-'use client'
+'use client';
 
-import { useCallback, useEffect, useState } from 'react'
-import api from '@/lib/api'
+import { useEffect, useState } from 'react';
+import { TrendingUp, Package, ShoppingCart, DollarSign } from 'lucide-react';
+import api from '@/lib/api';
 
-interface ReportData {
-  totalRevenue: number
-  totalOrders: number
-  averageOrderValue: number
-  totalCustomers: number
-  topProducts: { name: string; quantity: number; revenue: number }[]
-  ordersByStatus: { status: string; count: number }[]
-  revenueByMonth: { month: string; revenue: number }[]
-  recentTransactions: {
-    id: number
-    order_number: string
-    customer: string
-    amount: number
-    status: string
-    date: string
-  }[]
-}
-
-export default function ReportsPage() {
-  const [reportData, setReportData] = useState<ReportData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [dateRange, setDateRange] = useState('30') // days
-  const [exporting, setExporting] = useState(false)
-
-  const fetchReportData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await api.get(`/api/v1/orders/admin/reports/?days=${dateRange}`)
-      setReportData(res.data)
-    } catch (error) {
-      console.error('Error fetching reports:', error)
-      setReportData(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [dateRange])
+export default function AdminReportsPage() {
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchReportData()
-  }, [fetchReportData])
+    Promise.allSettled([
+      api.get('/api/v1/orders/', { params: { limit: 100 } }),
+      api.get('/api/v1/products/products/', { params: { limit: 100 } }),
+    ]).then(([o, p]) => {
+      if (o.status === 'fulfilled') {
+        const data = o.value.data;
+        setOrders(data?.results ?? data?.data?.results ?? []);
+      }
+      if (p.status === 'fulfilled') {
+        const data = p.value.data;
+        setProducts(data?.results ?? data?.data?.results ?? []);
+      }
+      setLoading(false);
+    });
+  }, []);
 
-  const exportToCSV = async () => {
-    setExporting(true)
-    try {
-      const response = await api.get('/api/v1/orders/admin/orders/export/', {
-        responseType: 'blob',
-      })
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `orders_export_${new Date().toISOString().split('T')[0]}.csv`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    } catch (error) {
-      alert('Failed to export orders. Please try again.')
-    } finally {
-      setExporting(false)
-    }
-  }
+  const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.total ?? '0'), 0);
+  const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+  const paidOrders = orders.filter((o) => o.status === 'paid' || o.status === 'delivered' || o.status === 'shipped').length;
+  const lowStockProducts = products.filter((p) => (p.stock ?? 0) <= (p.low_stock_threshold ?? 5));
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"></div>
-      </div>
-    )
-  }
-
-  if (!reportData) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-        <p className="text-lg">Unable to load report data</p>
-        <p className="text-sm">Please ensure the backend API is running</p>
-        <button
-          onClick={fetchReportData}
-          className="mt-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
-        >
-          Try Again
-        </button>
-      </div>
-    )
-  }
+  const stats = [
+    { label: 'Total Revenue', value: `KES ${totalRevenue.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`, Icon: DollarSign, color: 'var(--brand-gold)' },
+    { label: 'Avg. Order Value', value: `KES ${avgOrderValue.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`, Icon: TrendingUp, color: 'var(--brand-green-light)' },
+    { label: 'Paid Orders', value: paidOrders, Icon: ShoppingCart, color: '#3B82F6' },
+    { label: 'Low Stock Items', value: lowStockProducts.length, Icon: Package, color: 'var(--brand-terra)' },
+  ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Reports & Analytics</h1>
-        <div className="flex gap-4">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-          >
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="365">Last year</option>
-          </select>
-          <button
-            onClick={exportToCSV}
-            disabled={exporting}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-          >
-            {exporting ? 'Exporting...' : '📥 Export Orders'}
-          </button>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-serif text-2xl sm:text-3xl font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+          Reports & Analytics
+        </h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--brand-text-muted)' }}>
+          Snapshot of your store performance
+        </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <p className="text-gray-500 text-sm">Total Revenue</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">
-            KES {reportData.totalRevenue.toLocaleString() || 0}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <p className="text-gray-500 text-sm">Total Orders</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">{reportData.totalOrders || 0}</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <p className="text-gray-500 text-sm">Average Order Value</p>
-          <p className="text-3xl font-bold text-amber-600 mt-2">
-            KES {reportData.averageOrderValue.toLocaleString() || 0}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <p className="text-gray-500 text-sm">Total Customers</p>
-          <p className="text-3xl font-bold text-purple-600 mt-2">{reportData.totalCustomers || 0}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Top Products */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Top Products</h2>
-          <div className="space-y-4">
-            {reportData.topProducts.map((product, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center text-sm font-medium">
-                    {index + 1}
-                  </span>
-                  <span className="font-medium text-gray-700">{product.name}</span>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">KES {product.revenue.toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">{product.quantity} sold</p>
-                </div>
-              </div>
-            ))}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {stats.map(({ label, value, Icon, color }) => (
+          <div key={label} className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: `${color}15` }}>
+              <Icon size={18} style={{ color }} />
+            </div>
+            <div className="text-xl sm:text-2xl font-semibold" style={{ color: 'var(--brand-text)' }}>{value}</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--brand-text-muted)' }}>{label}</div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Orders by Status */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Orders by Status</h2>
-          <div className="space-y-4">
-            {reportData.ordersByStatus.map((item, index) => {
-              const percentage = reportData.totalOrders > 0
-                ? Math.round((item.count / reportData.totalOrders) * 100)
-                : 0
-              return (
-                <div key={index}>
-                  <div className="flex justify-between mb-1">
-                    <span className="capitalize font-medium text-gray-700">{item.status}</span>
-                    <span className="text-gray-500">{item.count} orders ({percentage}%)</span>
+      {loading ? (
+        <div className="p-8 text-center text-sm" style={{ color: 'var(--brand-text-muted)' }}>Generating report…</div>
+      ) : (
+        <div className="grid lg:grid-cols-2 gap-4">
+          <div className="rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <div className="p-5 border-b" style={{ borderColor: 'var(--brand-border)' }}>
+              <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Low Stock Alert</h2>
+            </div>
+            <div className="divide-y" style={{ borderColor: 'var(--brand-border)' }}>
+              {lowStockProducts.length === 0 ? (
+                <div className="p-5 text-sm" style={{ color: 'var(--brand-text-muted)' }}>All products are well-stocked.</div>
+              ) : (
+                lowStockProducts.slice(0, 10).map((p) => (
+                  <div key={p.id} className="p-4 flex items-center justify-between">
+                    <span className="text-sm truncate" style={{ color: 'var(--brand-text)' }}>{p.name}</span>
+                    <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(196,112,74,0.12)', color: 'var(--brand-terra)' }}>
+                      {p.stock ?? 0} left
+                    </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        item.status === 'delivered' ? 'bg-green-500'
-                          : item.status === 'shipped' ? 'bg-purple-500'
-                            : item.status === 'pending' ? 'bg-yellow-500'
-                              : 'bg-red-500'
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    ></div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <div className="p-5 border-b" style={{ borderColor: 'var(--brand-border)' }}>
+              <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Order Status Breakdown</h2>
+            </div>
+            <div className="divide-y" style={{ borderColor: 'var(--brand-border)' }}>
+              {['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
+                const count = orders.filter((o) => o.status === status).length;
+                const pct = orders.length > 0 ? Math.round((count / orders.length) * 100) : 0;
+                return (
+                  <div key={status} className="p-4">
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="capitalize" style={{ color: 'var(--brand-text)' }}>{status}</span>
+                      <span style={{ color: 'var(--brand-text-muted)' }}>{count} ({pct}%)</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--brand-warm)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--brand-gold)' }} />
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Revenue Chart */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Revenue by Month</h2>
-        <div className="h-64 flex items-end gap-4">
-          {reportData.revenueByMonth.map((item, index) => {
-            const maxRevenue = Math.max(...reportData.revenueByMonth.map(r => r.revenue))
-            const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0
-            return (
-              <div key={index} className="flex-1 flex flex-col items-center">
-                <div className="w-full bg-amber-500 rounded-t-lg transition-all hover:bg-amber-600" style={{ height: `${height}%`, minHeight: '10px' }}></div>
-                <p className="mt-2 text-sm text-gray-600">{item.month}</p>
-                <p className="text-xs text-gray-500">KES {(item.revenue / 1000).toFixed(1)}k</p>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Stats</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-800">
-              {Math.round(reportData.totalOrders / (parseInt(dateRange, 10) / 30)) || 0}
-            </p>
-            <p className="text-sm text-gray-500">Orders/Month</p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-800">{reportData.topProducts[0]?.name || 'N/A'}</p>
-            <p className="text-sm text-gray-500">Best Seller</p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-800">
-              {reportData.ordersByStatus.find(o => o.status === 'delivered')?.count || 0}
-            </p>
-            <p className="text-sm text-gray-500">Completed Orders</p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-gray-800">
-              {reportData.ordersByStatus.find(o => o.status === 'pending')?.count || 0}
-            </p>
-            <p className="text-sm text-gray-500">Pending Orders</p>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
-  )
+  );
 }

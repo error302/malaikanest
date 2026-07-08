@@ -1,557 +1,194 @@
-"use client"
+'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { ChevronLeft, ShieldCheck, User } from 'lucide-react'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { CreditCard, Smartphone, Banknote, Lock, ArrowRight } from 'lucide-react';
+import { useCart } from '@/lib/cartContext';
+import { showToast } from '@/lib/toast';
 
-import api, { handleApiError } from '@/lib/api'
-import { useAuth } from '@/lib/authContext'
-import MpesaCheckout from '@/components/MpesaCheckout'
+const DELIVERY_REGIONS = [
+  { value: 'mombasa', label: 'Mombasa (Same Day)', fee: 0 },
+  { value: 'nairobi', label: 'Nairobi (1-2 Days)', fee: 300 },
+  { value: 'upcountry', label: 'Upcountry (2-3 Days)', fee: 500 },
+];
 
-type CartData = {
-  id: string
-  items: Array<{
-    id: string
-    product: { id: string; name: string; price: string; image: string }
-    quantity: number
-  }>
-  subtotal: string
-  discount?: string
-  total: string
-}
-
-const normalizeCartData = (payload: unknown): CartData | null => {
-  if (!payload || typeof payload !== 'object') return null
-
-  const data = payload as Partial<CartData> & {
-    items?: Array<{
-      id?: string
-      product?: { id?: string; name?: string; price?: string; image?: string }
-      quantity?: number
-    }>
-  }
-
-  return {
-    id: String(data.id ?? ''),
-    items: Array.isArray(data.items)
-      ? data.items.map((item) => ({
-          id: String(item.id ?? ''),
-          product: {
-            id: String(item.product?.id ?? ''),
-            name: item.product?.name || 'Product',
-            price: String(item.product?.price ?? '0'),
-            image: item.product?.image || '',
-          },
-          quantity: Number(item.quantity ?? 0),
-        }))
-      : [],
-    subtotal: String(data.subtotal ?? '0'),
-    discount: String(data.discount ?? '0'),
-    total: String(data.total ?? '0'),
-  }
-}
-
-const DELIVERY_FEES: Record<string, number> = {
-  mombasa: 0,
-  nairobi: 300,
-  upcountry: 500,
-}
-
-const toMoneyNumber = (value: string | number): number => {
-  const num = typeof value === 'number' ? value : Number(value)
-  return Number.isFinite(num) ? num : 0
-}
-
-const formatKsh = (value: string | number): string =>
-  new Intl.NumberFormat('en-KE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(toMoneyNumber(value))
-
-function CheckoutContent() {
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
-  const [cart, setCart] = useState<CartData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [deliveryRegion, setDeliveryRegion] = useState('nairobi')
-  const [isGift, setIsGift] = useState(false)
-  const [giftMessage, setGiftMessage] = useState('')
-  const [error, setError] = useState('')
-  const [orderId, setOrderId] = useState<string | null>(null)
-  const [paymentInitiated, setPaymentInitiated] = useState(false)
-  const router = useRouter()
-
-  const [isGuestCheckout, setIsGuestCheckout] = useState(false)
-  const [guestEmail, setGuestEmail] = useState('')
-  const [guestPhone, setGuestPhone] = useState('')
-  const [shippingName, setShippingName] = useState('')
-  const [shippingPhone, setShippingPhone] = useState('')
-  const [shippingAddress, setShippingAddress] = useState('')
-  const [shippingCity, setShippingCity] = useState('')
-  const [notes, setNotes] = useState('')
-
-  const fetchCart = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await api.get('/api/v1/orders/cart/')
-      setCart(normalizeCartData(res.data))
-      setError('')
-    } catch (err: unknown) {
-      setError(handleApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (authLoading) return
-    fetchCart()
-  }, [authLoading, fetchCart])
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      setShippingName(user.name || '')
-    }
-  }, [isAuthenticated, user])
-
-  const subtotal = useMemo(() => toMoneyNumber(cart?.subtotal || '0'), [cart?.subtotal])
-  const discount = useMemo(() => toMoneyNumber(cart?.discount || '0'), [cart?.discount])
-  const deliveryFee = useMemo(() => DELIVERY_FEES[deliveryRegion] ?? 0, [deliveryRegion])
-  const payableTotal = useMemo(() => Math.max(subtotal - discount, 0) + deliveryFee, [subtotal, discount, deliveryFee])
-
-  const validateGuestForm = useCallback((): boolean => {
-    if (!isAuthenticated && !isGuestCheckout) {
-      setError('Please login or continue as guest')
-      return false
-    }
-    
-    if (isGuestCheckout) {
-      if (!guestEmail.trim()) {
-        setError('Email is required for guest checkout')
-        return false
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
-        setError('Please enter a valid email address')
-        return false
-      }
-      if (!guestPhone.trim()) {
-        setError('Phone number is required for guest checkout')
-        return false
-      }
-      const phone = guestPhone.replace(/[\s\-+]/g, '')
-      if (!/^254[17]\d{8}$/.test(phone) && !/^0[17]\d{8}$/.test(phone)) {
-        setError('Please enter a valid Kenyan phone number')
-        return false
-      }
-    }
-    
-    if (!shippingName.trim()) {
-      setError('Shipping name is required')
-      return false
-    }
-    if (!shippingPhone.trim()) {
-      setError('Shipping phone is required')
-      return false
-    }
-    if (!shippingAddress.trim()) {
-      setError('Shipping address is required')
-      return false
-    }
-    
-    return true
-  }, [guestEmail, guestPhone, isAuthenticated, isGuestCheckout, shippingAddress, shippingName, shippingPhone])
-
-  const preparingRef = useRef(false)
-
-  const prepareOrder = useCallback(async () => {
-    if (orderId || preparingRef.current) return orderId
-
-    if (!validateGuestForm()) {
-      return null
-    }
-
-    setError('')
-    preparingRef.current = true
-
-    try {
-      const checkoutData: Record<string, any> = {
-        delivery_region: deliveryRegion,
-        is_gift: isGift,
-        gift_message: giftMessage,
-        shipping_name: shippingName,
-        shipping_phone: shippingPhone,
-        shipping_address: shippingAddress,
-        shipping_city: shippingCity,
-        notes: notes,
-      }
-
-      if (isGuestCheckout) {
-        checkoutData.is_guest = true
-        checkoutData.guest_email = guestEmail
-        checkoutData.guest_phone = guestPhone
-      }
-
-      const checkoutRes = await api.post('/api/v1/orders/cart/checkout/', checkoutData)
-
-      const createdOrderId = String(checkoutRes.data?.id || '').trim()
-      if (!createdOrderId) {
-        throw new Error('Order could not be created.')
-      }
-
-      setOrderId(createdOrderId)
-      setPaymentInitiated(true)
-      return createdOrderId
-    } catch (err: unknown) {
-      preparingRef.current = false
-      setError(handleApiError(err))
-      throw err
-    }
-  }, [deliveryRegion, giftMessage, isGift, orderId, isGuestCheckout, guestEmail, guestPhone, shippingName, shippingPhone, shippingAddress, shippingCity, notes, validateGuestForm])
-
-  if (authLoading || loading) {
-    return (
-      <div className="pb-20 pt-10">
-        <div className="container-shell">
-          <div className="animate-pulse space-y-6">
-            <div className="h-9 w-64 rounded bg-[var(--bg-soft)]" />
-            <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-              <div className="h-[520px] rounded-[12px] border border-default bg-surface" />
-              <div className="h-[420px] rounded-[12px] border border-default bg-surface" />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!cart || (cart.items?.length ?? 0) === 0) {
-    return (
-      <div className="pb-20 pt-10">
-        <div className="container-shell">
-          <div className="card-soft mx-auto max-w-2xl p-10 text-center">
-            <h1 className="font-display text-[36px] text-[var(--text-primary)]">Your cart is empty</h1>
-            <p className="mt-3 text-[18px] text-[var(--text-secondary)]">Add products before checkout.</p>
-            <Link href="/categories" className="btn-primary mt-8 inline-flex px-7">Back to Shop</Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="pb-20 pt-10">
-      <div className="container-shell">
-        <div className="mb-8">
-          <Link href="/cart" className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
-            <ChevronLeft size={16} />
-            Back to Cart
-          </Link>
-          <h1 className="font-display text-[36px] text-[var(--text-primary)]">Checkout</h1>
-          <p className="mt-2 text-[18px] text-[var(--text-secondary)]">Complete your order securely.</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-          <section className="space-y-6">
-            <article className="card-soft p-6">
-              <h2 className="font-display text-[28px] text-[var(--text-primary)]">Delivery Details</h2>
-
-              {!isAuthenticated && (
-                <div className="mt-5">
-                  <div className="flex gap-3 mb-4">
-                    <button
-                      type="button"
-                      onClick={() => setIsGuestCheckout(false)}
-                      className={`flex-1 py-2.5 px-4 rounded-lg border font-medium transition-all ${
-                        !isGuestCheckout
-                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
-                          : 'border-default text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
-                      }`}
-                    >
-                      <User className="inline h-4 w-4 mr-2" />
-                      Login
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsGuestCheckout(true)}
-                      className={`flex-1 py-2.5 px-4 rounded-lg border font-medium transition-all ${
-                        isGuestCheckout
-                          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
-                          : 'border-default text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
-                      }`}
-                    >
-                      Continue as Guest
-                    </button>
-                  </div>
-
-                  {isGuestCheckout && (
-                    <div className="space-y-4 p-4 bg-[var(--bg-soft)] rounded-lg">
-                      <div>
-                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                          Email *
-                        </label>
-                        <input
-                          type="email"
-                          value={guestEmail}
-                          onChange={(e) => setGuestEmail(e.target.value)}
-                          placeholder="your@email.com"
-                          className="input-soft"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                          Phone Number *
-                        </label>
-                        <input
-                          type="tel"
-                          value={guestPhone}
-                          onChange={(e) => setGuestPhone(e.target.value)}
-                          placeholder="0712 345 678 or +254712345678"
-                          className="input-soft"
-                          required
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {!isGuestCheckout && (
-                    <Link
-                      href="/login?next=/checkout"
-                      className="block text-center py-2.5 px-4 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90"
-                    >
-                      Login to Continue
-                    </Link>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-5 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingName}
-                      onChange={(e) => setShippingName(e.target.value)}
-                      placeholder="John Doe"
-                      className="input-soft"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                      Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      value={shippingPhone}
-                      onChange={(e) => setShippingPhone(e.target.value)}
-                      placeholder="0712 345 678"
-                      className="input-soft"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                    Street Address *
-                  </label>
-                  <input
-                    type="text"
-                    value={shippingAddress}
-                    onChange={(e) => setShippingAddress(e.target.value)}
-                    placeholder="123 Main St, Apartment 4B"
-                    className="input-soft"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingCity}
-                      onChange={(e) => setShippingCity(e.target.value)}
-                      placeholder="Nairobi"
-                      className="input-soft"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                      Delivery Region *
-                    </label>
-                    <select
-                      value={deliveryRegion}
-                      onChange={(e) => setDeliveryRegion(e.target.value)}
-                      className="input-soft"
-                    >
-                      <option value="mombasa">Mombasa (Free)</option>
-                      <option value="nairobi">Nairobi (+KES 300)</option>
-                      <option value="upcountry">Upcountry (+KES 500)</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                    Order Notes (optional)
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Special instructions for delivery..."
-                    rows={2}
-                    className="input-soft resize-none"
-                  />
-                </div>
-
-                <label className="inline-flex items-center gap-3 pt-1 text-[var(--text-primary)]">
-                  <input
-                    type="checkbox"
-                    checked={isGift}
-                    onChange={(e) => setIsGift(e.target.checked)}
-                    className="h-4 w-4 rounded border-default"
-                  />
-                  This is a gift
-                </label>
-
-                {isGift && (
-                  <label className="block text-sm font-medium text-[var(--text-primary)]">
-                    Gift Message (optional)
-                    <textarea
-                      value={giftMessage}
-                      onChange={(e) => setGiftMessage(e.target.value)}
-                      placeholder="Add your note"
-                      rows={4}
-                      className="input-soft mt-2 resize-y"
-                    />
-                  </label>
-                )}
-              </div>
-            </article>
-
-            <article className="card-soft p-6">
-              <h2 className="font-display text-[28px] text-[var(--text-primary)]">Payment Method</h2>
-              <div className="mt-5 rounded-[12px] border border-default bg-[var(--bg-soft)] p-4">
-                <p className="font-semibold text-[var(--text-primary)]">M-Pesa STK Push</p>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">You will receive a secure phone prompt to approve payment.</p>
-              </div>
-
-              <div className="mt-6">
-                <MpesaCheckout
-                  orderId={orderId}
-                  totalAmount={payableTotal}
-                  guestEmail={isGuestCheckout ? guestEmail : ''}
-                  onPrepareOrder={prepareOrder}
-                  onInitiate={(_checkoutRequestId, createdOrderId) => {
-                    setOrderId(createdOrderId)
-                    setPaymentInitiated(true)
-                    setError('')
-                  }}
-                  onSuccess={(receipt, createdOrderId) => {
-                    const params = new URLSearchParams({
-                      order_id: String(createdOrderId),
-                      delivery_region: deliveryRegion,
-                      total: String(payableTotal),
-                    })
-                    if (receipt) params.set('receipt', receipt)
-                    if (isGuestCheckout) params.set('guest', '1')
-                    router.push(`/checkout/success?${params.toString()}`)
-                  }}
-                  onFailure={(message) => {
-                    setError(message || 'Payment failed or was cancelled. Please try again.')
-                  }}
-                />
-              </div>
-            </article>
-          </section>
-
-          <aside className="lg:sticky lg:top-28">
-            <div className="card-soft p-6">
-              <h2 className="font-display text-[28px] text-[var(--text-primary)]">Order Summary</h2>
-
-              <div className="mt-5 max-h-72 space-y-3 overflow-y-auto pr-1">
-                {cart.items.map((item) => (
-                  <div key={item.id} className="flex items-start justify-between gap-3 border-b border-default pb-3 last:border-0 last:pb-0">
-                    <div className="min-w-0">
-                      <p className="line-clamp-2 text-sm font-medium text-[var(--text-primary)]">{item.product.name}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">Qty {item.quantity}</p>
-                    </div>
-                    <p className="shrink-0 text-sm font-semibold text-[var(--text-primary)]">
-                      KES {formatKsh(toMoneyNumber(item.product.price) * item.quantity)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-5 space-y-3 text-[16px]">
-                <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                  <span>Subtotal</span>
-                  <span>KES {formatKsh(subtotal)}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                    <span>Discount</span>
-                    <span className="text-green-700">- KES {formatKsh(discount)}</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                  <span>Shipping</span>
-                  <span>KES {formatKsh(deliveryFee)}</span>
-                </div>
-                <div className="border-t border-default pt-3 text-[var(--text-primary)]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">Total</span>
-                    <span className="text-[24px] font-semibold">KES {formatKsh(payableTotal)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-start gap-2 rounded-[12px] border border-default bg-[var(--bg-soft)] p-3 text-sm text-[var(--text-secondary)]">
-                <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[var(--text-primary)]" />
-                <p>Your payment is secured and your order will only be confirmed after payment succeeds.</p>
-              </div>
-
-              {paymentInitiated && orderId && (
-                <div className="mt-4 rounded-[12px] border border-default bg-[var(--bg-soft)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-                  Order reference: <span className="font-semibold text-[var(--text-primary)]">#{orderId}</span>
-                </div>
-              )}
-            </div>
-          </aside>
-        </div>
-      </div>
-    </div>
-  )
-}
+const PAYMENT_METHODS = [
+  { value: 'mpesa', label: 'M-Pesa', Icon: Smartphone, desc: 'Pay via STK push to your phone' },
+  { value: 'card', label: 'Credit / Debit Card', Icon: CreditCard, desc: 'Visa, Mastercard accepted' },
+  { value: 'cash', label: 'Cash on Delivery', Icon: Banknote, desc: 'Pay when your order arrives' },
+];
 
 export default function CheckoutPage() {
+  const { items } = useCart();
+  const router = useRouter();
+  const [region, setRegion] = useState('nairobi');
+  const [payment, setPayment] = useState('mpesa');
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    firstName: '', lastName: '', email: '', phone: '',
+    address: '', city: '', postalCode: '',
+  });
+
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const regionObj = DELIVERY_REGIONS.find((r) => r.value === region)!;
+  const deliveryFee = subtotal >= 3000 ? 0 : regionObj.fee;
+  const total = subtotal + deliveryFee;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      // Simulate order creation — replace with real POST to /api/v1/orders/create/
+      await new Promise((r) => setTimeout(r, 1200));
+      showToast('Order placed successfully!', 'success');
+      router.push('/checkout/success');
+    } catch {
+      showToast('Failed to place order. Please try again.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="container-shell py-16 text-center">
+        <h1 className="font-serif text-3xl font-semibold mb-3" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+          Nothing to check out
+        </h1>
+        <p className="text-sm mb-6" style={{ color: 'var(--brand-text-secondary)' }}>
+          Your cart is empty. Add some products first.
+        </p>
+        <Link href="/categories" className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
+          Browse Products <ArrowRight size={16} />
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <Suspense
-      fallback={
-        <div className="pb-20 pt-10">
-          <div className="container-shell">
-            <div className="animate-pulse space-y-6">
-              <div className="h-9 w-64 rounded bg-[var(--bg-soft)]" />
-              <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-                <div className="h-[520px] rounded-[12px] border border-default bg-surface" />
-                <div className="h-[420px] rounded-[12px] border border-default bg-surface" />
+    <div className="container-shell py-6 sm:py-10">
+      <h1 className="font-serif text-3xl sm:text-4xl font-semibold mb-6" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+        Checkout
+      </h1>
+
+      <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
+        {/* Form fields */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Contact */}
+          <section className="p-5 sm:p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+              Contact Details
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <input required placeholder="First name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required placeholder="Last name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required type="tel" placeholder="Phone (+2547XXXXXXXX)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+            </div>
+          </section>
+
+          {/* Shipping */}
+          <section className="p-5 sm:p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+              Shipping Address
+            </h2>
+            <div className="space-y-3">
+              <input required placeholder="Street address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <div className="grid sm:grid-cols-2 gap-3">
+                <input required placeholder="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+                <input placeholder="Postal code (optional)" value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              </div>
+              <select
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                className="input-warm w-full !pl-4"
+                style={{ background: 'var(--brand-bg-alt)' }}
+                aria-label="Delivery region"
+              >
+                {DELIVERY_REGIONS.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label} — KES {r.fee}</option>
+                ))}
+              </select>
+            </div>
+          </section>
+
+          {/* Payment */}
+          <section className="p-5 sm:p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+              Payment Method
+            </h2>
+            <div className="space-y-2">
+              {PAYMENT_METHODS.map(({ value, label, Icon, desc }) => (
+                <label
+                  key={value}
+                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${payment === value ? 'ring-2' : ''}`}
+                  style={{
+                    borderColor: payment === value ? 'var(--brand-gold)' : 'var(--brand-border)',
+                    background: payment === value ? 'rgba(139,105,20,0.04)' : 'transparent',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={value}
+                    checked={payment === value}
+                    onChange={(e) => setPayment(e.target.value)}
+                    className="sr-only"
+                  />
+                  <Icon size={20} style={{ color: 'var(--brand-gold)' }} />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>{label}</div>
+                    <div className="text-xs" style={{ color: 'var(--brand-text-muted)' }}>{desc}</div>
+                  </div>
+                  <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center" style={{ borderColor: payment === value ? 'var(--brand-gold)' : 'var(--brand-border)' }}>
+                    {payment === value && <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--brand-gold)' }} />}
+                  </div>
+                </label>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* Summary */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-24 p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+              Your Order
+            </h2>
+            <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
+              {items.map((item) => (
+                <div key={item.id} className="flex justify-between text-xs" style={{ color: 'var(--brand-text-secondary)' }}>
+                  <span className="truncate flex-1 mr-2">{item.name} × {item.qty}</span>
+                  <span>KES {(item.price * item.qty).toLocaleString('en-KE')}</span>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2 text-sm pt-3" style={{ borderTop: '1px solid var(--brand-border)' }}>
+              <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
+                <span>Subtotal</span><span>KES {subtotal.toLocaleString('en-KE')}</span>
+              </div>
+              <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
+                <span>Delivery</span><span>{deliveryFee === 0 ? 'FREE' : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
+              </div>
+              <div className="flex justify-between text-base font-semibold pt-3" style={{ borderTop: '1px solid var(--brand-border)', color: 'var(--brand-text)' }}>
+                <span>Total</span><span>KES {total.toLocaleString('en-KE')}</span>
               </div>
             </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold transition-all disabled:opacity-60"
+              style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+            >
+              {submitting ? 'Processing…' : <>Place Order <Lock size={14} /></>}
+            </button>
+            <p className="text-[11px] mt-3 text-center" style={{ color: 'var(--brand-text-muted)' }}>
+              Secured by 256-bit SSL encryption
+            </p>
           </div>
         </div>
-      }
-    >
-      <CheckoutContent />
-    </Suspense>
-  )
+      </form>
+    </div>
+  );
 }

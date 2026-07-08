@@ -1,71 +1,70 @@
-import Link from 'next/link'
-import { CheckCircle2, Truck } from 'lucide-react'
+import type { Metadata } from 'next';
+import { Truck, Clock, MapPin } from 'lucide-react';
 
-const zones = [
-  { name: 'Mombasa', fee: 'Free', eta: 'Same day or next day' },
-  { name: 'Nairobi', fee: 'KES 300', eta: '1-2 business days' },
-  { name: 'Upcountry', fee: 'KES 500', eta: '3-5 business days' },
-]
+export const metadata: Metadata = {
+  title: 'Shipping Information',
+  description: 'Delivery options, fees and timelines for Malaika Nest orders across Kenya.',
+};
 
-const steps = [
-  'Order confirmed and payment verified.',
-  'Packing and dispatch prepared by our team.',
-  'Delivery partner receives and ships.',
-  'You receive the package at your provided location.',
-]
+const REGIONS = [
+  { region: 'Mombasa', timeline: 'Same day (order before 11am)', fee: 'FREE' },
+  { region: 'Nairobi', timeline: '1–2 business days', fee: 'KES 300' },
+  { region: 'Upcountry', timeline: '2–3 business days', fee: 'KES 500' },
+];
 
 export default function ShippingPage() {
   return (
-    <div className="pb-20 pt-10">
-      <div className="container-shell">
-        <header className="mb-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Delivery</p>
-          <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Shipping Information</h1>
-          <p className="mx-auto mt-3 max-w-3xl text-[18px] text-[var(--text-secondary)]">
-            Transparent delivery timelines and fees across Kenya.
-          </p>
-        </header>
+    <div className="container-shell py-10 sm:py-16 max-w-3xl">
+      <div className="text-center mb-10">
+        <h1 className="font-serif text-4xl sm:text-5xl font-semibold mb-3" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+          Shipping Information
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
+          Fast, reliable delivery across Kenya.
+        </p>
+      </div>
 
-        <section className="card-soft mb-8 p-6 md:p-8">
-          <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Delivery Zones</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            {zones.map((zone) => (
-              <article key={zone.name} className="rounded-[12px] border border-default bg-[var(--bg-soft)] p-4">
-                <p className="text-[20px] font-semibold text-[var(--text-primary)]">{zone.name}</p>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">Delivery Fee: <span className="font-semibold text-[var(--text-primary)]">{zone.fee}</span></p>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">Estimated Time: {zone.eta}</p>
-              </article>
-            ))}
+      <div className="grid sm:grid-cols-3 gap-3 mb-8">
+        {[
+          { Icon: Truck, title: 'Free over KES 3,000', desc: 'On all orders countrywide' },
+          { Icon: Clock, title: 'Same-day in Mombasa', desc: 'Order before 11am' },
+          { Icon: MapPin, title: 'Track every order', desc: 'SMS + email updates' },
+        ].map(({ Icon, title, desc }) => (
+          <div key={title} className="p-5 rounded-2xl border text-center" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <Icon size={24} className="mx-auto mb-2" style={{ color: 'var(--brand-gold)' }} />
+            <div className="text-sm font-semibold" style={{ color: 'var(--brand-text)' }}>{title}</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--brand-text-muted)' }}>{desc}</div>
           </div>
-        </section>
+        ))}
+      </div>
 
-        <section className="card-soft mb-8 p-6 md:p-8">
-          <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Delivery Process</h2>
-          <ol className="mt-5 space-y-3">
-            {steps.map((step, index) => (
-              <li key={step} className="flex items-start gap-3 rounded-[12px] border border-default bg-[var(--bg-soft)] p-4">
-                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-secondary)] text-sm font-semibold text-[var(--text-primary)]">
-                  {index + 1}
-                </span>
-                <span className="text-[16px] text-[var(--text-secondary)]">{step}</span>
-              </li>
+      <div className="rounded-2xl border overflow-hidden" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ background: 'var(--brand-warm)' }}>
+              <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Region</th>
+              <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Timeline</th>
+              <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            {REGIONS.map((r) => (
+              <tr key={r.region} style={{ borderTop: '1px solid var(--brand-border)' }}>
+                <td className="p-4 font-medium" style={{ color: 'var(--brand-text)' }}>{r.region}</td>
+                <td className="p-4" style={{ color: 'var(--brand-text-secondary)' }}>{r.timeline}</td>
+                <td className="p-4 font-semibold" style={{ color: 'var(--brand-gold)' }}>{r.fee}</td>
+              </tr>
             ))}
-          </ol>
-        </section>
+          </tbody>
+        </table>
+      </div>
 
-        <section className="card-soft p-6 md:p-8">
-          <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Important Notes</h2>
-          <ul className="mt-4 space-y-3">
-            <li className="flex items-start gap-3 text-[var(--text-secondary)]"><CheckCircle2 size={18} className="mt-0.5" /> Provide accurate delivery address and phone number.</li>
-            <li className="flex items-start gap-3 text-[var(--text-secondary)]"><CheckCircle2 size={18} className="mt-0.5" /> Keep your phone available for delivery confirmation calls.</li>
-            <li className="flex items-start gap-3 text-[var(--text-secondary)]"><Truck size={18} className="mt-0.5" /> For urgent support, contact us directly and include your order number.</li>
-          </ul>
-
-          <div className="mt-6">
-            <Link href="/contact" className="btn-primary inline-flex px-7">Contact Delivery Support</Link>
-          </div>
-        </section>
+      <div className="mt-8 prose prose-sm">
+        <h2 className="font-serif text-xl font-semibold mb-2" style={{ color: 'var(--brand-text)' }}>Order Processing</h2>
+        <p className="leading-relaxed" style={{ color: 'var(--brand-text-secondary)' }}>
+          Orders are processed within 24 hours of payment confirmation (excluding weekends and public holidays). You&apos;ll receive an order confirmation email immediately, followed by a shipping notification with your tracking number once your parcel leaves our Mombasa workshop.
+        </p>
       </div>
     </div>
-  )
+  );
 }

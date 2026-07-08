@@ -1,150 +1,52 @@
-'use client'
+import type { Metadata } from 'next';
+import { Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Mail, MapPin, Phone, AlertCircle } from 'lucide-react'
-import api from '@/lib/api'
+export const metadata: Metadata = {
+  title: 'Contact Us',
+  description: 'Get in touch with Malaika Nest. We respond to all enquiries within 24 hours.',
+};
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
-  const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState(false)
-  const [error, setError] = useState('')
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-    if (error) setError('')
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSending(true)
-    setError('')
-
-    try {
-      await api.post('/api/v1/core/contact/', formData)
-      setSent(true)
-    } catch (err: unknown) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Failed to send message. Please try whatsapping us on +254 726 771 321.'
-      setError(detail)
-    } finally {
-      setSending(false)
-    }
-  }
-
-  if (sent) {
-    return (
-      <div className="pb-20 pt-10">
-        <div className="container-shell">
-          <div className="card-soft mx-auto max-w-2xl p-10 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-secondary)]">
-              <Mail size={28} className="text-[var(--text-primary)]" />
-            </div>
-            <h1 className="font-display mt-5 text-[36px] text-[var(--text-primary)]">Message Sent!</h1>
-            <p className="mt-3 text-[18px] text-[var(--text-secondary)]">
-              Your message has been delivered to our team at{' '}
-              <strong>malaikanest7@gmail.com</strong>. We will get back to you shortly.
-            </p>
-            <Link href="/" className="btn-primary mt-8 inline-flex px-7">Back Home</Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="pb-20 pt-10">
-      <div className="container-shell">
-        <header className="mb-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Support</p>
-          <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Contact Us</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-[18px] text-[var(--text-secondary)]">Questions about products, delivery, or orders? We are here to help.</p>
-        </header>
-
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
-          <section className="card-soft p-6 md:p-8">
-            <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Send a Message</h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">Your message goes directly to our email inbox.</p>
-
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="text-sm font-medium text-[var(--text-primary)]">
-                  Full Name *
-                  <input name="name" value={formData.name} onChange={handleChange} className="input-soft mt-2" required placeholder="Jane Doe" />
-                </label>
-                <label className="text-sm font-medium text-[var(--text-primary)]">
-                  Phone
-                  <input name="phone" value={formData.phone} onChange={handleChange} className="input-soft mt-2" placeholder="+254 7XX XXX XXX" />
-                </label>
-              </div>
-
-              <label className="block text-sm font-medium text-[var(--text-primary)]">
-                Email *
-                <input name="email" type="email" value={formData.email} onChange={handleChange} className="input-soft mt-2" required placeholder="you@example.com" />
-              </label>
-
-              <label className="block text-sm font-medium text-[var(--text-primary)]">
-                Subject *
-                <input name="subject" value={formData.subject} onChange={handleChange} className="input-soft mt-2" required placeholder="e.g. Order inquiry" />
-              </label>
-
-              <label className="block text-sm font-medium text-[var(--text-primary)]">
-                Message *
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  className="input-soft mt-2 min-h-36 resize-y"
-                  required
-                  placeholder="Tell us how we can help..."
-                />
-              </label>
-
-              {error && (
-                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                  {error}
-                </div>
-              )}
-
-              <button type="submit" className="btn-primary w-full" disabled={sending}>
-                {sending ? 'Sending...' : 'Send Message'}
-              </button>
-            </form>
-          </section>
-
-          <aside className="space-y-4">
-            <article className="card-soft p-6">
-              <h2 className="text-[22px] font-semibold text-[var(--text-primary)]">Contact Information</h2>
-              <ul className="mt-4 space-y-4 text-[var(--text-secondary)]">
-                <li className="flex items-start gap-3"><Mail size={18} className="mt-0.5 shrink-0" /> malaikanest7@gmail.com</li>
-                <li className="flex items-start gap-3"><Phone size={18} className="mt-0.5 shrink-0" /> +254 726 771 321</li>
-                <li className="flex items-start gap-3"><MapPin size={18} className="mt-0.5 shrink-0" /> Mombasa, Kenya</li>
-              </ul>
-            </article>
-
-            <article className="card-soft p-6">
-              <h2 className="text-[22px] font-semibold text-[var(--text-primary)]">Business Hours</h2>
-              <p className="mt-3 text-[var(--text-secondary)]">Mon – Sat: 8:00 AM – 6:00 PM</p>
-            </article>
-
-            <article className="card-soft p-6">
-              <h2 className="text-[22px] font-semibold text-[var(--text-primary)]">WhatsApp</h2>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">Prefer instant messaging?</p>
-              <a
-                href="https://wa.me/254726771321"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary mt-3 inline-flex items-center gap-2"
-              >
-                Chat on WhatsApp
-              </a>
-            </article>
-          </aside>
-        </div>
+    <div className="container-shell py-10 sm:py-16 max-w-4xl">
+      <div className="text-center mb-10">
+        <h1 className="font-serif text-4xl sm:text-5xl font-semibold mb-3" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+          Get in touch
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
+          We&apos;d love to hear from you. Reach us on any channel below.
+        </p>
       </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
+        {[
+          { Icon: Mail, label: 'Email', value: 'malaikanest7@gmail.com', href: 'mailto:malaikanest7@gmail.com' },
+          { Icon: Phone, label: 'Phone', value: '+254 726 771 321', href: 'tel:+254726771321' },
+          { Icon: MessageCircle, label: 'WhatsApp', value: 'Chat with us', href: 'https://wa.me/254726771321' },
+          { Icon: MapPin, label: 'Location', value: 'Mombasa, Kenya', href: '#' },
+        ].map(({ Icon, label, value, href }) => (
+          <a key={label} href={href} className="p-5 rounded-2xl border text-center transition-all hover:shadow-warm-md" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <Icon size={22} className="mx-auto mb-2" style={{ color: 'var(--brand-gold)' }} />
+            <div className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--brand-text-muted)' }}>{label}</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>{value}</div>
+          </a>
+        ))}
+      </div>
+
+      <form className="p-6 sm:p-8 rounded-2xl border max-w-2xl mx-auto" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+        <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Send us a message</h2>
+        <div className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <input required placeholder="Your name" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+            <input required type="email" placeholder="Email" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+          </div>
+          <input placeholder="Subject (optional)" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+          <textarea required placeholder="Your message" rows={5} className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' }} />
+          <button type="submit" className="w-full rounded-full px-6 py-3.5 text-sm font-semibold" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
+            Send Message
+          </button>
+        </div>
+      </form>
     </div>
-  )
+  );
 }

@@ -1,12 +1,15 @@
-let accessToken: string | null = null
+/**
+ * In-memory access token store.
+ * Kept outside React state so axios interceptors can read it synchronously.
+ */
+let accessToken: string | null = null;
 
-export const getAccessToken = (): string | null => accessToken
+export const getAccessToken = (): string | null => accessToken;
 
 export const setAccessToken = (token: string | null) => {
-  accessToken = token
-}
+  accessToken = token;
+};
 
 export const clearAccessToken = () => {
-  accessToken = null
-}
-
+  accessToken = null;
+};

@@ -1,36 +1,32 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios'
-import { clearAccessToken, getAccessToken, setAccessToken } from './authToken'
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { clearAccessToken, getAccessToken, setAccessToken } from './authToken';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Cache configuration - durations in milliseconds
 const CACHE_DURATION = {
   PRODUCTS: 5 * 60 * 1000,
   CATEGORIES: 10 * 60 * 1000,
   BANNERS: 5 * 60 * 1000,
   DEFAULT: 2 * 60 * 1000,
-}
+};
 
-// In-memory response cache
-const responseCache = new Map<string, { data: any; timestamp: number }>()
+const responseCache = new Map<string, { data: any; timestamp: number }>();
 
-// Retry configuration
-const MAX_RETRIES = 3
-const RETRY_DELAY = 1000
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
   '/api/v1/accounts/token/',
   '/api/v1/accounts/token/refresh/',
   '/api/v1/accounts/register/',
   '/api/v1/accounts/admin/login/',
-  '/api/v1/accounts/profile/', // Don't trigger refresh loop for profile check
-  // Legacy aliases
+  '/api/v1/accounts/profile/',
   '/api/accounts/token/',
   '/api/accounts/token/refresh/',
   '/api/accounts/register/',
   '/api/accounts/admin/login/',
   '/api/accounts/profile/',
-]
+];
 
 const CACHEABLE_ENDPOINTS = [
   '/api/v1/products/products/',
@@ -39,31 +35,30 @@ const CACHEABLE_ENDPOINTS = [
   '/api/products/products/',
   '/api/products/categories/',
   '/api/products/banners/',
-]
+];
 
 const isAuthEndpoint = (url?: string) => {
-  if (!url) return false
-  return AUTH_ENDPOINTS_WITHOUT_REFRESH.some((path) => url.includes(path))
-}
+  if (!url) return false;
+  return AUTH_ENDPOINTS_WITHOUT_REFRESH.some((path) => url.includes(path));
+};
 
 const isCacheableEndpoint = (url?: string) => {
-  if (!url) return false
-  return CACHEABLE_ENDPOINTS.some((path) => url.includes(path))
-}
+  if (!url) return false;
+  return CACHEABLE_ENDPOINTS.some((path) => url.includes(path));
+};
 
 const getCacheDuration = (url: string): number => {
-  if (url.includes('/products/products')) return CACHE_DURATION.PRODUCTS
-  if (url.includes('/categories')) return CACHE_DURATION.CATEGORIES
-  if (url.includes('/banners')) return CACHE_DURATION.BANNERS
-  return CACHE_DURATION.DEFAULT
-}
+  if (url.includes('/products/products')) return CACHE_DURATION.PRODUCTS;
+  if (url.includes('/categories')) return CACHE_DURATION.CATEGORIES;
+  if (url.includes('/banners')) return CACHE_DURATION.BANNERS;
+  return CACHE_DURATION.DEFAULT;
+};
 
 const getCacheKey = (method: string, url: string, params?: any, data?: any): string => {
-  return `${method}:${url}:${JSON.stringify(params)}:${JSON.stringify(data)}`
-}
+  return `${method}:${url}:${JSON.stringify(params)}:${JSON.stringify(data)}`;
+};
 
-// Exponential backoff retry
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const retryWithBackoff = async <T>(
   fn: () => Promise<T>,
@@ -71,69 +66,61 @@ const retryWithBackoff = async <T>(
   delay = RETRY_DELAY
 ): Promise<T> => {
   try {
-    return await fn()
+    return await fn();
   } catch (error: any) {
     if (error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429) {
-      throw error
+      throw error;
     }
     if (retries > 0) {
-      await sleep(delay)
-      return retryWithBackoff(fn, retries - 1, delay * 2)
+      await sleep(delay);
+      return retryWithBackoff(fn, retries - 1, delay * 2);
     }
-    throw error
+    throw error;
   }
-}
+};
 
-const normalizeHost = (host: string) => host.replace(/^www\./i, '').toLowerCase()
+const normalizeHost = (host: string) => host.replace(/^www\./i, '').toLowerCase();
 const getEffectivePort = (url: URL) => {
-  if (url.port) return url.port
-  if (url.protocol === 'https:') return '443'
-  if (url.protocol === 'http:') return '80'
-  return ''
-}
+  if (url.port) return url.port;
+  if (url.protocol === 'https:') return '443';
+  if (url.protocol === 'http:') return '80';
+  return '';
+};
 
 const getBaseUrl = (): string => {
-  // In the browser, prefer same-origin requests so auth cookies always attach
-  // (especially important when users hit either www/non-www).
   if (typeof window !== 'undefined') {
-    const origin = window.location.origin
-    const pageUrl = new URL(origin)
+    const origin = window.location.origin;
+    const pageUrl = new URL(origin);
 
-    // Local Docker/browser testing needs an explicit backend port because
-    // the frontend runs on :3000 while Django is exposed on :8000.
     if (!API_URL) {
       if (['localhost', '127.0.0.1'].includes(pageUrl.hostname)) {
-        return `${pageUrl.protocol}//${pageUrl.hostname}:8000`
+        return `${pageUrl.protocol}//${pageUrl.hostname}:8000`;
       }
-      return ''
+      return '';
     }
 
-    // If API_URL points to the same "site host" (ignoring leading www), also use relative URLs.
     try {
-      const apiUrl = new URL(API_URL)
-      const apiOrigin = apiUrl.origin
-      const apiHost = normalizeHost(apiUrl.hostname)
-      const pageHost = normalizeHost(pageUrl.hostname)
-      const apiPort = getEffectivePort(apiUrl)
-      const pagePort = getEffectivePort(pageUrl)
+      const apiUrl = new URL(API_URL);
+      const apiOrigin = apiUrl.origin;
+      const apiHost = normalizeHost(apiUrl.hostname);
+      const pageHost = normalizeHost(pageUrl.hostname);
+      const apiPort = getEffectivePort(apiUrl);
+      const pagePort = getEffectivePort(pageUrl);
 
       if (apiHost === pageHost && apiPort === pagePort && apiUrl.protocol === pageUrl.protocol) {
-        return ''
+        return '';
       }
 
-      // Different origins (local dev, separate domains): use explicit API_URL.
-      if (apiOrigin !== origin) return API_URL
+      if (apiOrigin !== origin) return API_URL;
     } catch {
-      // If parsing fails, fall back to relative.
-      return ''
+      return '';
     }
 
-    return ''
+    return '';
   }
 
-  // Server-side (sitemaps, SSR): fall back to configured API host.
-  return API_URL || ''
-}
+  return API_URL || '';
+};
 
 const api = axios.create({
   baseURL: getBaseUrl(),
@@ -142,56 +129,48 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000,
-})
+});
 
-// Token refresh queue to handle concurrent requests
-let isRefreshing = false
-let failedQueue: Array<{ resolve: (value?: any) => void; reject: (error?: any) => void }> = []
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value?: any) => void; reject: (error?: any) => void }> = [];
 
 const processQueue = (error: any) => {
   failedQueue.forEach((prom) => {
     if (error) {
-      prom.reject(error)
+      prom.reject(error);
     }
-  })
-  failedQueue = []
-}
+  });
+  failedQueue = [];
+};
 
-// Request interceptor
 api.interceptors.request.use((config) => {
-  (config as any).metadata = { startTime: Date.now() }
+  (config as any).metadata = { startTime: Date.now() };
 
   if (config.data instanceof FormData) {
-    delete config.headers['Content-Type']
+    delete config.headers['Content-Type'];
   }
 
-  const token = getAccessToken()
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  const token = getAccessToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
 
-  return config
-})
+  return config;
+});
 
 const isApiEnvelope = (payload: unknown): payload is Record<string, any> => {
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return false
-  return 'data' in payload && (
-    'success' in payload ||
-    'status' in payload ||
-    'error' in payload ||
-    'message' in payload
-  )
-}
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return false;
+  return (
+    'data' in payload &&
+    ('success' in payload || 'status' in payload || 'error' in payload || 'message' in payload)
+  );
+};
 
-// Response interceptor with caching and retry
 api.interceptors.response.use(
   (response) => {
-    const payload = response.data
+    const payload = response.data;
 
     if (isApiEnvelope(payload)) {
       const inner = payload.data;
 
-      // Paginated response: preserve a flat {results, count, next, previous}
-      // shape for both classic DRF pagination and the project's {results, meta}
-      // envelope so components can always read res.data.results safely.
       const isCountPaginated =
         inner &&
         typeof inner === 'object' &&
@@ -209,7 +188,7 @@ api.interceptors.response.use(
         typeof inner.meta === 'object';
 
       if (isCountPaginated) {
-        response.data = inner; // {count, next, previous, results}
+        response.data = inner;
       } else if (isMetaPaginated) {
         response.data = {
           ...inner,
@@ -218,9 +197,8 @@ api.interceptors.response.use(
           previous: (inner.meta as any).previous ?? null,
         };
       } else if (Array.isArray(inner)) {
-        response.data = inner; // bare array
+        response.data = inner;
       } else if (inner !== null && typeof inner === 'object') {
-        // merge envelope-level fields: success, message, error remain accessible
         response.data = {
           success: payload.success ?? payload.status === 'success',
           status: payload.status,
@@ -229,203 +207,176 @@ api.interceptors.response.use(
           ...inner,
         };
       } else {
-        // null or primitive
         response.data = inner ?? null;
       }
     }
 
-    const cacheKey = getCacheKey(response.config.method || 'GET', response.config.url || '', response.config.params, response.config.data)
+    const cacheKey = getCacheKey(
+      response.config.method || 'GET',
+      response.config.url || '',
+      response.config.params,
+      response.config.data
+    );
 
     if (response.config.method === 'GET' && isCacheableEndpoint(response.config.url)) {
       responseCache.set(cacheKey, {
         data: response.data,
         timestamp: Date.now(),
-      })
-      // Evict oldest entries when cache exceeds 100 items
+      });
       if (responseCache.size > 100) {
-        const oldestKey = responseCache.keys().next().value
-        if (oldestKey !== undefined) responseCache.delete(oldestKey)
+        const oldestKey = responseCache.keys().next().value;
+        if (oldestKey !== undefined) responseCache.delete(oldestKey);
       }
     }
 
-    return response
+    return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean; metadata?: { startTime: number } }
-
-    if (originalRequest?.metadata?.startTime) {
-      const duration = Date.now() - originalRequest.metadata.startTime
-      // console.log intentionally removed for production security
-    }
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+      metadata?: { startTime: number };
+    };
 
     const shouldRetry = !originalRequest?._retry && (
       error.code === 'ECONNABORTED' ||
       error.code === 'ERR_NETWORK' ||
       (error.response?.status !== undefined && error.response.status >= 500) ||
       error.response?.status === 429
-    )
+    );
 
     if (shouldRetry && originalRequest) {
-      originalRequest._retry = true
-      return retryWithBackoff(() => api(originalRequest))
+      originalRequest._retry = true;
+      return retryWithBackoff(() => api(originalRequest));
     }
 
-    // If request has X-No-Auth-Redirect header, don't redirect on 401
     if (error.response?.status === 401 && originalRequest?.headers?.['X-No-Auth-Redirect']) {
-      return Promise.reject(error)
+      return Promise.reject(error);
     }
 
-    const shouldAttemptRefresh = error.response?.status === 401 &&
+    const shouldAttemptRefresh =
+      error.response?.status === 401 &&
       !originalRequest?._retry &&
-      !isAuthEndpoint(originalRequest?.url)
+      !isAuthEndpoint(originalRequest?.url);
 
     if (shouldAttemptRefresh && originalRequest) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
-        }).then(() => api(originalRequest)).catch((err) => Promise.reject(err))
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => api(originalRequest))
+          .catch((err) => Promise.reject(err));
       }
 
-      originalRequest._retry = true
-      isRefreshing = true
+      originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        const refreshRes = await api.post('/api/v1/accounts/token/refresh/')
-        const newAccess = (refreshRes.data as any)?.access
-        if (newAccess) setAccessToken(newAccess)
-        processQueue(null)
-        isRefreshing = false
-        return api(originalRequest)
+        const refreshRes = await api.post('/api/v1/accounts/token/refresh/');
+        const newAccess = (refreshRes.data as any)?.access;
+        if (newAccess) setAccessToken(newAccess);
+        processQueue(null);
+        isRefreshing = false;
+        return api(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError)
-        isRefreshing = false
-        clearAccessToken()
-        // Only redirect to login if we're not already on the login/register page
-        // This prevents infinite redirect loops
-        if (typeof window !== 'undefined' && 
-            !window.location.pathname.includes('/login') && 
-            !window.location.pathname.includes('/register') &&
-            !window.location.pathname.includes('/forgot-password')) {
-          window.location.href = '/login'
+        processQueue(refreshError);
+        isRefreshing = false;
+        clearAccessToken();
+        if (
+          typeof window !== 'undefined' &&
+          !window.location.pathname.includes('/login') &&
+          !window.location.pathname.includes('/register') &&
+          !window.location.pathname.includes('/forgot-password')
+        ) {
+          window.location.href = '/login';
         }
-        return Promise.reject(refreshError)
+        return Promise.reject(refreshError);
       }
     }
 
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
-// Enhanced GET with caching support
 export const apiGet = async <T>(
   url: string,
   options?: {
-    params?: Record<string, any>
-    useCache?: boolean
-    cacheDuration?: number
+    params?: Record<string, any>;
+    useCache?: boolean;
+    cacheDuration?: number;
   }
 ): Promise<T> => {
-  const { params, useCache = true, cacheDuration } = options || {}
+  const { params, useCache = true, cacheDuration } = options || {};
 
   if (useCache) {
-    const cacheKey = getCacheKey('GET', url, params)
-    const cached = responseCache.get(cacheKey)
+    const cacheKey = getCacheKey('GET', url, params);
+    const cached = responseCache.get(cacheKey);
     if (cached) {
-      const duration = cacheDuration || getCacheDuration(url)
+      const duration = cacheDuration || getCacheDuration(url);
       if (Date.now() - cached.timestamp < duration) {
-        return cached.data as T
+        return cached.data as T;
       }
     }
   }
 
-  const response = await api.get<T>(url, { params })
+  const response = await api.get<T>(url, { params });
 
   if (useCache && isCacheableEndpoint(url)) {
-    const cacheKey = getCacheKey('GET', url, params)
-    responseCache.set(cacheKey, { data: response.data, timestamp: Date.now() })
+    const cacheKey = getCacheKey('GET', url, params);
+    responseCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
   }
 
-  return response.data
-}
+  return response.data;
+};
 
-// Clear cache utilities
 export const clearCache = (urlPattern?: string) => {
   if (urlPattern) {
     for (const key of responseCache.keys()) {
-      if (key.includes(urlPattern)) responseCache.delete(key)
+      if (key.includes(urlPattern)) responseCache.delete(key);
     }
   } else {
-    responseCache.clear()
+    responseCache.clear();
   }
-}
+};
 
-export default api
+export default api;
 
-// Enhanced error handler
 export const handleApiError = (error: unknown, fallback = 'An error occurred. Please try again.') => {
-  const e = error as any
-  const responseData = e?.response?.data
+  const e = error as any;
+  const responseData = e?.response?.data;
 
-  const standardizedMessage = responseData?.error?.message
-  if (standardizedMessage) return standardizedMessage
+  const standardizedMessage = responseData?.error?.message;
+  if (standardizedMessage) return standardizedMessage;
 
-  const standardizedDetail = responseData?.error?.detail
+  const standardizedDetail = responseData?.error?.detail;
   if (standardizedDetail) {
-    if (typeof standardizedDetail === 'string') return standardizedDetail
+    if (typeof standardizedDetail === 'string') return standardizedDetail;
     if (typeof standardizedDetail === 'object') {
-      const nested = standardizedDetail.detail || standardizedDetail.message
-      if (nested) return Array.isArray(nested) ? nested[0] : String(nested)
+      const nested = standardizedDetail.detail || standardizedDetail.message;
+      if (nested) return Array.isArray(nested) ? nested[0] : String(nested);
       try {
-        return JSON.stringify(standardizedDetail)
+        return JSON.stringify(standardizedDetail);
       } catch {
-        return fallback
+        return fallback;
       }
     }
   }
 
-  const detail = responseData?.detail
-  const message = responseData?.message
-  if (detail) return Array.isArray(detail) ? detail[0] : detail
-  if (message) return message
+  const detail = responseData?.detail;
+  const message = responseData?.message;
+  if (detail) return Array.isArray(detail) ? detail[0] : detail;
+  if (message) return message;
 
-  if (e.code === 'ECONNABORTED') return 'Request timed out. Please check your connection.'
-  if (e.code === 'ERR_NETWORK') return 'Network error. Please check your internet connection.'
-  if (e.response?.status === 401) return 'Session expired. Please log in again.'
-  if (e.response?.status === 403) return 'You do not have permission.'
-  if (e.response?.status === 404) return 'Resource not found.'
-  if (e.response?.status === 429) return 'Too many requests. Please wait and try again.'
-  if (e.response?.status >= 500) return 'Server error. We are working on it.'
+  if (e.code === 'ECONNABORTED') return 'Request timed out. Please check your connection.';
+  if (e.code === 'ERR_NETWORK') return 'Network error. Please check your internet connection.';
+  if (e.response?.status === 401) return 'Session expired. Please log in again.';
+  if (e.response?.status === 403) return 'You do not have permission.';
+  if (e.response?.status === 404) return 'Resource not found.';
+  if (e.response?.status === 429) return 'Too many requests. Please wait and try again.';
+  if (e.response?.status >= 500) return 'Server error. We are working on it.';
 
-  const standardizedDetails = responseData?.error?.details
-  if (standardizedDetails) {
-    if (typeof standardizedDetails === 'string') return standardizedDetails
-    if (Array.isArray(standardizedDetails) && standardizedDetails.length > 0) {
-      return String(standardizedDetails[0])
-    }
-    if (typeof standardizedDetails === 'object') {
-      const detailEntries = Object.entries(standardizedDetails)
-      for (const [field, value] of detailEntries) {
-        if (typeof value === 'string' && value.trim()) {
-          return `${field.replace(/_/g, ' ')}: ${value}`
-        }
-        if (Array.isArray(value) && value.length > 0) {
-          return `${field.replace(/_/g, ' ')}: ${String(value[0])}`
-        }
-        if (value && typeof value === 'object') {
-          const nested = (value as any).detail || (value as any).message
-          if (nested) {
-            return `${field.replace(/_/g, ' ')}: ${Array.isArray(nested) ? nested[0] : String(nested)}`
-          }
-        }
-      }
-    }
-  }
-
-  return fallback
-}
+  return fallback;
+};
 
 export const isValidResponse = (data: any): boolean => {
-  return data !== null && data !== undefined && (typeof data === 'object' ? Object.keys(data).length > 0 : true)
-}
-
-
+  return data !== null && data !== undefined && (typeof data === 'object' ? Object.keys(data).length > 0 : true);
+};

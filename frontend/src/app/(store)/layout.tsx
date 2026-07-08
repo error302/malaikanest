@@ -1,29 +1,24 @@
-'use client'
+import type { Metadata } from 'next';
+import { Navbar } from '@/components/malaika/navbar';
+import { Footer } from '@/components/malaika/footer';
+import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
+import { StoreShell } from '@/components/malaika/store-shell';
+import { AnnouncementBar } from '@/components/malaika/announcement-bar';
 
-import { CartProvider } from '@/lib/cartContext'
-import { AuthProvider } from '@/lib/authContext'
-import { WishlistProvider } from '@/lib/wishlistContext'
-import Navbar from '@/components/layout/Navbar'
-import TrustBar from '@/components/layout/TrustBar'
-import Footer from '@/components/layout/Footer'
-import MobileNav from '@/components/layout/MobileNav'
-import { ToastContainer } from '@/components/Toast'
+export const metadata: Metadata = {
+  title: 'Shop',
+  description: 'Browse the Malaika Nest collection of premium baby clothing, essentials, nursery, toys and gifts.',
+};
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <WishlistProvider>
-        <CartProvider>
-          <div className="min-h-screen flex flex-col bg-[#FDF8F3]">
-            <Navbar />
-            <main className="flex-1 pb-20 lg:pb-0">{children}</main>
-            <TrustBar />
-            <Footer />
-          </div>
-          <MobileNav />
-          <ToastContainer />
-        </CartProvider>
-      </WishlistProvider>
-    </AuthProvider>
-  )
+    <StoreShell
+      announcement={<AnnouncementBar />}
+      navbar={<Navbar />}
+      mobileNav={<MobileBottomNav />}
+    >
+      {children}
+      <Footer />
+    </StoreShell>
+  );
 }

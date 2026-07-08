@@ -1,196 +1,141 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import api, { handleApiError } from '@/lib/api'
-import Link from 'next/link'
-import Image from 'next/image'
-import { shouldUseUnoptimizedImage } from '@/lib/media'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Plus, Search, Pencil, Trash2, Package } from 'lucide-react';
+import api from '@/lib/api';
+import { getImageUrl } from '@/lib/media';
+import { showToast } from '@/lib/toast';
 
 interface Product {
-  id: number
-  name: string
-  slug: string
-  price: string
-  category_name?: string
-  stock: number
-  is_active: boolean
-  image?: string | null
+  id: number;
+  name: string;
+  slug: string;
+  price: string;
+  stock: number;
+  is_active: boolean;
+  image?: string | null;
+  category?: { name?: string };
 }
 
-export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [uploadingId, setUploadingId] = useState<number | null>(null)
+export default function AdminProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const fetchProducts = () => {
+    setLoading(true);
+    api
+      .get('/api/v1/products/products/', { params: { search, limit: 50 } })
+      .then((res) => {
+        const data = res.data;
+        setProducts(data?.results ?? data?.data?.results ?? []);
+      })
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    fetchProducts()
-  }, [])
-
-  const fetchProducts = async () => {
-    try {
-      setError(null)
-      const res = await api.get('/api/v1/products/admin/products/')
-      const data = Array.isArray(res.data) ? res.data : res.data?.results || []
-      setProducts(data)
-    } catch (error) {
-      console.error('Error fetching products:', error)
-      setProducts([])
-      setError(handleApiError(error, 'Could not load products right now.'))
-    } finally {
-      setLoading(false)
-    }
-  }
+    const t = setTimeout(fetchProducts, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this product?')) return
-
-    setError(null)
-    setSuccess(null)
-
-    const previous = products
-    setProducts((current) => current.filter((product) => product.id !== id))
-
+    if (!confirm('Are you sure you want to delete this product?')) return;
     try {
-      await api.delete(`/api/v1/products/admin/products/${id}/`)
-      setSuccess('Product deleted.')
-    } catch (error) {
-      console.error('Error deleting product:', error)
-      setProducts(previous) // rollback
-      setError(handleApiError(error, 'Product could not be deleted.'))
+      await api.delete(`/api/v1/products/products/${id}/`);
+      showToast('Product deleted', 'success');
+      setProducts((p) => p.filter((x) => x.id !== id));
+    } catch {
+      showToast('Failed to delete product', 'error');
     }
-  }
-
-  const handleToggleActive = async (product: Product) => {
-    setError(null)
-    setSuccess(null)
-
-    try {
-      await api.patch(`/api/v1/products/admin/products/${product.id}/`, { is_active: !product.is_active })
-      setProducts((current) => current.map((item) => (
-        item.id === product.id ? { ...item, is_active: !item.is_active } : item
-      )))
-      setSuccess(`Product ${product.is_active ? 'deactivated' : 'activated'}.`)
-    } catch (error) {
-      console.error('Error updating product:', error)
-      setError(handleApiError(error, 'Product status could not be updated.'))
-    }
-  }
-
-  const handleImageUpload = async (product: Product, file: File | null) => {
-    if (!file) return
-
-    setUploadingId(product.id)
-    setError(null)
-    setSuccess(null)
-
-    try {
-      const payload = new FormData()
-      payload.append('image', file)
-      const res = await api.patch(`/api/v1/products/admin/products/${product.id}/`, payload)
-      setProducts((current) => current.map((item) => (item.id === product.id ? res.data : item)))
-      setSuccess(`Updated image for ${product.name}.`)
-    } catch (error) {
-      console.error('Error uploading product image:', error)
-      setError(handleApiError(error, 'Product image could not be updated.'))
-    } finally {
-      setUploadingId(null)
-    }
-  }
-
-  if (loading) return <div className="p-6">Loading products...</div>
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Products</h2>
-        <Link href="/admin/products/new" className="px-4 py-2 bg-amber-700 text-white rounded-lg">Add Product</Link>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+            Products
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--brand-text-muted)' }}>
+            {products.length} product{products.length === 1 ? '' : 's'} in your catalog
+          </p>
+        </div>
+        <Link href="/admin/products/new" className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
+          <Plus size={16} /> Add Product
+        </Link>
       </div>
 
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      <div className="relative max-w-md">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--brand-text-muted)' }} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search products…"
+          className="input-warm w-full"
+          style={{ background: '#FFFFFF' }}
+        />
+      </div>
 
-      {success && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {success}
-        </div>
-      )}
-
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs">Product</th>
-              <th className="px-4 py-3 text-left text-xs">Category</th>
-              <th className="px-4 py-3 text-left text-xs">Price</th>
-              <th className="px-4 py-3 text-left text-xs">Stock</th>
-              <th className="px-4 py-3 text-left text-xs">Status</th>
-              <th className="px-4 py-3 text-left text-xs">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
-                  No products found yet.
-                </td>
-              </tr>
-            ) : (
-              products.map((product) => (
-                <tr key={product.id} className="border-t">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden relative">
-                        {product.image ? (
-                          <Image src={product.image} alt={product.name} fill className="object-cover" unoptimized={shouldUseUnoptimizedImage(product.image)} />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--brand-gold)] to-[var(--brand-brown)] text-white font-semibold">
-                            {product.name.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-semibold">{product.name}</p>
-                        <p className="text-xs text-slate-500">{product.slug}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm">{product.category_name || 'Uncategorized'}</td>
-                  <td className="px-4 py-3 text-sm">KES {Number(product.price).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-sm">{product.stock}</td>
-                  <td className="px-4 py-3 text-sm">{product.is_active ? 'Active' : 'Inactive'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Link href={`/admin/products/${product.id}`} className="px-3 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-                        Edit
-                      </Link>
-                      <label className="cursor-pointer px-3 py-1 bg-amber-50 text-amber-700 rounded text-xs">
-                        {uploadingId === product.id ? 'Uploading...' : 'Upload'}
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          className="hidden"
-                          disabled={uploadingId === product.id}
-                          onChange={(e) => {
-                            void handleImageUpload(product, e.target.files?.[0] || null)
-                            e.currentTarget.value = ''
-                          }}
-                        />
-                      </label>
-                      <button onClick={() => handleToggleActive(product)} className="px-3 py-1 bg-slate-100 rounded text-xs">{product.is_active ? 'Deactivate' : 'Activate'}</button>
-                      <button onClick={() => handleDelete(product.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs">Delete</button>
-                    </div>
-                  </td>
+      <div className="rounded-2xl border overflow-hidden" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+        {loading ? (
+          <div className="p-8 text-center text-sm" style={{ color: 'var(--brand-text-muted)' }}>Loading…</div>
+        ) : products.length === 0 ? (
+          <div className="p-8 text-center">
+            <Package size={32} className="mx-auto mb-3" style={{ color: 'var(--brand-text-muted)' }} />
+            <p className="text-sm" style={{ color: 'var(--brand-text-muted)' }}>No products found.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: 'var(--brand-bg-alt)' }}>
+                  <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Product</th>
+                  <th className="text-left p-4 font-semibold hidden sm:table-cell" style={{ color: 'var(--brand-text)' }}>Category</th>
+                  <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Price</th>
+                  <th className="text-left p-4 font-semibold hidden md:table-cell" style={{ color: 'var(--brand-text)' }}>Stock</th>
+                  <th className="text-right p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.id} style={{ borderTop: '1px solid var(--brand-border)' }}>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: 'var(--brand-warm)' }}>
+                          {p.image ? <img src={getImageUrl(p.image)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate" style={{ color: 'var(--brand-text)' }}>{p.name}</div>
+                          <div className="text-xs" style={{ color: 'var(--brand-text-muted)' }}>/{p.slug}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 hidden sm:table-cell" style={{ color: 'var(--brand-text-secondary)' }}>{p.category?.name || '—'}</td>
+                    <td className="p-4 font-semibold" style={{ color: 'var(--brand-gold)' }}>KES {parseFloat(p.price).toLocaleString('en-KE')}</td>
+                    <td className="p-4 hidden md:table-cell">
+                      <span className={`text-xs px-2 py-1 rounded-full ${p.stock > 5 ? '' : ''}`} style={{ background: p.stock > 5 ? 'rgba(45,90,66,0.12)' : 'rgba(196,112,74,0.12)', color: p.stock > 5 ? 'var(--brand-green-light)' : 'var(--brand-terra)' }}>
+                        {p.stock} in stock
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/admin/products/${p.id}`} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]" aria-label="Edit product">
+                          <Pencil size={14} style={{ color: 'var(--brand-brown)' }} />
+                        </Link>
+                        <button type="button" onClick={() => handleDelete(p.id)} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]" aria-label="Delete product">
+                          <Trash2 size={14} style={{ color: 'var(--brand-terra)' }} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }

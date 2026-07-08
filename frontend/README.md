@@ -1,9 +1,9 @@
-# Malaika Nest — Premium Storefront (v2)
+# Malaika Nest — Premium Storefront
 
 Next.js 16 + TypeScript + Tailwind CSS 4 storefront for Malaika Nest, rebuilt with a
-premium, minimalist, mobile-first aesthetic.
+premium, minimalist, mobile-first aesthetic. This replaces the legacy frontend.
 
-## What's new in v2
+## Highlights
 
 - **Premium responsive design** — flawless on mobile (iPhone SE → 12 Pro Max) and desktop (1280px → 4K)
 - **Real API integration** — wired to the Django backend at `/api/v1/*` with in-memory caching,
@@ -15,8 +15,8 @@ premium, minimalist, mobile-first aesthetic.
 - **Accessibility** — WCAG 2.1 AA: skip link, semantic landmarks, ARIA roles, keyboard nav,
   focus-visible, 44px touch targets, reduced-motion support
 - **SEO** — full metadata, OpenGraph, Twitter cards, JSON-LD Store schema, semantic HTML
-- **Database schema** — see `../prisma/schema.prisma` for the normalized, indexed Prisma schema
-  and `../DATABASE.md` for PostgreSQL tuning best practices
+- **Database schema** — see `prisma/schema.prisma` for the normalized, indexed Prisma schema
+  and `DATABASE.md` for PostgreSQL tuning best practices
 
 ## Tech stack
 
@@ -29,7 +29,7 @@ premium, minimalist, mobile-first aesthetic.
 ## Getting started
 
 ```bash
-cd frontend-v2
+cd frontend
 bun install
 
 # Configure environment
@@ -79,12 +79,12 @@ src/
 - **Voice**: "Made with love in Kenya" — premium, warm, organic, classy
 - **Market**: Kenya (KES pricing, M-Pesa Till 3370347, Mombasa-based)
 
-## Swapping from v1 → v2 in production
+## Deploy to production
 
-1. Deploy `frontend-v2/` to Vercel / your hosting (it's a standalone Next.js app)
-2. Set `NEXT_PUBLIC_API_URL` to your Django backend
-3. Update your nginx/CDN to route to the new frontend
-4. The v1 `frontend/` directory remains as a rollback fallback
+1. Deploy `frontend/` to Vercel (or your hosting) — it's a standalone Next.js app
+2. Set `NEXT_PUBLIC_API_URL` to your Django backend (e.g. `https://malaikanest.duckdns.org`)
+3. Update nginx/CDN to route to the new frontend
+4. Run `bun run build` to verify the production build before going live
 
 ## License
 

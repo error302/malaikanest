@@ -1,40 +1,25 @@
-export default function TermsOfServicePage() {
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Terms of Service' };
+
+export default function TermsPage() {
   return (
-    <div className="pb-20 pt-10">
-      <div className="container-shell">
-        <article className="card-soft mx-auto max-w-4xl p-6 md:p-10">
-          <h1 className="font-display text-[48px] text-[var(--text-primary)]">Terms of Service</h1>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">Last updated: March 7, 2026</p>
-
-          <div className="mt-6 space-y-6 text-[var(--text-secondary)]">
-            <section>
-              <h2 className="text-[24px] font-semibold text-[var(--text-primary)]">1. Store Use</h2>
-              <p className="mt-2">By using Malaika Nest, you agree to provide accurate information and use the platform lawfully.</p>
-            </section>
-
-            <section>
-              <h2 className="text-[24px] font-semibold text-[var(--text-primary)]">2. Orders and Payments</h2>
-              <p className="mt-2">Orders are confirmed after successful payment verification. Pricing and stock are managed through the live catalog.</p>
-            </section>
-
-            <section>
-              <h2 className="text-[24px] font-semibold text-[var(--text-primary)]">3. Delivery</h2>
-              <p className="mt-2">Delivery times are estimates and may vary by location and logistics conditions.</p>
-            </section>
-
-            <section>
-              <h2 className="text-[24px] font-semibold text-[var(--text-primary)]">4. Customer Support</h2>
-              <p className="mt-2">If there is an issue with your order, contact support immediately with your order number for resolution.</p>
-            </section>
-
-            <section>
-              <h2 className="text-[24px] font-semibold text-[var(--text-primary)]">5. Contact</h2>
-              <p className="mt-2">For terms inquiries, email malaikanest7@gmail.com.</p>
-            </section>
-          </div>
-        </article>
+    <div className="container-shell py-10 sm:py-16 max-w-3xl">
+      <h1 className="font-serif text-4xl font-semibold mb-6" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>Terms of Service</h1>
+      <div className="prose prose-sm max-w-none space-y-4" style={{ color: 'var(--brand-text-secondary)' }}>
+        <p>By accessing or using malaikanest.duckdns.org, you agree to be bound by these Terms of Service. If you do not agree, please discontinue use of the site.</p>
+        <h2 className="font-serif text-xl font-semibold mt-6 mb-2" style={{ color: 'var(--brand-text)' }}>Orders & Payments</h2>
+        <p>All orders are subject to availability and confirmation of the order price. Prices are quoted in Kenyan Shillings (KES) and include applicable taxes. We reserve the right to refuse or cancel any order at our discretion.</p>
+        <h2 className="font-serif text-xl font-semibold mt-6 mb-2" style={{ color: 'var(--brand-text)' }}>Shipping & Delivery</h2>
+        <p>Delivery timelines are estimates and not guaranteed. Risk of loss passes to you upon delivery. We are not liable for delays caused by third-party couriers or events beyond our control.</p>
+        <h2 className="font-serif text-xl font-semibold mt-6 mb-2" style={{ color: 'var(--brand-text)' }}>Returns</h2>
+        <p>Returns are accepted within 7 days of delivery for unused items in original packaging. See our Returns page for full details.</p>
+        <h2 className="font-serif text-xl font-semibold mt-6 mb-2" style={{ color: 'var(--brand-text)' }}>Intellectual Property</h2>
+        <p>All content on this site — including text, images, logos and designs — is the property of Malaika Nest and protected under Kenyan and international copyright law. You may not reproduce or distribute our content without written permission.</p>
+        <h2 className="font-serif text-xl font-semibold mt-6 mb-2" style={{ color: 'var(--brand-text)' }}>Governing Law</h2>
+        <p>These terms are governed by the laws of the Republic of Kenya. Any disputes shall be resolved in the courts of Mombasa, Kenya.</p>
+        <p className="text-xs pt-4" style={{ color: 'var(--brand-text-muted)' }}>Last updated: January 2026</p>
       </div>
     </div>
-  )
+  );
 }
-

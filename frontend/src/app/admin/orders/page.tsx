@@ -1,170 +1,121 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import api from '@/lib/api'
-
-interface OrderItem {
-  id: number
-  product_name: string
-  price_at_purchase: number
-  quantity: number
-}
+import { useEffect, useState } from 'react';
+import { Search, Eye } from 'lucide-react';
+import Link from 'next/link';
+import api from '@/lib/api';
 
 interface Order {
-  id: number
-  order_number: string
-  user_email: string
-  customer_name: string
-  items: OrderItem[]
-  total: string
-  status: string
-  payment_status: string
-  created_at: string
-  receipt_number?: string
-  mpesa_receipt_number?: string
-  shipping_phone?: string
+  id: number;
+  receipt_number: string;
+  status: string;
+  total: string;
+  customer_email?: string;
+  guest_email?: string;
+  created_at: string;
 }
 
-export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [filter, setFilter] = useState('all')
-  const [actionLoading, setActionLoading] = useState(false)
-  const [actionError, setActionError] = useState('')
+const STATUSES = ['all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: 'var(--brand-gold)',
+  paid: 'var(--brand-green-light)',
+  processing: 'var(--brand-gold-light)',
+  shipped: '#3B82F6',
+  delivered: 'var(--brand-green-light)',
+  cancelled: 'var(--brand-terra)',
+};
+
+export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
-
-  const fetchOrders = async (): Promise<Order[]> => {
-    try {
-      const res = await api.get('/api/v1/orders/admin/orders/')
-      const data = Array.isArray(res.data) ? res.data : res.data?.results || []
-      setOrders(data)
-      return data
-    } catch {
-      setOrders([])
-      return []
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleStatusUpdate = async (newStatus: string) => {
-    if (!selectedOrder) return
-    setActionLoading(true)
-    setActionError('')
-
-    try {
-      await api.patch(`/api/v1/orders/admin/orders/${selectedOrder.id}/update_status/`, { status: newStatus })
-      const latest = await fetchOrders()
-      const refreshed = latest.find((o) => o.id === selectedOrder.id)
-      setSelectedOrder(refreshed || null)
-    } catch (err: any) {
-      setActionError(err?.response?.data?.detail || 'Failed to update order status.')
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const filteredOrders = filter === 'all' ? orders : orders.filter((o) => o.status === filter)
-  const statuses = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
-
-  if (loading) return <div className="p-6">Loading orders...</div>
+    let cancelled = false;
+    const params: Record<string, string> = { limit: '50' };
+    if (search) params.search = search;
+    if (statusFilter !== 'all') params.status = statusFilter;
+    const load = async () => {
+      try {
+        const res = await api.get('/api/v1/orders/', { params });
+        if (cancelled) return;
+        const data = res.data;
+        setOrders(data?.results ?? data?.data?.results ?? []);
+      } catch {
+        if (!cancelled) setOrders([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [search, statusFilter]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Orders</h2>
-        <div className="flex gap-2 flex-wrap">
-          {['all', ...statuses].map((status) => (
-            <button key={status} onClick={() => setFilter(status)} className={`px-3 py-2 rounded-lg text-sm ${filter === status ? 'bg-amber-600 text-white' : 'bg-slate-100'}`}>
-              {status}
-            </button>
-          ))}
+      <div>
+        <h1 className="font-serif text-2xl sm:text-3xl font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+          Orders
+        </h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--brand-text-muted)' }}>
+          {orders.length} order{orders.length === 1 ? '' : 's'}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--brand-text-muted)' }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by receipt or email…" className="input-warm w-full" style={{ background: '#FFFFFF' }} />
         </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-full px-4 py-2.5 text-sm border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}>
+          {STATUSES.map((s) => <option key={s} value={s}>{s === 'all' ? 'All statuses' : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+        </select>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs">Order ID</th>
-              <th className="px-4 py-3 text-left text-xs">Customer</th>
-              <th className="px-4 py-3 text-left text-xs">Total</th>
-              <th className="px-4 py-3 text-left text-xs">Status</th>
-              <th className="px-4 py-3 text-left text-xs">Date</th>
-              <th className="px-4 py-3 text-left text-xs">M-Pesa Receipt</th>
-              <th className="px-4 py-3 text-left text-xs"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-500">
-                  No orders found{filter !== 'all' ? ` with status "${filter}".` : '.'}
-                </td>
-              </tr>
-            ) : (
-              filteredOrders.map((order) => (
-              <tr key={order.id} className="border-t">
-                <td className="px-4 py-3 text-sm">{order.order_number || `#${order.id}`}</td>
-                <td className="px-4 py-3 text-sm">{order.customer_name || order.user_email}</td>
-                <td className="px-4 py-3 text-sm">KES {Number(order.total).toLocaleString()}</td>
-                <td className="px-4 py-3 text-sm">{order.status}</td>
-                <td className="px-4 py-3 text-sm">{new Date(order.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-sm">{order.mpesa_receipt_number || '-'}</td>
-                <td className="px-4 py-3"><button onClick={() => setSelectedOrder(order)} className="px-3 py-1 bg-slate-100 rounded text-xs">View</button></td>
-              </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Order {selectedOrder.order_number || `#${selectedOrder.id}`}</h3>
-              <button onClick={() => setSelectedOrder(null)}>Close</button>
-            </div>
-
-            <div className="space-y-2 text-sm mb-6">
-              <p><strong>Customer:</strong> {selectedOrder.customer_name || selectedOrder.user_email}</p>
-              <p><strong>Email:</strong> {selectedOrder.user_email}</p>
-              <p><strong>Phone:</strong> {selectedOrder.shipping_phone || '-'}</p>
-              <p><strong>Payment:</strong> {selectedOrder.payment_status || selectedOrder.status}</p>
-            </div>
-
-            <table className="w-full text-sm border">
-              <thead className="bg-slate-50">
-                <tr><th className="p-2 text-left">Item</th><th className="p-2">Qty</th><th className="p-2 text-right">Price</th></tr>
+      <div className="rounded-2xl border overflow-hidden" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+        {loading ? (
+          <div className="p-8 text-center text-sm" style={{ color: 'var(--brand-text-muted)' }}>Loading…</div>
+        ) : orders.length === 0 ? (
+          <div className="p-8 text-center text-sm" style={{ color: 'var(--brand-text-muted)' }}>No orders found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: 'var(--brand-bg-alt)' }}>
+                  <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Receipt</th>
+                  <th className="text-left p-4 font-semibold hidden sm:table-cell" style={{ color: 'var(--brand-text)' }}>Customer</th>
+                  <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Date</th>
+                  <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Status</th>
+                  <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Total</th>
+                  <th className="text-right p-4 font-semibold" style={{ color: 'var(--brand-text)' }}></th>
+                </tr>
               </thead>
               <tbody>
-                {selectedOrder.items.map((item) => (
-                  <tr key={item.id} className="border-t"><td className="p-2">{item.product_name}</td><td className="p-2 text-center">{item.quantity}</td><td className="p-2 text-right">KES {Number(item.price_at_purchase).toLocaleString()}</td></tr>
+                {orders.map((o) => (
+                  <tr key={o.id} style={{ borderTop: '1px solid var(--brand-border)' }}>
+                    <td className="p-4 font-medium" style={{ color: 'var(--brand-text)' }}>#{o.receipt_number}</td>
+                    <td className="p-4 hidden sm:table-cell" style={{ color: 'var(--brand-text-secondary)' }}>{o.customer_email || o.guest_email || 'Guest'}</td>
+                    <td className="p-4" style={{ color: 'var(--brand-text-secondary)' }}>{new Date(o.created_at).toLocaleDateString('en-KE')}</td>
+                    <td className="p-4">
+                      <span className="text-xs px-2 py-1 rounded-full capitalize" style={{ background: `${STATUS_COLORS[o.status] || 'var(--brand-text-muted)'}20`, color: STATUS_COLORS[o.status] || 'var(--brand-text-muted)' }}>
+                        {o.status}
+                      </span>
+                    </td>
+                    <td className="p-4 font-semibold" style={{ color: 'var(--brand-gold)' }}>KES {parseFloat(o.total).toLocaleString('en-KE')}</td>
+                    <td className="p-4 text-right">
+                      <Link href={`/admin/orders?id=${o.id}`} className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[var(--brand-warm)]" aria-label="View order">
+                        <Eye size={14} style={{ color: 'var(--brand-brown)' }} />
+                      </Link>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
-
-            {actionError && (
-              <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                {actionError}
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {statuses.map((status) => (
-                <button key={status} onClick={() => handleStatusUpdate(status)} disabled={actionLoading} className="px-3 py-2 bg-slate-100 rounded text-xs disabled:opacity-50">
-                  {actionLoading ? 'Updating...' : `Set ${status}`}
-                </button>
-              ))}
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  )
+  );
 }

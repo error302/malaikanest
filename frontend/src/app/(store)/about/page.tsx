@@ -1,71 +1,49 @@
-import Link from 'next/link'
-import { CheckCircle2, Leaf, Truck } from 'lucide-react'
+import type { Metadata } from 'next';
+import { Heart, Baby, Truck, Shield, Leaf } from 'lucide-react';
 
-const values = [
-  {
-    title: 'Quality Assured',
-    text: 'Every product is selected for safety, comfort, and daily reliability.',
-    icon: CheckCircle2,
-  },
-  {
-    title: 'Trusted Sourcing',
-    text: 'We prioritize verified suppliers and practical essentials for parents.',
-    icon: Leaf,
-  },
-  {
-    title: 'Kenya Delivery',
-    text: 'Fast local dispatch with support from order placement to delivery.',
-    icon: Truck,
-  },
-]
+export const metadata: Metadata = {
+  title: 'About Us',
+  description: 'Malaika Nest is a Kenyan baby shop handcrafting organic clothing and curating premium essentials for little ones aged 0-12 years.',
+};
 
 export default function AboutPage() {
   return (
-    <div className="pb-20 pt-10">
-      <div className="container-shell">
-        <header className="mb-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">About</p>
-          <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Malaika Nest</h1>
-          <p className="mx-auto mt-3 max-w-3xl text-[18px] text-[var(--text-secondary)]">
-            Premium baby and maternity essentials curated for Kenyan families who value comfort, quality, and trust.
-          </p>
-        </header>
-
-        <section className="card-soft mb-8 p-6 md:p-8">
-          <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Our Story</h2>
-          <p className="mt-3 text-[16px] text-[var(--text-secondary)]">
-            Malaika Nest was built to make parenting purchases simpler. We focus on practical products that support newborn care,
-            feeding, nursery setup, and maternity needs without overwhelming families.
-          </p>
-          <p className="mt-3 text-[16px] text-[var(--text-secondary)]">
-            Every listing you see on the storefront is managed through your admin dashboard, so the catalog always reflects what you
-            choose to sell.
-          </p>
-        </section>
-
-        <section className="grid gap-6 md:grid-cols-3">
-          {values.map((item) => {
-            const Icon = item.icon
-            return (
-              <article key={item.title} className="card-soft p-6 text-center">
-                <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-secondary)] text-[var(--text-primary)]">
-                  <Icon size={22} />
-                </span>
-                <h3 className="mt-4 text-[22px] font-semibold text-[var(--text-primary)]">{item.title}</h3>
-                <p className="mt-2 text-[16px] text-[var(--text-secondary)]">{item.text}</p>
-              </article>
-            )
-          })}
-        </section>
-
-        <section className="card-soft mt-8 p-8 text-center">
-          <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Need help choosing products?</h2>
-          <p className="mt-2 text-[18px] text-[var(--text-secondary)]">Our support team can guide you before you place an order.</p>
-          <Link href="/contact" className="btn-primary mt-6 inline-flex px-7">
-            Contact Support
-          </Link>
-        </section>
+    <div className="container-shell py-10 sm:py-16 max-w-3xl">
+      <div className="text-center mb-10">
+        <span className="section-label justify-center mb-3">Our story</span>
+        <h1 className="font-serif text-4xl sm:text-5xl font-semibold mt-3 mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+          Made with love in Kenya
+        </h1>
+        <p className="text-base leading-relaxed" style={{ color: 'var(--brand-text-secondary)' }}>
+          Malaika Nest was born from a simple belief: every child deserves the softest, safest, most beautiful beginnings. From our home in Mombasa, we handcraft organic cotton clothing and curate premium essentials for little ones aged 0–12 years — delivered with care across Kenya.
+        </p>
       </div>
+
+      <div className="grid sm:grid-cols-2 gap-4 mb-10">
+        {[
+          { Icon: Leaf, title: 'Organic & Safe', desc: 'OEKO-TEX certified organic cotton, gentle on delicate skin.' },
+          { Icon: Heart, title: 'Handcrafted', desc: 'Every piece is made by hand in our Mombasa workshop.' },
+          { Icon: Truck, title: 'Countrywide Delivery', desc: 'Same-day in Mombasa, 1–3 days across Kenya.' },
+          { Icon: Shield, title: 'Parent Approved', desc: 'Trusted by 5,000+ Kenyan families since 2024.' },
+        ].map(({ Icon, title, desc }) => (
+          <div key={title} className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <Icon size={24} className="mb-3" style={{ color: 'var(--brand-gold)' }} />
+            <h3 className="font-semibold mb-1" style={{ color: 'var(--brand-text)' }}>{title}</h3>
+            <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>{desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <section className="prose prose-sm max-w-none">
+        <h2 className="font-serif text-2xl font-semibold mb-3" style={{ color: 'var(--brand-text)' }}>Our Promise</h2>
+        <p className="leading-relaxed mb-4" style={{ color: 'var(--brand-text-secondary)' }}>
+          When you shop with Malaika Nest, you&apos;re choosing more than clothing. You&apos;re choosing a community of makers, parents and dreamers who believe that the little things matter most. Every stitch, every fabric, every package is an act of care — because your little one deserves nothing less.
+        </p>
+        <h2 className="font-serif text-2xl font-semibold mb-3 mt-8" style={{ color: 'var(--brand-text)' }}>Sustainability</h2>
+        <p className="leading-relaxed" style={{ color: 'var(--brand-text-secondary)' }}>
+          We use plastic-free packaging, source organic cotton from certified farms, and partner with local artisans to reduce our carbon footprint. Our workshop runs on renewable energy and we donate a portion of every sale to maternal health initiatives in coastal Kenya.
+        </p>
+      </section>
     </div>
-  )
+  );
 }

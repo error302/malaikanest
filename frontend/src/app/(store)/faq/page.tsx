@@ -1,160 +1,70 @@
-"use client"
+import type { Metadata } from 'next';
 
-import { useState } from 'react'
-import Link from 'next/link'
+export const metadata: Metadata = {
+  title: 'FAQ',
+  description: 'Frequently asked questions about orders, delivery, payments and returns at Malaika Nest.',
+};
 
-type FAQItem = {
-  question: string
-  answer: string
-}
-
-const faqCategories: Array<{ title: string; items: FAQItem[] }> = [
+const FAQS = [
   {
-    title: 'Orders & Shopping',
-    items: [
-      {
-        question: 'How do I place an order?',
-        answer:
-          'Browse products, add items to cart, and proceed to checkout. You can complete your purchase after account login and M-Pesa confirmation.',
-      },
-      {
-        question: 'Can I modify or cancel my order?',
-        answer:
-          'Yes, before fulfillment starts. Contact support with your order number as soon as possible and we will assist.',
-      },
-      {
-        question: 'How do I track my order?',
-        answer:
-          'You can track status from your account order history, and we also share delivery updates through phone or email.',
-      },
-      {
-        question: 'Do you offer gift wrapping?',
-        answer:
-          'Yes. During checkout, mark your order as a gift and optionally include a personal message.',
-      },
-    ],
+    q: 'How long does delivery take?',
+    a: 'Same-day delivery within Mombasa for orders placed before 11am. Nairobi: 1–2 business days. Upcountry: 2–3 business days. You\'ll receive a tracking number once your order ships.',
   },
   {
-    title: 'Payments',
-    items: [
-      {
-        question: 'What payment methods do you accept?',
-        answer:
-          'We currently support M-Pesa STK Push payments for secure and convenient checkout in Kenya.',
-      },
-      {
-        question: 'Is payment secure?',
-        answer:
-          'Yes. Payment authorization is handled through Safaricom channels and we do not store your M-Pesa PIN.',
-      },
-      {
-        question: 'Will I receive confirmation?',
-        answer:
-          'Yes. You receive an M-Pesa confirmation and an order confirmation from Malaika Nest.',
-      },
-    ],
+    q: 'What payment methods do you accept?',
+    a: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), bank transfer, and cash on delivery within Mombasa. All online payments are secured by 256-bit SSL encryption.',
   },
   {
-    title: 'Delivery',
-    items: [
-      {
-        question: 'Where do you deliver?',
-        answer: 'We deliver across Kenya including Mombasa, Nairobi, and upcountry regions.',
-      },
-      {
-        question: 'How long does delivery take?',
-        answer: 'Mombasa and Nairobi typically 1-2 business days. Upcountry generally 3-5 business days.',
-      },
-      {
-        question: 'Can I request delivery instructions?',
-        answer:
-          'Yes. Add your delivery notes during checkout and our team will coordinate with you before dispatch.',
-      },
-    ],
+    q: 'Is delivery really free?',
+    a: 'Yes — delivery is FREE for all orders above KES 3,000 within Kenya. Below that, a flat fee applies: KES 300 for Nairobi and KES 500 for upcountry. Mombasa delivery is always free.',
   },
   {
-    title: 'Product Support',
-    items: [
-      {
-        question: 'What if I receive a damaged or wrong item?',
-        answer:
-          'Contact support immediately with your order number and product photos. We prioritize resolution quickly.',
-      },
-      {
-        question: 'How do I choose the right size?',
-        answer:
-          'Product pages include sizing guidance where relevant. If unsure, contact support before ordering.',
-      },
-      {
-        question: 'Do you support wholesale or bulk orders?',
-        answer: 'Yes. Reach out through our contact page for wholesale and bulk pricing support.',
-      },
-    ],
+    q: 'What is your return policy?',
+    a: 'We accept returns within 7 days of delivery for unused items in original packaging. Refunds are processed to your original payment method within 5–7 business days. Custom-made items are non-returnable.',
   },
-]
+  {
+    q: 'Are your products safe for newborns?',
+    a: 'Absolutely. All our organic cotton is OEKO-TEX certified, free from harmful chemicals and dyes. We test every batch for skin safety and our workshop follows strict hygiene protocols.',
+  },
+  {
+    q: 'Can I track my order?',
+    a: 'Yes. Once your order ships, you\'ll receive an SMS and email with a tracking number. You can also view all your orders and their status in your account under "My Orders".',
+  },
+  {
+    q: 'Do you offer gift wrapping?',
+    a: 'Yes! We offer complimentary gift wrapping on all gift sets. You can also add a personalised gift message at checkout — perfect for baby showers and newborn gifts.',
+  },
+  {
+    q: 'How do I care for organic cotton?',
+    a: 'Machine wash cold with like colours, tumble dry low or hang to dry. Avoid bleach and fabric softeners — they break down organic fibres. Iron on low if needed.',
+  },
+];
 
 export default function FAQPage() {
-  const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
-
-  const toggle = (key: string) => {
-    setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
-
   return (
-    <div className="pb-20 pt-10">
-      <div className="container-shell">
-        <header className="mb-10 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">Support</p>
-          <h1 className="font-display mt-3 text-[48px] text-[var(--text-primary)]">Frequently Asked Questions</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-[18px] text-[var(--text-secondary)]">
-            Clear answers on orders, payments, delivery, and customer support.
-          </p>
-        </header>
+    <div className="container-shell py-10 sm:py-16 max-w-3xl">
+      <div className="text-center mb-10">
+        <h1 className="font-serif text-4xl sm:text-5xl font-semibold mb-3" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+          Frequently Asked Questions
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
+          Everything you need to know about shopping with Malaika Nest.
+        </p>
+      </div>
 
-        <div className="space-y-6">
-          {faqCategories.map((category, catIndex) => (
-            <section key={category.title} className="card-soft overflow-hidden">
-              <div className="border-b border-default bg-[var(--bg-soft)] px-5 py-4 md:px-6">
-                <h2 className="text-[22px] font-semibold text-[var(--text-primary)]">{category.title}</h2>
-              </div>
-              <div className="divide-y divide-[var(--border)]">
-                {category.items.map((item, itemIndex) => {
-                  const key = `${catIndex}-${itemIndex}`
-                  const isOpen = openItems[key]
-                  return (
-                    <article key={item.question}>
-                      <button
-                        onClick={() => toggle(key)}
-                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-soft)] md:px-6"
-                      >
-                        <span className="font-medium">{item.question}</span>
-                        <span className={`text-[var(--text-secondary)] transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-                          ▾
-                        </span>
-                      </button>
-                      <div className={`grid transition-all duration-300 ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-                        <div className="overflow-hidden">
-                          <p className="px-5 pb-4 text-[16px] text-[var(--text-secondary)] md:px-6">{item.answer}</p>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-
-        <section className="card-soft mt-10 p-8 text-center">
-          <h2 className="text-[28px] font-semibold text-[var(--text-primary)]">Need direct support?</h2>
-          <p className="mt-2 text-[18px] text-[var(--text-secondary)]">
-            Reach the team for order help, product guidance, or delivery coordination.
-          </p>
-          <Link href="/contact" className="btn-primary mt-6 inline-flex px-7">
-            Contact Support
-          </Link>
-        </section>
+      <div className="space-y-3">
+        {FAQS.map((faq, i) => (
+          <details key={i} className="p-5 rounded-2xl border group" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+            <summary className="font-medium cursor-pointer list-none flex items-center justify-between" style={{ color: 'var(--brand-text)' }}>
+              {faq.q}
+              <span className="text-xl transition-transform group-open:rotate-45" style={{ color: 'var(--brand-gold)' }}>+</span>
+            </summary>
+            <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--brand-text-secondary)' }}>
+              {faq.a}
+            </p>
+          </details>
+        ))}
       </div>
     </div>
-  )
+  );
 }
