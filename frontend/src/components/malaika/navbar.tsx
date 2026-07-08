@@ -29,7 +29,7 @@ const NAV_LINKS = [
   { name: 'Shop', href: '#shop', hasDropdown: true },
   { name: 'Mtumba', href: '/thrifted' },
   { name: 'Best Sellers', href: '#best-sellers' },
-  { name: 'About', href: '#about' },
+  { name: 'Find Us', href: '/find-us' },
 ];
 
 const SHOP_BY_AGE = [

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Upload, Image as ImageIcon, Palette, MessageCircle, Phone, Globe } from 'lucide-react';
+import { Save, Upload, Image as ImageIcon, Palette, MessageCircle, Phone, Globe, MapPin, Clock, Plus, X } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 
 const LUCIDE_ICONS = ['Baby', 'Heart', 'Star', 'ShoppingCart', 'Sparkles', 'Gift', 'Shield', 'Truck', 'CreditCard', 'Smile'];
@@ -11,6 +11,7 @@ export default function AdminBrandingPage() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [announcements, setAnnouncements] = useState<string[]>([]);
+  const [hours, setHours] = useState<Array<{ day: string; hours: string }>>([]);
 
   useEffect(() => {
     fetch('/api/admin/branding')
@@ -20,6 +21,10 @@ export default function AdminBrandingPage() {
         try {
           setAnnouncements(JSON.parse(data.settings?.announcement_messages || '[]'));
         } catch { setAnnouncements([]); }
+        try {
+          const parsed = JSON.parse(data.settings?.business_hours || '[]');
+          setHours(Array.isArray(parsed) ? parsed : []);
+        } catch { setHours([]); }
       })
       .catch(() => showToast('Failed to load branding', 'error'))
       .finally(() => setLoading(false));
@@ -36,7 +41,7 @@ export default function AdminBrandingPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const payload = { ...settings, announcement_messages: JSON.stringify(announcements) };
+      const payload = { ...settings, announcement_messages: JSON.stringify(announcements), business_hours: JSON.stringify(hours) };
       const res = await fetch('/api/admin/branding', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -50,6 +55,12 @@ export default function AdminBrandingPage() {
       setSaving(false);
     }
   };
+
+  const updateHour = (i: number, field: 'day' | 'hours', value: string) => {
+    setHours((h) => h.map((entry, idx) => (idx === i ? { ...entry, [field]: value } : entry)));
+  };
+  const addHour = () => setHours((h) => [...h, { day: 'New day', hours: '9:00 AM – 5:00 PM' }]);
+  const removeHour = (i: number) => setHours((h) => h.filter((_, idx) => idx !== i));
 
   const inputClass = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none';
   const inputStyle = { background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' };
@@ -193,6 +204,65 @@ export default function AdminBrandingPage() {
             <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Copyright name</label>
             <input value={settings.copyright_name || ''} onChange={(e) => update('copyright_name', e.target.value)} className={inputClass} style={inputStyle} />
           </div>
+        </div>
+      </div>
+
+      <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
+        <Save size={16} /> {saving ? 'Saving…' : 'Save All Changes'}
+      </button>
+
+      {/* Location & Map */}
+      <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin size={18} style={{ color: 'var(--brand-gold)' }} />
+          <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Find Us Page — Location & Map</h2>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Address (displayed on Find Us page)</label>
+            <input value={settings.address_line || ''} onChange={(e) => update('address_line', e.target.value)} placeholder="e.g. Nyali Road, Mombasa, Kenya" className={inputClass} style={inputStyle} />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Directions / notes</label>
+            <textarea value={settings.address_directions || ''} onChange={(e) => update('address_directions', e.target.value)} rows={2} placeholder="Visit our workshop in Mombasa for in-person shopping and pickups. Call ahead to ensure we're in!" className={inputClass} style={inputStyle} />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Google Maps embed URL</label>
+            <input value={settings.map_embed_url || ''} onChange={(e) => update('map_embed_url', e.target.value)} placeholder="https://www.google.com/maps?q=...&output=embed" className={inputClass} style={inputStyle} />
+            <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>
+              To get a custom embed: go to <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline">Google Maps</a>, search your address, click Share → Embed a map → copy the <code>src</code> URL. Or use the simple format: <code>https://www.google.com/maps?q=YOUR_ADDRESS&output=embed</code>
+            </p>
+          </div>
+          {settings.map_embed_url && (
+            <div className="mt-2 rounded-xl overflow-hidden border" style={{ borderColor: 'var(--brand-border)' }}>
+              <iframe src={settings.map_embed_url} width="100%" height="200" style={{ border: 0, display: 'block' }} loading="lazy" title="Map preview" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Business Hours */}
+      <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Clock size={18} style={{ color: 'var(--brand-gold)' }} />
+            <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Business Hours</h2>
+          </div>
+          <button type="button" onClick={addHour} className="text-xs font-medium px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-warm)', color: 'var(--brand-gold)' }}>
+            <Plus size={12} className="inline" /> Add row
+          </button>
+        </div>
+        <div className="space-y-2">
+          {hours.map((entry, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input value={entry.day} onChange={(e) => updateHour(i, 'day', e.target.value)} placeholder="Day" className={`${inputClass} flex-1`} style={inputStyle} />
+              <input value={entry.hours} onChange={(e) => updateHour(i, 'hours', e.target.value)} placeholder="Hours" className={`${inputClass} flex-1`} style={inputStyle} />
+              <button type="button" onClick={() => removeHour(i)} className="w-9 h-9 flex-shrink-0 rounded-lg flex items-center justify-center" style={{ background: 'rgba(196,112,74,0.1)', color: 'var(--brand-terra)' }} aria-label="Remove row">
+                <X size={16} />
+              </button>
+            </div>
+          ))}
+          {hours.length === 0 && <p className="text-xs italic" style={{ color: 'var(--brand-text-muted)' }}>No hours set — add at least one row.</p>}
         </div>
       </div>
 

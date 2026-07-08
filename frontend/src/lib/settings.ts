@@ -33,6 +33,15 @@ export const DEFAULT_BRANDING = {
   instagram_url: 'https://instagram.com',
   location: 'Mombasa, Kenya',
   copyright_name: 'Malaika Nest',
+  // Find Us page — Google Maps embed
+  map_embed_url: 'https://www.google.com/maps?q=Mombasa,Kenya&z=13&output=embed',
+  address_line: 'Mombasa, Kenya',
+  address_directions: 'Visit our workshop in Mombasa for in-person shopping and pickups. Call ahead to ensure we\'re in!',
+  business_hours: JSON.stringify([
+    { day: 'Monday – Friday', hours: '9:00 AM – 6:00 PM' },
+    { day: 'Saturday', hours: '9:00 AM – 4:00 PM' },
+    { day: 'Sunday', hours: 'Closed' },
+  ]),
 } as const;
 
 export const DEFAULT_CONTENT: Record<string, Record<string, string>> = {
@@ -153,6 +162,10 @@ export interface Branding {
   instagram_url: string;
   location: string;
   copyright_name: string;
+  map_embed_url: string;
+  address_line: string;
+  address_directions: string;
+  business_hours: Array<{ day: string; hours: string }>;
 }
 
 export interface ContentMap {
@@ -174,6 +187,13 @@ function parseBranding(rows: { key: string; value: string }[]): Branding {
   } catch {
     announcement = JSON.parse(DEFAULT_BRANDING.announcement_messages);
   }
+  let businessHours: Array<{ day: string; hours: string }> = [];
+  try {
+    businessHours = JSON.parse(get('business_hours'));
+    if (!Array.isArray(businessHours)) businessHours = JSON.parse(DEFAULT_BRANDING.business_hours);
+  } catch {
+    businessHours = JSON.parse(DEFAULT_BRANDING.business_hours);
+  }
   return {
     logo_url: get('logo_url'),
     favicon_url: get('favicon_url'),
@@ -191,6 +211,10 @@ function parseBranding(rows: { key: string; value: string }[]): Branding {
     instagram_url: get('instagram_url'),
     location: get('location'),
     copyright_name: get('copyright_name'),
+    map_embed_url: get('map_embed_url'),
+    address_line: get('address_line'),
+    address_directions: get('address_directions'),
+    business_hours: businessHours,
   };
 }
 
@@ -227,6 +251,7 @@ export async function getSiteSettings(): Promise<{ branding: Branding; content: 
     const branding: Branding = {
       ...DEFAULT_BRANDING,
       announcement_messages: JSON.parse(DEFAULT_BRANDING.announcement_messages),
+      business_hours: JSON.parse(DEFAULT_BRANDING.business_hours),
     } as Branding;
     return { branding, content: DEFAULT_CONTENT as ContentMap };
   }
