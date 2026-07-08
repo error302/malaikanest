@@ -2,22 +2,22 @@
 
 import { useEffect, useState } from 'react';
 
-const MESSAGES = [
-  'Free delivery on orders over KES 3,000',
-  'Same-day delivery in Mombasa',
-  'Lipa Na M-Pesa · Till 3370347',
-  'Handcrafted with love in Kenya',
-];
+interface AnnouncementBarProps {
+  messages?: string[];
+}
 
-export function AnnouncementBar() {
+export function AnnouncementBar({ messages = [] }: AnnouncementBarProps) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (messages.length <= 1) return;
     const t = setInterval(() => {
-      setIndex((i) => (i + 1) % MESSAGES.length);
+      setIndex((i) => (i + 1) % messages.length);
     }, 4500);
     return () => clearInterval(t);
-  }, []);
+  }, [messages.length]);
+
+  if (messages.length === 0) return null;
 
   return (
     <div
@@ -38,7 +38,7 @@ export function AnnouncementBar() {
           style={{ background: 'var(--brand-gold-soft)' }}
           aria-hidden
         />
-        <span dangerouslySetInnerHTML={{ __html: MESSAGES[index] }} />
+        <span dangerouslySetInnerHTML={{ __html: messages[index] || messages[0] }} />
       </div>
     </div>
   );

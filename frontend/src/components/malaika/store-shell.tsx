@@ -3,13 +3,15 @@
 import React from 'react';
 import { useCart } from '@/lib/cartContext';
 import { useWishlist } from '@/lib/wishlistContext';
+import { AnnouncementBar } from '@/components/malaika/announcement-bar';
+import type { Branding } from '@/lib/settings';
 
 /**
  * Wraps the storefront with live cart/wishlist counts injected into
  * the Navbar and MobileBottomNav. Children = the page body (main + footer).
  */
 interface StoreShellProps {
-  announcement?: React.ReactNode;
+  branding: Branding;
   navbar: React.ReactNode;
   mobileNav: React.ReactNode;
   children: React.ReactNode;
@@ -31,10 +33,10 @@ function MobileNavWithCounts({ mobileNav }: { mobileNav: React.ReactElement }) {
   } as { cartCount: number });
 }
 
-export function StoreShell({ announcement, navbar, mobileNav, children }: StoreShellProps) {
+export function StoreShell({ branding, navbar, mobileNav, children }: StoreShellProps) {
   return (
     <div className="min-h-screen flex flex-col bg-grain">
-      {announcement}
+      <AnnouncementBar messages={branding.announcement_messages} />
       <NavbarWithCounts navbar={navbar} />
       {children}
       <MobileNavWithCounts mobileNav={mobileNav} />

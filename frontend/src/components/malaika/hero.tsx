@@ -76,6 +76,8 @@ const TRUST_BADGES = [
 interface HeroProps {
   /** Server-fetched banners from /api/v1/products/banners/. Falls back to static slides if empty. */
   banners?: Banner[];
+  /** Editable content from the CMS (hero slide text). */
+  content?: Record<string, Record<string, string>>;
 }
 
 interface ResolvedSlide extends FallbackSlide {
@@ -142,23 +144,30 @@ function bannersToSlides(banners: Banner[]): ResolvedSlide[] {
   });
 }
 
-export function Hero({ banners = [] }: HeroProps) {
+export function Hero({ banners = [], content }: HeroProps) {
+  // Merge CMS content overrides into the fallback slides
+  const heroContent = content?.hero || {};
+  const cmsSlides: FallbackSlide[] = FALLBACK_SLIDES.map((s, i) => {
+    const n = i + 1;
+    return {
+      ...s,
+      tag: heroContent[`slide${n}_tag`] || s.tag,
+      headline: heroContent[`slide${n}_headline`] || s.headline,
+      highlight: heroContent[`slide${n}_highlight`] || s.highlight,
+      sub: heroContent[`slide${n}_sub`] || s.sub,
+      cta: heroContent[`slide${n}_cta`] || s.cta,
+    };
+  });
+
   const apiSlides = banners.length > 0 ? bannersToSlides(banners) : [];
-  const [slides, setSlides] = useState<ResolvedSlide[]>(
-    apiSlides.length > 0 ? apiSlides : (FALLBACK_SLIDES as ResolvedSlide[])
-  );
+
+  // Derive slides from banners prop (no state needed — banners come from server).
+  // Falls back to CMS-customized static slides when no API banners are provided.
+  const slides: ResolvedSlide[] = apiSlides.length > 0 ? apiSlides : (cmsSlides as ResolvedSlide[]);
+
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-
-  // If banners arrive after first render (e.g. via props update), merge them in.
-  useEffect(() => {
-    if (apiSlides.length > 0) {
-      setSlides((prev) => (prev === apiSlides ? prev : apiSlides));
-      setCurrent((prev) => (prev === 0 ? prev : 0));
-      setImageErrors({});
-    }
-  }, [banners]);
 
   const goTo = useCallback(
     (i: number) => setCurrent((i + slides.length) % slides.length),

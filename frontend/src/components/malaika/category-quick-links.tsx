@@ -48,7 +48,12 @@ const CATEGORIES = [
   },
 ];
 
-export function CategoryQuickLinks() {
+interface CategoryQuickLinksProps {
+  content?: Record<string, Record<string, string>>;
+}
+
+export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
+  const c = content?.categories || {};
   return (
     <section
       id="shop"
@@ -57,7 +62,7 @@ export function CategoryQuickLinks() {
     >
       <div className="container-shell">
         <div className="text-center max-w-2xl mx-auto mb-9 sm:mb-12">
-          <span className="section-label mb-3 justify-center">Browse collections</span>
+          <span className="section-label mb-3 justify-center">{c.label || 'Browse collections'}</span>
           <h2
             className="font-serif font-semibold tracking-tight mt-3"
             style={{
@@ -67,13 +72,13 @@ export function CategoryQuickLinks() {
               lineHeight: 1.15,
             }}
           >
-            Curated Categories
+            {c.title || 'Curated Categories'}
           </h2>
           <p
             className="mt-2 text-sm"
             style={{ color: 'var(--brand-text-secondary)' }}
           >
-            Thoughtfully selected for every moment of your baby&apos;s journey.
+            {c.subtitle || 'Thoughtfully selected for every moment of your baby\'s journey.'}
           </p>
         </div>
 

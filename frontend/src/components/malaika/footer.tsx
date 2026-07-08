@@ -3,6 +3,11 @@
 import Link from 'next/link';
 import { Facebook, Instagram, MessageCircle, Phone, CreditCard, Mail, MapPin, Heart } from 'lucide-react';
 import { Logo } from './logo';
+import type { Branding } from '@/lib/settings';
+
+interface FooterProps {
+  branding?: Branding;
+}
 
 const SHOP_LINKS = [
   { label: 'All Products', href: '#shop' },
@@ -31,13 +36,14 @@ const SUPPORT_LINKS = [
   { label: 'Returns', href: '#returns' },
 ];
 
-const SOCIAL = [
-  { label: 'Facebook', href: 'https://facebook.com', Icon: Facebook },
-  { label: 'Instagram', href: 'https://instagram.com', Icon: Instagram },
-  { label: 'WhatsApp', href: 'https://wa.me/254726771321', Icon: MessageCircle },
+const SOCIAL = (b?: Branding) => [
+  { label: 'Facebook', href: b?.facebook_url || 'https://facebook.com', Icon: Facebook },
+  { label: 'Instagram', href: b?.instagram_url || 'https://instagram.com', Icon: Instagram },
+  { label: 'WhatsApp', href: b?.whatsapp_url || 'https://wa.me/254726771321', Icon: MessageCircle },
 ];
 
-export function Footer() {
+export function Footer({ branding }: FooterProps) {
+  const b = branding;
   return (
     <footer
       id="contact"
@@ -59,7 +65,7 @@ export function Footer() {
               className="mt-4 text-sm leading-relaxed max-w-xs"
               style={{ color: 'var(--brand-text-secondary)' }}
             >
-              Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.
+              {b?.footer_tagline || 'Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.'}
             </p>
 
             {/* M-Pesa callout */}
@@ -94,7 +100,7 @@ export function Footer() {
 
             {/* Social */}
             <div className="flex gap-3 mt-6">
-              {SOCIAL.map(({ label, href, Icon }) => (
+              {SOCIAL(b).map(({ label, href, Icon }) => (
                 <a
                   key={label}
                   href={href}
@@ -191,27 +197,27 @@ export function Footer() {
                 <ul className="space-y-2">
                   <li>
                     <a
-                      href="mailto:malaikanest7@gmail.com"
+                      href={`mailto:${b?.contact_email || "malaikanest7@gmail.com"}`}
                       className="text-[13px] inline-flex items-center gap-2 transition-colors hover:text-[var(--brand-gold)]"
                       style={{ color: 'var(--brand-text-secondary)' }}
                     >
-                      <Mail size={13} /> malaikanest7@gmail.com
+                      <Mail size={13} /> {b?.contact_email || 'malaikanest7@gmail.com'}
                     </a>
                   </li>
                   <li>
                     <a
-                      href="tel:+254726771321"
+                      href={`tel:${b?.contact_phone || "+254726771321"}`}
                       className="text-[13px] inline-flex items-center gap-2 transition-colors hover:text-[var(--brand-gold)]"
                       style={{ color: 'var(--brand-text-secondary)' }}
                     >
-                      <Phone size={13} /> +254 726 771 321
+                      <Phone size={13} /> {b?.contact_phone || '+254 726 771 321'}
                     </a>
                   </li>
                   <li
                     className="text-[13px] inline-flex items-center gap-2"
                     style={{ color: 'var(--brand-text-secondary)' }}
                   >
-                    <MapPin size={13} /> Mombasa, Kenya
+                    <MapPin size={13} /> {b?.location || 'Mombasa, Kenya'}
                   </li>
                 </ul>
               </div>
@@ -225,7 +231,7 @@ export function Footer() {
             className="text-[11px]"
             style={{ color: 'var(--brand-text-muted)' }}
           >
-            © {new Date().getFullYear()} Malaika Nest. All rights reserved.
+            © {new Date().getFullYear()} {b?.copyright_name || 'Malaika Nest'}. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <Link
@@ -252,7 +258,7 @@ export function Footer() {
                 className="fill-current"
                 style={{ color: 'var(--brand-terra)' }}
               />{' '}
-              from Mombasa, Kenya
+              from {b?.location || 'Mombasa, Kenya'}
             </p>
           </div>
         </div>

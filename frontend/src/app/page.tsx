@@ -15,21 +15,27 @@ import {
   getNewArrivals,
   getActiveBanners,
 } from '@/lib/products';
+import { getSiteSettings, getValueProps, getTestimonials } from '@/lib/settings';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Home() {
-  const [featured, bestSellers, newArrivals, banners] = await Promise.all([
+  const [featured, bestSellers, newArrivals, banners, settings, valueProps, testimonials] = await Promise.all([
     getFeaturedProducts(),
     getBestSellers(),
     getNewArrivals(),
     getActiveBanners(),
+    getSiteSettings(),
+    getValueProps(),
+    getTestimonials(),
   ]);
+
+  const { branding, content } = settings;
 
   return (
     <StoreShell
-      announcement={<></>}
+      branding={branding}
       navbar={<Navbar />}
       mobileNav={<MobileBottomNav />}
     >
@@ -42,51 +48,51 @@ export default async function Home() {
       </a>
 
       <main id="main" className="flex-1">
-        <Hero banners={banners} />
-        <ShopByAge />
-        <CategoryQuickLinks />
+        <Hero banners={banners} content={content} />
+        <ShopByAge content={content} />
+        <CategoryQuickLinks content={content} />
 
         <ProductSection
           id="featured"
-          label="Hand-picked"
-          title="Featured Products"
+          label={content.featured?.label || 'Hand-picked'}
+          title={content.featured?.title || 'Featured Products'}
           viewAllHref="/categories"
-          viewAllLabel="View All"
+          viewAllLabel={content.featured?.view_all || 'View All'}
           products={featured}
           columns={4}
           background="bg-alt"
         />
 
-        <ValueProps />
+        <ValueProps props={valueProps} />
 
         <ProductSection
           id="best-sellers"
-          label="Most loved"
-          title="Best Sellers"
+          label={content.best_sellers?.label || 'Most loved'}
+          title={content.best_sellers?.title || 'Best Sellers'}
           viewAllHref="/best-sellers"
-          viewAllLabel="See More"
+          viewAllLabel={content.best_sellers?.view_all || 'See More'}
           products={bestSellers}
           columns={4}
           background="cream"
         />
 
-        <Testimonials />
+        <Testimonials content={content} testimonials={testimonials} />
 
         <ProductSection
           id="new-arrivals"
-          label="Just landed"
-          title="New Arrivals"
+          label={content.new_arrivals?.label || 'Just landed'}
+          title={content.new_arrivals?.title || 'New Arrivals'}
           viewAllHref="/categories"
-          viewAllLabel="Shop New"
+          viewAllLabel={content.new_arrivals?.view_all || 'Shop New'}
           products={newArrivals}
           columns={4}
           background="bg-alt"
         />
 
-        <Newsletter />
+        <Newsletter content={content} />
       </main>
 
-      <Footer />
+      <Footer branding={branding} />
     </StoreShell>
   );
 }

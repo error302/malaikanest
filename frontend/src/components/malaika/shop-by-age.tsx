@@ -17,7 +17,12 @@ const AGES = [
   { name: '9–12 Years', range: 'Big kid' },
 ];
 
-export function ShopByAge() {
+interface ShopByAgeProps {
+  content?: Record<string, Record<string, string>>;
+}
+
+export function ShopByAge({ content }: ShopByAgeProps) {
+  const c = content?.shop_by_age || {};
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: 'left' | 'right') => {
@@ -36,7 +41,7 @@ export function ShopByAge() {
       <div className="container-shell">
         <div className="flex items-end justify-between gap-4 mb-7 sm:mb-9">
           <div>
-            <span className="section-label mb-3">Find the perfect size</span>
+            <span className="section-label mb-3">{c.label || 'Find the perfect size'}</span>
             <h2
               className="font-serif font-semibold tracking-tight mt-3"
               style={{
@@ -46,13 +51,13 @@ export function ShopByAge() {
                 lineHeight: 1.15,
               }}
             >
-              Shop by Age
+              {c.title || 'Shop by Age'}
             </h2>
             <p
               className="mt-2 text-sm max-w-md"
               style={{ color: 'var(--brand-text-secondary)' }}
             >
-              From newborn snuggles to first-day-of-school fits — we&apos;ve got every stage covered.
+              {c.subtitle || 'From newborn snuggles to first-day-of-school fits — we have got every stage covered.'}
             </p>
           </div>
 

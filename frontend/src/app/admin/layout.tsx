@@ -16,6 +16,9 @@ import {
   LogOut,
   Menu,
   X,
+  Palette,
+  Type,
+  MessageSquareQuote,
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useState } from 'react';
@@ -27,6 +30,9 @@ const NAV = [
   { href: '/admin/customers', label: 'Customers', Icon: Users },
   { href: '/admin/categories', label: 'Categories', Icon: FolderTree },
   { href: '/admin/banners', label: 'Banners', Icon: Image },
+  { href: '/admin/branding', label: 'Branding', Icon: Palette },
+  { href: '/admin/content', label: 'Content', Icon: Type },
+  { href: '/admin/testimonials', label: 'Testimonials', Icon: MessageSquareQuote },
   { href: '/admin/invoices', label: 'Invoices', Icon: FileText },
   { href: '/admin/reports', label: 'Reports', Icon: BarChart3 },
   { href: '/admin/settings', label: 'Settings', Icon: Settings },
