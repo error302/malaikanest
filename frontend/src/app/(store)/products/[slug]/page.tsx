@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronRight, ShoppingBasket, Heart, Truck, Shield, RotateCcw } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
 import { ProductDetailClient } from './product-detail-client';
+import { ReviewSection } from '@/components/malaika/review-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -259,6 +260,9 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Customer Reviews */}
+      <ReviewSection productSlug={slug} />
     </div>
   );
 }

@@ -31,8 +31,9 @@ const AGE_LINKS = [
 const SUPPORT_LINKS = [
   { label: 'FAQ', href: '#faq' },
   { label: 'Shipping Info', href: '#shipping' },
+  { label: 'Track Your Order', href: '/track' },
   { label: 'Find Us', href: '/find-us' },
-  { label: 'Contact Us', href: '#contact' },
+  { label: 'Blog', href: '/blog' },
   { label: 'About Us', href: '#about' },
   { label: 'Returns', href: '#returns' },
 ];

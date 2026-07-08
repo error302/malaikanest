@@ -10,6 +10,7 @@ import { Footer } from '@/components/malaika/footer';
 import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
 import { StoreShell } from '@/components/malaika/store-shell';
 import { ThriftedSection } from '@/components/malaika/thrifted-section';
+import { CartRecoveryBanner } from '@/components/malaika/cart-recovery-banner';
 import {
   getFeaturedProducts,
   getBestSellers,
@@ -49,6 +50,9 @@ export default async function Home() {
       >
         Skip to main content
       </a>
+
+      {/* Abandoned cart recovery banner */}
+      <CartRecoveryBanner />
 
       <main id="main" className="flex-1">
         <Hero banners={banners} content={content} />

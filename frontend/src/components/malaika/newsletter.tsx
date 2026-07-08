@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, Check, Sparkles } from 'lucide-react';
+import { Mail, Check, Sparkles, Loader2 } from 'lucide-react';
 
 interface NewsletterProps {
   content?: Record<string, Record<string, string>>;
@@ -10,13 +10,35 @@ interface NewsletterProps {
 export function Newsletter({ content }: NewsletterProps) {
   const c = content?.newsletter || {};
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    setSubmitted(true);
-    setTimeout(() => { setSubmitted(false); setEmail(''); }, 3500);
+
+    setStatus('loading');
+    setMessage('');
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setStatus('success');
+        setMessage(data.message || c.success_message || 'Subscribed');
+        setEmail('');
+      } else {
+        setStatus('error');
+        setMessage(data.error || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setStatus('error');
+      setMessage('Network error. Please try again.');
+    }
   };
 
   return (
@@ -61,23 +83,33 @@ export function Newsletter({ content }: NewsletterProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={c.placeholder || 'you@email.com'}
                 aria-label="Email address"
-                className="w-full rounded-full pl-11 pr-4 py-3.5 text-sm"
+                disabled={status === 'loading'}
+                className="w-full rounded-full pl-11 pr-4 py-3.5 text-sm disabled:opacity-60"
                 style={{ background: '#FFFFFF', color: 'var(--brand-text)', border: '1px solid var(--brand-border)' }}
               />
             </div>
             <button
               type="submit"
-              disabled={submitted}
-              className="rounded-full px-7 py-3.5 text-sm font-semibold transition-all duration-300 hover:shadow-warm-md hover:-translate-y-0.5 disabled:opacity-70"
+              disabled={status === 'loading'}
+              className="rounded-full px-7 py-3.5 text-sm font-semibold transition-all duration-300 hover:shadow-warm-md hover:-translate-y-0.5 disabled:opacity-70 inline-flex items-center justify-center gap-2"
               style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
             >
-              {submitted ? (
-                <span className="inline-flex items-center gap-1.5"><Check size={16} /> {c.success_message || 'Subscribed'}</span>
+              {status === 'loading' ? (
+                <><Loader2 size={16} className="animate-spin" /> Subscribing…</>
+              ) : status === 'success' ? (
+                <><Check size={16} /> {c.success_message || 'Subscribed'}</>
               ) : (
                 c.cta || 'Subscribe'
               )}
             </button>
           </form>
+
+          {status === 'error' && message && (
+            <p className="mt-3 text-xs" style={{ color: 'var(--brand-terra-soft)' }}>{message}</p>
+          )}
+          {status === 'success' && message && (
+            <p className="mt-3 text-xs" style={{ color: 'var(--brand-gold-soft)' }}>{message}</p>
+          )}
 
           <p className="mt-4 text-[11px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
             {c.disclaimer || 'No spam, only love. Unsubscribe anytime.'}

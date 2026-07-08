@@ -120,3 +120,29 @@ model ThriftedProduct {
   @@index([createdAt])
   @@map("thrifted_products")
 }
+
+// ── Blog Posts ───────────────────────────────────────────────────────────────
+// Content marketing articles for SEO. Each post has a slug, cover image,
+// category, tags, and is rendered as Markdown on the public blog page.
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String   @default("")   // short summary for list pages + SEO
+  content     String   @default("")   // Markdown body
+  coverImage  String?
+  category    String   @default("General")  // e.g. "Baby Care", "Parenting", "Gift Guides"
+  tags        String   @default("")   // comma-separated
+  author      String   @default("Malaika Nest")
+  isPublished Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished, publishedAt])
+  @@index([isFeatured, isPublished])
+  @@index([category, isPublished])
+  @@map("blog_posts")
+}

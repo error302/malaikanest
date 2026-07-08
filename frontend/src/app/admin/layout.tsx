@@ -20,6 +20,8 @@ import {
   Type,
   MessageSquareQuote,
   Sparkles,
+  FileText,
+  ShoppingCart,
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useState } from 'react';
@@ -29,8 +31,10 @@ const NAV = [
   { href: '/admin/products', label: 'Products', Icon: Package },
   { href: '/admin/thrifted', label: 'Mtumba / Thrifted', Icon: Sparkles },
   { href: '/admin/orders', label: 'Orders', Icon: ShoppingCart },
+  { href: '/admin/abandoned-carts', label: 'Abandoned Carts', Icon: ShoppingCart },
   { href: '/admin/customers', label: 'Customers', Icon: Users },
   { href: '/admin/categories', label: 'Categories', Icon: FolderTree },
+  { href: '/admin/blog', label: 'Blog', Icon: FileText },
   { href: '/admin/banners', label: 'Banners', Icon: Image },
   { href: '/admin/branding', label: 'Branding', Icon: Palette },
   { href: '/admin/content', label: 'Content', Icon: Type },

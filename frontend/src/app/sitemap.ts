@@ -16,6 +16,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/categories`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE_URL}/thrifted`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/best-sellers`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${BASE_URL}/track`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE_URL}/find-us`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
@@ -45,5 +47,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not available — skip
   }
 
-  return [...staticPages, ...thriftedUrls];
+  // Blog posts
+  let blogUrls: MetadataRoute.Sitemap = [];
+  try {
+    const posts = await db.blogPost.findMany({
+      where: { isPublished: true },
+      select: { slug: true, updatedAt: true, publishedAt: true },
+    });
+    blogUrls = posts.map((p) => ({
+      url: `${BASE_URL}/blog/${p.slug}`,
+      lastModified: p.publishedAt || p.updatedAt,
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    }));
+  } catch {
+    // DB not available — skip
+  }
+
+  return [...staticPages, ...thriftedUrls, ...blogUrls];
 }
