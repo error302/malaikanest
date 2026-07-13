@@ -121,6 +121,8 @@ class TokenObtainPairWithUserSerializer(TokenObtainPairSerializer):
         token['user_id'] = user.id
         token['email'] = user.email
         token['role'] = getattr(user, 'role', 'customer')
+        # Token version enables revocation on password change / logout-everywhere.
+        token['token_version'] = user.token_version
         return token
     
     def validate(self, attrs):

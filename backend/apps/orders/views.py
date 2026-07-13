@@ -90,7 +90,13 @@ class CartViewSet(viewsets.ViewSet):
     def add(self, request):
         product_id = request.data.get("product_id")
         variant_id = request.data.get("variant_id")
-        qty = int(request.data.get("quantity", 1))
+        try:
+            qty = int(request.data.get("quantity", 1))
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Quantity must be an integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if qty < 1:
             return Response(
@@ -193,18 +199,8 @@ class CartViewSet(viewsets.ViewSet):
                 cart = self._get_prefetched_cart(cart.id)
                 return Response(CartSerializer(cart).data)
 
-            # Release any previous coupon usage (best-effort).
-            if cart.coupon_id:
-                prev = Coupon.objects.select_for_update().filter(pk=cart.coupon_id).first()
-                if prev and prev.used_count and prev.used_count > 0:
-                    prev.used_count = prev.used_count - 1
-                    prev.save(update_fields=["used_count", "updated_at"])
-
             if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
                 return Response({"detail": "Coupon usage limit reached"}, status=status.HTTP_400_BAD_REQUEST)
-
-            coupon.used_count = coupon.used_count + 1
-            coupon.save(update_fields=["used_count", "updated_at"])
 
             cart.coupon = coupon
             cart.coupon_applied_at = timezone.now()
@@ -222,11 +218,6 @@ class CartViewSet(viewsets.ViewSet):
 
         with transaction.atomic():
             cart = Cart.objects.select_for_update().get(pk=cart.pk)
-            if cart.coupon_id:
-                coupon = Coupon.objects.select_for_update().filter(pk=cart.coupon_id).first()
-                if coupon and coupon.used_count and coupon.used_count > 0:
-                    coupon.used_count = coupon.used_count - 1
-                    coupon.save(update_fields=["used_count", "updated_at"])
             cart.coupon = None
             cart.coupon_applied_at = None
             cart.save(update_fields=["coupon", "coupon_applied_at", "updated_at"])
@@ -367,7 +358,13 @@ class CartViewSet(viewsets.ViewSet):
         """Update quantity of a cart item"""
         product_id = request.data.get("product_id")
         variant_id = request.data.get("variant_id")
-        quantity = int(request.data.get("quantity", 1))
+        try:
+            quantity = int(request.data.get("quantity", 1))
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Quantity must be an integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if quantity < 1:
             return Response(
@@ -442,11 +439,6 @@ class CartViewSet(viewsets.ViewSet):
         with transaction.atomic():
             cart = Cart.objects.select_for_update().get(pk=cart.pk)
             CartItem.objects.filter(cart=cart).delete()
-            if cart.coupon_id:
-                coupon = Coupon.objects.select_for_update().filter(pk=cart.coupon_id).first()
-                if coupon and coupon.used_count and coupon.used_count > 0:
-                    coupon.used_count = coupon.used_count - 1
-                    coupon.save(update_fields=["used_count", "updated_at"])
             cart.coupon = None
             cart.coupon_applied_at = None
             cart.save(update_fields=["coupon", "coupon_applied_at", "updated_at"])
@@ -546,7 +538,7 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         status_filter = self.request.query_params.get("status")
 
         # Admin users can see all orders
-        if user.is_staff or getattr(user, "role", None) == "ADMIN":
+        if user.is_staff or getattr(user, "role", None) == User.ROLE_ADMIN:
             qs = (
                 Order.objects.all()
                 .select_related("user")
@@ -571,7 +563,7 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         obj = super().get_object()
         user = self.request.user
 
-        if user.is_staff or getattr(user, "role", None) == "ADMIN":
+        if user.is_staff or getattr(user, "role", None) == User.ROLE_ADMIN:
             return obj
 
         if obj.user != user:
@@ -645,30 +637,47 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
 
         if invoice.pdf_file:
             pdf_url = None
-            
+            raw_url = None
+
             if hasattr(invoice.pdf_file, 'url'):
-                pdf_url = invoice.pdf_file.url
-            elif isinstance(invoice.pdf_file, str) and invoice.pdf_file.startswith(('http://', 'https://')):
-                pdf_url = invoice.pdf_file
-            
+                raw_url = invoice.pdf_file.url
+            elif isinstance(invoice.pdf_file, str):
+                raw_url = invoice.pdf_file
+
+            # Only fetch remote URLs; relative media paths fall through to local
+            # file serving below (and avoid SSRF / internal network access).
+            if raw_url and raw_url.startswith(('http://', 'https://')):
+                pdf_url = raw_url
+
             if pdf_url:
-                try:
-                    remote_response = requests.get(pdf_url, timeout=30)
-                    if remote_response.status_code == 200:
-                        pdf_content = remote_response.content
-                        invoice.download_count += 1
-                        invoice.save(update_fields=["download_count"])
-                        response = HttpResponse(pdf_content, content_type="application/pdf")
-                        response["Content-Disposition"] = (
-                            f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+                from urllib.parse import urlparse
+
+                parsed = urlparse(pdf_url)
+                allowed_hosts = getattr(
+                    settings,
+                    "INVOICE_URL_ALLOWED_HOSTS",
+                    ["res.cloudinary.com", "cloudinary.com"],
+                )
+                # SSRF guard: only fetch over HTTPS from an allow-listed host
+                # (Cloudinary). Never fetch arbitrary/admin-supplied URLs.
+                if parsed.scheme == "https" and parsed.hostname and parsed.hostname.lower() in allowed_hosts:
+                    try:
+                        remote_response = requests.get(pdf_url, timeout=30)
+                        if remote_response.status_code == 200:
+                            pdf_content = remote_response.content
+                            invoice.download_count += 1
+                            invoice.save(update_fields=["download_count"])
+                            response = HttpResponse(pdf_content, content_type="application/pdf")
+                            response["Content-Disposition"] = (
+                                f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+                            )
+                            return response
+                    except requests.RequestException as e:
+                        logger.error("Error fetching invoice from URL: %s", e)
+                        return Response(
+                            {"detail": "Failed to retrieve invoice"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         )
-                        return response
-                except requests.RequestException as e:
-                    logger.error("Error fetching invoice from URL: %s", e)
-                    return Response(
-                        {"detail": "Failed to retrieve invoice"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
             
             try:
                 invoice.download_count += 1

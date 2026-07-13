@@ -162,6 +162,8 @@ else:
 
 enforce_postgresql_only(DATABASES, context="prod")
 
+DATABASE_ROUTERS = configure_read_replica(DATABASES)
+
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

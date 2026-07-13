@@ -28,16 +28,28 @@ from .services import PaymentService, normalize_phone, is_valid_mpesa_ip, audit_
 
 
 def resolve_order_for_request(request, order_id):
-    order_qs = Order.objects.filter(pk=order_id)
+    """
+    Resolve an order for payment actions.
+
+    Authenticated users are scoped to their own orders. Guest (anonymous)
+    requests are only ever resolved against GUEST orders (user is NULL) and
+    require either the unguessable `receipt_number` OR a matching `guest_email`.
+    Guest actions must never resolve to an authenticated user's order.
+    """
+    order_qs = Order.objects.all()
 
     if request.user.is_authenticated:
-        return order_qs.filter(user=request.user).first()
+        return order_qs.filter(pk=order_id, user=request.user).first()
+
+    receipt_number = (request.data.get("receipt_number") or request.query_params.get("receipt_number") or "").strip()
+    if receipt_number:
+        return order_qs.filter(receipt_number=receipt_number, user__isnull=True).first()
 
     guest_email = (request.data.get("guest_email") or request.query_params.get("guest_email") or "").strip().lower()
     if not guest_email:
         return None
 
-    return order_qs.filter(guest_email__iexact=guest_email).first()
+    return order_qs.filter(pk=order_id, user__isnull=True, guest_email__iexact=guest_email).first()
 
 class InitiatePaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -309,7 +321,7 @@ class MpesaCallbackView(APIView):
         from apps.payments.services import verify_mpesa_signature
         signature = request.META.get("HTTP_X_SAFARICOM_CALLBACK_SIGNATURE") or request.META.get("HTTP_X_MAC")
         
-        is_strict_mode = os.getenv("MPESA_STRICT_SIGNATURE", "false").lower() in ("true", "1", "yes")
+        is_strict_mode = os.getenv("MPESA_STRICT_SIGNATURE", "true").lower() in ("true", "1", "yes")
         if signature:
             if not verify_mpesa_signature(signature, body_bytes):
                 audit_log(event_type="callback_signature_failed", payload=raw_payload, request_ip=client_ip, notes="Blocked due to invalid signature cryptographic verification")

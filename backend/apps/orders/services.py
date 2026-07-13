@@ -9,7 +9,7 @@ from apps.products.models import (
     VariantInventory,
     sync_product_stock,
 )
-from .models import DELIVERY_FEES
+from .models import DELIVERY_FEES, Coupon
 
 
 class OrderService:
@@ -115,7 +115,10 @@ class OrderService:
                         raise ValueError(
                             f"Color {variant.get_color_display() if variant.color else variant.sku or variant.id} is out of stock. Available: {inv.available()}"
                         )
-                    unit_price = ci.unit_price or (ci.product.price + variant.price_modifier)
+                    # Recompute unit price from the authoritative product/variant
+                    # price at checkout time (never trust the stored CartItem.unit_price,
+                    # which could be stale if the catalog price changed after add-to-cart).
+                    unit_price = ci.product.price + (variant.price_modifier if variant else Decimal("0.00"))
                     line_total = unit_price * ci.quantity
                     subtotal += line_total
                     items.append((ci.product, variant, ci.quantity, unit_price, inv, True))
@@ -127,12 +130,21 @@ class OrderService:
                     inventories[ci.product_id] = inv
                 if inv.available() < ci.quantity:
                     raise ValueError(f"Product {ci.product.name} out of stock. Available: {inv.available()}")
-                unit_price = ci.unit_price or ci.product.price
+                unit_price = ci.product.price
                 line_total = unit_price * ci.quantity
                 subtotal += line_total
                 items.append((ci.product, None, ci.quantity, unit_price, inv, False))
 
-            discount_amount = coupon.calculate_discount(subtotal) if coupon and coupon.is_active and coupon.is_valid() else 0
+            discount_amount = 0
+            if coupon and coupon.is_active and coupon.is_valid():
+                # Count the coupon usage exactly once, at successful order creation
+                # (not at apply-to-cart time), so abandoned carts never permanently
+                # consume uses. Increment atomically and re-check max_uses.
+                coupon = Coupon.objects.select_for_update().get(pk=coupon.pk)
+                if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
+                    raise ValueError("Coupon usage limit reached")
+                Coupon.objects.filter(pk=coupon.pk).update(used_count=F("used_count") + 1)
+                discount_amount = coupon.calculate_discount(subtotal)
             delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
             total = max(subtotal - discount_amount, 0) + delivery_fee
 
@@ -253,6 +265,12 @@ class OrderService:
                         if color_label
                         else f"Stock reservation released after cancellation of order {order.receipt_number}"
                     ),
+                )
+            # Release the coupon usage: the order was cancelled before payment, so
+            # the use counted at checkout must be given back.
+            if order.coupon_id:
+                Coupon.objects.filter(pk=order.coupon_id, used_count__gt=0).update(
+                    used_count=F("used_count") - 1
                 )
             order.status = "cancelled"
             order.save(update_fields=["status"])

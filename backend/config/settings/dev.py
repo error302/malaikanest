@@ -28,6 +28,8 @@ DATABASES = {
 
 enforce_postgresql_only(DATABASES, context="dev")
 
+DATABASE_ROUTERS = configure_read_replica(DATABASES)
+
 SIMPLE_JWT["AUTH_COOKIE_SECURE"] = False
 SIMPLE_JWT["AUTH_COOKIE_SAMESITE"] = "Lax"
 

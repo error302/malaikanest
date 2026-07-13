@@ -18,16 +18,22 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from apps.orders.models import Order
+from apps.core.circuit_breaker import call_with_breaker, CircuitOpen
+from apps.core.outbox import publish_event
+from apps.core import metrics
 from .models import Payment, PaymentAuditLog
 from .tasks import verify_mpesa_payment_async
 
 logger = logging.getLogger("apps.payments")
 
 MPESA_SAFARICOM_IPS = {
+    # Safaricom's documented M-Pesa callback egress ranges. Keep these as narrow
+    # /24s only. Do NOT add broad consumer ranges (e.g. 41.86.0.0/16 or
+    # 41.89.0.0/16): they cover millions of subscriber IPs on Safaricom mobile
+    # data and would let any subscriber forge callbacks if signature verification
+    # is not enforced. Confirm the exact egress CIDRs with Safaricom before launch.
     "196.201.214.0/24",
     "196.201.213.0/24",
-    "41.89.0.0/16",
-    "41.86.0.0/16",
 }
 
 
@@ -62,25 +68,27 @@ def verify_mpesa_signature(signature_b64: str, body: bytes) -> bool:
     The signature is RSA-SHA256 of the raw request body, base64-encoded.
     The public key is loaded from the PEM file at MPESA_PUBLIC_KEY_PATH.
 
-    Returns True if verification succeeds, or True if no public key is
-    configured (warn-only mode for pre-launch).
+    Fails CLOSED: if the public key is not configured, cannot be loaded, or no
+    signature is supplied, verification returns False. Production must configure
+    MPESA_PUBLIC_KEY_PATH and run with MPESA_STRICT_SIGNATURE=true so unverifiable
+    callbacks are rejected rather than silently trusted.
     """
     key_path = os.getenv("MPESA_PUBLIC_KEY_PATH", "").strip()
     if not key_path:
-        logger.warning(
-            "MPESA_PUBLIC_KEY_PATH not set — skipping signature verification (warn-only mode)"
+        logger.error(
+            "MPESA_PUBLIC_KEY_PATH not set — refusing to trust unverified M-Pesa callbacks"
         )
-        return True
+        return False
 
     try:
         with open(key_path, "rb") as f:
             public_key = load_pem_public_key(f.read())
     except FileNotFoundError:
         logger.error("Safaricom public key file not found at %s", key_path)
-        return True  # Don't block payments if cert is missing
+        return False
     except Exception as exc:
         logger.error("Failed to load Safaricom public key: %s", exc)
-        return True
+        return False
 
     if not signature_b64 or not body:
         return False
@@ -266,10 +274,13 @@ class PaymentService:
         if cached:
             return str(cached)
 
-        token_resp = requests.get(
-            PaymentService._mpesa_token_url(),
-            auth=(consumer_key, consumer_secret),
-            timeout=30,
+        token_resp = call_with_breaker(
+            "mpesa_oauth",
+            lambda: requests.get(
+                PaymentService._mpesa_token_url(),
+                auth=(consumer_key, consumer_secret),
+                timeout=30,
+            ),
         )
         if token_resp.status_code != 200:
             raise ValueError("M-Pesa authentication failed")
@@ -286,8 +297,15 @@ class PaymentService:
         last_exc = None
         for attempt in range(1, attempts + 1):
             try:
-                resp = requests.request(method, url, timeout=30, **kwargs)
+                # Circuit breaker: fail fast if Safaricom is down/slow so worker
+                # threads aren't tied up; a CircuitOpen is not retried.
+                resp = call_with_breaker(
+                    "mpesa_api",
+                    lambda: requests.request(method, url, timeout=30, **kwargs),
+                )
                 return resp
+            except CircuitOpen:
+                raise
             except Exception as exc:
                 last_exc = exc
                 if attempt == attempts:
@@ -517,9 +535,17 @@ class PaymentService:
                 callback_phone = items.get("PhoneNumber")
 
                 try:
-                    if Decimal(str(amount)) != payment.amount:
+                    # M-Pesa only deals in whole KES: the STK push sent a rounded
+                    # integer and the callback returns a rounded integer. Compare
+                    # both sides quantized to whole KES so fractional-cents order
+                    # totals don't cause a false AMOUNT_MISMATCH on a paid order.
+                    callback_amount = Decimal(str(amount))
+                    if callback_amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP) != payment.amount.quantize(
+                        Decimal("1"), rounding=ROUND_HALF_UP
+                    ):
                         payment.status = "failed"
                         payment.save(update_fields=["status", "updated_at"])
+                        metrics.incr("payments.failed")
                         try:
                             order = payment.order
                             if hasattr(order, "transition_to") and hasattr(Order, "STATUS_PAYMENT_FAILED"):
@@ -528,9 +554,9 @@ class PaymentService:
                                 order.status = "payment_failed"
                                 order.save(update_fields=["status", "updated_at"])
 
-                            from apps.orders.tasks import restore_inventory
-
-                            transaction.on_commit(lambda: PaymentService.enqueue_task(restore_inventory, order.id))
+                            # Durable side-effect via outbox (restock) instead of
+                            # fire-and-forget on_commit enqueue.
+                            publish_event("order", order.id, "order.cancelled", {"order_id": order.id})
                         except Exception:
                             pass
                         audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="AMOUNT_MISMATCH", notes=f"Expected {payment.amount}, got {amount}")
@@ -538,6 +564,7 @@ class PaymentService:
                 except (InvalidOperation, TypeError):
                     payment.status = "failed"
                     payment.save(update_fields=["status", "updated_at"])
+                    metrics.incr("payments.failed")
                     audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="INVALID_AMOUNT")
                     return {"ResultCode": 1, "ResultDesc": "Invalid amount"}
 
@@ -550,6 +577,7 @@ class PaymentService:
                     payment.status = "failed"
                     payment.callback_received_at = timezone.now()
                     payment.save(update_fields=["status", "raw_callback_json", "callback_received_at", "updated_at"])
+                    metrics.incr("payments.failed")
                     try:
                         order = payment.order
                         if hasattr(order, "transition_to") and hasattr(Order, "STATUS_PAYMENT_FAILED"):
@@ -558,9 +586,7 @@ class PaymentService:
                             order.status = "payment_failed"
                             order.save(update_fields=["status", "updated_at"])
 
-                        from apps.orders.tasks import restore_inventory
-
-                        transaction.on_commit(lambda: PaymentService.enqueue_task(restore_inventory, order.id))
+                        publish_event("order", order.id, "order.cancelled", {"order_id": order.id})
                     except Exception:
                         pass
                     audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="PHONE_MISMATCH")
@@ -596,7 +622,11 @@ class PaymentService:
                 except Exception as e:
                     logger.error("Order status update failed for order %s: %s", order.id, e)
 
-                transaction.on_commit(lambda: PaymentService.trigger_post_payment_tasks(order.id))
+                # Durable side-effects via the transactional outbox: the order is
+                # now paid, and the relay task will reduce inventory / invoice /
+                # confirm. Survives a worker crash between commit and enqueue.
+                publish_event("order", order.id, "order.paid", {"order_id": order.id})
+                metrics.incr("payments.completed")
 
                 audit_log(event_type="callback_completed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
                 return {"ResultCode": 0, "ResultDesc": "Accepted"}
@@ -615,10 +645,9 @@ class PaymentService:
             except Exception as e:
                 logger.error("Order status update failed for order %s: %s", payment.order_id, e)
 
+            metrics.incr("payments.failed")
             try:
-                from apps.orders.tasks import restore_inventory
-
-                transaction.on_commit(lambda: PaymentService.enqueue_task(restore_inventory, payment.order_id))
+                publish_event("order", payment.order_id, "order.cancelled", {"order_id": payment.order_id})
             except Exception:
                 pass
             audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes=result_desc)

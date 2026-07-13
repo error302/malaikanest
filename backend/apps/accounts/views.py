@@ -166,16 +166,35 @@ class CookieTokenRefreshView(APIView):
             user_id = refresh.get("user_id")
             user = User.objects.get(id=user_id)
 
-            new_refresh = RefreshToken.for_user(user)
-            access = str(new_refresh.access_token)
+            # (a) Never mint new tokens for a deactivated account.
+            if not user.is_active:
+                return Response({"detail": "Account is disabled"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            # (b) Enforce token version so password-change / logout-everywhere revokes
+            # outstanding refresh tokens.
+            token_version = refresh.get("token_version", 1)
+            if user.token_version != token_version:
+                return Response({"detail": "Token has been revoked"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            # (c) Generate the new token pair through the same serializer used at
+            # login so custom claims (email/role/token_version) stay consistent.
+            token = TokenObtainPairWithUserSerializer.get_token(user)
+            access = str(token.access_token)
+            new_refresh = str(token)
 
             resp = Response({"access": access}, status=status.HTTP_200_OK)
-            _set_refresh_cookie(resp, str(new_refresh))
+            _set_refresh_cookie(resp, new_refresh)
 
+            # (d) Fail closed: if we cannot blacklist the old token we must not
+            # issue a new one (the old token would remain valid).
             try:
                 refresh.blacklist()
             except Exception as exc:
-                logger.warning("Refresh token blacklist failed: %s", exc)
+                logger.error("Refresh token blacklist failed; refusing to rotate: %s", exc)
+                return Response(
+                    {"detail": "Could not securely rotate session. Please log in again."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
 
             return resp
         except TokenError:

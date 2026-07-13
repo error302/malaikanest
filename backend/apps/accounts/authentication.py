@@ -122,13 +122,15 @@ class TokenRotationMixin:
         token['email'] = user.email
         token['role'] = user.role
         token['is_admin'] = user.is_staff
-        
+
         # Set absolute expiry
         from datetime import timedelta
         from django.conf import settings
-        
-        # Add token version for invalidation
-        token['token_version'] = user.profile.token_version if hasattr(user, 'profile') else 1
+
+        # Add token version for invalidation. User.token_version is the source of
+        # truth (the dead `user.profile.token_version` reference has been removed);
+        # bumping it on password change/logout-everywhere revokes outstanding tokens.
+        token['token_version'] = user.token_version
         
         return token
     
@@ -153,16 +155,17 @@ class TokenRotationMixin:
             
             # Check token version
             token_version = token.payload.get('token_version', 1)
-            
+
             # Get user and check version
             user = self.user_from_token(token)
-            if hasattr(user, 'profile'):
-                if user.profile.token_version != token_version:
-                    # Token was invalidated
-                    return Response(
-                        {'detail': 'Token has been revoked'},
-                        status=status.HTTP_401_UNAUTHORIZED
-                    )
+            # A bumped token_version means the user changed their password (or hit
+            # logout-everywhere); treat the token as revoked.
+            if user.token_version != token_version:
+                # Token was invalidated
+                return Response(
+                    {'detail': 'Token has been revoked'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
             
             # Generate new tokens (rotation)
             new_token = self.get_token(user)
@@ -184,14 +187,15 @@ class TokenRotationMixin:
 
 def invalidate_all_user_tokens(user):
     """
-    Invalidate all tokens for a user by incrementing their token version
-    Call this when user changes password or is disabled
+    Invalidate all tokens for a user by incrementing their token version.
+    Call this when the user changes password or is disabled/logged out everywhere.
+    Outstanding refresh tokens will fail the version check at refresh time.
     """
-    if hasattr(user, 'profile'):
-        from django.db import transaction
-        with transaction.atomic():
-            user.profile.token_version += 1
-            user.profile.save()
-            logger.warning(f"All tokens invalidated for user {user.email}")
-    else:
-        logger.warning(f"Cannot invalidate tokens - user {user.email} has no profile")
+    from django.db import transaction
+
+    with transaction.atomic():
+        # Refresh to avoid lost updates and ensure we bump the latest value.
+        user = type(user).objects.select_for_update().get(pk=user.pk)
+        user.token_version += 1
+        user.save(update_fields=["token_version", "updated_at"])
+        logger.warning(f"All tokens invalidated for user {user.email}")

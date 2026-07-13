@@ -230,7 +230,7 @@ class Order(BaseModel):
     
     # Valid status transitions for the state machine
     STATUS_TRANSITIONS = {
-        STATUS_PENDING: [STATUS_INITIATED, STATUS_CANCELLED],
+        STATUS_PENDING: [STATUS_INITIATED, STATUS_PAID, STATUS_CANCELLED],
         STATUS_INITIATED: [STATUS_PAID, STATUS_PAYMENT_FAILED, STATUS_CANCELLED],
         STATUS_PAID: [STATUS_PROCESSING, STATUS_CANCELLED, STATUS_REFUNDED],
         STATUS_PAYMENT_FAILED: [STATUS_PENDING, STATUS_CANCELLED],
@@ -308,6 +308,11 @@ class Order(BaseModel):
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, blank=True, null=True)
     transaction_id = models.CharField(max_length=100, blank=True, null=True)
     mpesa_receipt_number = models.CharField(max_length=50, blank=True, null=True)
+
+    # Guards idempotency of inventory restoration. Set True once stock has been
+    # released/restored for this order so a retried/duplicated restore_inventory
+    # task cannot create phantom stock.
+    inventory_restored = models.BooleanField(default=False)
     
     # Gift order
     is_gift = models.BooleanField(default=False)
@@ -479,7 +484,7 @@ def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):
                         f'Color {ci.variant.get_color_display() if ci.variant and ci.variant.color else ci.product.name} is out of stock. Available: {inv.available()}'
                     )
 
-                unit_price = ci.unit_price or (ci.product.price + (ci.variant.price_modifier if ci.variant else Decimal("0.00")))
+                unit_price = ci.product.price + (ci.variant.price_modifier if ci.variant else Decimal("0.00"))
                 line_total = unit_price * ci.quantity
                 subtotal += line_total
                 items.append((ci.product, ci.variant, ci.quantity, unit_price, inv, True))
@@ -492,7 +497,7 @@ def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):
             if inv.available() < ci.quantity:
                 raise ValueError(f'Product {ci.product.name} is out of stock. Available: {inv.available()}')
 
-            unit_price = ci.unit_price or ci.product.price
+            unit_price = ci.product.price
             line_total = unit_price * ci.quantity
             subtotal += line_total
             items.append((ci.product, None, ci.quantity, unit_price, inv, False))

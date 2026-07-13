@@ -242,7 +242,7 @@ class InvoiceListView(APIView):
                 "currency": "KES",
                 "payment_status": derived_payment_status(invoice),
                 "invoice_status": derived_invoice_status(invoice),
-                "generated_at": invoice.generated_at.isoformat() if invoice.generated_at else None,
+                "generated_at": invoice.created_at.isoformat() if invoice.created_at else None,
                 "sent_at": invoice.sent_at.isoformat() if invoice.sent_at else None,
                 "download_count": invoice.download_count,
                 "pdf_file": invoice.pdf_file.url if invoice.pdf_file else None,
@@ -317,7 +317,7 @@ class InvoiceDetailView(APIView):
                 "dates": {
                     "created": order.created_at.isoformat(),
                     "paid": order.paid_at.isoformat() if order.paid_at else None,
-                    "generated": invoice.generated_at.isoformat() if invoice.generated_at else None,
+                    "generated": invoice.created_at.isoformat() if invoice.created_at else None,
                     "sent": invoice.sent_at.isoformat() if invoice.sent_at else None,
                 },
                 "download_count": invoice.download_count,

@@ -17,6 +17,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
+from apps.accounts.permissions import IsAdminUser as RoleAwareIsAdminUser
 
 try:
     from django_filters.rest_framework import DjangoFilterBackend
@@ -76,7 +77,7 @@ class BrandViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [permissions.IsAdminUser()]
+            return [RoleAwareIsAdminUser()]
         return [permissions.AllowAny()]
 
     def perform_create(self, serializer):
@@ -154,7 +155,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [permissions.IsAdminUser()]
+            return [RoleAwareIsAdminUser()]
         return [permissions.AllowAny()]
 
     def perform_update(self, serializer):
@@ -319,7 +320,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [permissions.IsAdminUser()]
+            return [RoleAwareIsAdminUser()]
         return [permissions.AllowAny()]
 
     def get_serializer_class(self):
@@ -373,7 +374,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 class InventoryViewSet(viewsets.ModelViewSet):
     queryset = Inventory.objects.select_related("product").all()
     serializer_class = InventorySerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [RoleAwareIsAdminUser]
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -393,7 +394,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if self.action in ["create"]:
             return [permissions.IsAuthenticated()]
         if self.action in ["update", "partial_update", "destroy"]:
-            return [permissions.IsAdminUser()]
+            return [RoleAwareIsAdminUser()]
         return [permissions.AllowAny()]
 
     def get_queryset(self):
@@ -404,7 +405,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user, user_email=self.request.user.email)
+        product = serializer.validated_data.get("product")
+        user = self.request.user
+        # unique_together(product, user) would otherwise raise IntegrityError -> 500
+        # on a second review; surface a clean 400 instead.
+        if product and Review.objects.filter(product=product, user=user).exists():
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError("You have already reviewed this product.")
+        serializer.save(user=user, user_email=user.email)
 
 
 class WishlistViewSet(viewsets.ModelViewSet):
@@ -425,7 +434,7 @@ class BannerViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [permissions.IsAdminUser()]
+            return [RoleAwareIsAdminUser()]
         return [permissions.AllowAny()]
 
     def list(self, request, *args, **kwargs):
@@ -444,9 +453,10 @@ class BannerViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             now = timezone.now()
             return queryset.filter(
-                is_active=True,
-                start_date__lte=now,
-            ).filter(Q(end_date__gte=now) | Q(end_date__isnull=True))
+                Q(is_active=True)
+                & (Q(start_date__lte=now) | Q(start_date__isnull=True))
+                & (Q(end_date__gte=now) | Q(end_date__isnull=True))
+            )
         return queryset
 
     def perform_update(self, serializer):

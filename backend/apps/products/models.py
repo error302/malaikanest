@@ -23,9 +23,15 @@ def validate_image_file(image):
         if image.size > max_size:
             raise ValidationError("Image too large. Maximum size is 5MB")
 
-        mime_type, _ = mimetypes.guess_type(image.name)
-        if mime_type not in ["image/jpeg", "image/png", "image/webp"]:
-            raise ValidationError("Invalid image format")
+        # Verify the ACTUAL file content, not just the declared extension /
+        # mimetype (which are attacker-controlled), to block content-type spoofing.
+        try:
+            from PIL import Image
+
+            img = Image.open(image)
+            img.verify()
+        except Exception:
+            raise ValidationError("Invalid or corrupted image file")
 
 
 class Brand(BaseModel):

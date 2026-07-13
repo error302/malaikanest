@@ -57,3 +57,37 @@ class SiteSettings(BaseModel):
         if not obj:
             obj = cls.objects.create()
         return obj
+
+
+class OutboxEvent(BaseModel):
+    """
+    Transactional Outbox (system-design-101: event-driven / reliable messaging).
+
+    Domain events are written in the SAME DB transaction as the state change that
+    produced them, then a relay task publishes them to the async workers. This
+    guarantees side effects (invoice generation, inventory reduction, emails,
+    stock restoration) are never lost even if the web/Celery process crashes
+    between committing the DB change and enqueuing the task.
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("published", "Published"),
+        ("failed", "Failed"),
+    ]
+
+    aggregate_type = models.CharField(max_length=40)
+    aggregate_id = models.CharField(max_length=64, db_index=True)
+    event_type = models.CharField(max_length=60)
+    payload = models.JSONField(default=dict, blank=True)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True
+    )
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["status", "created_at"])]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"OutboxEvent({self.aggregate_type}:{self.aggregate_id}:{self.event_type}:{self.status})"

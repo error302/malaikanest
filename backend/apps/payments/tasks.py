@@ -8,6 +8,9 @@ import os
 import requests
 from django.db import transaction
 from django.utils import timezone
+from apps.core.outbox import publish_event
+from apps.core import metrics
+from apps.core.circuit_breaker import call_with_breaker, CircuitOpen
 
 logger = logging.getLogger("apps.payments")
 
@@ -28,7 +31,7 @@ except ImportError:
 @shared_task(bind=True, max_retries=3, default_retry_delay=60, acks_late=True, reject_on_worker_lost=True)
 def verify_mpesa_payment_async(self, payment_id):
     from .models import Payment
-    from .services import audit_log
+    from .services import PaymentService, audit_log
 
     try:
         payment = Payment.objects.get(pk=payment_id)
@@ -77,6 +80,17 @@ def verify_mpesa_payment_async(self, payment_id):
         from .services import PaymentService
 
         access_token = PaymentService.get_mpesa_oauth_token()
+    except CircuitOpen as exc:
+        # Breaker open: don't bury the worker in retries against a down Safaricom.
+        audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"stage": "token", "error": str(exc)},
+            checkout_request_id=payment.checkout_request_id,
+            notes="M-Pesa breaker open — skipping token fetch",
+            source="celery"
+        )
+        return "breaker open"
     except requests.exceptions.RequestException as exc:
         audit_log(
             payment=payment,
@@ -86,6 +100,7 @@ def verify_mpesa_payment_async(self, payment_id):
             notes="Token fetch failed",
             source="celery"
         )
+        metrics.incr("payments.failed")
         raise self.retry(exc=exc)
     except Exception as exc:
         audit_log(
@@ -96,6 +111,7 @@ def verify_mpesa_payment_async(self, payment_id):
             notes="Token fetch failed",
             source="celery"
         )
+        metrics.incr("payments.failed")
         raise self.retry(exc=exc)
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -109,11 +125,14 @@ def verify_mpesa_payment_async(self, payment_id):
     }
 
     try:
-        resp = requests.post(
-            query_url,
-            json=payload,
-            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
-            timeout=30,
+        resp = call_with_breaker(
+            "mpesa_api",
+            lambda: requests.post(
+                query_url,
+                json=payload,
+                headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+                timeout=30,
+            ),
         )
         resp.raise_for_status()
         data = resp.json()
@@ -131,31 +150,53 @@ def verify_mpesa_payment_async(self, payment_id):
         if result_code == "0" or result_code == 0:
             with transaction.atomic():
                 p = Payment.objects.select_for_update().get(pk=payment_id)
-                if p.status != "completed":
-                    p.status = "completed"
-                    p.save(update_fields=["status", "updated_at"])
-                    order = p.order
-                    if order.status != "paid":
-                        order.status = "paid"
-                        if hasattr(order, "paid_at"):
-                            order.paid_at = timezone.now()
-                            order.save(update_fields=["status", "paid_at", "updated_at"])
-                        else:
-                            order.save(update_fields=["status", "updated_at"])
-
-                    audit_log(
-                        payment=p,
-                        event_type="reconcile_completed",
-                        payload={"payment_id": p.id, "order_id": p.order_id},
-                        checkout_request_id=p.checkout_request_id,
-                        result_code="0",
-                        notes="Recovered payment via STK query reconciliation",
-                        source="celery"
+                if p.status == "completed":
+                    return "already completed"
+                p.status = "completed"
+                p.save(update_fields=["status", "updated_at"])
+                order = p.order
+                # Use the state machine so timestamps/hooks run, mirroring the live callback.
+                ok, _err = order.transition_to(Order.STATUS_PAID)
+                if not ok:
+                    order.status = "paid"
+                    if hasattr(order, "paid_at"):
+                        order.paid_at = timezone.now()
+                    order.save(
+                        update_fields=["status", "paid_at", "updated_at"]
+                        if hasattr(order, "paid_at")
+                        else ["status", "updated_at"]
                     )
+
+                audit_log(
+                    payment=p,
+                    event_type="reconcile_completed",
+                    payload={"payment_id": p.id, "order_id": p.order_id},
+                    checkout_request_id=p.checkout_request_id,
+                    result_code="0",
+                    notes="Recovered payment via STK query reconciliation",
+                    source="celery"
+                )
+            # CRITICAL: a recovered (callback-missed) payment must still fulfill the
+            # order — reduce inventory, generate invoice, send confirmation — exactly
+            # like the live callback path. Otherwise stock leaks and the customer
+            # gets no invoice/email. Emitted via the outbox so it survives crashes.
+            publish_event("order", order.id, "order.paid", {"order_id": order.id})
+            metrics.incr("payments.completed")
             return "completed"
 
         raise self.retry()
 
+    except CircuitOpen as exc:
+        # Breaker open: don't pile up retry tasks against a down Safaricom.
+        audit_log(
+            payment=payment,
+            event_type="reconcile_query",
+            payload={"stage": "query", "error": str(exc)},
+            checkout_request_id=payment.checkout_request_id,
+            notes="M-Pesa breaker open — skipping reconcile",
+            source="celery"
+        )
+        return "breaker open"
     except requests.exceptions.RequestException as exc:
         audit_log(
             payment=payment,
@@ -165,6 +206,7 @@ def verify_mpesa_payment_async(self, payment_id):
             notes="STK query failed",
             source="celery"
         )
+        metrics.incr("payments.failed")
         raise self.retry(exc=exc)
     except Payment.DoesNotExist:
         return "not found"

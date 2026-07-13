@@ -72,12 +72,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_CUSTOMER)
     date_joined = models.DateTimeField(auto_now_add=True)
-    password_reset_token = models.CharField(max_length=32, blank=True, null=True)
+    password_reset_token = models.CharField(max_length=64, blank=True, null=True)
     password_reset_expires = models.DateTimeField(blank=True, null=True)
     verification_token = models.CharField(max_length=64, blank=True, null=True)
     # MED-04: Added expiry for email verification tokens (was missing, tokens never expired)
     verification_token_expires = models.DateTimeField(blank=True, null=True)
     is_email_verified = models.BooleanField(default=False)
+
+    # Bumped from 32 -> 64 to match the 64-char token produced by
+    # get_random_string(64) in AuthService.request_password_reset. The previous
+    # length caused full_clean() (called in save()) to raise and the reset token
+    # was never persisted, breaking the whole password-reset flow.
+
+    # Token version used to invalidate all of a user's JWTs on password change /
+    # logout-everywhere. Checked against the `token_version` claim at refresh time.
+    token_version = models.PositiveIntegerField(default=1)
 
     objects = UserManager()
 

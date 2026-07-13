@@ -106,11 +106,22 @@ class RateLimitMiddleware:
         return f"api:{ip}", self.RATE_LIMITS['api']
     
     def _get_client_ip(self, request):
-        """Get client IP, considering proxies"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        """Get client IP, considering proxies.
+
+        Prefer X-Real-IP (set by the trusted reverse proxy from $remote_addr).
+        Fall back to the right-most X-Forwarded-For hop — the one appended by the
+        proxy, NOT the attacker-controlled left-most hop — then REMOTE_ADDR. We
+        deliberately do NOT trust the left-most XFF hop, which a client can spoof
+        to evade IP-based rate limiting / login lockout. Configure nginx to set
+        `proxy_set_header X-Real-IP $remote_addr;` for this to be authoritative.
+        """
+        real_ip = request.META.get("HTTP_X_REAL_IP")
+        if real_ip:
+            return real_ip.strip()
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            return x_forwarded_for.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR', 'unknown')
+            return x_forwarded_for.split(",")[-1].strip()
+        return request.META.get("REMOTE_ADDR", "unknown")
     
     def _check_rate_limit(self, key, rate_limit):
         """

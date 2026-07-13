@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from pathlib import Path
 from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
@@ -255,6 +256,20 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_TRACK_STARTED = True
 
 CELERY_BEAT_SCHEDULE = {
+    # Transactional Outbox relay (system-design-101: event-driven / reliable
+    # messaging). Polls OutboxEvent rows every 30s and dispatches them to the
+    # async workers so payment side effects (reduce inventory, invoice, email,
+    # restock) are never lost on process crashes.
+    "outbox-process-every-30s": {
+        "task": "apps.core.tasks.process_outbox",
+        "schedule": timedelta(seconds=30),
+    },
+    # Lightweight RED alerting (system-design-101: monitoring). Detects payment
+    # failure spikes and pages admins via the existing critical-alert task.
+    "payments-failure-alert-every-5-min": {
+        "task": "apps.core.tasks.payments_failure_alert",
+        "schedule": timedelta(minutes=5),
+    },
     # Reconcile any M-Pesa payments where the callback was missed or delayed.
     # Runs every 15 minutes — catches payments that have been initiated but
     # have no callback after 5+ minutes.  Limit 500 prevents runaway queries.
@@ -366,3 +381,29 @@ try:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
     pass
+
+
+# ── Read replica (system-design-101: database replication) ─────────────────────
+# Opt-in: set REPLICA_DATABASE_URL (or DATABASE_REPLICA_URL) to a Postgres read
+# replica and reads will be routed there via config.db_router.ReplicaRouter while
+# all writes/migrations stay on "default". When unset, this is a no-op and the app
+# behaves exactly as before (single primary).
+def configure_read_replica(databases):
+    replica_url = os.getenv("REPLICA_DATABASE_URL") or os.getenv("DATABASE_REPLICA_URL")
+    if not replica_url:
+        return []
+
+    parsed = urllib.parse.urlparse(replica_url)
+    host = (parsed.hostname or "").strip().lower()
+    sslmode = "disable" if host in {"localhost", "127.0.0.1", "::1"} or host.endswith(".local") else "require"
+    databases["replica"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed.path[1:] if parsed.path else "postgres",
+        "USER": parsed.username,
+        "PASSWORD": parsed.password,
+        "HOST": parsed.hostname,
+        "PORT": parsed.port or 5432,
+        "CONN_MAX_AGE": globals().get("DB_CONN_MAX_AGE", 600),
+        "OPTIONS": {"sslmode": sslmode, "connect_timeout": 10},
+    }
+    return ["config.db_router.ReplicaRouter"]

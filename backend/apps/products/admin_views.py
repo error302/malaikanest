@@ -6,7 +6,7 @@ from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser
+from apps.accounts.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
@@ -171,7 +171,7 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
         Order.objects.all().select_related("user").prefetch_related("items__product")
     )
     serializer_class = AdminOrderSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminUser]
     pagination_class = None
 
     def get_queryset(self):

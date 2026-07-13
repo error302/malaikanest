@@ -1,10 +1,30 @@
 import uuid
 
-from django.db.models.signals import pre_save
+from django.core.cache import cache
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 
-from .models import Brand, Category, Product
+from .models import Brand, Category, Product, ProductVariant
+
+
+def _invalidate_catalog_caches():
+    """
+    Cache invalidation discipline (system-design-101: cache aside / explicit
+    invalidation). When admin changes a product or variant (price, stock, image,
+    etc.), any cached catalog list / detail pages must be busted immediately.
+    """
+    try:
+        for key in cache.keys("products_list_*"):
+            cache.delete(key)
+    except Exception:
+        pass
+    # Nested caches keyed on the well-known names.
+    for key in ("categories_list", "banners_list_active"):
+        try:
+            cache.delete(key)
+        except Exception:
+            pass
 
 
 @receiver(pre_save, sender=Product)
@@ -17,6 +37,19 @@ def product_pre_save(sender, instance, **kwargs):
         instance.is_active = False
     elif instance.stock > 0 and instance.status == "published":
         instance.is_active = True
+
+
+@receiver(post_save, sender=Product)
+@receiver(post_delete, sender=Product)
+def product_cache_invalidate(sender, instance, **kwargs):
+    _invalidate_catalog_caches()
+
+
+@receiver(post_save, sender=ProductVariant)
+@receiver(post_delete, sender=ProductVariant)
+def variant_cache_invalidate(sender, instance, **kwargs):
+    # Variant price/availability flows into product-list rendering.
+    _invalidate_catalog_caches()
 
 
 @receiver(pre_save, sender=Brand)

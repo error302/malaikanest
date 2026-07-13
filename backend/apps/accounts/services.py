@@ -214,4 +214,7 @@ class AuthService:
         user.password_reset_expires = None
         user.save()
 
+        # Invalidate any outstanding refresh tokens (password reset = logout everywhere).
+        invalidate_all_user_tokens(user)
+
         return True

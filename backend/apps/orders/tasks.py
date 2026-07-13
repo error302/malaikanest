@@ -11,7 +11,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-from apps.orders.models import Order, Cart, Invoice
+from apps.orders.models import Order, Cart, Invoice, Coupon
 from apps.products.models import Inventory, VariantInventory, sync_product_stock
 from django.db import transaction
 from django.db.models import F
@@ -537,7 +537,12 @@ def cancel_stale_pending_orders():
                         ).update(
                             reserved=F('reserved') - item.quantity
                         )
-            cancelled_count += 1
+                    # Return the coupon use counted at checkout (order never paid).
+                    if order.coupon_id:
+                        Coupon.objects.filter(pk=order.coupon_id, used_count__gt=0).update(
+                            used_count=F('used_count') - 1
+                        )
+                cancelled_count += 1
         else:
             logger.error(f"Failed to cancel stale order {order.id}: {error_msg}")
 
@@ -605,13 +610,21 @@ def restore_inventory(self, order_id):
     """
     Release reserved inventory when order is cancelled/payment fails.
     If stock was already deducted, this will restock quantity and keep reserved non-negative.
+
+    Idempotent: guarded by Order.inventory_restored so a retried or duplicated
+    task execution (cancel, payment-failed, phone-mismatch can all enqueue it)
+    cannot release/restock twice and create phantom stock.
     """
     try:
         order = Order.objects.prefetch_related('items').get(pk=order_id)
     except Order.DoesNotExist:
         logger.error(f"Order {order_id} not found for inventory restoration")
         return "order not found"
-    
+
+    if order.inventory_restored:
+        logger.info(f"Inventory already restored for order {order_id}; skipping")
+        return "already restored"
+
     try:
         with transaction.atomic():
             from apps.products.models import Product
@@ -646,6 +659,9 @@ def restore_inventory(self, order_id):
                     quantity=F("quantity") + item.quantity
                 )
                 Product.objects.filter(pk=item.product_id).update(stock=F("stock") + item.quantity)
+
+            order.inventory_restored = True
+            order.save(update_fields=["inventory_restored", "updated_at"])
         logger.info(f"Inventory restored for order {order_id}")
         return "success"
     except Exception as e:
