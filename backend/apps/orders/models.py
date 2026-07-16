@@ -371,18 +371,19 @@ class Order(BaseModel):
         allowed_transitions = self.STATUS_TRANSITIONS.get(self.status, [])
         return new_status in allowed_transitions
     
-    def transition_to(self, new_status, save=True):
+    def transition_to(self, new_status, save=True, publish=True):
         """
         Transition to a new status with validation.
+        When publish=True, emits an outbox event on transaction commit
+        so downstream tasks (invoice, inventory, email) are triggered reliably.
         Returns (success: bool, error_message: str)
         """
         if not self.can_transition_to(new_status):
             return False, f"Invalid transition from {self.status} to {new_status}"
-        
+
         old_status = self.status
         self.status = new_status
-        
-        # Update timestamp fields
+
         now = timezone.now()
         if new_status == self.STATUS_PAID:
             self.paid_at = now
@@ -394,18 +395,33 @@ class Order(BaseModel):
             self.delivered_at = now
         elif new_status == self.STATUS_CANCELLED:
             self.cancelled_at = now
-        
+
         if save:
-            self.save(update_fields=['status', 'updated_at', 'paid_at', 'processed_at', 
+            self.save(update_fields=['status', 'updated_at', 'paid_at', 'processed_at',
                                      'shipped_at', 'delivered_at', 'cancelled_at'])
-        
+
+        if publish and old_status != new_status:
+            event_map = {
+                (self.STATUS_PENDING, self.STATUS_PAID): "order.paid",
+                (self.STATUS_INITIATED, self.STATUS_PAID): "order.paid",
+                (self.STATUS_PROCESSING, self.STATUS_SHIPPED): "order.shipped",
+                (self.STATUS_SHIPPED, self.STATUS_DELIVERED): "order.delivered",
+                (self.STATUS_PAID, self.STATUS_CANCELLED): "order.cancelled",
+                (self.STATUS_PAYMENT_FAILED, self.STATUS_CANCELLED): "order.cancelled",
+            }
+            event_type = event_map.get((old_status, new_status))
+            if event_type:
+                from apps.core.outbox import publish_event
+                transaction.on_commit(lambda e=event_type, oid=self.id: publish_event("order", oid, e, {"order_id": str(oid)}))
+
         return True, None
-    
+
     @property
     def triggered_events(self):
-        """Get events that should be triggered for status changes."""
         events = []
-        # This would be populated based on status change in the service layer
+        key = (self._old_status if hasattr(self, '_old_status') else None, self.status)
+        if key in self.ORDER_EVENTS:
+            events = self.ORDER_EVENTS[key]
         return events
     
     @property

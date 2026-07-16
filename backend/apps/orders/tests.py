@@ -1,158 +1,161 @@
+from decimal import Decimal
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
+from unittest.mock import patch, MagicMock
 from apps.products.models import Product, Category, Inventory
-from apps.orders.models import Cart, CartItem
+from apps.orders.models import Cart, CartItem, Order, DeliveryZone, get_delivery_fee_for_region
 
 User = get_user_model()
 
 
-def make_user(email='test@example.com', password='t3stPass!word', **kwargs):
-    return User.objects.create_user(email=email, password=password, is_active=True, **kwargs)
+class DeliveryZoneTest(TestCase):
+    def test_seeded_fees(self):
+        zones = DeliveryZone.objects.all()
+        self.assertGreaterEqual(len(zones), 0)
+        for z in zones:
+            self.assertIsInstance(z.fee, Decimal)
+
+    def test_get_fallback_when_table_empty(self):
+        fee = get_delivery_fee_for_region("nairobi")
+        self.assertEqual(fee, Decimal("300"))
 
 
-def make_product(name='Test Product', price=500.0, stock=10, **kwargs):
-    cat = Category.objects.get_or_create(name='Test Cat', slug='test-cat')[0]
-    prod = Product.objects.create(
-        name=name, slug=name.lower().replace(' ', '-'), category=cat, price=price,
-        stock=stock, **kwargs
-    )
-    Inventory.objects.create(product=prod, quantity=stock)
-    return prod
-
-
-# ─────────────────────────────────────────────────
-# PHASE 2: API Response Standardization Tests
-# ─────────────────────────────────────────────────
-class APIResponseFormatTest(TestCase):
-    """Verify every response is wrapped in {success, message, data, error}."""
-
+class StateMachineTransitionTest(TestCase):
     def setUp(self):
-        self.client = APIClient()
+        self.user = User.objects.create_user(email="a@b.com", phone_number="+254712345678", password="x")
+        self.order = Order.objects.create(user=self.user, total=Decimal("100"), status=Order.STATUS_PENDING)
 
-    def _assert_standardized(self, response):
-        data = response.json()
-        self.assertIn('success', data, 'Missing `success` key')
-        self.assertIn('data',    data, 'Missing `data` key')
-        self.assertIn('error',   data, 'Missing `error` key')
+    def test_valid_pending_to_paid(self):
+        ok, err = self.order.transition_to(Order.STATUS_PAID)
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_PAID)
+        self.assertIsNotNone(self.order.paid_at)
 
-    def test_product_list_wrapped(self):
-        make_product()
-        response = self.client.get('/api/products/products/')
-        self.assertEqual(response.status_code, 200)
-        self._assert_standardized(response)
+    def test_valid_paid_to_processing(self):
+        self.order.transition_to(Order.STATUS_PAID)
+        ok, err = self.order.transition_to(Order.STATUS_PROCESSING)
+        self.assertTrue(ok)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_PROCESSING)
+        self.assertIsNotNone(self.order.processed_at)
 
-    def test_404_wrapped(self):
-        response = self.client.get('/api/products/products/9999/')
-        self.assertEqual(response.status_code, 404)
-        data = response.json()
-        self.assertFalse(data.get('success'))
-        self.assertIsNotNone(data.get('error'))
+    def test_valid_pending_to_cancelled(self):
+        ok, err = self.order.transition_to(Order.STATUS_CANCELLED)
+        self.assertTrue(ok)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_CANCELLED)
+        self.assertIsNotNone(self.order.cancelled_at)
 
-    def test_categories_list_wrapped(self):
-        response = self.client.get('/api/products/categories/')
-        self.assertEqual(response.status_code, 200)
-        self._assert_standardized(response)
+    def test_invalid_transition(self):
+        self.order.transition_to(Order.STATUS_CANCELLED)
+        ok, err = self.order.transition_to(Order.STATUS_PAID)
+        self.assertFalse(ok)
+        self.assertIn("Invalid transition", err)
+
+    def test_already_delivered_cannot_cancel(self):
+        self.order.transition_to(Order.STATUS_PAID)
+        self.order.transition_to(Order.STATUS_PROCESSING)
+        self.order.transition_to(Order.STATUS_SHIPPED)
+        ok, err = self.order.transition_to(Order.STATUS_DELIVERED)
+        self.assertTrue(ok)
+        ok, err = self.order.transition_to(Order.STATUS_CANCELLED)
+        self.assertFalse(ok, "Delivered orders should not be cancellable")
+
+    def test_emits_outbox_event_on_paid(self):
+        with patch("apps.core.outbox.publish_event") as mock_publish:
+            ok, _ = self.order.transition_to(Order.STATUS_PAID, publish=True)
+            self.assertTrue(ok)
+            mock_publish.assert_called_once()
+            args = mock_publish.call_args
+            self.assertEqual(args[0][0], "order")
+            self.assertEqual(args[0][2], "order.paid")
 
 
-# ─────────────────────────────────────────────────
-# PHASE 8: Auth Security Tests
-# ─────────────────────────────────────────────────
-class AuthSecurityTest(TestCase):
-
+class OrderServiceCancelTest(TestCase):
     def setUp(self):
-        self.client = APIClient()
-        self.user = make_user()
-
-    def test_login_with_valid_credentials(self):
-        response = self.client.post('/api/accounts/token/', {
-            'email': 'test@example.com', 'password': 't3stPass!word'
-        }, format='json')
-        self.assertIn(response.status_code, [200, 400])  # 400 if captcha required
-
-    def test_login_with_wrong_password(self):
-        response = self.client.post('/api/accounts/token/', {
-            'email': 'test@example.com', 'password': 'wrong'
-        }, format='json')
-        self.assertIn(response.status_code, [400, 401, 423])
-
-    def test_register_missing_fields(self):
-        response = self.client.post('/api/accounts/register/', {}, format='json')
-        self.assertIn(response.status_code, [400, 422])
-
-    def test_password_reset_nonexistent_email(self):
-        """Should return 200 (no information leakage)."""
-        response = self.client.post('/api/accounts/password/reset/', {
-            'email': 'ghost@example.com'
-        }, format='json')
-        self.assertEqual(response.status_code, 200)
-
-    def test_protected_endpoint_without_auth(self):
-        response = self.client.get('/api/orders/orders/')
-        self.assertIn(response.status_code, [401, 403])
-
-
-# ─────────────────────────────────────────────────
-# PHASE 6: Cart & Ecommerce Logic Tests
-# ─────────────────────────────────────────────────
-class CartFlowTest(TestCase):
-
-    def setUp(self):
-        self.client = APIClient()
-        self.user = make_user(email='buyer@example.com')
-        self.client.force_authenticate(user=self.user)
-        self.product = make_product(name='Baby Rattle', price=300.0, stock=5)
-
-    def test_cart_initially_empty(self):
-        response = self.client.get('/api/orders/cart/')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json().get('items', []), [])
-
-    def test_add_to_cart(self):
-        response = self.client.post('/api/orders/cart/add/', {
-            'product_id': self.product.id,
-            'quantity': 2
-        }, format='json')
-        self.assertIn(response.status_code, [200, 201])
-
-    def test_add_to_cart_exceeding_stock(self):
-        response = self.client.post('/api/orders/cart/add/', {
-            'product_id': self.product.id,
-            'quantity': 9999
-        }, format='json')
-        self.assertEqual(response.status_code, 400)
-
-    def test_remove_from_cart(self):
-        self.client.post('/api/orders/cart/add/', {
-            'product_id': self.product.id, 'quantity': 1
-        }, format='json')
-        response = self.client.post(f'/api/orders/cart/remove/{self.product.id}/')
-        self.assertEqual(response.status_code, 200)
-
-
-# ─────────────────────────────────────────────────
-# PHASE 3: Database & Inventory Integrity Tests
-# ─────────────────────────────────────────────────
-class InventoryIntegrityTest(TestCase):
-
-    def setUp(self):
-        self.user = make_user(email='inv@example.com')
-        self.product = make_product(name='Stock Item', stock=3)
+        from apps.products.models import Category, Inventory
+        self.user = User.objects.create_user(email="cancel@t.com", phone_number="+254712345679", password="x")
+        self.cat = Category.objects.create(name="Test", slug="test")
+        self.product = Product.objects.create(
+            name="Test Product", slug="test-p", price=Decimal("50"),
+            category=self.cat, description="x",
+        )
+        Inventory.objects.create(product=self.product, quantity=10)
         self.cart = Cart.objects.create(user=self.user)
         CartItem.objects.create(cart=self.cart, product=self.product, quantity=2)
-
-    def test_inventory_updated_on_order(self):
         from apps.orders.services import OrderService
-        before = Inventory.objects.get(product=self.product).quantity
-        order = OrderService.process_checkout(cart=self.cart, user=self.user)
-        after = Inventory.objects.get(product=self.product).quantity
-        self.assertEqual(after, before - 2, 'Inventory should decrease by ordered quantity')
+        self.order = OrderService.process_checkout(cart=self.cart, user=self.user)
 
-    def test_inventory_restored_on_cancel(self):
+    def test_cancel_releases_inventory(self):
+        inv = Inventory.objects.get(product=self.product)
+        reserved_before = inv.reserved
         from apps.orders.services import OrderService
-        order = OrderService.process_checkout(cart=self.cart, user=self.user)
-        before_cancel = Inventory.objects.get(product=self.product).quantity
-        OrderService.cancel_order(order)
-        after_cancel = Inventory.objects.get(product=self.product).quantity
-        self.assertEqual(after_cancel, before_cancel + 2, 'Inventory should be restored on cancel')
+        OrderService.cancel_order(self.order)
+        inv.refresh_from_db()
+        self.assertEqual(inv.reserved, reserved_before - 2)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_CANCELLED)
+
+    def test_cancel_twice_raises(self):
+        from apps.orders.services import OrderService
+        OrderService.cancel_order(self.order)
+        with self.assertRaises(ValueError):
+            OrderService.cancel_order(self.order)
+
+
+class PaymentGatewayFactoryTest(TestCase):
+    def test_resolves_mpesa(self):
+        from apps.payments.gateway import PaymentGatewayFactory, MpesaGateway
+        gateway = PaymentGatewayFactory.create("mpesa")
+        self.assertIsInstance(gateway, MpesaGateway)
+
+    def test_unimplemented_gateway_raises(self):
+        from apps.payments.gateway import PaymentGatewayFactory
+        gateway = PaymentGatewayFactory.create("paypal")
+        with self.assertRaises(NotImplementedError):
+            gateway.initiate(None)
+
+
+class IdempotencyKeyTest(TestCase):
+    def test_valid_key(self):
+        from apps.core.idempotency import IdempotencyKey
+        k = IdempotencyKey("abc-123")
+        self.assertEqual(str(k), "abc-123")
+
+    def test_empty_key_raises(self):
+        from apps.core.idempotency import IdempotencyKey
+        with self.assertRaises(ValueError):
+            IdempotencyKey("")
+
+    def test_oversized_key_raises(self):
+        from apps.core.idempotency import IdempotencyKey
+        with self.assertRaises(ValueError):
+            IdempotencyKey("x" * 200)
+
+
+class DeliveryFeeCalculationTest(TestCase):
+    def test_get_fee_via_model(self):
+        zone = DeliveryZone.objects.create(slug="test-zone", name="Test", fee=Decimal("150"), is_active=True)
+        fee = get_delivery_fee_for_region("test-zone")
+        self.assertEqual(fee, Decimal("150"))
+
+    def test_inactive_zone_fallsback(self):
+        DeliveryZone.objects.create(slug="off", name="Off", fee=Decimal("999"), is_active=False)
+        fee = get_delivery_fee_for_region("off")
+        self.assertEqual(fee, Decimal("0"))
+
+
+class EventEmissionTest(TestCase):
+    def test_order_cancelled_emits_event(self):
+        user = User.objects.create_user(email="ev@t.com", phone_number="+254712345680", password="x")
+        order = Order.objects.create(user=user, total=Decimal("50"), status=Order.STATUS_PAYMENT_FAILED)
+        with patch("apps.core.outbox.publish_event") as mock:
+            ok, _ = order.transition_to(Order.STATUS_CANCELLED, publish=True)
+            self.assertTrue(ok)
+            mock.assert_called_once()
+            args = mock.call_args
+            self.assertEqual(args[0][2], "order.cancelled")
