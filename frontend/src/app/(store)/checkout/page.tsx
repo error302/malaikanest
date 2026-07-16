@@ -40,7 +40,8 @@ export default function CheckoutPage() {
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const zones = deliveryZones.length > 0 ? deliveryZones : [
-    { slug: 'mombasa', name: 'Mombasa (Same Day)', fee: '0', estimated_days: 'Same Day' },
+    { slug: 'mombasa_pickup', name: 'Mombasa (Pick up at Shop)', fee: '0', estimated_days: 'Same Day' },
+    { slug: 'mombasa', name: 'Mombasa (Delivery)', fee: '150', estimated_days: 'Same Day' },
     { slug: 'nairobi', name: 'Nairobi (1-2 Days)', fee: '300', estimated_days: '1-2 Days' },
     { slug: 'upcountry', name: 'Upcountry (2-3 Days)', fee: '500', estimated_days: '2-3 Days' },
   ];

@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - backend/.env.example
+      - backend/.env
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
@@ -91,7 +91,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - backend/.env.example
+      - backend/.env
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DEBUG: ${DEBUG:-True}
@@ -131,7 +131,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - backend/.env.example
+      - backend/.env
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DEBUG: ${DEBUG:-True}

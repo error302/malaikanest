@@ -3,9 +3,15 @@ from apps.orders.models import DeliveryZone
 
 
 ZONES = [
-    {"slug": "mombasa", "name": "Mombasa (Same Day)", "fee": 0, "estimated_days": "Same Day", "position": 0},
-    {"slug": "nairobi", "name": "Nairobi (1-2 Days)", "fee": 300, "estimated_days": "1-2 Days", "position": 1},
-    {"slug": "upcountry", "name": "Upcountry (2-3 Days)", "fee": 500, "estimated_days": "2-3 Days", "position": 2},
+    {"slug": "mombasa_pickup", "name": "Mombasa (Pick up at Shop)", "fee": 0, "estimated_days": "Same Day", "position": 0},
+    {"slug": "mombasa", "name": "Mombasa (Delivery)", "fee": 150, "estimated_days": "Same Day", "position": 1},
+    {"slug": "nairobi", "name": "Nairobi (1-2 Days)", "fee": 300, "estimated_days": "1-2 Days", "position": 2},
+    {"slug": "upcountry", "name": "Upcountry (2-3 Days)", "fee": 500, "estimated_days": "2-3 Days", "position": 3},
+]
+
+UPDATES = [
+    {"slug": "mombasa_pickup", "name": "Mombasa (Pick up at Shop)", "fee": 0, "estimated_days": "Same Day", "position": 0},
+    {"slug": "mombasa", "fee": 150, "estimated_days": "Same Day"},
 ]
 
 
@@ -18,4 +24,11 @@ class Command(BaseCommand):
             _, is_new = DeliveryZone.objects.get_or_create(slug=zone["slug"], defaults=zone)
             if is_new:
                 created += 1
-        self.stdout.write(self.style.SUCCESS(f"Seeded {created} delivery zone(s)"))
+        # Update existing zones if defaults changed
+        for update in UPDATES:
+            updated = DeliveryZone.objects.filter(slug=update["slug"]).exclude(
+                **{k: v for k, v in update.items() if k != "slug"}
+            ).update(**{k: v for k, v in update.items() if k != "slug"})
+            if updated:
+                self.stdout.write(f"  Updated zone '{update['slug']}'")
+        self.stdout.write(self.style.SUCCESS(f"Seeded {created} new delivery zone(s)"))
