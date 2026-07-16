@@ -9,7 +9,7 @@ from apps.products.models import (
     VariantInventory,
     sync_product_stock,
 )
-from .models import DELIVERY_FEES, Coupon
+from .models import Coupon, get_delivery_fee_for_region
 
 
 class OrderService:
@@ -145,7 +145,7 @@ class OrderService:
                     raise ValueError("Coupon usage limit reached")
                 Coupon.objects.filter(pk=coupon.pk).update(used_count=F("used_count") + 1)
                 discount_amount = coupon.calculate_discount(subtotal)
-            delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
+            delivery_fee = get_delivery_fee_for_region(delivery_region)
             total = max(subtotal - discount_amount, 0) + delivery_fee
 
             from .models import Order, OrderItem

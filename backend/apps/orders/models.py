@@ -485,6 +485,18 @@ class DeliveryZone(BaseModel):
         return self.name
 
 
+def get_delivery_fee_for_region(delivery_region: str) -> Decimal:
+    try:
+        from django.db.models import Value
+        from django.db.models.functions import Coalesce
+        zone = DeliveryZone.objects.filter(slug=delivery_region, is_active=True).values_list('fee', flat=True).first()
+        if zone is not None:
+            return zone
+    except Exception:
+        pass
+    return Decimal(str(DELIVERY_FEES.get(delivery_region, 0)))
+
+
 def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):
     """
     Create an order from a cart with proper inventory locking to prevent race conditions.
@@ -548,7 +560,7 @@ def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):
             discount_amount = coupon.calculate_discount(subtotal)
 
         # Apply delivery fee
-        delivery_fee = DELIVERY_FEES.get(delivery_region, 0)
+        delivery_fee = get_delivery_fee_for_region(delivery_region)
 
         total = max(subtotal - discount_amount, 0) + delivery_fee
 

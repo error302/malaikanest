@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from .models import Cart, CartItem, Order, OrderItem, Coupon, DeliveryZone
+from .models import Cart, CartItem, Order, OrderItem, Coupon, DeliveryZone, get_delivery_fee_for_region
 from apps.products.serializers import ProductSerializer
 from decimal import Decimal
-from .models import DELIVERY_FEES
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -61,7 +60,8 @@ class CartSerializer(serializers.ModelSerializer):
 
     def get_delivery_fee(self, obj):
         try:
-            return str(Decimal(str(DELIVERY_FEES.get(obj.delivery_region, 0))).quantize(Decimal("0.01")))
+            fee = get_delivery_fee_for_region(obj.delivery_region)
+            return str(fee.quantize(Decimal("0.01")))
         except Exception:
             return "0.00"
 

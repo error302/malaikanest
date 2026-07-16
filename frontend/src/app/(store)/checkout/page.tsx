@@ -9,6 +9,8 @@ import { showToast } from '@/lib/toast';
 import api, { handleApiError } from '@/lib/api';
 import { getDeliveryZones } from '@/lib/delivery';
 import type { DeliveryZone } from '@/lib/delivery';
+import { getPublicSettings } from '@/lib/public-settings';
+import type { PublicSettings } from '@/lib/public-settings';
 
 const PAYMENT_METHODS = [
   { value: 'mpesa', label: 'M-Pesa', Icon: Smartphone, desc: 'Pay via STK push to your phone' },
@@ -20,6 +22,7 @@ export default function CheckoutPage() {
   const { items } = useCart();
   const router = useRouter();
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
+  const [settings, setSettings] = useState<PublicSettings>({ free_shipping_threshold: '3000', shipping_fee: '300' });
   const [region, setRegion] = useState('nairobi');
   const [payment, setPayment] = useState('mpesa');
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +32,10 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    getDeliveryZones().then(setDeliveryZones);
+    Promise.all([getDeliveryZones(), getPublicSettings()]).then(([zones, s]) => {
+      if (zones.length > 0) setDeliveryZones(zones);
+      setSettings(s);
+    });
   }, []);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -39,7 +45,8 @@ export default function CheckoutPage() {
     { slug: 'upcountry', name: 'Upcountry (2-3 Days)', fee: '500', estimated_days: '2-3 Days' },
   ];
   const regionObj = zones.find((r) => r.slug === region)!;
-  const deliveryFee = subtotal >= 3000 ? 0 : Number(regionObj?.fee || 0);
+  const freeThreshold = Number(settings.free_shipping_threshold) || 3000;
+  const deliveryFee = subtotal >= freeThreshold ? 0 : Number(regionObj?.fee || 0);
   const total = subtotal + deliveryFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,7 +237,7 @@ export default function CheckoutPage() {
                 <span>Subtotal</span><span>KES {subtotal.toLocaleString('en-KE')}</span>
               </div>
               <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
-                <span>Delivery</span><span>{deliveryFee === 0 ? 'FREE' : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
+                <span>Delivery{deliveryFee === 0 ? ` (free over KES ${freeThreshold.toLocaleString('en-KE')})` : ''}</span><span>{deliveryFee === 0 ? 'FREE' : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
               </div>
               <div className="flex justify-between text-base font-semibold pt-3" style={{ borderTop: '1px solid var(--brand-border)', color: 'var(--brand-text)' }}>
                 <span>Total</span><span>KES {total.toLocaleString('en-KE')}</span>
