@@ -10,32 +10,32 @@ interface FooterProps {
 }
 
 const SHOP_LINKS = [
-  { label: 'All Products', href: '#shop' },
-  { label: 'Clothing', href: '#shop' },
+  { label: 'All Products', href: '/categories' },
+  { label: 'Clothing', href: '/categories' },
   { label: 'Mtumba / Thrifted', href: '/thrifted' },
-  { label: 'Baby Essentials', href: '#shop' },
-  { label: 'Nursery', href: '#shop' },
-  { label: 'Toys & Learning', href: '#shop' },
-  { label: 'Gifts', href: '#gifts' },
+  { label: 'Baby Essentials', href: '/categories' },
+  { label: 'Nursery', href: '/categories' },
+  { label: 'Toys & Learning', href: '/categories' },
+  { label: 'Gifts', href: '/categories' },
 ];
 
 const AGE_LINKS = [
-  { label: 'Newborn', href: '#shop-by-age' },
-  { label: '0–3 Months', href: '#shop-by-age' },
-  { label: '3–6 Months', href: '#shop-by-age' },
-  { label: '6–12 Months', href: '#shop-by-age' },
-  { label: '1–4 Years', href: '#shop-by-age' },
-  { label: '4–12 Years', href: '#shop-by-age' },
+  { label: 'Newborn', href: '/categories' },
+  { label: '0–3 Months', href: '/categories' },
+  { label: '3–6 Months', href: '/categories' },
+  { label: '6–12 Months', href: '/categories' },
+  { label: '1–4 Years', href: '/categories' },
+  { label: '4–12 Years', href: '/categories' },
 ];
 
 const SUPPORT_LINKS = [
-  { label: 'FAQ', href: '#faq' },
-  { label: 'Shipping Info', href: '#shipping' },
+  { label: 'FAQ', href: '/faq' },
+  { label: 'Shipping Info', href: '/shipping' },
   { label: 'Track Your Order', href: '/track' },
   { label: 'Find Us', href: '/find-us' },
   { label: 'Blog', href: '/blog' },
-  { label: 'About Us', href: '#about' },
-  { label: 'Returns', href: '#returns' },
+  { label: 'About Us', href: '/about' },
+  { label: 'Returns', href: '/returns' },
 ];
 
 const SOCIAL = (b?: Branding) => [
@@ -235,16 +235,16 @@ export function Footer({ branding }: FooterProps) {
           >
             © {new Date().getFullYear()} {b?.copyright_name || 'Malaika Nest'}. All rights reserved.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <Link
-              href="#privacy"
+              href="/privacy-policy"
               className="text-[11px] transition-colors hover:text-[var(--brand-gold)]"
               style={{ color: 'var(--brand-text-muted)' }}
             >
               Privacy Policy
             </Link>
             <Link
-              href="#terms"
+              href="/terms-of-service"
               className="text-[11px] transition-colors hover:text-[var(--brand-gold)]"
               style={{ color: 'var(--brand-text-muted)' }}
             >

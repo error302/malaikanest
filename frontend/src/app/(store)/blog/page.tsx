@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Calendar, Tag, ArrowRight } from 'lucide-react';
 import { getPublishedPosts, getCategories } from '@/lib/blog';
+import { SITE_URL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'Blog — Baby Care Tips, Parenting & Gift Guides',
   description: 'Expert advice on baby care, organic clothing, parenting tips, and gift guides from Malaika Nest. Handcrafted with love in Kenya.',
-  alternates: { canonical: 'https://malaikanest.duckdns.org/blog' },
+  alternates: { canonical: `${SITE_URL}/blog` },
 };
 
 export const dynamic = 'force-dynamic';

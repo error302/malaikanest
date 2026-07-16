@@ -7,6 +7,7 @@ import { ProductDetailClient } from './product-detail-client';
 import { ReviewSection } from '@/components/malaika/review-section';
 import { RelatedProducts } from '@/components/malaika/related-products';
 import { getRelatedProducts } from '@/lib/related-products';
+import { SITE_URL } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ function getApiBaseUrl(): string {
   return (
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    'https://malaikanest.duckdns.org'
+    'https://api.malaikanest.com'
   );
 }
 
@@ -45,11 +46,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: { canonical: `https://malaikanest.duckdns.org/products/${slug}` },
+    alternates: { canonical: `${SITE_URL}/products/${slug}` },
     openGraph: {
       title,
       description,
-      url: `https://malaikanest.duckdns.org/products/${slug}`,
+      url: `${SITE_URL}/products/${slug}`,
       images: imageUrl ? [{ url: imageUrl, width: 600, height: 600, alt: title }] : [],
       type: 'product',
     },
@@ -80,9 +81,9 @@ function buildJsonLd(product: any, slug: string) {
     },
     category: product.category?.name || 'Baby Clothing',
     image: imageUrl ? [imageUrl] : undefined,
-    offers: {
-      '@type': 'Offer',
-      url: `https://malaikanest.duckdns.org/products/${slug}`,
+      offers: {
+        '@type': 'Offer',
+        url: `${SITE_URL}/products/${slug}`,
       priceCurrency: 'KES',
       price: price.toFixed(2),
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
@@ -105,8 +106,8 @@ function buildJsonLd(product: any, slug: string) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://malaikanest.duckdns.org/' },
-      { '@type': 'ListItem', position: 2, name: 'Shop', item: 'https://malaikanest.duckdns.org/categories' },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${SITE_URL}/categories` },
       ...(product.category?.name
         ? [{ '@type': 'ListItem', position: 3, name: product.category.name }]
         : []),

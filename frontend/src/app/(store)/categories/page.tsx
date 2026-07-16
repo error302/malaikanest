@@ -1,5 +1,7 @@
 'use client';
 
+import { Suspense } from 'react';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -40,6 +42,18 @@ function normalizeProduct(p: any): Product {
 }
 
 export default function CategoriesPage() {
+  // useSearchParams needs a Suspense boundary in the App Router (Next 14+.
+  // We wrap the page's interactive body in <Suspense> so the rest of the
+  // storefront (header, footer, marketing blocks) renders without the
+  // bail-out forcing a full client-only tree.
+  return (
+    <Suspense fallback={null}>
+      <CategoriesBrowser />
+    </Suspense>
+  );
+}
+
+function CategoriesBrowser() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

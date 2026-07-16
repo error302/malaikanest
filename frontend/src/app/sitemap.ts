@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
+import { SITE_URL } from '@/lib/site-config';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://malaikanest.duckdns.org';
+const BASE_URL = SITE_URL;
 
 /**
  * Dynamic sitemap — includes all static pages, plus product and thrifted URLs

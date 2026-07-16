@@ -11,8 +11,8 @@ import logging
 
 from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
 
-from .models import SiteSettings
-from .serializers import PublicSiteSettingsSerializer, SiteSettingsSerializer
+from .models import SiteSettings, ShopPhoto
+from .serializers import PublicSiteSettingsSerializer, SiteSettingsSerializer, ShopPhotoSerializer
 
 logger = logging.getLogger("apps.core")
 
@@ -259,3 +259,21 @@ class Pm2LogsView(APIView):
                 {"error": "Unable to read log file"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+SHOP_PHOTOS_CACHE_KEY = "core_shop_photos_v1"
+
+
+class ShopPhotosView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        cached = cache.get(SHOP_PHOTOS_CACHE_KEY)
+        if cached is not None:
+            return Response(cached, status=status.HTTP_200_OK)
+
+        photos = ShopPhoto.objects.filter(is_active=True)
+        data = ShopPhotoSerializer(photos, many=True, context={"request": request}).data
+        cache.set(SHOP_PHOTOS_CACHE_KEY, data, timeout=300)
+        return Response(data, status=status.HTTP_200_OK)

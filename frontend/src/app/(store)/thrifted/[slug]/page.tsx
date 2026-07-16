@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronRight, ShoppingBasket, Heart, Sparkles, Shield, RotateCcw, Truck } from 'lucide-react';
 import { getThriftedBySlug, CONDITION_LABELS } from '@/lib/thrifted';
 import { ThriftedDetailClient } from './thrifted-detail-client';
+import { SITE_URL } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,11 +16,62 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getThriftedBySlug(slug);
   if (!product) return { title: 'Thrifted item not found' };
+  const title = `${product.name} (Mtumba) — Pre-loved`;
+  const description = product.description?.slice(0, 160) || product.name;
   return {
-    title: `${product.name} (Mtumba)`,
-    description: product.description.slice(0, 160),
-    openGraph: { title: product.name, description: product.description, images: [product.image] },
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/thrifted/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}/thrifted/${slug}`,
+      siteName: 'Malaika Nest',
+      locale: 'en_KE',
+      type: 'website',
+      images: product.image ? [{ url: product.image, width: 600, height: 600, alt: product.name }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: product.image ? [product.image] : [],
+    },
   };
+}
+
+function thriftedJsonLd(product: any, slug: string) {
+  const price = product.price ?? 0;
+  const inStock = product.stock > 0;
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description?.slice(0, 300) || '',
+      sku: product.sku || slug,
+      category: 'Thrifted / Mtumba',
+      image: [product.image, product.image2, product.image3].filter(Boolean),
+      offers: {
+        '@type': 'Offer',
+        url: `${SITE_URL}/thrifted/${slug}`,
+        priceCurrency: 'KES',
+        price: price.toFixed(2),
+        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        itemCondition: product.condition === 'brand_new' ? 'https://schema.org/NewCondition' : 'https://schema.org/UsedCondition',
+        seller: { '@type': 'Organization', name: 'Malaika Nest' },
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Mtumba', item: `${SITE_URL}/thrifted` },
+        { '@type': 'ListItem', position: 3, name: product.name },
+      ],
+    },
+  ];
 }
 
 export default async function ThriftedDetailPage({ params }: Props) {
@@ -32,9 +84,13 @@ export default async function ThriftedDetailPage({ params }: Props) {
     : 0;
 
   const images = [product.image, product.image2, product.image3].filter(Boolean);
+  const jsonLdSchemas = thriftedJsonLd(product, slug);
 
   return (
     <div className="container-shell py-6 sm:py-10">
+      {jsonLdSchemas.map((schema, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      ))}
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-1.5 text-xs flex-wrap">
         <Link href="/" className="hover:text-[var(--brand-gold)]" style={{ color: 'var(--brand-text-muted)' }}>Home</Link>

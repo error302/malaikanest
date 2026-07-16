@@ -102,3 +102,10 @@ backend/refactor_models.py
 _deps/
 _incoming/
 _wheelhouse/
+
+# Cloudflare Tunnel credentials — secret, never commit
+cloudflared/*.json
+cloudflared/cert.pem
+
+# Admin-uploaded media — never commit (admin can change logos at any time)
+frontend/public/uploads/

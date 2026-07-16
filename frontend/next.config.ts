@@ -7,7 +7,7 @@ const ContentSecurityPolicy = `
   img-src 'self' data: blob: https: http:;
   font-src 'self' data: https://fonts.gstatic.com;
   frame-src 'self' https://www.google.com https://www.youtube.com;
-  connect-src 'self' https://malaikanest.duckdns.org https://res.cloudinary.com https://www.google-analytics.com https://region1.google-analytics.com;
+  connect-src 'self' https://malaikanest.com https://api.malaikanest.com https://www.malaikanest.com https://res.cloudinary.com https://www.google-analytics.com https://region1.google-analytics.com;
   media-src 'self' https:;
   object-src 'none';
   base-uri 'self';
@@ -48,7 +48,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
-      { protocol: 'https', hostname: 'malaikanest.duckdns.org' },
+      { protocol: 'https', hostname: 'malaikanest.com' },
+      { protocol: 'https', hostname: 'www.malaikanest.com' },
+      { protocol: 'https', hostname: 'api.malaikanest.com' },
     ],
   },
 };

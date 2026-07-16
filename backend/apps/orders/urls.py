@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CartViewSet, OrderViewSet, GuestOrderTrackView
+from .views import CartViewSet, OrderViewSet, GuestOrderTrackView, DeliveryZonesView
 from .admin_views import (
     AdminAnalyticsView,
     AdminReportsView,
@@ -29,6 +29,7 @@ urlpatterns = [
     path('track/', GuestOrderTrackView.as_view({'post': 'create'})),
     path('admin/analytics/', AdminAnalyticsView.as_view()),
     path('admin/reports/', AdminReportsView.as_view()),
+    path('delivery-zones/', DeliveryZonesView.as_view(), name='delivery-zones'),
     path('admin/orders/export/', OrdersCSVExportView.as_view()),
     path('admin/invoices/', InvoiceListView.as_view(), name='admin-invoice-list'),
     path('admin/invoices/<int:invoice_id>/', InvoiceDetailView.as_view(), name='admin-invoice-detail'),

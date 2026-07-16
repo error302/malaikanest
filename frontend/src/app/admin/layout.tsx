@@ -20,8 +20,6 @@ import {
   Type,
   MessageSquareQuote,
   Sparkles,
-  FileText,
-  ShoppingCart,
   Award,
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';

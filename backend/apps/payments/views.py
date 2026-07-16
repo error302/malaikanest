@@ -33,23 +33,26 @@ def resolve_order_for_request(request, order_id):
 
     Authenticated users are scoped to their own orders. Guest (anonymous)
     requests are only ever resolved against GUEST orders (user is NULL) and
-    require either the unguessable `receipt_number` OR a matching `guest_email`.
-    Guest actions must never resolve to an authenticated user's order.
+    require an unguessable secret — `checkout_token` (preferred) or
+    `receipt_number` (legacy). The order id is sequential and guessable, and
+    the guest email leaks via the receipt email, so `order_id + guest_email`
+    is NOT a sufficient authorization factor. Guest actions must never
+    resolve to an authenticated user's order.
     """
     order_qs = Order.objects.all()
 
     if request.user.is_authenticated:
         return order_qs.filter(pk=order_id, user=request.user).first()
 
+    checkout_token = (request.data.get("checkout_token") or request.query_params.get("checkout_token") or "").strip()
+    if checkout_token:
+        return order_qs.filter(checkout_token=checkout_token, user__isnull=True).first()
+
     receipt_number = (request.data.get("receipt_number") or request.query_params.get("receipt_number") or "").strip()
     if receipt_number:
         return order_qs.filter(receipt_number=receipt_number, user__isnull=True).first()
 
-    guest_email = (request.data.get("guest_email") or request.query_params.get("guest_email") or "").strip().lower()
-    if not guest_email:
-        return None
-
-    return order_qs.filter(pk=order_id, user__isnull=True, guest_email__iexact=guest_email).first()
+    return None
 
 class InitiatePaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]

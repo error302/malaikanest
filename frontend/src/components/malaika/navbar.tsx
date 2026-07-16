@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   Heart,
@@ -26,10 +27,10 @@ import { AnnouncementBar } from './announcement-bar';
 import { LanguageToggle } from './language-toggle';
 
 const NAV_LINKS = [
-  { name: 'Home', href: '#home' },
-  { name: 'Shop', href: '#shop', hasDropdown: true },
+  { name: 'Home', href: '/' },
+  { name: 'Shop', href: '/categories', hasDropdown: true },
   { name: 'Mtumba', href: '/thrifted' },
-  { name: 'Best Sellers', href: '#best-sellers' },
+  { name: 'Best Sellers', href: '/best-sellers' },
   { name: 'Find Us', href: '/find-us' },
 ];
 
@@ -50,6 +51,7 @@ const SHOP_CATEGORIES = [
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
 
 export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
+  const router = useRouter();
   const [shopOpen, setShopOpen] = useState(false);
   const [ageOpen, setAgeOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -121,7 +123,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
 
           {/* Logo */}
           <Link
-            href="#home"
+            href="/"
             className="flex-shrink-0"
             aria-label="Malaika Nest home"
           >
@@ -152,14 +154,14 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   </button>
                 </div>
               ) : (
-                <a
+                <Link
                   key={link.name}
                   href={link.href}
                   className="text-[14px] font-medium transition-colors hover:text-[var(--brand-gold)]"
                   style={{ color: 'var(--brand-brown)' }}
                 >
                   {link.name}
-                </a>
+                </Link>
               )
             )}
 
@@ -190,9 +192,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               onSubmit={(e) => {
                 e.preventDefault();
                 if (searchQuery.trim()) {
-                  document
-                    .getElementById('shop')
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
                 }
               }}
               className="relative w-full"
@@ -230,7 +230,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             </button>
 
             <Link
-              href="#wishlist"
+              href="/wishlist"
               className="relative hidden sm:flex w-11 h-11 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
               aria-label={`Wishlist${wishlistCount > 0 ? `, ${wishlistCount} items` : ''}`}
@@ -247,7 +247,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             </Link>
 
             <Link
-              href="#account"
+              href="/login"
               className="hidden md:flex w-11 h-11 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
               aria-label="Account"
@@ -256,7 +256,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             </Link>
 
             <Link
-              href="#cart"
+              href="/cart"
               className="relative inline-flex items-center gap-2 h-10 sm:h-11 px-3 sm:px-4 rounded-full transition-all duration-300 hover:shadow-warm-md"
               style={{
                 background: 'var(--brand-gold)',
@@ -299,7 +299,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               {SHOP_CATEGORIES.map((cat) => (
                 <Link
                   key={cat.name}
-                  href="#shop"
+                  href="/categories"
                   onClick={() => setShopOpen(false)}
                   className="group flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden hover:shadow-warm-md"
                   style={{
@@ -341,7 +341,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             >
               <div className="flex flex-wrap gap-5">
                 <Link
-                  href="#best-sellers"
+                  href="/best-sellers"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-terra)' }}
@@ -349,7 +349,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   <Flame size={14} /> Best Sellers
                 </Link>
                 <Link
-                  href="#new-arrivals"
+                  href="/categories"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
@@ -357,7 +357,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   <Sparkles size={14} /> New Arrivals
                 </Link>
                 <Link
-                  href="#gifts"
+                  href="/categories"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
@@ -366,7 +366,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 </Link>
               </div>
               <Link
-                href="#shop"
+                href="/categories"
                 onClick={() => setShopOpen(false)}
                 className="text-[12px] font-medium px-4 py-2 rounded-full transition-all"
                 style={{
@@ -404,7 +404,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 Shop by Age
               </h3>
               <Link
-                href="#shop"
+                href="/categories"
                 onClick={() => setAgeOpen(false)}
                 className="inline-flex items-center gap-1 text-[13px] font-medium hover:gap-2 transition-all"
                 style={{ color: 'var(--brand-gold)' }}
@@ -416,7 +416,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               {SHOP_BY_AGE.map((age) => (
                 <Link
                   key={age}
-                  href="#shop"
+                  href="/categories"
                   onClick={() => setAgeOpen(false)}
                   className="group flex-shrink-0 flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 hover:shadow-warm-md min-w-[110px]"
                   style={{
@@ -478,9 +478,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 e.preventDefault();
                 if (searchQuery.trim()) {
                   setSearchOpen(false);
-                  document
-                    .getElementById('shop')
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
                 }
               }}
               className="flex flex-col sm:flex-row gap-3"
@@ -516,11 +514,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   key={t}
                   type="button"
                   onClick={() => {
-                    setSearchQuery(t);
                     setSearchOpen(false);
-                    document
-                      .getElementById('shop')
-                      ?.scrollIntoView({ behavior: 'smooth' });
+                    router.push(`/categories?search=${encodeURIComponent(t)}`);
                   }}
                   className="text-xs px-3 py-1.5 rounded-full transition-colors"
                   style={{
@@ -561,7 +556,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
           <div className="px-5 py-6 space-y-6">
             <nav className="space-y-1" aria-label="Mobile navigation">
               {NAV_LINKS.map((link) => (
-                <a
+                <Link
                   key={link.name}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
@@ -573,7 +568,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   }}
                 >
                   {link.name}
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -586,9 +581,9 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               </p>
               <div className="flex flex-wrap gap-2">
                 {SHOP_BY_AGE.slice(0, 6).map((age) => (
-                  <a
+                  <Link
                     key={age}
-                    href="#shop"
+                    href="/categories"
                     onClick={() => setMobileOpen(false)}
                     className="px-4 py-2 rounded-full border text-[13px] transition-all"
                     style={{
@@ -597,7 +592,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                     }}
                   >
                     {age}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -611,9 +606,9 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {SHOP_CATEGORIES.map((cat) => (
-                  <a
+                  <Link
                     key={cat.name}
-                    href="#shop"
+                    href="/categories"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
                     style={{ background: 'var(--brand-warm)' }}
@@ -629,7 +624,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                     >
                       {cat.name}
                     </span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -638,30 +633,30 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               className="pt-5 space-y-3"
               style={{ borderTop: '1px solid var(--brand-border)' }}
             >
-              <a
-                href="#account"
+              <Link
+                href="/login"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 text-sm py-2"
                 style={{ color: 'var(--brand-brown)' }}
               >
                 <User size={18} /> Account / Login
-              </a>
-              <a
-                href="#wishlist"
+              </Link>
+              <Link
+                href="/wishlist"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 text-sm py-2"
                 style={{ color: 'var(--brand-brown)' }}
               >
                 <Heart size={18} /> Wishlist ({wishlistCount})
-              </a>
-              <a
-                href="#cart"
+              </Link>
+              <Link
+                href="/cart"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 text-sm py-2"
                 style={{ color: 'var(--brand-brown)' }}
               >
                 <ShoppingCart size={18} /> Cart ({cartCount})
-              </a>
+              </Link>
             </div>
           </div>
         </div>

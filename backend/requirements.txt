@@ -23,3 +23,4 @@ cryptography==46.0.5
 python-dateutil==2.9.0
 whitenoise==6.9.0
 reportlab==4.4.10
+django-flat-theme==1.1.4

@@ -179,7 +179,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           )}
 
           <Link
-            href="#"
+            href={`/products/${product.slug}`}
             className="group/link"
             aria-label={`View ${product.name}`}
           >

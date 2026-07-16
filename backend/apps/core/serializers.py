@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import SiteSettings
+from .models import SiteSettings, ShopPhoto
 
 
 class SiteSettingsSerializer(serializers.ModelSerializer):
@@ -36,6 +36,17 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(url)
         return url
+
+
+class ShopPhotoSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ShopPhoto
+        fields = ("id", "image", "caption", "position")
+
+    def get_image(self, obj):
+        return obj.get_image_url
 
 
 class PublicSiteSettingsSerializer(serializers.ModelSerializer):

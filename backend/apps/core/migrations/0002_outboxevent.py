@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "ordering": ["-created_at"],
-                "indexes": [models.Index(fields=["status", "created_at"])],
+                "indexes": [models.Index(fields=["status", "created_at"], name="core_outbox_status_created_idx")],
             },
         ),
     ]

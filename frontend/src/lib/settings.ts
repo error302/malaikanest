@@ -12,10 +12,10 @@ import { db } from '@/lib/db';
 // ── Hardcoded defaults (used when DB has no override) ────────────────────────
 
 export const DEFAULT_BRANDING = {
-  logo_url: '',                          // empty = use built-in SVG logo
-  favicon_url: '',                       // empty = use /logo.svg
+  logo_url: '/logo.png',                    // served from public/logo.png
+  favicon_url: '',                          // empty = use /logo.png
   store_name: 'Malaika Nest',
-  tagline: 'Baby & Maternity',
+  tagline: 'Made for Little Angels',
   footer_tagline: 'Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.',
   primary_color: '#8B6914',
   accent_color: '#C4704A',

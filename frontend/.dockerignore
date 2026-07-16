@@ -1,0 +1,11 @@
+node_modules
+.next
+.turbo
+dist
+dev.db
+dev.db-journal
+.env
+.env.local
+.git
+.gitignore
+*.md

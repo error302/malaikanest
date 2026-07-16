@@ -6,11 +6,12 @@ from django.db import transaction
 from django.utils import timezone
 from apps.accounts.models import User
 from apps.products.models import Inventory, Product, ProductVariant, VariantInventory
-from .models import Cart, CartItem, Order, OrderItem, Coupon
+from .models import Cart, CartItem, Order, OrderItem, Coupon, DeliveryZone
 from .serializers import (
     CartSerializer,
     OrderSerializer,
     CouponSerializer,
+    DeliveryZoneSerializer,
 )
 
 
@@ -567,10 +568,23 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
             return obj
 
         if obj.user != user:
-            if not obj.guest_email or obj.guest_email != user.email:
+            # M3 fix: viewing a guest order requires the per-order checkout_token,
+            # not just an email match. The order id is sequential and guessable, and
+            # the guest email leaks via the receipt email, so email alone lets any
+            # logged-in user enumerate every guest order matching their address.
+            provided_token = (
+                self.request.data.get("checkout_token")
+                or self.request.query_params.get("checkout_token")
+                or ""
+            ).strip()
+            if not obj.guest_email or obj.guest_email.lower() != (user.email or "").lower():
                 from rest_framework.exceptions import PermissionDenied
 
                 raise PermissionDenied("You do not have permission to view this order")
+            if obj.checkout_token and provided_token != obj.checkout_token:
+                from rest_framework.exceptions import PermissionDenied
+
+                raise PermissionDenied("checkout_token required to view this guest order")
 
         return obj
 
@@ -713,12 +727,37 @@ class GuestOrderTrackView(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
     def create(self, request):
+        # Preferred: per-order checkout_token alone (unguessable secret). Backward
+        # compatibility: receipt_number + email (receipt_number is unguessable so
+        # the combination remains safe, but is being phased out for the token).
+        checkout_token = (request.data.get("checkout_token") or "").strip()
+        if checkout_token:
+            order = (
+                Order.objects.select_related("user")
+                .prefetch_related("items__product")
+                .filter(checkout_token=checkout_token, user__isnull=True)
+                .first()
+            )
+            if not order:
+                return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(OrderSerializer(order).data)
+
+
+class DeliveryZonesView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        zones = DeliveryZone.objects.filter(is_active=True)
+        serializer = DeliveryZoneSerializer(zones, many=True)
+        return Response(serializer.data)
+
         order_number = request.data.get("order_number") or request.data.get("receipt_number")
         email = (request.data.get("email") or "").strip().lower()
 
         if not order_number or not email:
             return Response(
-                {"detail": "order_number and email are required"},
+                {"detail": "order_number and email (or checkout_token) are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

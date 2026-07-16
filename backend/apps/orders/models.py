@@ -5,6 +5,7 @@ from django.utils import timezone
 from apps.products.models import Product, ProductVariant, Inventory, InventoryLog, VariantInventory, sync_product_stock
 import uuid
 import random
+import secrets
 from datetime import datetime
 from django.db.models import F
 from decimal import Decimal
@@ -17,6 +18,19 @@ def generate_receipt_number() -> str:
     Kept as `receipt_number` for backwards compatibility with existing API/UI.
     """
     return f"MN-{uuid.uuid4().hex[:12].upper()}"
+
+
+def generate_checkout_token() -> str:
+    """
+    Unguessable per-order secret for guest authorization.
+
+    Guest actions (payment initiation, order view, tracking) must present this
+    token (or the receipt_number) — never the sequential order id. The order
+    id is a guessable auto-increment integer and the guest email leaks via the
+    receipt email, so accepting `order_id + guest_email` for authorization lets
+    any third party who knows both values act on someone else's order.
+    """
+    return secrets.token_urlsafe(32)
 
 
 class Invoice(BaseModel):
@@ -284,6 +298,16 @@ class Order(BaseModel):
         default=generate_receipt_number,
         editable=False,
     )
+    # Per-order unguessable token for guest authorization. Returned in the
+    # order response at checkout so the frontend can pass it back for payment
+    # initiation / view / tracking instead of the guessable sequential id.
+    checkout_token = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        default=generate_checkout_token,
+        editable=False,
+    )
     delivery_region = models.CharField(max_length=20, choices=DELIVERY_CHOICES, default='nairobi')
     
     # Shipping address fields
@@ -442,6 +466,23 @@ DELIVERY_FEES = {
     'nairobi': 300,
     'upcountry': 500,
 }
+
+
+class DeliveryZone(BaseModel):
+    slug = models.SlugField(max_length=30, unique=True)
+    name = models.CharField(max_length=100)
+    fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    estimated_days = models.CharField(max_length=100, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "name"]
+        verbose_name = "Delivery Zone"
+        verbose_name_plural = "Delivery Zones"
+
+    def __str__(self):
+        return self.name
 
 
 def create_order_from_cart(user, cart, coupon=None, delivery_region='nairobi'):

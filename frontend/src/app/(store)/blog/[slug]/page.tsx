@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight, Calendar, Tag, ArrowLeft } from 'lucide-react';
 import { getPostBySlug, getPublishedPosts } from '@/lib/blog';
+import { SITE_URL } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: post.title,
     description: post.excerpt,
-    alternates: { canonical: `https://malaikanest.duckdns.org/blog/${slug}` },
+    alternates: { canonical: `${SITE_URL}/blog/${slug}` },
     openGraph: {
       title: post.title,
       description: post.excerpt,
@@ -49,11 +50,11 @@ function buildArticleJsonLd(post: any) {
     publisher: {
       '@type': 'Organization',
       name: 'Malaika Nest',
-      url: 'https://malaikanest.duckdns.org',
+      url: SITE_URL,
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://malaikanest.duckdns.org/blog/${post.slug}`,
+      '@id': `${SITE_URL}/blog/${post.slug}`,
     },
   };
 }

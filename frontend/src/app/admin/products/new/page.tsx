@@ -1,31 +1,119 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Image as ImageIcon, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { showToast } from '@/lib/toast';
+import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
+
+interface ProductForm {
+  name: string;
+  slug: string;
+  description: string;
+  price: string;
+  compare_price: string;
+  stock: string;
+  category: string;
+  brand: string;
+  sku: string;
+  gender: string;
+  age_group: string;
+  age_range: string;
+  size_label: string;
+  featured: boolean;
+  status: string;
+  seo_title: string;
+  seo_description: string;
+  image_url: string;
+}
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
 
 export default function NewProductPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    name: '', description: '', price: '', compare_price: '', stock: '0',
+  const [form, setForm] = useState<ProductForm>({
+    name: '', slug: '', description: '', price: '', compare_price: '', stock: '0',
     category: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
     size_label: '', featured: false, status: 'draft', seo_title: '', seo_description: '',
+    image_url: '',
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [slugTouched, setSlugTouched] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      showToast('Only PNG, JPEG or WebP images are allowed', 'error');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      showToast('Image must be 5 MB or smaller', 'error');
+      e.target.value = '';
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImageRemove = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setForm((f) => ({ ...f, image_url: '' }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const payload = () => {
+    const slug = form.slug.trim() || slugify(form.name);
+    const fd = new FormData();
+    fd.append('name', form.name);
+    fd.append('slug', slug);
+    fd.append('description', form.description);
+    fd.append('price', String(parseFloat(form.price) || 0));
+    fd.append('compare_price', form.compare_price ? String(parseFloat(form.compare_price)) : '');
+    fd.append('stock', String(parseInt(form.stock) || 0));
+    fd.append('category', form.category);
+    fd.append('brand', form.brand);
+    fd.append('sku', form.sku);
+    fd.append('gender', form.gender);
+    fd.append('age_group', form.age_group);
+    fd.append('age_range', form.age_range);
+    fd.append('size_label', form.size_label);
+    fd.append('featured', form.featured ? 'true' : 'false');
+    fd.append('status', form.status);
+    fd.append('seo_title', form.seo_title);
+    fd.append('seo_description', form.seo_description);
+    if (form.image_url) fd.append('image_url', form.image_url);
+    if (imageFile) fd.append('image', imageFile);
+    return fd;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.name.trim()) {
+      showToast('Product name is required', 'error');
+      return;
+    }
     setSaving(true);
     try {
-      await api.post('/api/v1/products/products/', {
-        ...form,
-        price: parseFloat(form.price) || 0,
-        compare_price: form.compare_price ? parseFloat(form.compare_price) : null,
-        stock: parseInt(form.stock) || 0,
-      });
+      await api.post('/api/v1/products/products/', payload());
       showToast('Product created', 'success');
       router.push('/admin/products');
     } catch (err: any) {
@@ -53,7 +141,11 @@ export default function NewProductPage() {
           <div className="space-y-3">
             <div>
               <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Name *</label>
-              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} style={inputStyle} />
+              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: slugTouched ? form.slug : slugify(e.target.value) })} className={inputClass} style={inputStyle} />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Slug *</label>
+              <input required value={form.slug} onChange={(e) => { setSlugTouched(true); setForm({ ...form, slug: e.target.value }); }} className={inputClass} style={inputStyle} />
             </div>
             <div>
               <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Description</label>
@@ -69,6 +161,40 @@ export default function NewProductPage() {
                 <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category ID" className={inputClass} style={inputStyle} />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <ImageIcon size={18} style={{ color: 'var(--brand-gold)' }} />
+            <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Product Image</h2>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-24 h-24 rounded-xl border flex items-center justify-center overflow-hidden flex-shrink-0" style={{ background: 'var(--brand-bg-alt)', borderColor: 'var(--brand-border)' }}>
+              {imagePreview ? (
+                <img src={imagePreview} alt="Product preview" className="w-full h-full object-cover" />
+              ) : (
+                <ImageIcon size={28} style={{ color: 'var(--brand-text-muted)' }} />
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium cursor-pointer" style={{ background: 'var(--brand-warm)', color: 'var(--brand-gold)' }}>
+                <Upload size={14} /> Choose image
+                <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleImageSelect} />
+              </label>
+              {(imagePreview || form.image_url) && (
+                <button type="button" onClick={handleImageRemove} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs" style={{ background: 'rgba(196,112,74,0.1)', color: 'var(--brand-terra)' }}>
+                  <X size={12} /> Remove
+                </button>
+              )}
+              <p className="text-[11px]" style={{ color: 'var(--brand-text-muted)' }}>
+                PNG, JPEG or WebP. Max 5 MB.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3">
+            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Or image URL</label>
+            <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://…" className={inputClass} style={inputStyle} />
           </div>
         </div>
 

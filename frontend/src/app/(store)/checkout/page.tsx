@@ -1,18 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CreditCard, Smartphone, Banknote, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { CreditCard, Smartphone, Banknote, Lock, ArrowRight } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
 import api, { handleApiError } from '@/lib/api';
-
-const DELIVERY_REGIONS = [
-  { value: 'mombasa', label: 'Mombasa (Same Day)', fee: 0 },
-  { value: 'nairobi', label: 'Nairobi (1-2 Days)', fee: 300 },
-  { value: 'upcountry', label: 'Upcountry (2-3 Days)', fee: 500 },
-];
+import { getDeliveryZones } from '@/lib/delivery';
+import type { DeliveryZone } from '@/lib/delivery';
 
 const PAYMENT_METHODS = [
   { value: 'mpesa', label: 'M-Pesa', Icon: Smartphone, desc: 'Pay via STK push to your phone' },
@@ -23,6 +19,7 @@ const PAYMENT_METHODS = [
 export default function CheckoutPage() {
   const { items } = useCart();
   const router = useRouter();
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   const [region, setRegion] = useState('nairobi');
   const [payment, setPayment] = useState('mpesa');
   const [submitting, setSubmitting] = useState(false);
@@ -31,9 +28,18 @@ export default function CheckoutPage() {
     address: '', city: '', postalCode: '',
   });
 
+  useEffect(() => {
+    getDeliveryZones().then(setDeliveryZones);
+  }, []);
+
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const regionObj = DELIVERY_REGIONS.find((r) => r.value === region)!;
-  const deliveryFee = subtotal >= 3000 ? 0 : regionObj.fee;
+  const zones = deliveryZones.length > 0 ? deliveryZones : [
+    { slug: 'mombasa', name: 'Mombasa (Same Day)', fee: '0', estimated_days: 'Same Day' },
+    { slug: 'nairobi', name: 'Nairobi (1-2 Days)', fee: '300', estimated_days: '1-2 Days' },
+    { slug: 'upcountry', name: 'Upcountry (2-3 Days)', fee: '500', estimated_days: '2-3 Days' },
+  ];
+  const regionObj = zones.find((r) => r.slug === region)!;
+  const deliveryFee = subtotal >= 3000 ? 0 : Number(regionObj?.fee || 0);
   const total = subtotal + deliveryFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,8 +167,8 @@ export default function CheckoutPage() {
                 style={{ background: 'var(--brand-bg-alt)' }}
                 aria-label="Delivery region"
               >
-                {DELIVERY_REGIONS.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label} — KES {r.fee}</option>
+                {zones.map((r) => (
+                  <option key={r.slug} value={r.slug}>{r.name} — KES {Number(r.fee).toLocaleString('en-KE')}</option>
                 ))}
               </select>
             </div>

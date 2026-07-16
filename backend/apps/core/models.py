@@ -1,13 +1,18 @@
+import uuid
+
 from django.db import models
 
 
 class BaseModel(models.Model):
     """
-    Abstract base model providing timestamp tracking.
+    Abstract base model providing UUID primary keys and timestamp tracking.
 
-    Uses Django's DEFAULT_AUTO_FIELD (BigAutoField) for primary keys,
-    matching the production database schema.
+    Migration `core.0004` aligns the model state with the UUID-serialised
+    columns already present in every child table (products, orders, payments,
+    carts, etc.) so that the Django model layer auto-generates UUIDs for new
+    rows instead of sending ``id=NULL`` to the database.
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -59,6 +64,30 @@ class SiteSettings(BaseModel):
         return obj
 
 
+class ShopPhoto(BaseModel):
+    image = models.ImageField(upload_to="shop_photos/")
+    image_url = models.URLField(blank=True, null=True, help_text="Paste Cloudinary URL instead of uploading")
+    caption = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True)
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "-created_at"]
+        verbose_name = "Shop Photo"
+        verbose_name_plural = "Shop Photos"
+
+    def __str__(self):
+        return self.caption or f"Shop Photo {self.pk}"
+
+    @property
+    def get_image_url(self):
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            return self.image.url
+        return None
+
+
 class OutboxEvent(BaseModel):
     """
     Transactional Outbox (system-design-101: event-driven / reliable messaging).
@@ -86,7 +115,12 @@ class OutboxEvent(BaseModel):
     published_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        indexes = [models.Index(fields=["status", "created_at"])]
+        indexes = [
+            models.Index(
+                fields=["status", "created_at"],
+                name="core_outbox_status_created_idx",
+            )
+        ]
         ordering = ["-created_at"]
 
     def __str__(self):

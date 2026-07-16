@@ -86,7 +86,7 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
           {CATEGORIES.map((cat) => (
             <Link
               key={cat.name}
-              href="#shop"
+              href="/categories"
               className="group relative flex flex-col rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-warm-md hover:-translate-y-1"
               style={{
                 background: '#FFFFFF',

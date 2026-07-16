@@ -1,4 +1,4 @@
-{% load i18n static admin_flat__theme %}
+{% load i18n static %}
 <!DOCTYPE html>
 {% get_current_language as language_code %}
 <html lang="{{ language_code|default:"en-us" }}">
@@ -9,7 +9,6 @@
 <title>{% block title %}{% endblock %} | Malaika Nest Admin</title>
 <link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
 <link rel="stylesheet" href="{% static 'admin/css/login.css' %}">
-<link rel="stylesheet" href="{% static 'admin_flat_theme/css/style.css' %}">
 {% block extrastyle %}{% endblock %}
 {% block extrahead %}{% endblock %}
 {% block responsive %}
@@ -262,7 +261,6 @@
         background-color: white;
     }
 </style>
-{% endblock %}
 </head>
 {% load i18n %}
 
@@ -303,6 +301,7 @@
                     <button type="submit">{% trans 'Log out' %}</button>
                 </form>
             {% endblock %}
+        {% endif %}
         </div>
         {% endblock %}
         {% block nav-global %}{% endblock %}

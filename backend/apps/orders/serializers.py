@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cart, CartItem, Order, OrderItem, Coupon
+from .models import Cart, CartItem, Order, OrderItem, Coupon, DeliveryZone
 from apps.products.serializers import ProductSerializer
 from decimal import Decimal
 from .models import DELIVERY_FEES
@@ -105,7 +105,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'user', 'subtotal', 'delivery_fee', 'tax_amount', 'discount_amount',
             'total', 'status', 'items', 'created_at',
-            'receipt_number', 'delivery_region', 'is_gift', 'gift_message',
+            'receipt_number', 'checkout_token', 'delivery_region', 'is_gift', 'gift_message',
             'guest_email', 'mpesa_receipt_number',
         )
 
@@ -125,4 +125,10 @@ class CouponSerializer(serializers.ModelSerializer):
             'valid_to',
             'is_active',
         )
+
+
+class DeliveryZoneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryZone
+        fields = ("slug", "name", "fee", "estimated_days")
 

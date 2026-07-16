@@ -3,6 +3,7 @@ import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/malaika/providers";
 import { getSiteSettings } from "@/lib/settings";
+import { SITE_URL, SITE_NAME } from "@/lib/site-config";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -34,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const favicon = branding?.favicon_url || "/logo.svg";
 
   return {
-    metadataBase: new URL("https://malaikanest.duckdns.org"),
+    metadataBase: new URL(SITE_URL),
     title: {
       default: `${storeName} — Premium Baby & Maternity Store in Kenya`,
       template: `%s · ${storeName}`,
@@ -45,29 +46,45 @@ export async function generateMetadata(): Promise<Metadata> {
       "baby clothes Kenya", "newborn clothing", "organic baby clothes",
       "baby shop Mombasa", "maternity Kenya", "baby gifts", storeName,
       "children's clothing Kenya", "baby essentials", "M-Pesa baby shop",
+      "baby onesies Kenya", "kids clothes Mombasa", "handmade baby gifts Kenya",
     ],
     authors: [{ name: storeName }],
     creator: storeName,
     publisher: storeName,
+    applicationName: storeName,
     icons: {
       icon: favicon,
       apple: favicon,
     },
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    },
     openGraph: {
+      type: "website",
       title: `${storeName} — Premium Baby & Maternity Store in Kenya`,
       description: "Handcrafted organic baby clothing, accessories & toys made with love in Kenya. Premium quality for ages 0-12 years.",
-      url: "https://malaikanest.duckdns.org",
+      url: SITE_URL,
       siteName: storeName,
       locale: "en_KE",
-      type: "website",
     },
     twitter: {
       card: "summary_large_image",
       title: `${storeName} — Premium Baby Store`,
       description: "Handcrafted organic baby clothing & essentials made with love in Kenya.",
     },
-    alternates: { canonical: "https://malaikanest.duckdns.org" },
+    alternates: { canonical: SITE_URL },
     category: "shopping",
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
   };
 }
 
@@ -83,17 +100,65 @@ export const viewport: Viewport = {
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Store",
-  name: "Malaika Nest",
-  description: "Premium baby and maternity store. Handcrafted organic clothing, accessories & toys made with love in Kenya.",
-  url: "https://malaikanest.duckdns.org",
-  telephone: "+254726771321",
-  email: "malaikanest7@gmail.com",
-  address: { "@type": "PostalAddress", addressLocality: "Mombasa", addressCountry: "KE" },
-  paymentAccepted: "M-Pesa, Credit Card, Cash on Delivery",
-  currenciesAccepted: "KES",
-  openingHours: "Mo-Sa 09:00-18:00",
-  priceRange: "KES 500 - 8000",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "Malaika Nest",
+      url: SITE_URL,
+      logo: `${SITE_URL}/logo.png`,
+      image: `${SITE_URL}/logo.png`,
+      description: "Premium baby and maternity store. Handcrafted organic clothing, accessories & toys made with love in Kenya.",
+      email: "malaikanest7@gmail.com",
+      telephone: "+254726771321",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Mombasa",
+        addressCountry: "KE",
+      },
+      sameAs: [
+        "https://www.facebook.com/malaikanest",
+        "https://www.instagram.com/malaikanest",
+      ],
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: "+254726771321",
+        contactType: "customer service",
+        areaServed: "KE",
+        availableLanguage: "en",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: "Malaika Nest",
+      description: "Premium baby and maternity store in Kenya — handcrafted organic clothing, accessories & toys.",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      inLanguage: "en",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${SITE_URL}/categories?search={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "Store",
+      "@id": `${SITE_URL}/#store`,
+      name: "Malaika Nest",
+      url: SITE_URL,
+      telephone: "+254726771321",
+      email: "malaikanest7@gmail.com",
+      address: { "@type": "PostalAddress", addressLocality: "Mombasa", addressCountry: "KE" },
+      paymentAccepted: "M-Pesa, Credit Card, Cash on Delivery",
+      currenciesAccepted: "KES",
+      openingHours: "Mo-Sa 09:00-18:00",
+      priceRange: "KES 500 - 8000",
+    },
+  ],
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -105,6 +170,19 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <head>
         <link rel="icon" href={favicon} />
         <link rel="apple-touch-icon" href={favicon} />
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_ID}',{page_path:window.location.pathname});`,
+              }}
+            />
+          </>
+        )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
       <body
