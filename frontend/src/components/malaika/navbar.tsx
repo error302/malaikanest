@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -529,135 +530,137 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
       )}
 
       {/* ── Mobile Menu ── */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-[200] lg:hidden overflow-y-auto"
-          style={{ background: 'var(--brand-cream)' }}
-        >
+      {mobileOpen &&
+        createPortal(
           <div
-            className="flex items-center justify-between h-16 px-5"
-            style={{ borderBottom: '1px solid var(--brand-border)' }}
+            className="fixed inset-0 z-[200] lg:hidden overflow-y-auto"
+            style={{ background: 'var(--brand-cream)' }}
           >
-            <Logo />
-            <button
-              type="button"
-              onClick={() => setMobileOpen(false)}
-              className="w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
-              style={{ color: 'var(--brand-brown)' }}
-              aria-label="Close menu"
+            <div
+              className="flex items-center justify-between h-16 px-5"
+              style={{ borderBottom: '1px solid var(--brand-border)' }}
             >
-              <X size={22} />
-            </button>
-          </div>
-
-          <div className="px-5 py-6 space-y-6">
-            <nav className="space-y-1" aria-label="Mobile navigation">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block py-3 text-lg font-medium border-b"
-                  style={{
-                    color: 'var(--brand-text)',
-                    borderColor: 'var(--brand-border)',
-                    fontFamily: 'var(--font-cormorant)',
-                  }}
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-
-            <div>
-              <p
-                className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
-                style={{ color: 'var(--brand-text-muted)' }}
+              <Logo />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+                style={{ color: 'var(--brand-brown)' }}
+                aria-label="Close menu"
               >
-                Shop by Age
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SHOP_BY_AGE.slice(0, 6).map((age) => (
+                <X size={22} />
+              </button>
+            </div>
+
+            <div className="px-5 py-6 space-y-6">
+              <nav className="space-y-1" aria-label="Mobile navigation">
+                {NAV_LINKS.map((link) => (
                   <Link
-                    key={age}
-                    href="/categories"
+                    key={link.name}
+                    href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="px-4 py-2 rounded-full border text-[13px] transition-all"
+                    className="block py-3 text-lg font-medium border-b"
                     style={{
+                      color: 'var(--brand-text)',
                       borderColor: 'var(--brand-border)',
-                      color: 'var(--brand-brown)',
+                      fontFamily: 'var(--font-cormorant)',
                     }}
                   >
-                    {age}
+                    {link.name}
                   </Link>
                 ))}
-              </div>
-            </div>
+              </nav>
 
-            <div>
-              <p
-                className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
-                style={{ color: 'var(--brand-text-muted)' }}
-              >
-                Shop Categories
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {SHOP_CATEGORIES.map((cat) => (
-                  <Link
-                    key={cat.name}
-                    href="/categories"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
-                    style={{ background: 'var(--brand-warm)' }}
-                  >
-                    <cat.Icon
-                      size={22}
-                      strokeWidth={1.5}
-                      style={{ color: 'var(--brand-gold)' }}
-                    />
-                    <span
-                      className="text-[13px] font-medium"
-                      style={{ color: 'var(--brand-text)' }}
+              <div>
+                <p
+                  className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                >
+                  Shop by Age
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SHOP_BY_AGE.slice(0, 6).map((age) => (
+                    <Link
+                      key={age}
+                      href="/categories"
+                      onClick={() => setMobileOpen(false)}
+                      className="px-4 py-2 rounded-full border text-[13px] transition-all"
+                      style={{
+                        borderColor: 'var(--brand-border)',
+                        color: 'var(--brand-brown)',
+                      }}
                     >
-                      {cat.name}
-                    </span>
-                  </Link>
-                ))}
+                      {age}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p
+                  className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                >
+                  Shop Categories
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {SHOP_CATEGORIES.map((cat) => (
+                    <Link
+                      key={cat.name}
+                      href="/categories"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
+                      style={{ background: 'var(--brand-warm)' }}
+                    >
+                      <cat.Icon
+                        size={22}
+                        strokeWidth={1.5}
+                        style={{ color: 'var(--brand-gold)' }}
+                      />
+                      <span
+                        className="text-[13px] font-medium"
+                        style={{ color: 'var(--brand-text)' }}
+                      >
+                        {cat.name}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="pt-5 space-y-3"
+                style={{ borderTop: '1px solid var(--brand-border)' }}
+              >
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 text-sm py-2"
+                  style={{ color: 'var(--brand-brown)' }}
+                >
+                  <User size={18} /> Account / Login
+                </Link>
+                <Link
+                  href="/wishlist"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 text-sm py-2"
+                  style={{ color: 'var(--brand-brown)' }}
+                >
+                  <Heart size={18} /> Wishlist ({wishlistCount})
+                </Link>
+                <Link
+                  href="/cart"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 text-sm py-2"
+                  style={{ color: 'var(--brand-brown)' }}
+                >
+                  <ShoppingCart size={18} /> Cart ({cartCount})
+                </Link>
               </div>
             </div>
-
-            <div
-              className="pt-5 space-y-3"
-              style={{ borderTop: '1px solid var(--brand-border)' }}
-            >
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-sm py-2"
-                style={{ color: 'var(--brand-brown)' }}
-              >
-                <User size={18} /> Account / Login
-              </Link>
-              <Link
-                href="/wishlist"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-sm py-2"
-                style={{ color: 'var(--brand-brown)' }}
-              >
-                <Heart size={18} /> Wishlist ({wishlistCount})
-              </Link>
-              <Link
-                href="/cart"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-sm py-2"
-                style={{ color: 'var(--brand-brown)' }}
-              >
-                <ShoppingCart size={18} /> Cart ({cartCount})
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

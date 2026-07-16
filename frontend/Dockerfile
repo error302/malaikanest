@@ -1,6 +1,6 @@
 FROM node:22-alpine
 
-ENV NODE_ENV=development \
+ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
@@ -8,10 +8,12 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
-RUN npm ci --no-audit --no-fund
+# Install ALL dependencies (dev deps like @tailwindcss/postcss are required for the build)
+RUN npm ci --include=dev --no-audit --no-fund
 
 COPY . .
 
 EXPOSE 3000
 
-CMD sh -c "rm -rf .next node_modules/.prisma && npx prisma db push 2>&1; npx prisma generate && npx next dev -p 3000 -H 0.0.0.0 --turbopack"
+# Production build: generate Prisma client, build, then run the optimized server.
+CMD sh -c "npx prisma generate && npx next build && npx next start -p 3000 -H 0.0.0.0"
