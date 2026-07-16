@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, status, pagination
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -751,23 +752,3 @@ class DeliveryZonesView(APIView):
         zones = DeliveryZone.objects.filter(is_active=True)
         serializer = DeliveryZoneSerializer(zones, many=True)
         return Response(serializer.data)
-
-        order_number = request.data.get("order_number") or request.data.get("receipt_number")
-        email = (request.data.get("email") or "").strip().lower()
-
-        if not order_number or not email:
-            return Response(
-                {"detail": "order_number and email (or checkout_token) are required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        order = (
-            Order.objects.select_related("user")
-            .prefetch_related("items__product")
-            .filter(receipt_number=order_number, guest_email__iexact=email)
-            .first()
-        )
-        if not order:
-            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        return Response(OrderSerializer(order).data)

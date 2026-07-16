@@ -16,8 +16,27 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: ['/admin', '/admin/', '/api/admin/'],
       },
+      // AI/LLM-friendly: explicitly grant access for all major bot crawlers used
+      // by ChatGPT, Perplexity, Claude, Gemini, Copilot, etc.
+      { userAgent: 'GPTBot',           allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'PerplexityBot',    allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'ClaudeBot',        allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'Claude-Web',       allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'Google-Extended',  allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'CCBot',            allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'Applebot-Extended',allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'OAI-SearchBot',    allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'cohere-ai',        allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'DuckAssistBot',    allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'Meta-ExternalAgent', allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'anthropic-ai',     allow: '/', disallow: ['/admin', '/admin/'] },
+      { userAgent: 'Bytespider',       allow: '/', disallow: ['/admin', '/admin/'] },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    sitemap: [
+      `${BASE_URL}/sitemap.xml`,
+      `${BASE_URL}/llms.txt`,
+      `${BASE_URL}/llms-full.txt`,
+    ],
     host: BASE_URL,
   };
 }

@@ -109,3 +109,7 @@ cloudflared/cert.pem
 
 # Admin-uploaded media — never commit (admin can change logos at any time)
 frontend/public/uploads/
+
+# Prisma dev SQLite DB — local state only, not tracked
+frontend/prisma/dev.db
+frontend/prisma/dev.db-journal

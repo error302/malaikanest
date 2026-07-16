@@ -43,11 +43,24 @@ export interface ApiProduct {
 }
 
 function getApiBaseUrl(): string {
-  return (
-    process.env.INTERNAL_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    'https://api.malaikanest.com'
-  );
+  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL;
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    const url = process.env.NEXT_PUBLIC_API_URL;
+    if (url.includes('localhost') || url.includes('127.0.0.1')) return url;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ) {
+    return 'http://localhost:8000';
+  }
+  if (
+    typeof process !== 'undefined' &&
+    process.env.NODE_ENV === 'development'
+  ) {
+    return 'http://localhost:8000';
+  }
+  return 'https://api.malaikanest.com';
 }
 
 function normalizeProduct(p: ApiProduct): Product {

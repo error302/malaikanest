@@ -25,7 +25,7 @@ export function WhatsAppButton() {
   if (isAdmin) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[140]">
+    <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[140]">
       {expanded && (
         <div
           className="absolute bottom-16 right-0 w-64 rounded-2xl shadow-warm-lg border p-4 animate-fade-in-up"

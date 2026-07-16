@@ -23,7 +23,6 @@ import {
   Baby,
 } from 'lucide-react';
 import { Logo } from './logo';
-import { AnnouncementBar } from './announcement-bar';
 import { LanguageToggle } from './language-toggle';
 
 const NAV_LINKS = [
@@ -92,8 +91,6 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
 
   return (
     <>
-      <AnnouncementBar />
-
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled
@@ -107,7 +104,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
         role="banner"
       >
         <nav
-          className="container-shell flex items-center h-[64px] sm:h-[72px] gap-4 sm:gap-6 lg:gap-8"
+          className="container-shell flex items-center h-[64px] sm:h-[72px] gap-2 sm:gap-3 lg:gap-5"
           aria-label="Main navigation"
         >
           {/* Mobile hamburger */}
@@ -131,7 +128,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-7 flex-1">
+          <div className="hidden lg:flex items-center gap-6 xl:gap-7 flex-shrink-0">
             {NAV_LINKS.map((link) =>
               link.hasDropdown ? (
                 <div
@@ -141,7 +138,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="relative"
                 >
                   <button
-                    className="inline-flex items-center gap-1 text-[14px] font-medium transition-colors"
+                    className="inline-flex items-center gap-1 text-[14px] font-medium whitespace-nowrap transition-colors"
                     style={{ color: 'var(--brand-brown)' }}
                     aria-expanded={shopOpen}
                     aria-haspopup="true"
@@ -157,7 +154,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-[14px] font-medium transition-colors hover:text-[var(--brand-gold)]"
+                  className="text-[14px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
                   style={{ color: 'var(--brand-brown)' }}
                 >
                   {link.name}
@@ -172,7 +169,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               className="relative"
             >
               <button
-                className="inline-flex items-center gap-1 text-[14px] font-medium transition-colors"
+                className="inline-flex items-center gap-1 text-[14px] font-medium whitespace-nowrap transition-colors"
                 style={{ color: 'var(--brand-brown)' }}
                 aria-expanded={ageOpen}
                 aria-haspopup="true"
@@ -187,7 +184,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
           </div>
 
           {/* Desktop search */}
-          <div className="hidden md:flex flex-1 max-w-xs lg:max-w-md ml-auto">
+          <div className="hidden md:flex flex-1 min-w-0 max-w-[200px] xl:max-w-[260px]">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -215,7 +212,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
           </div>
 
           {/* Right icons */}
-          <div className="flex items-center gap-1 sm:gap-1.5 ml-auto md:ml-2">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {/* Language toggle */}
             <LanguageToggle className="hidden sm:inline-flex" />
 

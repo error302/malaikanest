@@ -3,7 +3,7 @@ import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/malaika/providers";
 import { getSiteSettings } from "@/lib/settings";
-import { SITE_URL, SITE_NAME } from "@/lib/site-config";
+import { SITE_URL } from "@/lib/site-config";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -19,7 +19,6 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-// Fetch branding for metadata (store name, favicon, etc.)
 async function getBranding() {
   try {
     const { branding } = await getSiteSettings();
@@ -40,8 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
       default: `${storeName} — Premium Baby & Maternity Store in Kenya`,
       template: `%s · ${storeName}`,
     },
-    description:
-      "Handcrafted organic baby clothing, accessories & toys made with love in Kenya. Premium quality for little ones aged 0-12 years. Free delivery in Mombasa, M-Pesa accepted.",
+    description: "Handcrafted organic baby clothing, accessories & toys made with love in Kenya. Premium quality for little ones aged 0-12 years. Free delivery in Mombasa, M-Pesa accepted.",
     keywords: [
       "baby clothes Kenya", "newborn clothing", "organic baby clothes",
       "baby shop Mombasa", "maternity Kenya", "baby gifts", storeName,
@@ -161,15 +159,13 @@ const jsonLd = {
   ],
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const branding = await getBranding();
-  const favicon = branding?.favicon_url || "/logo.svg";
-
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href={favicon} />
-        <link rel="apple-touch-icon" href={favicon} />
+        <link rel="icon" type="image/png" href="/logo.png" />
+        <link rel="shortcut icon" type="image/png" href="/logo.png" />
+        <link rel="apple-touch-icon" type="image/png" href="/logo.png" />
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>
             <script
