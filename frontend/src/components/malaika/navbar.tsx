@@ -112,7 +112,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+            className="lg:hidden w-11 h-11 min-w-11 min-h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
             style={{ color: 'var(--brand-brown)' }}
             aria-label="Open menu"
           >
@@ -281,7 +281,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
         <div
           onMouseEnter={openShop}
           onMouseLeave={closeShop}
-          className={`absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
+          className={`hidden lg:block absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
             shopOpen
               ? 'opacity-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 -translate-y-2 pointer-events-none'
@@ -366,7 +366,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               <Link
                 href="/categories"
                 onClick={() => setShopOpen(false)}
-                className="text-[12px] font-medium px-4 py-2 rounded-full transition-all"
+                className="text-[12px] font-medium px-4 py-2 min-h-11 rounded-full transition-all flex items-center"
                 style={{
                   background: 'var(--brand-warm)',
                   color: 'var(--brand-text)',
@@ -382,7 +382,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
         <div
           onMouseEnter={openAge}
           onMouseLeave={closeAge}
-          className={`absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
+          className={`hidden lg:block absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
             ageOpen
               ? 'opacity-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 -translate-y-2 pointer-events-none'

@@ -62,7 +62,7 @@ export default function LoginPage() {
             <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--brand-text-muted)' }}>
               <input type="checkbox" className="rounded" /> Remember me
             </label>
-            <Link href="/forgot-password" className="text-xs underline" style={{ color: 'var(--brand-gold)' }}>Forgot password?</Link>
+            <Link href="/forgot-password" className="text-xs underline inline-block min-h-[44px] py-1" style={{ color: 'var(--brand-gold)' }}>Forgot password?</Link>
           </div>
 
           <button type="submit" disabled={loading} className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
@@ -71,7 +71,7 @@ export default function LoginPage() {
 
           <p className="text-xs text-center mt-5" style={{ color: 'var(--brand-text-muted)' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-semibold underline" style={{ color: 'var(--brand-gold)' }}>Sign up</Link>
+            <Link href="/register" className="font-semibold underline inline-block min-h-[44px] py-1" style={{ color: 'var(--brand-gold)' }}>Sign up</Link>
           </p>
         </form>
       </div>

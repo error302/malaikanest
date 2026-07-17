@@ -198,9 +198,8 @@ export function Hero({ banners = [], content }: HeroProps) {
               onClick={() => go(i)}
               aria-label={`Go to slide ${i + 1}`}
               aria-current={i === current}
-              className="h-2 rounded-full transition-all duration-300"
+              className="h-2 w-2 min-w-11 min-h-11 rounded-full transition-all duration-300 flex items-center justify-center"
               style={{
-                width: i === current ? 28 : 7,
                 background: i === current ? 'var(--brand-gold)' : 'rgba(255,255,255,0.4)',
               }}
             />

@@ -137,7 +137,7 @@ export function Footer({ branding }: FooterProps) {
                     <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)]"
+                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
                         style={{ color: 'var(--brand-text-secondary)' }}
                       >
                         {l.label}
@@ -159,7 +159,7 @@ export function Footer({ branding }: FooterProps) {
                     <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)]"
+                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
                         style={{ color: 'var(--brand-text-secondary)' }}
                       >
                         {l.label}
@@ -181,7 +181,7 @@ export function Footer({ branding }: FooterProps) {
                     <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)]"
+                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
                         style={{ color: 'var(--brand-text-secondary)' }}
                       >
                         {l.label}
@@ -238,14 +238,14 @@ export function Footer({ branding }: FooterProps) {
            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <Link
               href="/privacy-policy"
-              className="text-[11px] transition-colors hover:text-[var(--brand-gold)]"
+              className="text-[11px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
               style={{ color: 'var(--brand-text-muted)' }}
             >
               Privacy Policy
             </Link>
             <Link
               href="/terms-of-service"
-              className="text-[11px] transition-colors hover:text-[var(--brand-gold)]"
+              className="text-[11px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
               style={{ color: 'var(--brand-text-muted)' }}
             >
               Terms of Service

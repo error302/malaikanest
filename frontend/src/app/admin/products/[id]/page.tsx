@@ -8,6 +8,12 @@ import api from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface ProductForm {
   name: string;
   slug: string;
@@ -15,7 +21,7 @@ interface ProductForm {
   price: string;
   compare_price: string;
   stock: string;
-  category: string;
+  category_id: string;
   brand: string;
   sku: string;
   gender: string;
@@ -29,8 +35,10 @@ interface ProductForm {
   image_url: string;
 }
 
-interface ProductDetail extends ProductForm {
+interface ProductDetail extends Omit<ProductForm, 'category_id'> {
   id: number;
+  category_id: number | null;
+  category: number | null;
   image: string | null;
   image_full_url: string | null;
 }
@@ -54,9 +62,10 @@ export default function EditProductPage() {
   const id = params?.id as string;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<ProductForm>({
     name: '', slug: '', description: '', price: '', compare_price: '', stock: '0',
-    category: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
+    category_id: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
     size_label: '', featured: false, status: 'draft', seo_title: '', seo_description: '',
     image_url: '',
   });
@@ -65,6 +74,11 @@ export default function EditProductPage() {
   const [existingImage, setExistingImage] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    api.get('/api/v1/products/categories/').then(({ data }) => setCategories(data.results || data))
+      .catch(() => showToast('Failed to load categories', 'error'));
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -79,7 +93,7 @@ export default function EditProductPage() {
           price: d.price != null ? String(d.price) : '',
           compare_price: d.compare_price != null ? String(d.compare_price) : '',
           stock: d.stock != null ? String(d.stock) : '0',
-          category: d.category != null ? String(d.category) : '',
+          category_id: d.category_id ? String(d.category_id) : '',
           brand: d.brand ?? '',
           sku: d.sku ?? '',
           gender: d.gender ?? 'unisex',
@@ -132,7 +146,7 @@ export default function EditProductPage() {
     fd.append('price', String(parseFloat(form.price) || 0));
     fd.append('compare_price', form.compare_price ? String(parseFloat(form.compare_price)) : '');
     fd.append('stock', String(parseInt(form.stock) || 0));
-    fd.append('category', form.category);
+    fd.append('category_id', form.category_id);
     fd.append('brand', form.brand);
     fd.append('sku', form.sku);
     fd.append('gender', form.gender);
@@ -212,7 +226,17 @@ export default function EditProductPage() {
               </div>
               <div>
                 <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Category</label>
-                <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category ID" className={inputClass} style={inputStyle} />
+                <select
+                  value={form.category_id}
+                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                  className={inputClass}
+                  style={inputStyle}
+                >
+                  <option value="">— Select category —</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

@@ -1,12 +1,18 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Image as ImageIcon, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface ProductForm {
   name: string;
@@ -15,7 +21,7 @@ interface ProductForm {
   price: string;
   compare_price: string;
   stock: string;
-  category: string;
+  category_id: string;
   brand: string;
   sku: string;
   gender: string;
@@ -45,9 +51,10 @@ function slugify(value: string): string {
 export default function NewProductPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<ProductForm>({
     name: '', slug: '', description: '', price: '', compare_price: '', stock: '0',
-    category: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
+    category_id: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
     size_label: '', featured: false, status: 'draft', seo_title: '', seo_description: '',
     image_url: '',
   });
@@ -55,6 +62,11 @@ export default function NewProductPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    api.get('/api/v1/products/categories/').then(({ data }) => setCategories(data.results || data))
+      .catch(() => showToast('Failed to load categories', 'error'));
+  }, []);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,7 +101,7 @@ export default function NewProductPage() {
     fd.append('price', String(parseFloat(form.price) || 0));
     fd.append('compare_price', form.compare_price ? String(parseFloat(form.compare_price)) : '');
     fd.append('stock', String(parseInt(form.stock) || 0));
-    fd.append('category', form.category);
+    fd.append('category_id', form.category_id);
     fd.append('brand', form.brand);
     fd.append('sku', form.sku);
     fd.append('gender', form.gender);
@@ -158,7 +170,17 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Category</label>
-                <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category ID" className={inputClass} style={inputStyle} />
+                <select
+                  value={form.category_id}
+                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                  className={inputClass}
+                  style={inputStyle}
+                >
+                  <option value="">— Select category —</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

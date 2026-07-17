@@ -88,7 +88,7 @@ export default function RegisterPage() {
 
           <p className="text-xs text-center mt-5" style={{ color: 'var(--brand-text-muted)' }}>
             Already have an account?{' '}
-            <Link href="/login" className="font-semibold underline" style={{ color: 'var(--brand-gold)' }}>Sign in</Link>
+            <Link href="/login" className="font-semibold underline min-h-[44px] inline-block leading-tight" style={{ color: 'var(--brand-gold)' }}>Sign in</Link>
           </p>
         </form>
       </div>
