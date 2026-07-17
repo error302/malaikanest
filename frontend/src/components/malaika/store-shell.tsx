@@ -28,9 +28,11 @@ function NavbarWithCounts({ navbar }: { navbar: React.ReactElement }) {
 
 function MobileNavWithCounts({ mobileNav }: { mobileNav: React.ReactElement }) {
   const { items } = useCart();
+  const { count: wishlistCount } = useWishlist();
   return React.cloneElement(mobileNav, {
     cartCount: items.length,
-  } as { cartCount: number });
+    wishlistCount,
+  } as { cartCount: number; wishlistCount: number });
 }
 
 export function StoreShell({ branding, navbar, mobileNav, children }: StoreShellProps) {

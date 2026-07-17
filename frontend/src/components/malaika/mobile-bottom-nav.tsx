@@ -2,17 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, ShoppingBag, Baby, ShoppingCart, User } from 'lucide-react';
+import { useWishlist } from '@/lib/wishlistContext';
+import { Home, ShoppingBag, Baby, Heart, ShoppingCart, User } from 'lucide-react';
 
 const NAV_ITEMS = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Shop', href: '/categories', icon: ShoppingBag },
   { name: 'Age', href: '/categories', icon: Baby },
+  { name: 'Wishlist', href: '/wishlist', icon: Heart, showBadge: true },
   { name: 'Cart', href: '/cart', icon: ShoppingCart, showBadge: true },
-  { name: 'Account', href: '/login', icon: User },
+  { name: 'Account', href: '/account', icon: User },
 ];
 
-export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
+export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
   const pathname = usePathname();
 
   return (
@@ -30,6 +32,13 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
+          const badgeCount = item.showBadge
+            ? item.name === 'Cart'
+              ? cartCount
+              : item.name === 'Wishlist'
+              ? wishlistCount
+              : 0
+            : 0;
           return (
             <Link
               key={item.name}
@@ -41,7 +50,7 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
             >
               <div className="relative">
                 <Icon size={22} strokeWidth={active ? 2 : 1.75} />
-                {item.showBadge && cartCount > 0 && (
+                {badgeCount > 0 && (
                   <span
                     className="absolute -top-1.5 -right-2 min-w-[16px] h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"
                     style={{
@@ -49,7 +58,7 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
                       color: '#FFFFFF',
                     }}
                   >
-                    {cartCount > 9 ? '9+' : cartCount}
+                    {badgeCount > 9 ? '9+' : badgeCount}
                   </span>
                 )}
               </div>

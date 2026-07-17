@@ -195,7 +195,7 @@ class Banner(BaseModel):
     title = models.CharField(max_length=200, blank=True)
     subtitle = models.CharField(max_length=300, blank=True)
     button_text = models.CharField(max_length=50, blank=True)
-    button_link = models.URLField(blank=True, null=True)
+    button_link = models.CharField(max_length=255, blank=True, null=True)
     image = models.ImageField(upload_to="banners/", validators=[validate_image_file])
     image_url = models.URLField(
         blank=True,

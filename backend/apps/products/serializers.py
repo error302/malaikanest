@@ -100,7 +100,14 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source="category", write_only=True, required=True
+    )
+    brand_id = serializers.PrimaryKeyRelatedField(
+        queryset=Brand.objects.all(), source="brand", write_only=True, required=False, allow_null=True
+    )
     image = serializers.SerializerMethodField()
+    image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
     discount_percentage = serializers.ReadOnlyField()
     in_stock = serializers.ReadOnlyField()
     is_in_stock = serializers.SerializerMethodField()
@@ -122,7 +129,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "sku",
             "description",
             "category",
+            "category_id",
             "brand",
+            "brand_id",
             "tags",
             "price",
             "compare_price",
@@ -145,6 +154,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "meta_title",
             "meta_description",
             "image",
+            "image_url",
             "is_active",
             "has_variants",
             "variants",
@@ -154,26 +164,49 @@ class ProductSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
-    def create(self, validated_data):
-        request = self.context.get("request")
-        image = None
+    def _handle_image(self, product, context, image_url=None):
+        request = context.get("request") if isinstance(context, dict) else self.context.get("request")
+        image_file = None
         if request and request.FILES:
-            files = request.FILES.getlist("uploaded_images")
-            if files:
-                image = files[0]
+            image_file = request.FILES.get("image") or request.FILES.get("uploaded_images")
+        if image_file:
+            product.image = image_file
+        elif image_url:
+            product.image = image_url
+        if image_file or image_url:
+            product.save(update_fields=["image"])
 
+    def create(self, validated_data):
+        validated_data.pop("tags", None)
+        image_url = validated_data.pop("image_url", None)
         product = Product.objects.create(**validated_data)
         Inventory.objects.get_or_create(
             product=product, defaults={"quantity": product.stock}
         )
-        if image:
-            product.image = image
-            product.save(update_fields=["image"])
-
+        self._handle_image(product, self.context, image_url)
         return product
+
+    def update(self, instance, validated_data):
+        validated_data.pop("tags", None)
+        image_url = validated_data.pop("image_url", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        request = self.context.get("request")
+        image_file = None
+        if request and request.FILES:
+            image_file = request.FILES.get("image") or request.FILES.get("uploaded_images")
+        if image_file:
+            instance.image = image_file
+        elif image_url is not None:
+            instance.image = image_url
+        instance.save()
+        return instance
 
     def get_image(self, obj):
         if obj.image:
+            raw = obj.image.name if hasattr(obj.image, "name") else str(obj.image)
+            if raw.startswith("http://") or raw.startswith("https://"):
+                return raw
             url = obj.image.url
             if url.startswith("http://") or url.startswith("https://"):
                 return url
@@ -389,6 +422,8 @@ class WishlistSerializer(serializers.ModelSerializer):
 class BannerSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     mobile_image = serializers.SerializerMethodField()
+    image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
+    mobile_image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Banner
@@ -399,12 +434,46 @@ class BannerSerializer(serializers.ModelSerializer):
             "button_text",
             "button_link",
             "image",
+            "image_url",
             "mobile_image",
+            "mobile_image_url",
             "is_active",
             "position",
             "start_date",
             "end_date",
         )
+
+    def _handle_images(self, banner, validated_data):
+        request = self.context.get("request")
+        image_url = validated_data.pop("image_url", None)
+        mobile_image_url = validated_data.pop("mobile_image_url", None)
+        image_file = None
+        mobile_file = None
+        if request and request.FILES:
+            image_file = request.FILES.get("image")
+            mobile_file = request.FILES.get("mobile_image")
+        if image_file:
+            banner.image = image_file
+        elif image_url is not None:
+            banner.image = image_url
+        if mobile_file:
+            banner.mobile_image = mobile_file
+        elif mobile_image_url is not None:
+            banner.mobile_image = mobile_image_url
+        if image_file or image_url is not None or mobile_file or mobile_image_url is not None:
+            banner.save()
+
+    def create(self, validated_data):
+        banner = Banner.objects.create(**validated_data)
+        self._handle_images(banner, validated_data)
+        return banner
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        self._handle_images(instance, validated_data)
+        instance.save()
+        return instance
 
     def get_image(self, obj):
         return obj.get_image_url
