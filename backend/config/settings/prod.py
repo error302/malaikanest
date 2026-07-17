@@ -8,8 +8,9 @@ DEBUG = False
 
 _env_hosts = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()]
 _default_hosts = [
-    "malaikanest.duckdns.org",
-    "www.malaikanest.duckdns.org",
+    "malaikanest.com",
+    "www.malaikanest.com",
+    "api.malaikanest.com",
 ]
 _vps_ip = (os.getenv("VPS_IP") or os.getenv("PUBLIC_IP") or "").strip()
 if _vps_ip:

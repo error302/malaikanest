@@ -39,7 +39,7 @@ def _get_frontend_origin():
         if "." in value:
             return f"https://{value.lstrip('/')}"
 
-    return "https://malaikanest.duckdns.org"
+    return "https://malaikanest.com"
 
 
 def _build_frontend_url(path, **params):

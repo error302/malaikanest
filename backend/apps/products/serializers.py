@@ -26,7 +26,7 @@ class BrandSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             if request:
                 return request.build_absolute_uri(url)
-            return f"https://malaikanest.duckdns.org{url}"
+            return f"https://malaikanest.com{url}"
         return None
 
 
@@ -79,7 +79,7 @@ class CategorySerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             if request:
                 return request.build_absolute_uri(url)
-            return f"https://malaikanest.duckdns.org{url}"
+            return f"https://malaikanest.com{url}"
         return None
 
     def get_children(self, obj):
@@ -213,7 +213,7 @@ class ProductSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             if request:
                 return request.build_absolute_uri(url)
-            return f"https://malaikanest.duckdns.org{url}"
+            return f"https://malaikanest.com{url}"
         return None
 
     def get_is_in_stock(self, obj):
@@ -311,7 +311,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             if request:
                 return request.build_absolute_uri(url)
-            return f"https://malaikanest.duckdns.org{url}"
+            return f"https://malaikanest.com{url}"
         return None
 
     def get_has_variants(self, obj):

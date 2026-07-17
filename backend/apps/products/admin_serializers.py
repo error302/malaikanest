@@ -54,7 +54,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
@@ -170,7 +170,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             # Fallback: construct URL manually
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
@@ -470,7 +470,7 @@ class AdminBannerSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
@@ -486,7 +486,7 @@ class AdminBannerSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.duckdns.org"
+            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
