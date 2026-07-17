@@ -1,12 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Save, Store, CreditCard, Truck } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 
+const STORAGE_KEYS = {
+  storeName: 'store_name',
+  storeEmail: 'contact_email',
+  storePhone: 'contact_phone',
+  mpesaTill: 'mpesa_till',
+  freeShippingThreshold: 'free_shipping_threshold',
+  mombasaFee: 'mombasa_fee',
+  nairobiFee: 'nairobi_fee',
+  upcountryFee: 'upcountry_fee',
+  lowStockThreshold: 'low_stock_threshold',
+} as const;
+
+type SettingsKey = keyof typeof STORAGE_KEYS;
+
 export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState({
+  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<Record<SettingsKey, string>>({
     storeName: 'Malaika Nest',
     storeEmail: 'malaikanest7@gmail.com',
     storePhone: '+254726771321',
@@ -18,12 +33,42 @@ export default function AdminSettingsPage() {
     lowStockThreshold: '5',
   });
 
+  useEffect(() => {
+    fetch('/api/admin/branding')
+      .then((r) => r.json())
+      .then((data) => {
+        const s = data.settings || {};
+        setSettings((prev) => ({
+          ...prev,
+          storeName: s[STORAGE_KEYS.storeName] || prev.storeName,
+          storeEmail: s[STORAGE_KEYS.storeEmail] || prev.storeEmail,
+          storePhone: s[STORAGE_KEYS.storePhone] || prev.storePhone,
+          mpesaTill: s[STORAGE_KEYS.mpesaTill] || prev.mpesaTill,
+          freeShippingThreshold: s[STORAGE_KEYS.freeShippingThreshold] || prev.freeShippingThreshold,
+          mombasaFee: s[STORAGE_KEYS.mombasaFee] || prev.mombasaFee,
+          nairobiFee: s[STORAGE_KEYS.nairobiFee] || prev.nairobiFee,
+          upcountryFee: s[STORAGE_KEYS.upcountryFee] || prev.upcountryFee,
+          lowStockThreshold: s[STORAGE_KEYS.lowStockThreshold] || prev.lowStockThreshold,
+        }));
+      })
+      .catch(() => showToast('Failed to load settings', 'error'))
+      .finally(() => setLoading(false));
+  }, []);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      // In production, this would PATCH /api/v1/core/settings/
-      await new Promise((r) => setTimeout(r, 800));
+      const payload: Record<string, string> = {};
+      for (const [k, v] of Object.entries(STORAGE_KEYS)) {
+        payload[v] = settings[k as SettingsKey];
+      }
+      const res = await fetch('/api/admin/branding', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Save failed');
       showToast('Settings saved', 'success');
     } catch {
       showToast('Failed to save settings', 'error');
@@ -34,6 +79,10 @@ export default function AdminSettingsPage() {
 
   const inputClass = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none';
   const inputStyle = { background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' };
+
+  if (loading) {
+    return <div className="text-center py-20" style={{ color: 'var(--brand-text-muted)' }}>Loading…</div>;
+  }
 
   return (
     <div className="max-w-3xl space-y-6">

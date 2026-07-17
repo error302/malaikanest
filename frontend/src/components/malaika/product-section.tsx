@@ -60,7 +60,7 @@ export function ProductSection({
           </div>
           <Link
             href={viewAllHref}
-            className="hidden sm:inline-flex items-center gap-1 text-[13px] font-medium transition-all hover:gap-2"
+            className="hidden sm:inline-flex items-center gap-1 text-[13px] font-medium transition-all hover:gap-2 min-h-[44px]"
             style={{ color: 'var(--brand-gold)' }}
           >
             {viewAllLabel}

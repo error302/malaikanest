@@ -28,9 +28,9 @@ export default async function BlogPage() {
 
       {/* Category pills */}
       <div className="flex flex-wrap justify-center gap-2 mb-8">
-        <Link href="/blog" className="text-xs px-4 py-1.5 rounded-full font-medium" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>All</Link>
+        <Link href="/blog" className="text-xs px-4 py-1.5 min-h-[44px] flex items-center rounded-full font-medium" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>All</Link>
         {categories.map((cat) => (
-          <Link key={cat} href={`/blog?category=${encodeURIComponent(cat)}`} className="text-xs px-4 py-1.5 rounded-full font-medium border" style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}>{cat}</Link>
+          <Link key={cat} href={`/blog?category=${encodeURIComponent(cat)}`} className="text-xs px-4 py-1.5 min-h-[44px] flex items-center rounded-full font-medium border" style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}>{cat}</Link>
         ))}
       </div>
 

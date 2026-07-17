@@ -21,6 +21,8 @@ export interface Banner {
   mobile_image?: string;
   image_url?: string;
   mobile_image_url?: string;
+  is_active: boolean;
+  position?: number;
 }
 
 export interface ApiProduct {
@@ -141,7 +143,7 @@ export async function getActiveBanners(): Promise<Banner[]> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 2500);
-    const res = await fetch(`${baseUrl}/api/v1/products/banners/`, {
+    const res = await fetch(`${baseUrl}/api/v1/products/banners/?is_active=true&ordering=position`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: controller.signal,
