@@ -25,13 +25,14 @@ import {
 } from 'lucide-react';
 import { Logo } from './logo';
 import { LanguageToggle } from './language-toggle';
+import { useI18n } from '@/lib/i18n';
 
 const NAV_LINKS = [
-  { name: 'Home', href: '/' },
-  { name: 'Shop', href: '/categories', hasDropdown: true },
-  { name: 'Mtumba', href: '/thrifted' },
-  { name: 'Best Sellers', href: '/best-sellers' },
-  { name: 'Find Us', href: '/find-us' },
+  { nameKey: 'nav.home', href: '/' },
+  { nameKey: 'nav.shop', href: '/categories', hasDropdown: true },
+  { nameKey: 'nav.thrifted', href: '/thrifted' },
+  { nameKey: 'nav.bestsellers', href: '/best-sellers' },
+  { nameKey: 'nav.contact', href: '/find-us' },
 ];
 
 const SHOP_BY_AGE = [
@@ -40,18 +41,19 @@ const SHOP_BY_AGE = [
 ];
 
 const SHOP_CATEGORIES = [
-  { name: 'Clothing', desc: 'Onesies, rompers & more', Icon: Shirt, color: '#FCE7E1' },
-  { name: 'Baby Essentials', desc: 'Feeding, bathing & care', Icon: Package, color: '#FEF3DC' },
-  { name: 'Nursery', desc: 'Furniture, bedding & decor', Icon: Home, color: '#E1EEF8' },
-  { name: 'Toys & Learning', desc: 'Play, explore & grow', Icon: Gamepad2, color: '#EFE3F8' },
-  { name: 'Travel & Safety', desc: 'Strollers, carriers & safety', Icon: Car, color: '#E1F4E8' },
-  { name: 'Gift Sets', desc: 'Curated bundles', Icon: Gift, color: '#FCE1EE' },
+  { nameKey: 'cat.clothing', descKey: 'cat.clothingDesc', Icon: Shirt, color: '#FCE7E1' },
+  { nameKey: 'cat.feeding', descKey: 'cat.feedingDesc', Icon: Package, color: '#FEF3DC' },
+  { nameKey: 'cat.nursery', descKey: 'cat.nurseryDesc', Icon: Home, color: '#E1EEF8' },
+  { nameKey: 'cat.toys', descKey: 'cat.toysDesc', Icon: Gamepad2, color: '#EFE3F8' },
+  { nameKey: 'cat.travel', descKey: 'cat.travelDesc', Icon: Car, color: '#E1F4E8' },
+  { nameKey: 'cat.books', descKey: 'cat.booksDesc', Icon: Gift, color: '#FCE1EE' },
 ];
 
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
 
 export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [shopOpen, setShopOpen] = useState(false);
   const [ageOpen, setAgeOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -133,7 +135,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             {NAV_LINKS.map((link) =>
               link.hasDropdown ? (
                 <div
-                  key={link.name}
+                  key={link.nameKey}
                   onMouseEnter={openShop}
                   onMouseLeave={closeShop}
                   className="relative"
@@ -144,7 +146,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                     aria-expanded={shopOpen}
                     aria-haspopup="true"
                   >
-                    {link.name}
+                    {t(link.nameKey)}
                     <ChevronDown
                       size={14}
                       className={`transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`}
@@ -153,12 +155,12 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 </div>
               ) : (
                 <Link
-                  key={link.name}
+                  key={link.nameKey}
                   href={link.href}
                   className="text-[14px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  {link.name}
+                  {t(link.nameKey)}
                 </Link>
               )
             )}
@@ -175,7 +177,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 aria-expanded={ageOpen}
                 aria-haspopup="true"
               >
-                Shop by Age
+                {t('nav.shopByAge')}
                 <ChevronDown
                   size={14}
                   className={`transition-transform duration-200 ${ageOpen ? 'rotate-180' : ''}`}
@@ -205,9 +207,9 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search baby essentials…"
+                placeholder={t('nav.search') + '…'}
                 className="input-warm w-full"
-                aria-label="Search products"
+                aria-label={t('nav.search')}
               />
             </form>
           </div>
@@ -260,10 +262,10 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 background: 'var(--brand-gold)',
                 color: '#FFFFFF',
               }}
-              aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+               aria-label={`${t('nav.cart')}${cartCount > 0 ? `, ${cartCount} items` : ''}`}
             >
               <ShoppingCart size={16} strokeWidth={2} />
-              <span className="hidden sm:inline text-[13px] font-medium">Cart</span>
+              <span className="hidden sm:inline text-[13px] font-medium">{t('nav.cart')}</span>
               <span
                 className="inline-flex min-w-[20px] h-5 items-center justify-center rounded-full text-[10px] font-semibold px-1"
                 style={{
@@ -296,7 +298,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {SHOP_CATEGORIES.map((cat) => (
                 <Link
-                  key={cat.name}
+                  key={cat.nameKey}
                   href="/categories"
                   onClick={() => setShopOpen(false)}
                   className="group flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden hover:shadow-warm-md"
@@ -320,13 +322,13 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                       className="text-[13px] font-semibold group-hover:text-[var(--brand-gold)] transition-colors"
                       style={{ color: 'var(--brand-text)' }}
                     >
-                      {cat.name}
+                      {t(cat.nameKey)}
                     </div>
                     <div
                       className="text-[11px] mt-0.5 leading-snug"
                       style={{ color: 'var(--brand-text-muted)' }}
                     >
-                      {cat.desc}
+                      {t(cat.descKey)}
                     </div>
                   </div>
                 </Link>
@@ -344,7 +346,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-terra)' }}
                 >
-                  <Flame size={14} /> Best Sellers
+                  <Flame size={14} /> {t('nav.bestsellers')}
                 </Link>
                 <Link
                   href="/categories"
@@ -352,7 +354,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <Sparkles size={14} /> New Arrivals
+                  <Sparkles size={14} /> {t('nav.new')}
                 </Link>
                 <Link
                   href="/categories"
@@ -360,7 +362,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <Gift size={14} /> Gift Ideas
+                  <Gift size={14} /> {t('cat.books')}
                 </Link>
               </div>
               <Link
@@ -372,7 +374,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   color: 'var(--brand-text)',
                 }}
               >
-                View All Products →
+                {t('nav.allProducts')} →
               </Link>
             </div>
           </div>
@@ -399,7 +401,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 className="font-serif text-[1.5rem] font-semibold"
                 style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}
               >
-                Shop by Age
+                {t('nav.shopByAge')}
               </h3>
               <Link
                 href="/categories"
@@ -407,7 +409,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 className="inline-flex items-center gap-1 text-[13px] font-medium hover:gap-2 transition-all"
                 style={{ color: 'var(--brand-gold)' }}
               >
-                View All <ChevronRight size={14} />
+                {t('section.viewAll')} <ChevronRight size={14} />
               </Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
@@ -556,7 +558,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               <nav className="space-y-1" aria-label="Mobile navigation">
                 {NAV_LINKS.map((link) => (
                   <Link
-                    key={link.name}
+                    key={link.nameKey}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
                     className="block py-3 text-lg font-medium border-b"
@@ -566,7 +568,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                       fontFamily: 'var(--font-cormorant)',
                     }}
                   >
-                    {link.name}
+                    {t(link.nameKey)}
                   </Link>
                 ))}
               </nav>
@@ -576,7 +578,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
                   style={{ color: 'var(--brand-text-muted)' }}
                 >
-                  Shop by Age
+                  {t('nav.shopByAge')}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SHOP_BY_AGE.slice(0, 6).map((age) => (
@@ -601,12 +603,12 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
                   style={{ color: 'var(--brand-text-muted)' }}
                 >
-                  Shop Categories
+                  {t('nav.categories')}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {SHOP_CATEGORIES.map((cat) => (
                     <Link
-                      key={cat.name}
+                      key={cat.nameKey}
                       href="/categories"
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
@@ -621,7 +623,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                         className="text-[13px] font-medium"
                         style={{ color: 'var(--brand-text)' }}
                       >
-                        {cat.name}
+                        {t(cat.nameKey)}
                       </span>
                     </Link>
                   ))}
@@ -638,7 +640,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="flex items-center gap-3 text-sm py-2"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <User size={18} /> Account / Login
+                  <User size={18} /> {t('nav.account')} / {t('nav.signin')}
                 </Link>
                 <Link
                   href="/wishlist"
@@ -646,7 +648,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="flex items-center gap-3 text-sm py-2"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <Heart size={18} /> Wishlist ({wishlistCount})
+                  <Heart size={18} /> {t('nav.wishlist')} ({wishlistCount})
                 </Link>
                 <Link
                   href="/cart"
@@ -654,7 +656,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   className="flex items-center gap-3 text-sm py-2"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <ShoppingCart size={18} /> Cart ({cartCount})
+                  <ShoppingCart size={18} /> {t('nav.cart')} ({cartCount})
                 </Link>
               </div>
             </div>

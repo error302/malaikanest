@@ -4,13 +4,17 @@ import { useState, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Banner } from '@/lib/products';
 import { getBannerUrl } from '@/lib/media';
+import { useI18n } from '@/lib/i18n';
 
 interface ResolvedSlide {
   bgImage: string;
   mobileBgImage: string;
-  headline: string;
-  sub: string;
-  cta: string;
+  headlineKey?: string;
+  subKey?: string;
+  ctaKey?: string;
+  headline?: string;
+  sub?: string;
+  cta?: string;
   ctaHref: string;
 }
 
@@ -21,25 +25,25 @@ interface HeroProps {
 
 const FALLBACK_SLIDES: ResolvedSlide[] = [
   {
-    headline: 'A Premium Nest for Little Ones',
-    sub: 'Handcrafted organic clothing, accessories & toys made with love in Kenya. For ages 0–12 years.',
-    cta: 'Shop Newborn',
+    headlineKey: 'hero.slide1.title',
+    subKey: 'hero.slide1.subtitle',
+    ctaKey: 'hero.slide1.cta',
     ctaHref: '/categories?age=newborn',
     bgImage: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=1920&q=80&auto=format&fit=crop',
     mobileBgImage: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80&auto=format&fit=crop',
   },
   {
-    headline: 'Organic Cotton for Soft Skin',
-    sub: 'Gentle, breathable fabrics made from 100% organic cotton. Perfect for your baby\'s delicate skin.',
-    cta: 'Shop Clothing',
+    headlineKey: 'hero.slide2.title',
+    subKey: 'hero.slide2.subtitle',
+    ctaKey: 'hero.slide2.cta',
     ctaHref: '/categories',
     bgImage: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1920&q=80&auto=format&fit=crop',
     mobileBgImage: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80&auto=format&fit=crop',
   },
   {
-    headline: 'The Perfect Baby Gift',
-    sub: 'Beautifully curated gift sets for baby showers, newborns and special milestones.',
-    cta: 'Browse Gifts',
+    headlineKey: 'hero.slide3.title',
+    subKey: 'hero.slide3.subtitle',
+    ctaKey: 'hero.slide3.cta',
     ctaHref: '/categories',
     bgImage: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=1920&q=80&auto=format&fit=crop',
     mobileBgImage: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&q=80&auto=format&fit=crop',
@@ -71,6 +75,7 @@ function bannersToSlides(banners: Banner[]): ResolvedSlide[] {
 }
 
 export function Hero({ banners = [], content }: HeroProps) {
+  const { t } = useI18n();
   const slides: ResolvedSlide[] =
     banners.length > 0
       ? bannersToSlides(banners)
@@ -84,12 +89,15 @@ export function Hero({ banners = [], content }: HeroProps) {
 
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => go(current + 1), 7000);
-    return () => clearInterval(t);
+    const id = setInterval(() => go(current + 1), 7000);
+    return () => clearInterval(id);
   }, [current, go, paused]);
 
   const s = slides[current];
   const bgOk = s.bgImage && !imgErr[current];
+  const headline = s.headline ?? (s.headlineKey ? t(s.headlineKey) : '');
+  const sub = s.sub ?? (s.subKey ? t(s.subKey) : '');
+  const cta = s.cta ?? (s.ctaKey ? t(s.ctaKey) : '');
 
   return (
     <section
@@ -146,20 +154,20 @@ export function Hero({ banners = [], content }: HeroProps) {
                 fontSize: 'clamp(1.75rem, 5.5vw, 3.25rem)',
               }}
             >
-              {s.headline}
+              {headline}
             </h1>
             <p
               className="text-sm sm:text-base leading-relaxed mb-8 max-w-lg"
               style={{ color: 'rgba(255,255,255,0.8)' }}
             >
-              {s.sub}
+              {sub}
             </p>
             <a
               href={s.ctaHref}
               className="inline-flex items-center gap-2 rounded-full font-medium text-sm sm:text-base px-7 py-3.5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
               style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
             >
-              {s.cta}
+              {cta}
               <ChevronRight size={16} />
             </a>
           </div>

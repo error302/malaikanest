@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, ArrowRight, User } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { showToast } from '@/lib/toast';
+import { useI18n } from '@/lib/i18n';
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const { login } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -33,26 +35,26 @@ export default function LoginPage() {
       <div className="container-shell w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="font-serif text-3xl sm:text-4xl font-semibold mb-2" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-            Welcome Back
+            {t('auth.loginTitle')}
           </h1>
           <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
-            Sign in to your Malaika Nest account
+            {t('auth.loginSub')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
           <div className="space-y-4">
             <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>Email</label>
+              <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>{t('auth.email')}</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--brand-text-muted)' }} />
                 <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" className="input-warm w-full" style={{ background: 'var(--brand-bg-alt)' }} />
               </div>
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>Password</label>
+              <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>{t('auth.password')}</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate_y-1/2 pointer-events-none" style={{ color: 'var(--brand-text-muted)' }} />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--brand-text-muted)' }} />
                 <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="input-warm w-full" style={{ background: 'var(--brand-bg-alt)' }} />
               </div>
             </div>
@@ -60,18 +62,18 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between mt-4">
             <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--brand-text-muted)' }}>
-              <input type="checkbox" className="rounded" /> Remember me
+              <input type="checkbox" className="rounded" /> {t('auth.remember')}
             </label>
-            <Link href="/forgot-password" className="text-xs underline inline-block min-h-[44px] py-1" style={{ color: 'var(--brand-gold)' }}>Forgot password?</Link>
+            <Link href="/forgot-password" className="text-xs underline inline-block min-h-[44px] py-1" style={{ color: 'var(--brand-gold)' }}>{t('auth.forgot')}</Link>
           </div>
 
           <button type="submit" disabled={loading} className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
-            {loading ? 'Signing in…' : <>Sign In <ArrowRight size={16} /></>}
+            {loading ? t('auth.signingIn') : <>{t('auth.signin')} <ArrowRight size={16} /></>}
           </button>
 
           <p className="text-xs text-center mt-5" style={{ color: 'var(--brand-text-muted)' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-semibold underline inline-block min-h-[44px] py-1" style={{ color: 'var(--brand-gold)' }}>Sign up</Link>
+            {t('auth.noAccount')}{' '}
+            <Link href="/register" className="font-semibold underline inline-block min-h-[44px] py-1" style={{ color: 'var(--brand-gold)' }}>{t('auth.signupLink')}</Link>
           </p>
         </form>
       </div>
