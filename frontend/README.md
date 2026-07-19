@@ -45,9 +45,9 @@ Open http://localhost:3000
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | Django backend URL (public) | `https://malaikanest.duckdns.org` |
+| `NEXT_PUBLIC_API_URL` | Django backend URL (public) | `https://malaikanest.com` |
 | `INTERNAL_API_URL` | Django backend URL (server-side, optional) | `http://10.0.0.5:8000` |
-| `NEXT_PUBLIC_SITE_URL` | Public site URL for canonical/OG | `https://malaikanest.duckdns.org` |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL for canonical/OG | `https://malaikanest.com` |
 
 ## Project structure
 
@@ -82,7 +82,7 @@ src/
 ## Deploy to production
 
 1. Deploy `frontend/` to Vercel (or your hosting) — it's a standalone Next.js app
-2. Set `NEXT_PUBLIC_API_URL` to your Django backend (e.g. `https://malaikanest.duckdns.org`)
+2. Set `NEXT_PUBLIC_API_URL` to your Django backend (e.g. `https://malaikanest.com`)
 3. Update nginx/CDN to route to the new frontend
 4. Run `bun run build` to verify the production build before going live
 

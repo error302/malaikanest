@@ -8,7 +8,7 @@ This guide walks through restoring AI features on your Malaika Nest deployment o
 - **Backend**: Django 5.1 (on GCP Compute Engine or Container)
 - **Database**: PostgreSQL (Cloud SQL or self-hosted?)
 - **AI Service**: Ollama (`llama3.1`, `nomic-embed-text`)
-- **Domain**: `malaikanest.duckdns.org` pointing to GCP instance
+- **Domain**: `malaikanest.com` pointing to GCP instance
 - **Reverse Proxy**: Likely Nginx or GCP Load Balancer
 
 ---
@@ -122,7 +122,7 @@ From your local machine:
 ### Test Chat Endpoint:
 
 ```bash
-curl -X POST https://malaikanest.duckdns.org/api/ai/chat/ \
+curl -X POST https://malaikanest.com/api/ai/chat/ \
 -H "Content-Type: application/json" \
 -d '{"prompt": "Generate a product description for a baby onesie made of organic cotton."}'
 ```
@@ -140,7 +140,7 @@ Expected response:
 Endpoint: `/api/ai/embedding/`
 
 ```bash
-curl -X POST https://malaikanest.duckdns.org/api/ai/embedding/ \
+curl -X POST https://malaikanest.com/api/ai/embedding/ \
 -H "Content-Type: application/json" \
 -d '{"text": "Baby romper with snap buttons"}'
 ```
@@ -211,7 +211,7 @@ sudo systemctl start ollama
 
 ## Final Verification Steps
 
-1. Visit your site: https://malaikanest.duckdns.org
+1. Visit your site: https://malaikanest.com
 2. Try asking the AI chatbot a question.
 3. Try auto-generating a product description.
 4. Check network tab to ensure `/api/ai/chat/` returns valid JSON.

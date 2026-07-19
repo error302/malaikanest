@@ -56,7 +56,7 @@ function normalizeLink(url?: string): string {
     const p = new URL(url);
     const site = process.env.NEXT_PUBLIC_SITE_URL;
     if (site && p.origin === new URL(site).origin) return `${p.pathname}${p.search}`;
-    if (/malaikanest\.(com|duckdns\.org)$/.test(p.hostname)) return `${p.pathname}${p.search}`;
+    if (/(^|\.)malaikanest\.com$/.test(p.hostname)) return `${p.pathname}${p.search}`;
     return url;
   } catch {
     return url.startsWith('/') ? url : `/${url.replace(/^\/+/, '')}`;

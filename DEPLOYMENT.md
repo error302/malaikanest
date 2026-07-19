@@ -2,7 +2,7 @@
 ## From Fresh Ubuntu 22.04 to Live Production
 
 > **Target environment**: Google Cloud VM, Ubuntu 22.04 LTS, 2+ vCPUs, 4 GB+ RAM  
-> **Domain**: malaikanest.duckdns.org  
+> **Domain**: malaikanest.com  
 > **Stack**: Django 4 + Gunicorn + Celery + Redis + PostgreSQL + Next.js + Nginx + Certbot
 
 ---
@@ -131,8 +131,8 @@ nano /var/www/malaikanest/backend/.env.production
 | `DB_USER` | `malaika_user` |
 | `DB_PASSWORD` | Strong password set in Step 3 |
 | `DB_HOST` | `localhost` |
-| `ALLOWED_HOSTS` | `malaikanest.duckdns.org,www.malaikanest.duckdns.org` |
-| `CORS_ALLOWED_ORIGINS` | `https://malaikanest.duckdns.org` |
+| `ALLOWED_HOSTS` | `malaikanest.com,www.malaikanest.com` |
+| `CORS_ALLOWED_ORIGINS` | `https://malaikanest.com` |
 | `REDIS_URL` | `redis://127.0.0.1:6379/0` |
 | `CLOUDINARY_CLOUD_NAME` | From Cloudinary dashboard |
 | `CLOUDINARY_API_KEY` | From Cloudinary dashboard |
@@ -141,7 +141,7 @@ nano /var/www/malaikanest/backend/.env.production
 | `MPESA_CONSUMER_SECRET` | Safaricom Daraja production credentials |
 | `MPESA_SHORTCODE` | Your M-Pesa business shortcode |
 | `MPESA_PASSKEY` | From Safaricom Daraja portal |
-| `MPESA_CALLBACK_URL` | `https://malaikanest.duckdns.org/api/v1/payments/mpesa/callback/` |
+| `MPESA_CALLBACK_URL` | `https://malaikanest.com/api/v1/payments/mpesa/callback/` |
 | `MPESA_ENV` | `live` |
 | `EMAIL_HOST` | SMTP host (e.g., `smtp.gmail.com`) |
 | `EMAIL_HOST_USER` | Sending email address |
@@ -227,11 +227,11 @@ nginx -t && systemctl reload nginx
 ```bash
 # Obtain certificate — Nginx plugin handles all configuration
 certbot --nginx \
-    -d malaikanest.duckdns.org \
-    -d www.malaikanest.duckdns.org \
+    -d malaikanest.com \
+    -d www.malaikanest.com \
     --non-interactive \
     --agree-tos \
-    --email admin@malaikanest.duckdns.org \
+    --email admin@malaikanest.com \
     --redirect
 
 # Verify auto-renewal works
@@ -251,7 +251,7 @@ cd /var/www/malaikanest/frontend
 
 # Copy and fill frontend env
 cp .env.production.example .env.production
-# Set NEXT_PUBLIC_API_URL=https://malaikanest.duckdns.org
+# Set NEXT_PUBLIC_API_URL=https://malaikanest.com
 
 npm ci --legacy-peer-deps
 npm run build
@@ -309,10 +309,10 @@ chown www-data:www-data /var/log/malaikanest
 bash /var/www/malaikanest/deployment/go-live-smoke.sh
 
 # Manual spot checks
-curl -I https://malaikanest.duckdns.org/                                    # 200
-curl -I https://malaikanest.duckdns.org/api/v1/products/products/           # 200
-curl -I https://malaikanest.duckdns.org/api/v1/products/categories/         # 200
-curl -s https://malaikanest.duckdns.org/api/v1/products/products/ | \
+curl -I https://malaikanest.com/                                    # 200
+curl -I https://malaikanest.com/api/v1/products/products/           # 200
+curl -I https://malaikanest.com/api/v1/products/categories/         # 200
+curl -s https://malaikanest.com/api/v1/products/products/ | \
     python3 -c "import sys,json; d=json.load(sys.stdin); print('OK, products:', len(d.get('results',d.get('data',{}).get('results',[]))))"
 ```
 

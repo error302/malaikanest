@@ -115,4 +115,4 @@ fi
 
 echo ""
 echo -e "${GREEN}🎉 Deployment complete!${NC}"
-echo "Your site should be live at https://malaikanest.duckdns.org"
+echo "Your site should be live at https://malaikanest.com"

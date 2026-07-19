@@ -3,13 +3,13 @@ set -euo pipefail
 
 # Malaika Nest production go-live smoke test
 # Usage:
-# BASE_URL=https://malaikanest.duckdns.org \
+# BASE_URL=https://malaikanest.com \
 # ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='***' \
 # TEST_EMAIL=smoke+$(date +%s)@example.com TEST_PASSWORD='TestPass123!' \
 # ADMIN_WRITE_TEST=1 \
 # bash deployment/go-live-smoke.sh
 
-BASE_URL="${BASE_URL:-https://malaikanest.duckdns.org}"
+BASE_URL="${BASE_URL:-https://malaikanest.com}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 TEST_EMAIL="${TEST_EMAIL:-smoke.$(date +%s)@example.com}"

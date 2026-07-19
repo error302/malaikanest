@@ -1,6 +1,6 @@
 import requests
 
-BASE = 'https://malaikanest.duckdns.org'
+BASE = 'https://malaikanest.com'
 EMAIL = 'codex.verify.20260327.1033@example.com'
 PASSWORD = 'MalaikaTest!2026'
 ORDER_ID = 12

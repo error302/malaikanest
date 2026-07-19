@@ -18,31 +18,31 @@
 
 - [ ] **3. HTTPS redirect is enforced (HTTP → HTTPS)**
   ```bash
-  curl -I http://malaikanest.duckdns.org/ | grep -E "HTTP|Location"
+  curl -I http://malaikanest.com/ | grep -E "HTTP|Location"
   # Expected: 301 → https://...
   ```
 
 - [ ] **4. HSTS header present**
   ```bash
-  curl -sI https://malaikanest.duckdns.org/ | grep -i strict-transport
+  curl -sI https://malaikanest.com/ | grep -i strict-transport
   # Expected: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   ```
 
 - [ ] **5. X-Frame-Options: DENY**
   ```bash
-  curl -sI https://malaikanest.duckdns.org/ | grep -i x-frame-options
+  curl -sI https://malaikanest.com/ | grep -i x-frame-options
   # Expected: X-Frame-Options: DENY
   ```
 
 - [ ] **6. Content-Type-Options: nosniff**
   ```bash
-  curl -sI https://malaikanest.duckdns.org/ | grep -i x-content-type
+  curl -sI https://malaikanest.com/ | grep -i x-content-type
   # Expected: X-Content-Type-Options: nosniff
   ```
 
 - [ ] **7. Admin URL is NOT /admin/**
   ```bash
-  curl -I https://malaikanest.duckdns.org/admin/ | grep HTTP
+  curl -I https://malaikanest.com/admin/ | grep HTTP
   # Expected: 404 (admin is at /manage-store/ not /admin/)
   ```
 
@@ -61,7 +61,7 @@
 - [ ] **10. SSL certificate is valid and auto-renewed**
   ```bash
   certbot renew --dry-run && echo "Auto-renewal OK"
-  openssl s_client -connect malaikanest.duckdns.org:443 < /dev/null 2>/dev/null | openssl x509 -noout -dates
+  openssl s_client -connect malaikanest.com:443 < /dev/null 2>/dev/null | openssl x509 -noout -dates
   ```
 
 ---
@@ -83,7 +83,7 @@
 
 - [ ] **13. Database connection from Gunicorn worker works**
   ```bash
-  curl -s https://malaikanest.duckdns.org/api/v1/products/products/ | python3 -c "import sys,json; d=json.load(sys.stdin); print('DB OK, rows:', d.get('count', '?'))"
+  curl -s https://malaikanest.com/api/v1/products/products/ | python3 -c "import sys,json; d=json.load(sys.stdin); print('DB OK, rows:', d.get('count', '?'))"
   ```
 
 ---
@@ -92,24 +92,24 @@
 
 - [ ] **14. Products API returns results**
   ```bash
-  curl -s https://malaikanest.duckdns.org/api/v1/products/products/ | python3 -m json.tool | head -20
+  curl -s https://malaikanest.com/api/v1/products/products/ | python3 -m json.tool | head -20
   ```
 
 - [ ] **15. Categories API returns results**
   ```bash
-  curl -s https://malaikanest.duckdns.org/api/v1/products/categories/ | python3 -m json.tool | head -20
+  curl -s https://malaikanest.com/api/v1/products/categories/ | python3 -m json.tool | head -20
   ```
 
 - [ ] **16. Payment status endpoint rejects unauthenticated requests**
   ```bash
-  curl -s -o /dev/null -w "%{http_code}" https://malaikanest.duckdns.org/api/v1/payments/1/status/
+  curl -s -o /dev/null -w "%{http_code}" https://malaikanest.com/api/v1/payments/1/status/
   # Expected: 401
   ```
 
 - [ ] **17. M-Pesa callback endpoint returns 200 (always, even for invalid data)**
   ```bash
   curl -s -w "\nHTTP %{http_code}\n" \
-    -X POST https://malaikanest.duckdns.org/api/v1/payments/mpesa/callback/ \
+    -X POST https://malaikanest.com/api/v1/payments/mpesa/callback/ \
     -H "Content-Type: application/json" \
     -d '{"Body":{"stkCallback":{"CheckoutRequestID":"test","ResultCode":1,"ResultDesc":"Test"}}}'
   # Expected: HTTP 200 (Safaricom always needs 200)
@@ -157,7 +157,7 @@
 
 - [ ] **22. Static files are served correctly**
   ```bash
-  curl -I https://malaikanest.duckdns.org/static/admin/css/base.css | grep -E "HTTP|Cache-Control"
+  curl -I https://malaikanest.com/static/admin/css/base.css | grep -E "HTTP|Cache-Control"
   # Expected: HTTP/2 200, Cache-Control: public
   ```
 
@@ -205,7 +205,7 @@
 
 - [ ] **27. Homepage loads and returns products**
   ```bash
-  curl -s -o /dev/null -w "%{http_code}" https://malaikanest.duckdns.org/
+  curl -s -o /dev/null -w "%{http_code}" https://malaikanest.com/
   # Expected: 200
   ```
 

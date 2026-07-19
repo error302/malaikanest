@@ -60,4 +60,4 @@ jobs:
             sudo -u appuser bash -lc "cd '$APP_DIR/frontend' && nohup npm start > /tmp/malaikanest-frontend.log 2>&1 &"
 
             curl --fail --silent --show-error http://127.0.0.1:8000/api/health/
-            curl --fail --silent --show-error https://malaikanest.duckdns.org/api/health/
+            curl --fail --silent --show-error https://malaikanest.com/api/health/

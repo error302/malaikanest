@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Validate security posture on deployed domain.
-DOMAIN="${DOMAIN:-malaikanest.duckdns.org}"
+DOMAIN="${DOMAIN:-malaikanest.com}"
 BASE="https://${DOMAIN}"
 
 check_header() {
