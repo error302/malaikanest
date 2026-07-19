@@ -18,7 +18,7 @@ export default function AdminInvoicesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/api/v1/orders/invoices/')
+    api.get('/api/v1/orders/admin/invoices/')
       .then((res) => {
         const data = res.data;
         setInvoices(data?.results ?? data?.data?.results ?? []);

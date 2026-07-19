@@ -2,8 +2,10 @@ node_modules
 .next
 .turbo
 dist
-dev.db
 dev.db-journal
+# NOTE: prisma/dev.db is intentionally NOT ignored — it is baked into the image
+# as the first-boot seed for the CMS SQLite database (copied to prisma/seed.db).
+_dbcheck.js
 .env
 .env.local
 .git

@@ -10,6 +10,8 @@ from .admin_views import (
     InvoiceDownloadView,
     InvoiceRegenerateView,
     InvoiceResendView,
+    AdminAbandonedCartsView,
+    AdminCartReminderView,
 )
 
 router = DefaultRouter()
@@ -29,6 +31,8 @@ urlpatterns = [
     path('track/', GuestOrderTrackView.as_view({'post': 'create'})),
     path('admin/analytics/', AdminAnalyticsView.as_view()),
     path('admin/reports/', AdminReportsView.as_view()),
+    path('admin/carts/', AdminAbandonedCartsView.as_view(), name='admin-abandoned-carts'),
+    path('admin/carts/remind/', AdminCartReminderView.as_view(), name='admin-cart-remind'),
     path('delivery-zones/', DeliveryZonesView.as_view(), name='delivery-zones'),
     path('admin/orders/export/', OrdersCSVExportView.as_view()),
     path('admin/invoices/', InvoiceListView.as_view(), name='admin-invoice-list'),

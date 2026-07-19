@@ -155,20 +155,33 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* are inlined into the client bundle at build time. The
+        # browser on malaikanest.com must call the API at api.malaikanest.com
+        # (cloudflared routes that hostname to the backend service).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.malaikanest.com}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://malaikanest.com}
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
+        NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:-}
     restart: unless-stopped
     ports:
       # Host port 3000 is occupied by another stack (metardu-app); use 3090.
       - "3090:3000"
     environment:
-      # The browser running on the host machine reaches the backend at localhost.
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Kept in sync with the build arg for any server-side reads.
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.malaikanest.com}
       # Server-side fetches from inside the docker network use the backend hostname.
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8000}
       # Canonical production domain used for SEO metadata, sitemap and robots.
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://malaikanest.com}
       NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
       NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:-}
-      DATABASE_URL: file:./dev.db
+      # The Next.js CMS (branding, content blocks, testimonials, thrifted, blog,
+      # loyalty) is stored in SQLite on a persistent named volume so admin edits
+      # survive container rebuilds/redeploys.
+      DATABASE_URL: file:/app/data/cms.db
+    volumes:
+      - frontend_cms_data:/app/data
     depends_on:
       - backend
 
@@ -184,3 +197,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  frontend_cms_data:

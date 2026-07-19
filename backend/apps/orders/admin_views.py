@@ -9,8 +9,10 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.utils import timezone
+
 from apps.accounts.models import User
-from apps.orders.models import Invoice, Order, OrderItem
+from apps.orders.models import Cart, Invoice, Order, OrderItem
 from apps.products.models import Inventory, Product
 
 from .invoice import generate_invoice_pdf, save_invoice_pdf
@@ -393,6 +395,120 @@ class InvoiceResendView(APIView):
             return Response({"detail": "Invoice resend queued successfully"})
         except Exception as exc:
             return Response({"detail": f"Failed to queue email: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminAbandonedCartsView(APIView):
+    """Lists carts that still hold items but were last touched more than
+    `abandoned_after_hours` ago. Supports ?abandoned=true&limit=N for the admin UI."""
+
+    permission_classes = [IsAdminUser]
+    abandoned_after_hours = 1
+
+    def get(self, request):
+        try:
+            limit = int(request.query_params.get("limit", 50))
+        except (TypeError, ValueError):
+            limit = 50
+        limit = max(1, min(limit, 200))
+
+        cutoff = timezone.now() - datetime.timedelta(hours=self.abandoned_after_hours)
+
+        carts = (
+            Cart.objects.filter(items__isnull=False, updated_at__lte=cutoff)
+            .select_related("user")
+            .prefetch_related("items__product", "items__variant")
+            .distinct()
+            .order_by("-updated_at")[:limit]
+        )
+
+        results = []
+        for cart in carts:
+            items = []
+            for item in cart.items.all():
+                items.append(
+                    {
+                        "id": item.id,
+                        "product": {
+                            "id": item.product_id,
+                            "name": getattr(item.product, "name", "Item"),
+                            "price": str(getattr(item.product, "price", item.unit_price)),
+                            "image": (
+                                item.product.get_image_url()
+                                if hasattr(item.product, "get_image_url")
+                                else ""
+                            )
+                            or "",
+                        },
+                        "variant": (
+                            {
+                                "color_label": getattr(item.variant, "color", "") or "",
+                                "size_label": getattr(item.variant, "size", "") or "",
+                            }
+                            if item.variant_id
+                            else None
+                        ),
+                        "quantity": item.quantity,
+                        "unit_price": str(item.unit_price),
+                    }
+                )
+            if not items:
+                continue
+            results.append(
+                {
+                    "id": cart.id,
+                    "user": (
+                        {
+                            "email": cart.user.email,
+                            "first_name": cart.user.first_name,
+                            "last_name": cart.user.last_name,
+                        }
+                        if cart.user_id
+                        else None
+                    ),
+                    "session_key": cart.session_key,
+                    "created_at": cart.created_at.isoformat(),
+                    "updated_at": cart.updated_at.isoformat(),
+                    "items": items,
+                }
+            )
+
+        return Response({"results": results, "meta": {"count": len(results)}})
+
+
+class AdminCartReminderView(APIView):
+    """Sends an abandoned-cart reminder email for a specific cart."""
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        cart_id = request.data.get("cart_id")
+        if not cart_id:
+            return Response({"detail": "cart_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cart = Cart.objects.select_related("user").get(id=cart_id)
+        except Cart.DoesNotExist:
+            return Response({"detail": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        email = cart.user.email if cart.user_id else None
+        if not email:
+            return Response(
+                {"detail": "This cart has no associated customer email to remind."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from .tasks import send_abandoned_cart_reminder
+
+            # The reminder task scans and emails all currently-abandoned carts
+            # (including this one). Run async when a broker is available.
+            send_abandoned_cart_reminder.delay()
+            return Response({"detail": f"Reminder queued (will include {email})"})
+        except Exception:
+            return Response(
+                {"detail": "Reminder scheduling is not available on this environment."},
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
 
 
 
