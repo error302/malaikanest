@@ -109,20 +109,37 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "Organization",
-      "@id": `${SITE_URL}/#organization`,
+      "@type": "LocalBusiness",
+      "@id": `${SITE_URL}/#store`,
       name: "Malaika Nest",
+      alternateName: "Tawakal Toto Shop",
       url: SITE_URL,
       logo: `${SITE_URL}/logo.png`,
       image: `${SITE_URL}/logo.png`,
       description: "Premium baby and maternity store. Handcrafted organic clothing, accessories & toys made with love in Kenya.",
       email: "malaikanest7@gmail.com",
       telephone: "+254726771321",
+      priceRange: "KES",
+      currenciesAccepted: "KES",
+      paymentAccepted: "M-Pesa, Cash",
       address: {
         "@type": "PostalAddress",
+        streetAddress: "Tawakal Toto Shop",
         addressLocality: "Mombasa",
+        addressRegion: "Mombasa County",
         addressCountry: "KE",
       },
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: -4.0856032,
+        longitude: 39.661555,
+      },
+      hasMap: "https://maps.app.goo.gl/AHTa75obHAyjB3xZ8",
+      openingHoursSpecification: [
+        { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday"], opens: "09:00", closes: "18:00" },
+        { "@type": "OpeningHoursSpecification", dayOfWeek: "Saturday", opens: "09:00", closes: "16:00" },
+        { "@type": "OpeningHoursSpecification", dayOfWeek: "Sunday", opens: "00:00", closes: "00:00" },
+      ],
       sameAs: [
         "https://web.facebook.com/profile.php?id=61592150003761",
         "https://www.instagram.com/malaikanest/",
@@ -133,7 +150,7 @@ const jsonLd = {
         telephone: "+254726771321",
         contactType: "customer service",
         areaServed: "KE",
-        availableLanguage: "en",
+        availableLanguage: ["en","sw"],
       },
     },
     {
