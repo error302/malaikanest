@@ -4,12 +4,12 @@ djangorestframework-simplejwt==5.5.1
 django-filter==24.3
 psycopg2-binary==2.9.10
 gunicorn==23.0.0
-setuptools==82.0.0
-python-dotenv==1.0.1
+setuptools==83.0.0
+python-dotenv==1.2.2
 django-cors-headers==4.6.0
-requests==2.32.4
+requests==2.33.0
 pytz==2024.2
-Pillow==12.1.1
+Pillow==12.3.0
 cloudinary==1.44.1
 django-cloudinary-storage==0.3.0
 redis==5.2.1
@@ -18,8 +18,8 @@ django-celery-beat==2.7.0
 dj-database-url==2.2.0
 channels==4.2.0
 channels-redis==4.2.0
-daphne==4.1.0
-cryptography==46.0.5
+daphne==4.2.2
+cryptography==48.0.1
 python-dateutil==2.9.0
 whitenoise==6.9.0
 reportlab==4.4.10
