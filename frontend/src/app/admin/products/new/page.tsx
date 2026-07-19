@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Image as ImageIcon, Upload, X } from 'lucide-react';
 import Link from 'next/link';
-import api from '@/lib/api';
+import api, { extractApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
 
@@ -123,13 +123,21 @@ export default function NewProductPage() {
       showToast('Product name is required', 'error');
       return;
     }
+    if (!form.category_id) {
+      showToast('Please select a category', 'error');
+      return;
+    }
+    if (!form.price || parseFloat(form.price) <= 0) {
+      showToast('Please enter a valid price', 'error');
+      return;
+    }
     setSaving(true);
     try {
       await api.post('/api/v1/products/products/', payload());
       showToast('Product created', 'success');
       router.push('/admin/products');
     } catch (err: any) {
-      showToast(err?.response?.data?.detail || 'Failed to create product', 'error');
+      showToast(extractApiError(err, 'Failed to create product'), 'error');
     } finally {
       setSaving(false);
     }

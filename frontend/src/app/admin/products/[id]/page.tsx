@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Image as ImageIcon, Upload, X } from 'lucide-react';
 import Link from 'next/link';
-import api from '@/lib/api';
+import api, { extractApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
 
@@ -168,13 +168,17 @@ export default function EditProductPage() {
       showToast('Product name is required', 'error');
       return;
     }
+    if (!form.category_id) {
+      showToast('Please select a category', 'error');
+      return;
+    }
     setSaving(true);
     try {
       await api.put(`/api/v1/products/products/${id}/`, payload());
       showToast('Product updated', 'success');
       router.push('/admin/products');
     } catch (err: any) {
-      showToast(err?.response?.data?.detail || 'Failed to update product', 'error');
+      showToast(extractApiError(err, 'Failed to update product'), 'error');
     } finally {
       setSaving(false);
     }

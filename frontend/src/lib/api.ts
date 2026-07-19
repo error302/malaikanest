@@ -3,6 +3,25 @@ import { clearAccessToken, getAccessToken, setAccessToken } from './authToken';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export function extractApiError(err: any, fallback = 'Something went wrong'): string {
+  const data = err?.response?.data;
+  if (!data) return err?.message || fallback;
+  if (typeof data === 'string') return data;
+  if (data.detail) return String(data.detail);
+  if (data.non_field_errors) {
+    return Array.isArray(data.non_field_errors) ? data.non_field_errors.join(' ') : String(data.non_field_errors);
+  }
+  if (typeof data === 'object') {
+    const parts: string[] = [];
+    for (const [field, msgs] of Object.entries(data)) {
+      const text = Array.isArray(msgs) ? msgs.join(' ') : String(msgs);
+      parts.push(`${field}: ${text}`);
+    }
+    if (parts.length) return parts.join(' | ');
+  }
+  return fallback;
+}
+
 const CACHE_DURATION = {
   PRODUCTS: 5 * 60 * 1000,
   CATEGORIES: 10 * 60 * 1000,
