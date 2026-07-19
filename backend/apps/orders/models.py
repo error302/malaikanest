@@ -11,6 +11,23 @@ from django.db.models import F
 from decimal import Decimal
 
 
+def invoice_pdf_storage():
+    """Storage for invoice PDFs.
+
+    Cloudinary blocks delivery of PDFs uploaded as resource_type=image by
+    default (returns 401), so store invoices as raw files which are delivered
+    without that restriction. Falls back to the default storage in dev/local.
+    """
+    default_backend = settings.STORAGES.get("default", {}).get("BACKEND", "")
+    if "cloudinary" in default_backend.lower():
+        from cloudinary_storage.storage import RawMediaCloudinaryStorage
+
+        return RawMediaCloudinaryStorage()
+    from django.core.files.storage import default_storage
+
+    return default_storage
+
+
 def generate_receipt_number() -> str:
     """
     Human-friendly public order reference.
@@ -38,7 +55,7 @@ class Invoice(BaseModel):
     
     order = models.OneToOneField('orders.Order', on_delete=models.CASCADE, related_name='invoice')
     invoice_number = models.CharField(max_length=50, unique=True, db_index=True)
-    pdf_file = models.FileField(upload_to='invoices/%Y/%m/', null=True, blank=True)
+    pdf_file = models.FileField(upload_to='invoices/%Y/%m/', storage=invoice_pdf_storage, null=True, blank=True)
     pdf_url = models.URLField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)

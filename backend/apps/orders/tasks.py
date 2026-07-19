@@ -45,18 +45,37 @@ def _attach_invoice_pdf(message, invoice):
     filename = getattr(invoice.pdf_file, "name", "") or f"invoice-{invoice.invoice_number}.pdf"
     filename = filename.split("/")[-1]
 
-    if hasattr(invoice.pdf_file, "open"):
-        invoice.pdf_file.open("rb")
-        try:
-            message.attach(filename, invoice.pdf_file.read(), "application/pdf")
-        finally:
+    # Preferred: read the stored file. This can fail if the storage backend
+    # (e.g. Cloudinary) refuses delivery of the PDF, so fall back to
+    # regenerating the PDF bytes in-memory rather than dropping the attachment.
+    try:
+        if hasattr(invoice.pdf_file, "open"):
+            invoice.pdf_file.open("rb")
             try:
-                invoice.pdf_file.close()
-            except Exception:
-                pass
-        return
+                data = invoice.pdf_file.read()
+            finally:
+                try:
+                    invoice.pdf_file.close()
+                except Exception:
+                    pass
+            if data:
+                message.attach(filename, data, "application/pdf")
+                return
+        else:
+            message.attach_file(invoice.pdf_file.path)
+            return
+    except Exception as exc:
+        logger.warning(
+            "Could not read stored invoice PDF %s, regenerating in-memory: %s",
+            filename,
+            exc,
+        )
 
-    message.attach_file(invoice.pdf_file.path)
+    from apps.orders.invoice import generate_invoice_pdf
+
+    pdf_content, _ = generate_invoice_pdf(invoice.order, invoice.invoice_number)
+    if pdf_content:
+        message.attach(filename, pdf_content, "application/pdf")
 
 
 # ==================== ORDER EMAIL TASKS ====================
