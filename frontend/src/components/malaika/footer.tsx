@@ -10,6 +10,20 @@ interface FooterProps {
   branding?: Branding;
 }
 
+function TikTok({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M16.5 3c.3 2.1 1.5 3.6 3.5 4v2.6c-1.3.1-2.5-.3-3.6-1v6.1c0 3.6-2.9 6.3-6.4 6.1-3-.2-5.4-2.7-5.5-5.7-.1-3.3 2.6-6 5.9-5.9.3 0 .6 0 .9.1v2.8c-.3-.1-.6-.1-.9-.1-1.6-.1-3 1.2-3 2.8s1.3 2.9 2.9 2.9 2.9-1.3 2.9-2.9V3h3.2z" />
+    </svg>
+  );
+}
+
 const SHOP_LINKS = [
   { key: 'footer.shopAll', href: '/categories' },
   { key: 'cat.clothing', href: '/categories' },
@@ -40,8 +54,9 @@ const SUPPORT_LINKS = [
 ];
 
 const SOCIAL = (b?: Branding) => [
-  { label: 'Facebook', href: b?.facebook_url || 'https://facebook.com', Icon: Facebook },
-  { label: 'Instagram', href: b?.instagram_url || 'https://instagram.com', Icon: Instagram },
+  { label: 'Facebook', href: b?.facebook_url || 'https://web.facebook.com/profile.php?id=61592150003761', Icon: Facebook },
+  { label: 'Instagram', href: b?.instagram_url || 'https://www.instagram.com/malaikanest/', Icon: Instagram },
+  { label: 'TikTok', href: b?.tiktok_url || 'https://www.tiktok.com/@malaikanest', Icon: TikTok },
   { label: 'WhatsApp', href: b?.whatsapp_url || 'https://wa.me/254726771321', Icon: MessageCircle },
 ];
 

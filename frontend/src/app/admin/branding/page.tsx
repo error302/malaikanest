@@ -382,6 +382,12 @@ export default function AdminBrandingPage() {
           </div>
           <div>
             <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>
+              TikTok URL
+            </label>
+            <input value={settings.tiktok_url || ''} onChange={(e) => update('tiktok_url', e.target.value)} className={inputClass} style={inputStyle} />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>
               Copyright name
             </label>
             <input value={settings.copyright_name || ''} onChange={(e) => update('copyright_name', e.target.value)} className={inputClass} style={inputStyle} />

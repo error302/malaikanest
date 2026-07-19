@@ -124,8 +124,9 @@ const jsonLd = {
         addressCountry: "KE",
       },
       sameAs: [
-        "https://www.facebook.com/malaikanest",
-        "https://www.instagram.com/malaikanest",
+        "https://web.facebook.com/profile.php?id=61592150003761",
+        "https://www.instagram.com/malaikanest/",
+        "https://www.tiktok.com/@malaikanest",
       ],
       contactPoint: {
         "@type": "ContactPoint",
