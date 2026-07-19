@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Pencil, Trash2, Package } from 'lucide-react';
-import api from '@/lib/api';
+import api, { extractApiError } from '@/lib/api';
 import { getImageUrl } from '@/lib/media';
 import { showToast } from '@/lib/toast';
 
@@ -15,6 +15,8 @@ interface Product {
   stock: number;
   is_active: boolean;
   image?: string | null;
+  image_full_url?: string | null;
+  category_name?: string;
   category?: { name?: string };
 }
 
@@ -26,10 +28,10 @@ export default function AdminProductsPage() {
   const fetchProducts = () => {
     setLoading(true);
     api
-      .get('/api/v1/products/products/', { params: { search, limit: 50 } })
+      .get('/api/v1/products/admin/products/', { params: { search } })
       .then((res) => {
         const data = res.data;
-        setProducts(data?.results ?? data?.data?.results ?? []);
+        setProducts(data?.results ?? data?.data?.results ?? data?.data ?? (Array.isArray(data) ? data : []));
       })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
@@ -43,11 +45,11 @@ export default function AdminProductsPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
-      await api.delete(`/api/v1/products/products/${id}/`);
+      await api.delete(`/api/v1/products/admin/products/${id}/`);
       showToast('Product deleted', 'success');
       setProducts((p) => p.filter((x) => x.id !== id));
-    } catch {
-      showToast('Failed to delete product', 'error');
+    } catch (err: any) {
+      showToast(extractApiError(err, 'Failed to delete product'), 'error');
     }
   };
 
@@ -104,7 +106,7 @@ export default function AdminProductsPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: 'var(--brand-warm)' }}>
-                          {p.image ? <img src={getImageUrl(p.image)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
+                          {(p.image_full_url || p.image) ? <img src={getImageUrl(p.image_full_url || p.image)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
                         </div>
                         <div className="min-w-0">
                           <div className="font-medium truncate" style={{ color: 'var(--brand-text)' }}>{p.name}</div>
@@ -112,7 +114,7 @@ export default function AdminProductsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 hidden sm:table-cell" style={{ color: 'var(--brand-text-secondary)' }}>{p.category?.name || '—'}</td>
+                    <td className="p-4 hidden sm:table-cell" style={{ color: 'var(--brand-text-secondary)' }}>{p.category_name || p.category?.name || '—'}</td>
                     <td className="p-4 font-semibold" style={{ color: 'var(--brand-gold)' }}>KES {parseFloat(p.price).toLocaleString('en-KE')}</td>
                     <td className="p-4 hidden md:table-cell">
                       <span className={`text-xs px-2 py-1 rounded-full ${p.stock > 5 ? '' : ''}`} style={{ background: p.stock > 5 ? 'rgba(45,90,66,0.12)' : 'rgba(196,112,74,0.12)', color: p.stock > 5 ? 'var(--brand-green-light)' : 'var(--brand-terra)' }}>

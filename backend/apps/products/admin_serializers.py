@@ -161,6 +161,9 @@ class AdminProductSerializer(serializers.ModelSerializer):
 
     def get_image_full_url(self, obj):
         if obj.image:
+            raw = obj.image.name if hasattr(obj.image, "name") else str(obj.image)
+            if raw.startswith("http://") or raw.startswith("https://"):
+                return raw
             url = obj.image.url
             if url.startswith("http://") or url.startswith("https://"):
                 return url
@@ -183,9 +186,13 @@ class AdminProductSerializer(serializers.ModelSerializer):
         for variant in variants:
             image_url = None
             if variant.image:
-                image_url = variant.image.url
-                if request and not image_url.startswith(("http://", "https://")):
-                    image_url = request.build_absolute_uri(image_url)
+                raw = variant.image.name if hasattr(variant.image, "name") else str(variant.image)
+                if raw.startswith(("http://", "https://")):
+                    image_url = raw
+                else:
+                    image_url = variant.image.url
+                    if request and not image_url.startswith(("http://", "https://")):
+                        image_url = request.build_absolute_uri(image_url)
             items.append(
                 {
                     "id": variant.id,
@@ -219,6 +226,17 @@ class AdminProductSerializer(serializers.ModelSerializer):
         except Exception:
             return None
         return None
+
+    @staticmethod
+    def _store_image_url(product, url):
+        """Persist an absolute image URL verbatim into the image column.
+
+        Assigning a URL string to an ImageField would otherwise trigger the
+        configured storage backend (Cloudinary) to re-upload it. Writing the
+        raw value via a queryset update bypasses ImageField.pre_save entirely.
+        """
+        Product.objects.filter(pk=product.pk).update(image=url)
+        product.image.name = url
 
     def _parse_variants(self):
         request = self.context.get("request")
@@ -282,8 +300,12 @@ class AdminProductSerializer(serializers.ModelSerializer):
             image = item.pop("image", None)
             image_url = item.pop("image_url", None)
 
+            remote_url = None
             if not image and image_url:
-                image = self._download_image(image_url, f"variant_{index + 1}.jpg")
+                if image_url.startswith(("http://", "https://")):
+                    remote_url = image_url
+                else:
+                    image = self._download_image(image_url, f"variant_{index + 1}.jpg")
 
             if variant_id:
                 variant = ProductVariant.objects.filter(pk=variant_id, product=product).first()
@@ -300,6 +322,10 @@ class AdminProductSerializer(serializers.ModelSerializer):
                     image=image,
                     **item,
                 )
+
+            if remote_url:
+                ProductVariant.objects.filter(pk=variant.pk).update(image=remote_url)
+                variant.image.name = remote_url
 
             inventory, _ = VariantInventory.objects.get_or_create(
                 variant=variant,
@@ -327,15 +353,23 @@ class AdminProductSerializer(serializers.ModelSerializer):
         stock = validated_data.get("stock", 0)
         variants_payload = self._parse_variants()
 
-        # If image_url is provided, download and save the image
+        # A full remote URL (e.g. Cloudinary) is stored verbatim, bypassing the
+        # storage backend (see _store_image_url below). Only download when the
+        # value is not already an absolute URL.
+        remote_url = None
         if image_url:
-            downloaded = self._download_image(image_url, "product_image.jpg")
-            if downloaded:
-                validated_data["image"] = downloaded
+            if image_url.startswith(("http://", "https://")):
+                remote_url = image_url
+            else:
+                downloaded = self._download_image(image_url, "product_image.jpg")
+                if downloaded:
+                    validated_data["image"] = downloaded
 
         try:
             with transaction.atomic():
                 product = super().create(validated_data)
+                if remote_url:
+                    self._store_image_url(product, remote_url)
                 Inventory.objects.update_or_create(
                     product=product, defaults={"quantity": stock}
                 )
@@ -366,16 +400,23 @@ class AdminProductSerializer(serializers.ModelSerializer):
         image_url = validated_data.pop("image_url", None)
         variants_payload = self._parse_variants()
 
-        # If image_url is provided, download and save the image
+        # A full remote URL (e.g. Cloudinary) is stored verbatim, bypassing the
+        # storage backend. Only download when it is not already an absolute URL.
+        remote_url = None
         if image_url:
-            downloaded = self._download_image(image_url, "product_image.jpg")
-            if downloaded:
-                validated_data["image"] = downloaded
+            if image_url.startswith(("http://", "https://")):
+                remote_url = image_url
+            else:
+                downloaded = self._download_image(image_url, "product_image.jpg")
+                if downloaded:
+                    validated_data["image"] = downloaded
 
         previous_stock = instance.stock
         try:
             with transaction.atomic():
                 product = super().update(instance, validated_data)
+                if remote_url:
+                    self._store_image_url(product, remote_url)
                 self._sync_variants(product, variants_payload)
                 if "stock" in validated_data:
                     if not product.variants.filter(is_active=True).exists():

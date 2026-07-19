@@ -7,6 +7,16 @@ import Link from 'next/link';
 import api, { extractApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
+import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
+
+interface ApiVariant {
+  id?: number;
+  color?: string;
+  size?: string;
+  sku?: string;
+  price_modifier?: string;
+  stock?: number;
+}
 
 interface Category {
   id: string;
@@ -41,6 +51,7 @@ interface ProductDetail extends Omit<ProductForm, 'category_id'> {
   category: number | null;
   image: string | null;
   image_full_url: string | null;
+  variants?: ApiVariant[];
 }
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -73,6 +84,7 @@ export default function EditProductPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImage, setExistingImage] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [variants, setVariants] = useState<VariantForm[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -83,7 +95,7 @@ export default function EditProductPage() {
   useEffect(() => {
     if (!id) return;
     api
-      .get(`/api/v1/products/products/${id}/`)
+      .get(`/api/v1/products/admin/products/${id}/`)
       .then((res) => {
         const d: ProductDetail = res.data;
         setForm({
@@ -93,7 +105,7 @@ export default function EditProductPage() {
           price: d.price != null ? String(d.price) : '',
           compare_price: d.compare_price != null ? String(d.compare_price) : '',
           stock: d.stock != null ? String(d.stock) : '0',
-          category_id: d.category_id ? String(d.category_id) : '',
+          category_id: d.category != null ? String(d.category) : (d.category_id ? String(d.category_id) : ''),
           brand: d.brand ?? '',
           sku: d.sku ?? '',
           gender: d.gender ?? 'unisex',
@@ -107,6 +119,18 @@ export default function EditProductPage() {
           image_url: d.image_url ?? '',
         });
         setExistingImage(d.image_full_url || d.image || null);
+        if (Array.isArray(d.variants)) {
+          setVariants(
+            d.variants.map((v) => ({
+              id: v.id,
+              color: v.color ?? '',
+              size: v.size ?? '',
+              sku: v.sku ?? '',
+              price_modifier: v.price_modifier != null ? String(v.price_modifier) : '0',
+              stock: v.stock != null ? String(v.stock) : '0',
+            }))
+          );
+        }
       })
       .catch(() => showToast('Failed to load product', 'error'))
       .finally(() => setLoading(false));
@@ -137,6 +161,19 @@ export default function EditProductPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const buildVariantsPayload = () =>
+    variants
+      .filter((v) => v.color)
+      .map((v) => ({
+        ...(v.id ? { id: v.id } : {}),
+        color: v.color,
+        size: v.size || null,
+        sku: v.sku || null,
+        price_modifier: v.price_modifier || '0',
+        stock: parseInt(v.stock) || 0,
+        is_active: true,
+      }));
+
   const payload = () => {
     const slug = form.slug.trim() || slugify(form.name);
     const fd = new FormData();
@@ -146,8 +183,7 @@ export default function EditProductPage() {
     fd.append('price', String(parseFloat(form.price) || 0));
     fd.append('compare_price', form.compare_price ? String(parseFloat(form.compare_price)) : '');
     fd.append('stock', String(parseInt(form.stock) || 0));
-    fd.append('category_id', form.category_id);
-    fd.append('brand', form.brand);
+    fd.append('category', form.category_id);
     fd.append('sku', form.sku);
     fd.append('gender', form.gender);
     fd.append('age_group', form.age_group);
@@ -155,10 +191,10 @@ export default function EditProductPage() {
     fd.append('size_label', form.size_label);
     fd.append('featured', form.featured ? 'true' : 'false');
     fd.append('status', form.status);
-    fd.append('seo_title', form.seo_title);
-    fd.append('seo_description', form.seo_description);
+    fd.append('is_active', form.status === 'published' ? 'true' : 'false');
     if (form.image_url) fd.append('image_url', form.image_url);
     if (imageFile) fd.append('image', imageFile);
+    fd.append('variants', JSON.stringify(buildVariantsPayload()));
     return fd;
   };
 
@@ -172,9 +208,13 @@ export default function EditProductPage() {
       showToast('Please select a category', 'error');
       return;
     }
+    if (variants.some((v) => !v.color)) {
+      showToast('Each variant must have a color selected', 'error');
+      return;
+    }
     setSaving(true);
     try {
-      await api.put(`/api/v1/products/products/${id}/`, payload());
+      await api.put(`/api/v1/products/admin/products/${id}/`, payload());
       showToast('Product updated', 'success');
       router.push('/admin/products');
     } catch (err: any) {
@@ -342,6 +382,11 @@ export default function EditProductPage() {
             <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
             Featured product (show on homepage)
           </label>
+        </div>
+
+        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Colors &amp; Sizes</h2>
+          <VariantEditor variants={variants} onChange={setVariants} />
         </div>
 
         <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>

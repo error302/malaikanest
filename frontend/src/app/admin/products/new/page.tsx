@@ -7,6 +7,7 @@ import Link from 'next/link';
 import api, { extractApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
+import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
 
 interface Category {
   id: string;
@@ -61,6 +62,7 @@ export default function NewProductPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [variants, setVariants] = useState<VariantForm[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -92,6 +94,18 @@ export default function NewProductPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const buildVariantsPayload = () =>
+    variants
+      .filter((v) => v.color)
+      .map((v) => ({
+        color: v.color,
+        size: v.size || null,
+        sku: v.sku || null,
+        price_modifier: v.price_modifier || '0',
+        stock: parseInt(v.stock) || 0,
+        is_active: true,
+      }));
+
   const payload = () => {
     const slug = form.slug.trim() || slugify(form.name);
     const fd = new FormData();
@@ -101,8 +115,7 @@ export default function NewProductPage() {
     fd.append('price', String(parseFloat(form.price) || 0));
     fd.append('compare_price', form.compare_price ? String(parseFloat(form.compare_price)) : '');
     fd.append('stock', String(parseInt(form.stock) || 0));
-    fd.append('category_id', form.category_id);
-    fd.append('brand', form.brand);
+    fd.append('category', form.category_id);
     fd.append('sku', form.sku);
     fd.append('gender', form.gender);
     fd.append('age_group', form.age_group);
@@ -110,10 +123,11 @@ export default function NewProductPage() {
     fd.append('size_label', form.size_label);
     fd.append('featured', form.featured ? 'true' : 'false');
     fd.append('status', form.status);
-    fd.append('seo_title', form.seo_title);
-    fd.append('seo_description', form.seo_description);
+    fd.append('is_active', form.status === 'published' ? 'true' : 'false');
     if (form.image_url) fd.append('image_url', form.image_url);
     if (imageFile) fd.append('image', imageFile);
+    const vp = buildVariantsPayload();
+    if (vp.length) fd.append('variants', JSON.stringify(vp));
     return fd;
   };
 
@@ -131,9 +145,13 @@ export default function NewProductPage() {
       showToast('Please enter a valid price', 'error');
       return;
     }
+    if (variants.some((v) => !v.color)) {
+      showToast('Each variant must have a color selected', 'error');
+      return;
+    }
     setSaving(true);
     try {
-      await api.post('/api/v1/products/products/', payload());
+      await api.post('/api/v1/products/admin/products/', payload());
       showToast('Product created', 'success');
       router.push('/admin/products');
     } catch (err: any) {
@@ -278,6 +296,11 @@ export default function NewProductPage() {
             <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
             Featured product (show on homepage)
           </label>
+        </div>
+
+        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Colors &amp; Sizes</h2>
+          <VariantEditor variants={variants} onChange={setVariants} />
         </div>
 
         <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
