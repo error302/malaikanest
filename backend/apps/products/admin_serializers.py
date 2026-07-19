@@ -139,19 +139,28 @@ class AdminProductSerializer(serializers.ModelSerializer):
         else:
             mutable_data = dict(data)
 
+        # Numeric/URL fields that are genuinely nullable in the DB: turn "" into None.
         nullable_fields = [
             "compare_price",
             "discount_price",
-            "brand",
-            "age_group",
-            "age_range",
-            "size_label",
             "image_url",
-            "sku",
         ]
         for field_name in nullable_fields:
             if mutable_data.get(field_name) == "":
                 mutable_data[field_name] = None
+
+        # CharFields with blank=True but NOT null=True: null/absent must become
+        # an empty string, otherwise DRF rejects them as "may not be null".
+        blank_char_fields = [
+            "brand",
+            "age_group",
+            "age_range",
+            "size_label",
+            "sku",
+        ]
+        for field_name in blank_char_fields:
+            if mutable_data.get(field_name) is None:
+                mutable_data[field_name] = ""
 
         return super().to_internal_value(mutable_data)
 

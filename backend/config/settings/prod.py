@@ -116,9 +116,18 @@ MEDIA_ROOT = BASE_DIR / "media"
 database_url = os.getenv("DATABASE_URL")
 
 def _db_sslmode(hostname: str | None) -> str:
+    # Explicit override wins (e.g. DB_SSLMODE=disable for an internal
+    # docker-network Postgres that doesn't terminate SSL).
+    override = (os.getenv("DB_SSLMODE") or "").strip().lower()
+    if override:
+        return override
     host = (hostname or "").strip().lower()
-    # Local Postgres on the VM typically doesn't have SSL configured.
-    if host in {"localhost", "127.0.0.1", "::1"} or host.endswith(".local"):
+    # Local/internal Postgres typically doesn't have SSL configured.
+    if (
+        host in {"localhost", "127.0.0.1", "::1", "db", "postgres", "backend"}
+        or host.endswith(".local")
+        or "." not in host  # bare docker service names have no dots
+    ):
         return "disable"
     return "require"
 
@@ -169,7 +178,19 @@ SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SIMPLE_JWT["AUTH_COOKIE_SECURE"] = True
-SIMPLE_JWT["AUTH_COOKIE_SAMESITE"] = "Strict"
+# Frontend (malaikanest.com) and API (api.malaikanest.com) are different
+# subdomains, which browsers treat as cross-site for cookies. The refresh
+# cookie must therefore use SameSite=None (with Secure) and a parent-domain
+# scope so it is shared across subdomains. Honor AUTH_COOKIE_SAMESITE from env
+# (default None) instead of forcing Strict, which silently breaks auth.
+SIMPLE_JWT["AUTH_COOKIE_SAMESITE"] = os.getenv("AUTH_COOKIE_SAMESITE", "None")
+
+# Share auth/session/CSRF cookies across malaikanest.com subdomains.
+if AUTH_COOKIE_DOMAIN:
+    SESSION_COOKIE_DOMAIN = AUTH_COOKIE_DOMAIN
+    CSRF_COOKIE_DOMAIN = AUTH_COOKIE_DOMAIN
+    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "None")
+    CSRF_COOKIE_SAMESITE = os.getenv("CSRF_COOKIE_SAMESITE", "None")
 
 # Admin session persistence - keep admin logged in
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
