@@ -35,9 +35,9 @@ export const DEFAULT_BRANDING = {
   location: 'Mombasa, Kenya',
   copyright_name: 'Malaika Nest',
   // Find Us page — Google Maps embed
-  map_embed_url: 'https://www.google.com/maps?q=Mombasa,Kenya&z=13&output=embed',
-  address_line: 'Mombasa, Kenya',
-  address_directions: 'Visit our workshop in Mombasa for in-person shopping and pickups. Call ahead to ensure we\'re in!',
+  map_embed_url: 'https://www.google.com/maps?q=-4.0856032,39.661555&z=17&output=embed',
+  address_line: 'Tawakal Toto Shop, Mombasa, Kenya',
+  address_directions: 'Find us at Tawakal Toto Shop in Mombasa for in-person shopping and pickups. Call ahead to ensure we\'re in!',
   business_hours: JSON.stringify([
     { day: 'Monday – Friday', hours: '9:00 AM – 6:00 PM' },
     { day: 'Saturday', hours: '9:00 AM – 4:00 PM' },

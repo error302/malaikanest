@@ -23,7 +23,7 @@ export default function ContactPage() {
           { Icon: Mail, label: 'Email', value: 'malaikanest7@gmail.com', href: 'mailto:malaikanest7@gmail.com' },
           { Icon: Phone, label: 'Phone', value: '+254 726 771 321', href: 'tel:+254726771321' },
           { Icon: MessageCircle, label: 'WhatsApp', value: 'Chat with us', href: 'https://wa.me/254726771321' },
-          { Icon: MapPin, label: 'Location', value: 'Mombasa, Kenya', href: '#' },
+          { Icon: MapPin, label: 'Location', value: 'Tawakal Toto Shop, Mombasa', href: 'https://maps.app.goo.gl/AHTa75obHAyjB3xZ8' },
         ].map(({ Icon, label, value, href }) => (
           <a key={label} href={href} className="p-5 rounded-2xl border text-center transition-all hover:shadow-warm-md" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
             <Icon size={22} className="mx-auto mb-2" style={{ color: 'var(--brand-gold)' }} />
