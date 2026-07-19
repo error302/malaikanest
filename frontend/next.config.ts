@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import path from "path";
+
+// Redirect every `lucide-react` import to the Phosphor-backed compat shim so the
+// whole site uses the richer icon set without editing each import site.
+const iconShimTs = path.resolve(__dirname, "src/lib/icons.tsx");
 
 const ContentSecurityPolicy = `
   default-src 'self';
@@ -29,6 +34,19 @@ const nextConfig: NextConfig = {
   output: "standalone",
   typescript: { ignoreBuildErrors: true },
   reactStrictMode: false,
+  turbopack: {
+    root: __dirname,
+    resolveAlias: {
+      "lucide-react": "./src/lib/icons.tsx",
+    },
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "lucide-react": iconShimTs,
+    };
+    return config;
+  },
   async headers() {
     return [
       {
