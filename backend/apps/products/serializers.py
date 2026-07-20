@@ -1,8 +1,11 @@
+import json
+import uuid
+
 from rest_framework import serializers
 
 from apps.orders.models import Order
 
-from .models import Banner, Brand, Category, Inventory, Product, ProductVariant, Review, Wishlist, Tag
+from .models import Banner, Brand, Category, Inventory, Product, ProductImage, ProductVariant, Review, Wishlist, Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -185,6 +188,7 @@ class ProductSerializer(serializers.ModelSerializer):
             product=product, defaults={"quantity": product.stock}
         )
         self._handle_image(product, self.context, image_url)
+        self._handle_gallery(product, self.context)
         return product
 
     def update(self, instance, validated_data):
@@ -201,6 +205,7 @@ class ProductSerializer(serializers.ModelSerializer):
         elif image_url is not None:
             instance.image = image_url
         instance.save()
+        self._handle_gallery(instance, self.context)
         return instance
 
     def get_image(self, obj):
@@ -233,8 +238,75 @@ class ProductSerializer(serializers.ModelSerializer):
                         url = request.build_absolute_uri(url)
                     else:
                         url = f"https://malaikanest.com{url}"
-            items.append({"url": url, "alt_text": img.alt_text, "is_primary": img.is_primary})
+            items.append({
+                "id": img.id,
+                "url": url,
+                "alt_text": img.alt_text,
+                "is_primary": img.is_primary,
+            })
         return items
+
+    def _parse_json_list(self, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except Exception:
+            return []
+
+    def _norm_id(self, value):
+        try:
+            return str(uuid.UUID(str(value)))
+        except (ValueError, AttributeError, TypeError):
+            return None
+
+    def _handle_gallery(self, product, context):
+        request = context.get("request") if isinstance(context, dict) else self.context.get("request")
+        if not request:
+            return
+
+        # 1) Append newly uploaded gallery images (in selection order).
+        files = request.FILES.getlist("gallery_images") if request.FILES else []
+        if files:
+            base = product.images.count()
+            for i, f in enumerate(files):
+                ProductImage.objects.create(
+                    product=product, image=f, position=base + i, is_primary=False
+                )
+
+        # 2) Delete images the admin removed.
+        delete_ids = self._parse_json_list(request.data.get("delete_image_ids"))
+        if delete_ids:
+            norm = [self._norm_id(x) for x in delete_ids]
+            norm = [n for n in norm if n]
+            if norm:
+                product.images.filter(id__in=norm).delete()
+
+        # 3) Reorder existing images (two-pass to avoid unique_together clashes).
+        order = self._parse_json_list(request.data.get("image_orders"))
+        if order:
+            imgs = {str(img.id): img for img in product.images.all()}
+            for i, pid in enumerate(order):
+                img = imgs.get(self._norm_id(pid))
+                if img:
+                    img.position = 1000 + i
+            if imgs:
+                ProductImage.objects.bulk_update(list(imgs.values()), ["position"])
+            for i, pid in enumerate(order):
+                img = imgs.get(self._norm_id(pid))
+                if img:
+                    img.position = i
+            if imgs:
+                ProductImage.objects.bulk_update(list(imgs.values()), ["position"])
+
+        # 4) Set the primary gallery image.
+        primary_id = self._norm_id(request.data.get("primary_image_id"))
+        if primary_id:
+            product.images.update(is_primary=False)
+            product.images.filter(id=primary_id).update(is_primary=True)
 
     def get_is_in_stock(self, obj):
         try:

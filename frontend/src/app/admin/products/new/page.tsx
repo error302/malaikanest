@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Image as ImageIcon, Upload } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
+import ProductGalleryUploader, { GalleryChange } from '@/components/admin/ProductGalleryUploader';
 
 interface Category {
   id: string;
@@ -24,6 +25,7 @@ export default function NewProductPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [variants, setVariants] = useState<VariantForm[]>([]);
+  const [galleryChange, setGalleryChange] = useState<GalleryChange | null>(null);
   const [form, setForm] = useState({
     name: '', slug: '', description: '', price: '', compare_price: '', stock: '0',
     category: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
@@ -116,7 +118,16 @@ export default function NewProductPage() {
     }
 
     try {
-      await api.post('/api/v1/products/admin/products/', fd);
+      const res = await api.post('/api/v1/products/admin/products/', fd);
+      const createdId = res.data?.data?.id ?? res.data?.id;
+
+      // Upload any gallery images now that the product exists (FK required).
+      if (createdId && galleryChange && galleryChange.galleryFiles.length > 0) {
+        const gfd = new FormData();
+        galleryChange.galleryFiles.forEach((f) => gfd.append('gallery_images', f));
+        await api.patch(`/api/v1/products/admin/products/${createdId}/`, gfd);
+      }
+
       showToast('Product created successfully!', 'success');
       router.push('/admin/products');
     } catch (err: any) {
@@ -211,6 +222,10 @@ export default function NewProductPage() {
 
           <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>…or paste an image URL (Cloudinary/CDN)</label>
           <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…/product.jpg" className={inputClass} style={inputStyle} disabled={!!imageFile} />
+
+          <div className="my-4 border-t" style={{ borderColor: 'var(--brand-border)' }} />
+
+          <ProductGalleryUploader initialImages={[]} onChange={setGalleryChange} />
         </div>
 
         {/* Variants */}

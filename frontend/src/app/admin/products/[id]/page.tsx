@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Image as ImageIcon, Upload } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
+import ProductGalleryUploader, { GalleryChange } from '@/components/admin/ProductGalleryUploader';
 
 interface Category {
   id: string;
@@ -24,6 +25,8 @@ export default function EditProductPage() {
   const [variants, setVariants] = useState<VariantForm[]>([]);
   const [variantsTouched, setVariantsTouched] = useState(false);
   const [form, setForm] = useState<any>(null);
+  const [galleryInitial, setGalleryInitial] = useState<{ id?: string; url: string; is_primary?: boolean }[]>([]);
+  const [galleryChange, setGalleryChange] = useState<GalleryChange | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +62,15 @@ export default function EditProductPage() {
             }))
           );
         }
+
+        const existingImages = Array.isArray(product.images) ? product.images : [];
+        setGalleryInitial(
+          existingImages.map((im: any) => ({
+            id: im.id,
+            url: im.url,
+            is_primary: im.is_primary,
+          }))
+        );
 
         const cats = catRes.data?.results ?? catRes.data?.data?.results ?? catRes.data?.data ?? catRes.data ?? [];
         setCategories(Array.isArray(cats) ? cats : []);
@@ -129,12 +141,31 @@ export default function EditProductPage() {
     }
 
     try {
-      if (imageFile) {
+      const hasGallery =
+        galleryChange &&
+        (galleryChange.galleryFiles.length > 0 ||
+          galleryChange.deleteIds.length > 0 ||
+          galleryChange.primaryId !== null ||
+          galleryChange.order.length > 0);
+
+      if (imageFile || hasGallery) {
         const fd = new FormData();
         Object.entries(payload).forEach(([k, v]) => {
           if (v !== null && v !== undefined) fd.append(k, String(v));
         });
-        fd.append('image', imageFile);
+        if (imageFile) fd.append('image', imageFile);
+        if (galleryChange) {
+          galleryChange.galleryFiles.forEach((f) => fd.append('gallery_images', f));
+          if (galleryChange.deleteIds.length > 0) {
+            fd.append('delete_image_ids', JSON.stringify(galleryChange.deleteIds));
+          }
+          if (galleryChange.primaryId !== null) {
+            fd.append('primary_image_id', galleryChange.primaryId);
+          }
+          if (galleryChange.order.length > 0) {
+            fd.append('image_orders', JSON.stringify(galleryChange.order));
+          }
+        }
         if (variantsTouched) fd.append('variants', JSON.stringify(payload.variants));
         await api.put(`/api/v1/products/admin/products/${params.id}/`, fd);
       } else {
@@ -227,6 +258,10 @@ export default function EditProductPage() {
 
           <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>…or paste an image URL (Cloudinary/CDN)</label>
           <input value={form.image_url || ''} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…" className={inputClass} style={inputStyle} disabled={!!imageFile} />
+
+          <div className="my-4 border-t" style={{ borderColor: 'var(--brand-border)' }} />
+
+          <ProductGalleryUploader initialImages={galleryInitial} onChange={setGalleryChange} />
         </div>
 
         {/* Variants */}

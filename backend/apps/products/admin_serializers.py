@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
@@ -11,6 +12,7 @@ from apps.products.models import (
     Inventory,
     InventoryLog,
     Product,
+    ProductImage,
     ProductVariant,
     VariantInventory,
     sync_product_stock,
@@ -100,6 +102,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(required=False, allow_null=True)
     image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     image_full_url = serializers.SerializerMethodField(read_only=True)
+    images = serializers.SerializerMethodField(read_only=True)
     variants = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -122,6 +125,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "image",
             "image_url",
             "image_full_url",
+            "images",
             "gender",
             "age_group",
             "age_range",
@@ -187,6 +191,94 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 return f"{host}{url}"
             return f"https://{host}{url}"
         return None
+
+    def get_images(self, obj):
+        items = []
+        for img in obj.images.all():
+            if not img.image:
+                continue
+            raw = img.image.name if hasattr(img.image, "name") else str(img.image)
+            if raw.startswith("http://") or raw.startswith("https://"):
+                url = raw
+            else:
+                url = img.image.url
+                if not (url.startswith("http://") or url.startswith("https://")):
+                    request = self.context.get("request")
+                    if request:
+                        url = request.build_absolute_uri(url)
+                    else:
+                        from django.conf import settings
+
+                        host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
+                        if host.startswith(("http://", "https://")):
+                            url = f"{host}{url}"
+                        else:
+                            url = f"https://{host}{url}"
+            items.append({
+                "id": img.id,
+                "url": url,
+                "alt_text": img.alt_text,
+                "is_primary": img.is_primary,
+            })
+        return items
+
+    def _parse_json_list(self, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except Exception:
+            return []
+
+    def _norm_id(self, value):
+        try:
+            return str(uuid.UUID(str(value)))
+        except (ValueError, AttributeError, TypeError):
+            return None
+
+    def _handle_gallery(self, product):
+        request = self.context.get("request")
+        if not request:
+            return
+
+        files = request.FILES.getlist("gallery_images") if request.FILES else []
+        if files:
+            base = product.images.count()
+            for i, f in enumerate(files):
+                ProductImage.objects.create(
+                    product=product, image=f, position=base + i, is_primary=False
+                )
+
+        delete_ids = self._parse_json_list(request.data.get("delete_image_ids"))
+        if delete_ids:
+            norm = [self._norm_id(x) for x in delete_ids]
+            norm = [n for n in norm if n]
+            if norm:
+                product.images.filter(id__in=norm).delete()
+
+        order = self._parse_json_list(request.data.get("image_orders"))
+        if order:
+            imgs = {str(img.id): img for img in product.images.all()}
+            for i, pid in enumerate(order):
+                img = imgs.get(self._norm_id(pid))
+                if img:
+                    img.position = 1000 + i
+            if imgs:
+                ProductImage.objects.bulk_update(list(imgs.values()), ["position"])
+            for i, pid in enumerate(order):
+                img = imgs.get(self._norm_id(pid))
+                if img:
+                    img.position = i
+            if imgs:
+                ProductImage.objects.bulk_update(list(imgs.values()), ["position"])
+
+        primary_id = self._norm_id(request.data.get("primary_image_id"))
+        if primary_id:
+            product.images.update(is_primary=False)
+            product.images.filter(id=primary_id).update(is_primary=True)
 
     def get_variants(self, obj):
         request = self.context.get("request")
@@ -456,6 +548,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
                         reason="Initial stock set from admin product creation",
                     )
                 self._sync_variants(product, variants_payload)
+                self._handle_gallery(product)
                 return product
         except IntegrityError as exc:
             message = str(exc).lower()
@@ -493,6 +586,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 if remote_url:
                     self._store_image_url(product, remote_url)
                 self._sync_variants(product, variants_payload)
+                self._handle_gallery(product)
                 if "stock" in validated_data:
                     if not product.variants.filter(is_active=True).exists():
                         Inventory.objects.update_or_create(
