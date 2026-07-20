@@ -8,6 +8,7 @@ class Payment(BaseModel):
         ("mpesa", "M-Pesa"),
         ("paypal", "PayPal"),
         ("card", "Debit/Credit Card"),
+        ("pesapal", "Pesapal"),
     ]
     STATUS_CHOICES = [
         ("initiated", "Initiated"),
@@ -29,6 +30,9 @@ class Payment(BaseModel):
     paypal_transaction_id = models.CharField(max_length=128, unique=True, null=True, blank=True)
     card_last_four = models.CharField(max_length=4, null=True, blank=True)
     card_brand = models.CharField(max_length=20, null=True, blank=True)
+    pesapal_tracking_id = models.CharField(max_length=128, unique=True, null=True, blank=True)
+    pesapal_merchant_reference = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+    pesapal_confirmation_code = models.CharField(max_length=128, unique=True, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="initiated")
     raw_callback_json = models.JSONField(null=True, blank=True)
     callback_received_at = models.DateTimeField(null=True, blank=True)
@@ -87,6 +91,11 @@ class PaymentAuditLog(BaseModel):
         ("reconcile_query", "Reconcile Query"),
         ("reconcile_queued", "Reconcile Queued"),
         ("reconcile_completed", "Reconcile Completed"),
+        ("pesapal_submitted", "Pesapal Submitted"),
+        ("ipn_received", "IPN Received"),
+        ("ipn_completed", "IPN Completed"),
+        ("ipn_failed", "IPN Failed"),
+        ("pesapal_cancelled", "Pesapal Cancelled"),
     ]
 
     payment = models.ForeignKey(

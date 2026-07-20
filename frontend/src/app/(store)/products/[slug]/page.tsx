@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight, ShoppingBasket, Heart, Truck, Shield, RotateCcw } from 'lucide-react';
 import { getImageUrl } from '@/lib/media';
-import { ProductDetailClient } from './product-detail-client';
+import { ProductDetailClient, ProductGallery } from './product-detail-client';
 import { ReviewSection } from '@/components/malaika/review-section';
 import { RelatedProducts } from '@/components/malaika/related-products';
 import { getRelatedProducts } from '@/lib/related-products';
@@ -131,6 +131,12 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product) notFound();
 
   const imageUrl = product.image ? getImageUrl(product.image) : null;
+  const extraImages = ((product.images as Array<{ url?: string; image?: string }> | undefined) || [])
+    .map((i) => getImageUrl((i.url || i.image) ?? ''))
+    .filter(Boolean) as string[];
+  const galleryImages: string[] = Array.from(
+    new Set([...(imageUrl ? [imageUrl] : []), ...extraImages])
+  ).filter(Boolean) as string[];
   const price = parseFloat(product.price ?? '0');
   const originalPrice = product.compare_price ? parseFloat(product.compare_price) : null;
   const discount = originalPrice && originalPrice > price
@@ -162,27 +168,9 @@ export default async function ProductDetailPage({ params }: Props) {
       </nav>
 
       <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
-        {/* Image */}
+        {/* Image gallery */}
         <div className="relative">
-          <div
-            className="aspect-square rounded-2xl overflow-hidden border"
-            style={{ background: 'var(--brand-warm)', borderColor: 'var(--brand-border)' }}
-          >
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                loading="eager"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="font-serif text-8xl opacity-20" style={{ color: 'var(--brand-gold)', fontFamily: 'var(--font-cormorant)' }}>
-                  {product.name?.charAt(0)}
-                </span>
-              </div>
-            )}
-          </div>
+          <ProductGallery images={galleryImages} alt={product.name} />
           {discount > 0 && (
             <span
               className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-xs font-semibold text-white"

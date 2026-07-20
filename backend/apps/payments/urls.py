@@ -12,6 +12,9 @@ from .views import (
     PaymentStatusByIdView,
     PaymentVerifyView,
     PayPalCallbackView,
+    PesapalCallbackView,
+    PesapalInitiateView,
+    PesapalIPNView,
 )
 
 urlpatterns = [
@@ -26,6 +29,9 @@ urlpatterns = [
     path('verify/<str:checkout_request_id>/', PaymentVerifyView.as_view(), name='payment_verify'),
     path('paypal/callback/', PayPalCallbackView.as_view(), name='paypal_callback'),
     path('card/callback/', CardCallbackView.as_view(), name='card_callback'),
+    path('pesapal/initiate/', PesapalInitiateView.as_view(), name='pesapal_initiate'),
+    path('pesapal/callback/', PesapalCallbackView.as_view(), name='pesapal_callback'),
+    path('pesapal/ipn/', PesapalIPNView.as_view(), name='pesapal_ipn'),
     path('admin/reconcile/', AdminReconcilePaymentsView.as_view(), name='admin_reconcile_payments'),
     path('admin/reconcile/candidates/', AdminReconcileCandidatesView.as_view(), name='admin_reconcile_candidates'),
 ]

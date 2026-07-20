@@ -55,11 +55,18 @@ services:
       MPESA_SHORTCODE: ${MPESA_SHORTCODE:-174379}
       MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-http://localhost:8000/api/v1/payments/mpesa/callback/}
       MPESA_STRICT_SIGNATURE: ${MPESA_STRICT_SIGNATURE:-false}
-      # Email (SMTP via Gmail)
-      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
+      PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
+      PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
+      PESAPAL_MOCK_MODE: ${PESAPAL_MOCK_MODE:-true}
+      PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
+      PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-http://localhost:8000/api/v1/payments/pesapal/callback/}
+      PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-http://localhost:8000/api/v1/payments/pesapal/ipn/}
+      # Email (SMTP via Brevo — outbound transactional mail)
+      EMAIL_HOST: ${EMAIL_HOST:-smtp-relay.brevo.com}
       EMAIL_PORT: ${EMAIL_PORT:-587}
-      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-malaikanest7@gmail.com}
-      # EMAIL_HOST_PASSWORD intentionally NOT set here so the value from backend/.env is used
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-b2ad26001@smtp-brevo.com}
+      # EMAIL_HOST_PASSWORD intentionally NOT set here so the value from backend/.env (env_file) is used
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <hello@malaikanest.com>}
     depends_on:
@@ -124,6 +131,13 @@ services:
       # EMAIL_HOST_PASSWORD intentionally NOT set here so the value from backend/.env is used
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <hello@malaikanest.com>}
+      PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
+      PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
+      PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
+      PESAPAL_MOCK_MODE: ${PESAPAL_MOCK_MODE:-true}
+      PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
+      PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-http://localhost:8000/api/v1/payments/pesapal/callback/}
+      PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-http://localhost:8000/api/v1/payments/pesapal/ipn/}
     depends_on:
       backend:
         condition: service_started

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, type RefObject } from 'react';
 import { Save, Upload, Image as ImageIcon, Palette, MessageCircle, Phone, Globe, MapPin, Clock, Plus, X } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 
@@ -65,6 +65,31 @@ export default function AdminBrandingPage() {
   const inputClass = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none';
   const inputStyle = { background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' };
 
+  const logoFileRef = useRef<HTMLInputElement>(null);
+  const faviconFileRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (key: 'logo_url' | 'favicon_url', fileRef: RefObject<HTMLInputElement>) => {
+    const input = fileRef.current;
+    const file = input?.files?.[0];
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/branding/upload', { method: 'POST', body: fd });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Upload failed');
+      }
+      const data = await res.json();
+      update(key, data.url);
+      showToast('Image uploaded — remember to Save All Changes', 'success');
+    } catch (e: any) {
+      showToast(e.message || 'Upload failed', 'error');
+    } finally {
+      if (input) input.value = '';
+    }
+  };
+
   if (loading) return <div className="text-center py-20" style={{ color: 'var(--brand-text-muted)' }}>Loading…</div>;
 
   return (
@@ -87,12 +112,26 @@ export default function AdminBrandingPage() {
         <div className="space-y-3">
           <div>
             <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Logo URL</label>
-            <input value={settings.logo_url || ''} onChange={(e) => update('logo_url', e.target.value)} placeholder="https://res.cloudinary.com/…/logo.png (leave empty for built-in SVG)" className={inputClass} style={inputStyle} />
-            <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>Paste a Cloudinary/CDN URL. Leave empty to use the built-in swaddle-baby SVG logo.</p>
+            <div className="flex gap-2">
+              <input value={settings.logo_url || ''} onChange={(e) => update('logo_url', e.target.value)} placeholder="https://res.cloudinary.com/…/logo.png (leave empty for built-in SVG)" className={inputClass} style={inputStyle} />
+              <button type="button" onClick={() => logoFileRef.current?.click()} className="px-3 rounded-xl text-sm font-medium flex-shrink-0" style={{ background: 'var(--brand-warm)', color: 'var(--brand-gold)' }}>Upload</button>
+              <input ref={logoFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={() => handleUpload('logo_url', logoFileRef)} />
+            </div>
+            {settings.logo_url && (
+              <div className="mt-2 inline-block p-2 rounded-xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={settings.logo_url} alt="Logo preview" className="h-12 w-auto object-contain" />
+              </div>
+            )}
+            <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>Upload a file or paste a Cloudinary/CDN URL. Leave empty to use the built-in swaddle-baby SVG logo.</p>
           </div>
           <div>
             <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Favicon URL</label>
-            <input value={settings.favicon_url || ''} onChange={(e) => update('favicon_url', e.target.value)} placeholder="https://res.cloudinary.com/…/favicon.ico (leave empty for /logo.svg)" className={inputClass} style={inputStyle} />
+            <div className="flex gap-2">
+              <input value={settings.favicon_url || ''} onChange={(e) => update('favicon_url', e.target.value)} placeholder="https://res.cloudinary.com/…/favicon.ico (leave empty for /logo.svg)" className={inputClass} style={inputStyle} />
+              <button type="button" onClick={() => faviconFileRef.current?.click()} className="px-3 rounded-xl text-sm font-medium flex-shrink-0" style={{ background: 'var(--brand-warm)', color: 'var(--brand-gold)' }}>Upload</button>
+              <input ref={faviconFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.ico" className="hidden" onChange={() => handleUpload('favicon_url', faviconFileRef)} />
+            </div>
           </div>
         </div>
       </div>

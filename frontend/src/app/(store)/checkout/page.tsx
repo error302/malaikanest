@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CreditCard, Smartphone, Banknote, Lock, ArrowRight } from 'lucide-react';
+import { CreditCard, Smartphone, Banknote, Lock, ArrowRight, Wallet } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
 import api, { handleApiError } from '@/lib/api';
@@ -16,6 +16,7 @@ import { useI18n } from '@/lib/i18n';
 const PAYMENT_METHODS = [
   { value: 'mpesa', labelKey: 'checkout.mpesa', Icon: Smartphone, descKey: 'checkout.mpesaDesc' },
   { value: 'card', labelKey: 'checkout.card', Icon: CreditCard, descKey: 'checkout.cardDesc' },
+  { value: 'pesapal', labelKey: 'checkout.pesapal', Icon: Wallet, descKey: 'checkout.pesapalDesc' },
   { value: 'cash', labelKey: 'checkout.cod', Icon: Banknote, descKey: 'checkout.codDesc' },
 ];
 
@@ -98,6 +99,27 @@ export default function CheckoutPage() {
           router.push(`/checkout/success?order=${receiptNumber}`);
         } else {
           throw new Error(mpesaData?.message || 'M-Pesa initiation failed');
+        }
+      } else if (payment === 'pesapal') {
+        // Initiate Pesapal order and open the hosted payment page
+        const pesapalRes = await api.post('/api/v1/payments/pesapal/initiate/', {
+          order_id: orderId,
+          phone: form.phone,
+          email: form.email,
+          first_name: form.firstName,
+          last_name: form.lastName,
+        });
+        const pesapalData = pesapalRes.data?.data ?? pesapalRes.data;
+
+        if (pesapalData?.redirect_url) {
+          showToast('Opening Pesapal… complete payment to confirm your order.', 'success');
+          // Open the Pesapal hosted page; Pesapal redirects back to our callback
+          // which lands the shopper on the success page. We also send the main
+          // window there so the order is recorded as placed.
+          window.open(pesapalData.redirect_url, '_blank');
+          router.push(`/checkout/success?order=${receiptNumber}`);
+        } else {
+          throw new Error(pesapalData?.detail || 'Pesapal initiation failed');
         }
       } else if (payment === 'card') {
         // Card payment — redirect to payment gateway if URL provided

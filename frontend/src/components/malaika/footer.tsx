@@ -71,7 +71,7 @@ export function Footer({ branding }: FooterProps) {
         >
           {/* Brand */}
           <div className="lg:col-span-4">
-            <Logo />
+            <Logo logoUrl={b?.logo_url} storeName={b?.store_name} tagline={b?.tagline} />
              <p
                className="mt-3 text-sm leading-relaxed max-w-xs"
                style={{ color: 'var(--brand-text-secondary)' }}

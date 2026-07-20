@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Image as ImageIcon, Upload } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
+import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -18,6 +19,10 @@ export default function EditProductPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [variants, setVariants] = useState<VariantForm[]>([]);
+  const [variantsTouched, setVariantsTouched] = useState(false);
   const [form, setForm] = useState<any>(null);
 
   useEffect(() => {
@@ -42,7 +47,20 @@ export default function EditProductPage() {
           image_url: product.image_full_url || product.image_url || '',
         });
 
-        const cats = catRes.data?.results ?? catRes.data?.data?.results ?? catRes.data ?? [];
+        if (Array.isArray(product.variants)) {
+          setVariants(
+            product.variants.map((v: any) => ({
+              id: v.id,
+              color: v.color || '',
+              size: v.size || '',
+              sku: v.sku || '',
+              price_modifier: v.price_modifier ? String(v.price_modifier) : '0',
+              stock: String(v.stock ?? 0),
+            }))
+          );
+        }
+
+        const cats = catRes.data?.results ?? catRes.data?.data?.results ?? catRes.data?.data ?? catRes.data ?? [];
         setCategories(Array.isArray(cats) ? cats : []);
       } catch (err: any) {
         if (!cancelled) {
@@ -58,11 +76,23 @@ export default function EditProductPage() {
     return () => { cancelled = true; };
   }, [params.id, router]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setImageFile(file);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const handleVariantsChange = (next: VariantForm[]) => {
+    setVariants(next);
+    setVariantsTouched(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
-    // Build payload matching AdminProductSerializer
+    // Category/brand ids are UUIDs — send them as strings (never parseInt).
     const payload: Record<string, any> = {
       name: form.name,
       slug: form.slug,
@@ -73,19 +103,43 @@ export default function EditProductPage() {
       status: form.status || 'draft',
       featured: Boolean(form.featured),
       is_active: Boolean(form.is_active),
-      category: form.category ? parseInt(form.category) : null,
+      category: form.category ? form.category : null,
     };
 
     if (form.compare_price) payload.compare_price = form.compare_price;
-    if (form.brand) payload.brand = parseInt(form.brand);
+    if (form.brand) payload.brand = form.brand;
     if (form.sku) payload.sku = form.sku;
     if (form.age_group) payload.age_group = form.age_group;
     if (form.age_range) payload.age_range = form.age_range;
     if (form.size_label) payload.size_label = form.size_label;
-    if (form.image_url) payload.image_url = form.image_url;
+    if (!imageFile && form.image_url) payload.image_url = form.image_url;
+
+    if (variantsTouched) {
+      const clean = variants
+        .filter((v) => v.color)
+        .map((v) => ({
+          id: v.id,
+          color: v.color,
+          size: v.size || null,
+          sku: v.sku || null,
+          price_modifier: v.price_modifier || '0',
+          stock: parseInt(v.stock) || 0,
+        }));
+      payload.variants = clean;
+    }
 
     try {
-      await api.put(`/api/v1/products/admin/products/${params.id}/`, payload);
+      if (imageFile) {
+        const fd = new FormData();
+        Object.entries(payload).forEach(([k, v]) => {
+          if (v !== null && v !== undefined) fd.append(k, String(v));
+        });
+        fd.append('image', imageFile);
+        if (variantsTouched) fd.append('variants', JSON.stringify(payload.variants));
+        await api.put(`/api/v1/products/admin/products/${params.id}/`, fd);
+      } else {
+        await api.put(`/api/v1/products/admin/products/${params.id}/`, payload);
+      }
       showToast('Product updated successfully!', 'success');
       router.push('/admin/products');
     } catch (err: any) {
@@ -153,15 +207,32 @@ export default function EditProductPage() {
             <ImageIcon size={18} style={{ color: 'var(--brand-gold)' }} />
             <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Product Image</h2>
           </div>
-          <div>
-            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Image URL (Cloudinary/CDN)</label>
-            <input value={form.image_url || ''} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…" className={inputClass} style={inputStyle} />
+
+          <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Upload from your computer</label>
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-brown)' }}>
+              <Upload size={15} /> Choose image
+              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            </label>
+            {imageFile && <span className="text-xs truncate" style={{ color: 'var(--brand-text-muted)' }}>{imageFile.name}</span>}
           </div>
-          {form.image_url && (
+
+          {(imagePreview || form.image_url) && (
             <div className="mt-3 w-32 h-32 rounded-xl overflow-hidden border" style={{ borderColor: 'var(--brand-border)' }}>
-              <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
+              <img src={imagePreview || form.image_url} alt="Preview" className="w-full h-full object-cover" />
             </div>
           )}
+
+          <div className="my-4 border-t" style={{ borderColor: 'var(--brand-border)' }} />
+
+          <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>…or paste an image URL (Cloudinary/CDN)</label>
+          <input value={form.image_url || ''} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…" className={inputClass} style={inputStyle} disabled={!!imageFile} />
+        </div>
+
+        {/* Variants */}
+        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Variants (color / size)</h2>
+          <VariantEditor variants={variants} onChange={handleVariantsChange} />
         </div>
 
         <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>

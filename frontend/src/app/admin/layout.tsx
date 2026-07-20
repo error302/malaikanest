@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useState } from 'react';
+import { Logo } from '@/components/malaika/logo';
+import type { Branding } from '@/lib/settings';
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
@@ -49,6 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [branding, setBranding] = useState<Partial<Branding>>({});
 
   useEffect(() => {
     if (!isLoading) {
@@ -59,6 +62,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     }
   }, [user, isAdmin, isLoading, router]);
+
+  useEffect(() => {
+    fetch('/api/admin/branding')
+      .then((r) => r.json())
+      .then((data) => setBranding(data.settings || {}))
+      .catch(() => {});
+  }, []);
 
   // Don't render admin chrome on the login page
   if (pathname === '/admin/login') {
@@ -83,9 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar - desktop */}
       <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 border-r" style={{ background: 'var(--brand-brown-dark)', borderColor: 'rgba(255,255,255,0.08)' }}>
         <div className="p-5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--brand-gold)' }}>
-            <span className="font-serif font-bold text-white text-sm">M</span>
-          </div>
+          <Logo logoUrl={branding.logo_url} storeName={branding.store_name} tagline={branding.tagline} className="[&_img]:h-9 [&_img]:w-9" />
           <div>
             <div className="font-serif text-sm font-semibold text-white">Malaika Nest</div>
             <div className="text-[10px] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>Admin Panel</div>
@@ -130,13 +138,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-[200]" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setSidebarOpen(false)}>
           <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col" style={{ background: 'var(--brand-brown-dark)' }} onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--brand-gold)' }}>
-                  <span className="font-serif font-bold text-white text-sm">M</span>
-                </div>
-                <div className="font-serif text-sm font-semibold text-white">Admin Panel</div>
-              </div>
+             <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-2.5">
+                 <Logo logoUrl={branding.logo_url} storeName={branding.store_name} tagline={branding.tagline} className="[&_img]:h-8 [&_img]:w-8" />
+                 <div className="font-serif text-sm font-semibold text-white">Admin Panel</div>
+               </div>
               <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar">
                 <X size={20} className="text-white" />
               </button>

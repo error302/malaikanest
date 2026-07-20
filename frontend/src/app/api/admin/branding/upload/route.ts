@@ -6,13 +6,17 @@ import path from 'path';
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml']);
 
+// Persist uploads under the mounted CMS volume (/app/data) so they survive
+// container rebuilds. Served back via /api/branding/uploads/[filename].
+const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads', 'branding');
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/admin/branding/upload — accept a single image file and save it
- * under /public/uploads/branding/. Returns the public URL the front-end can
- * paste into the "Logo URL" / "Favicon URL" field.
+ * under the persistent uploads directory. Returns a URL the front-end can
+ * store as `logo_url` / `favicon_url`.
  *
  * Body: multipart/form-data with one file field (any name).
  */
@@ -37,14 +41,13 @@ export async function POST(req: NextRequest) {
       'png'
     ).toLowerCase();
 
-    const dir = path.join(process.cwd(), 'public', 'uploads', 'branding');
-    if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+    if (!existsSync(UPLOAD_DIR)) await mkdir(UPLOAD_DIR, { recursive: true });
     const filename = `logo-${Date.now()}.${ext}`;
-    const fullPath = path.join(dir, filename);
+    const fullPath = path.join(UPLOAD_DIR, filename);
     const buf = Buffer.from(await f.arrayBuffer());
     await writeFile(fullPath, buf);
 
-    return NextResponse.json({ url: `/uploads/branding/${filename}`, filename, bytes: f.size });
+    return NextResponse.json({ url: `/api/branding/uploads/${filename}`, filename, bytes: f.size });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? 'Upload failed' }, { status: 500 });
   }

@@ -20,7 +20,8 @@ from rest_framework.views import APIView
 
 from apps.orders.models import Order
 from .models import Payment, PaymentAuditLog
-from .tasks import reconcile_payments_task, verify_mpesa_payment_async
+from .gateway import PaymentGatewayFactory
+from .tasks import reconcile_payments_task, verify_mpesa_payment_async, verify_pesapal_payment_async
 
 logger = logging.getLogger("apps.payments")
 
@@ -61,7 +62,7 @@ class InitiatePaymentView(APIView):
         order_id = request.data.get("order_id")
         payment_method = request.data.get("payment_method", "mpesa")
 
-        if payment_method not in ["mpesa", "paypal", "card"]:
+        if payment_method not in ["mpesa", "paypal", "card", "pesapal"]:
             return Response({"detail": "Invalid payment method"}, status=status.HTTP_400_BAD_REQUEST)
 
         if payment_method == "mpesa" and not request.data.get("phone"):
@@ -93,6 +94,8 @@ class InitiatePaymentView(APIView):
 
         if payment_method == "mpesa":
             return Response({"payment_id": payment.id, "payment_method": "mpesa"})
+        if payment_method == "pesapal":
+            return Response({"payment_id": payment.id, "payment_method": "pesapal"})
         if payment_method == "paypal":
             return Response({"detail": "PayPal not yet supported"}, status=status.HTTP_501_NOT_IMPLEMENTED)
         return Response({"detail": "Card payment not yet supported"}, status=status.HTTP_501_NOT_IMPLEMENTED)
@@ -346,6 +349,191 @@ class MpesaCallbackView(APIView):
             response_dict = {"ResultCode": 0, "ResultDesc": "Accepted"}
         return JsonResponse(response_dict, status=200)
 
+@method_decorator(csrf_exempt, name="dispatch")
+class PesapalInitiateView(APIView):
+    """
+    POST /api/v1/payments/pesapal/initiate/
+
+    Creates (or reuses) a Payment for the order and calls Pesapal SubmitOrder.
+    Returns the `redirect_url` the shopper must open to complete payment.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "payments"
+
+    def post(self, request):
+        order_id = request.data.get("order_id")
+        if not order_id:
+            return Response({"detail": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = resolve_order_for_request(request, order_id)
+        if not order:
+            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        if order.status != "pending":
+            return Response({"detail": "Order not in pending state"}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment, _ = Payment.objects.get_or_create(
+            order=order,
+            defaults={
+                "amount": order.total,
+                "payment_method": "pesapal",
+                "status": "initiated",
+                "phone_number": request.data.get("phone") or order.guest_phone,
+            },
+        )
+
+        try:
+            if Decimal(str(payment.amount)) != Decimal(str(order.total)):
+                return Response({"detail": "Order total mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+        except (InvalidOperation, TypeError):
+            return Response({"detail": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if payment.status == "completed":
+            return Response(
+                {"detail": "Payment already completed", "payment_id": payment.id, "redirect_url": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        billing = {
+            "email": request.data.get("email") or order.guest_email,
+            "phone": request.data.get("phone") or order.guest_phone,
+            "first_name": request.data.get("first_name") or order.shipping_first_name,
+            "last_name": request.data.get("last_name") or order.shipping_last_name,
+            "country_code": request.data.get("country_code", "KE"),
+        }
+
+        try:
+            gateway = PaymentGatewayFactory.create("pesapal")
+            result = gateway.initiate(payment, **billing)
+        except Exception as exc:
+            logger.exception("Pesapal initiate failed for order %s: %s", order.id, exc)
+            return Response({"detail": f"Pesapal initiation failed: {exc}"}, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(
+            {
+                "payment_id": payment.id,
+                "order_id": order.id,
+                "redirect_url": result.get("redirect_url"),
+                "tracking_id": result.get("tracking_id"),
+            }
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PesapalCallbackView(APIView):
+    """
+    GET (browser redirect) /api/v1/payments/pesapal/callback/
+
+    Pesapal redirects the shopper's browser here after they finish on Pesapal.
+    We resolve the order and send the browser to the storefront success page;
+    final fulfilment is performed by the IPN view.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        tracking_id = (request.query_params.get("pesapal_transaction_tracking_id") or "").strip()
+        merchant_ref = (request.query_params.get("pesapal_merchant_reference") or "").strip()
+
+        payment = None
+        if tracking_id:
+            payment = Payment.objects.filter(pesapal_tracking_id=tracking_id).select_related("order").first()
+        if not payment and merchant_ref:
+            payment = Payment.objects.filter(pesapal_merchant_reference=merchant_ref).select_related("order").first()
+
+        receipt = payment.order.receipt_number if payment else ""
+        frontend = os.getenv("FRONTEND_URL", "https://malaikanest.com").rstrip("/")
+        success_url = f"{frontend}/checkout/success?order={receipt}"
+        return JsonResponse({"status": "ok", "redirect": success_url}, status=200)
+
+    def post(self, request):
+        return self.get(request)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PesapalIPNView(APIView):
+    """
+    POST/GET /api/v1/payments/pesapal/ipn/
+
+    Pesapal's IPN webhook. We must reply with the IPN acknowledgement JSON and
+    then query the real transaction status to confirm the money. Pesapal's
+    callback/IPN only carries the tracking + merchant reference — the actual
+    status is fetched via GetTransactionStatus.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def _respond(self, tracking_id, merchant_ref, http_status=200):
+        return JsonResponse(
+            {
+                "orderNotificationType": "IPNCHANGE",
+                "orderTrackingId": tracking_id or "",
+                "orderMerchantReference": merchant_ref or "",
+                "status": 200,
+            },
+            status=http_status,
+        )
+
+    def post(self, request):
+        data = request.data if isinstance(request.data, dict) else {}
+        tracking_id = (
+            data.get("pesapal_transaction_tracking_id")
+            or request.query_params.get("pesapal_transaction_tracking_id")
+            or _extract_param(request.body, "pesapal_transaction_tracking_id")
+            or ""
+        ).strip()
+        merchant_ref = (
+            data.get("pesapal_merchant_reference")
+            or request.query_params.get("pesapal_merchant_reference")
+            or _extract_param(request.body, "pesapal_merchant_reference")
+            or ""
+        ).strip()
+
+        if not tracking_id and not merchant_ref:
+            return self._respond(tracking_id, merchant_ref, http_status=200)
+
+        payment = None
+        if tracking_id:
+            payment = Payment.objects.filter(pesapal_tracking_id=tracking_id).select_related("order").first()
+        if not payment and merchant_ref:
+            payment = Payment.objects.filter(pesapal_merchant_reference=merchant_ref).select_related("order").first()
+
+        if not payment:
+            audit_log(
+                event_type="ipn_received",
+                payload={"tracking_id": tracking_id, "merchant_ref": merchant_ref},
+                notes="IPN for unknown payment",
+                source="ipn",
+            )
+            return self._respond(tracking_id, merchant_ref)
+
+        try:
+            from .pesapal import PesapalService
+
+            status_resp = PesapalService.get_transaction_status(payment.pesapal_tracking_id)
+            PesapalService.apply_status(payment, status_resp, source="ipn")
+        except Exception as exc:
+            logger.exception("Pesapal IPN status check failed for payment %s: %s", payment.pk, exc)
+
+        return self._respond(tracking_id, merchant_ref)
+
+    def get(self, request):
+        return self.post(request)
+
+
+def _extract_param(body, key):
+    if not body:
+        return ""
+    try:
+        text = body.decode("utf-8") if isinstance(body, bytes) else str(body)
+    except Exception:
+        return ""
+    import re
+
+    m = re.search(rf"{re.escape(key)}=([^&\s]+)", text)
+    return m.group(1) if m else ""
+
+
 class AdminReconcileCandidatesView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
@@ -356,9 +544,8 @@ class AdminReconcileCandidatesView(APIView):
 
         candidates = (
             Payment.objects.select_related("order")
-            .filter(payment_method="mpesa", status="initiated", created_at__lt=cutoff)
-            .exclude(mpesa_checkout_request_id__isnull=True)
-            .exclude(mpesa_checkout_request_id="")
+            .filter(payment_method__in=["mpesa", "pesapal"], status="initiated", created_at__lt=cutoff)
+            .exclude(mpesa_checkout_request_id__isnull=True, pesapal_tracking_id__isnull=True)
             .order_by("created_at")[:limit]
         )
 
@@ -387,16 +574,19 @@ class AdminReconcilePaymentsView(APIView):
         limit = min(int(request.data.get("limit", 200)), 500)
 
         if payment_id or order_id:
+            from .tasks import verify_mpesa_payment_async, verify_pesapal_payment_async
+
             payment = None
             if payment_id:
-                payment = Payment.objects.filter(pk=payment_id, payment_method="mpesa").first()
+                payment = Payment.objects.filter(pk=payment_id, payment_method__in=["mpesa", "pesapal"]).first()
             elif order_id:
-                payment = Payment.objects.filter(order_id=order_id, payment_method="mpesa").first()
+                payment = Payment.objects.filter(order_id=order_id, payment_method__in=["mpesa", "pesapal"]).first()
 
             if not payment:
                 return Response({"detail": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            verify_mpesa_payment_async.delay(payment.id)
+            verify_task = verify_pesapal_payment_async if payment.payment_method == "pesapal" else verify_mpesa_payment_async
+            verify_task.delay(payment.id)
             audit_log(
                 event_type="reconcile_queued",
                 payload={"payment_id": payment.id, "trigger": "admin_endpoint"},

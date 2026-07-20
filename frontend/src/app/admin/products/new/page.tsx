@@ -3,16 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Image as ImageIcon, Upload } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
+import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   full_slug?: string;
-  parent?: number | null;
+  parent?: string | null;
   children?: Category[];
 }
 
@@ -20,6 +21,9 @@ export default function NewProductPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [variants, setVariants] = useState<VariantForm[]>([]);
   const [form, setForm] = useState({
     name: '', slug: '', description: '', price: '', compare_price: '', stock: '0',
     category: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
@@ -37,7 +41,7 @@ export default function NewProductPage() {
         });
         if (cancelled) return;
         const data = res.data;
-        const cats = data?.results ?? data?.data?.results ?? data ?? [];
+        const cats = data?.results ?? data?.data?.results ?? data?.data ?? data ?? [];
         setCategories(Array.isArray(cats) ? cats : []);
       } catch {
         if (!cancelled) setCategories([]);
@@ -60,35 +64,59 @@ export default function NewProductPage() {
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setImageFile(file);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(file ? URL.createObjectURL(file) : null);
+    if (file) setForm((prev) => ({ ...prev, image_url: '' }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
-    // Build the payload matching AdminProductSerializer fields exactly
-    const payload: Record<string, any> = {
-      name: form.name,
-      slug: form.slug || generateSlug(form.name),
-      description: form.description || '',
-      price: form.price,  // send as string — Django Decimal field accepts string
-      stock: parseInt(form.stock) || 0,
-      gender: form.gender,
-      status: form.status,
-      featured: form.featured,
-      is_active: form.is_active,
-      category: form.category ? parseInt(form.category) : null,
-    };
+    // Category ids are UUIDs — send them as strings (never parseInt).
+    const fd = new FormData();
+    fd.append('name', form.name);
+    fd.append('slug', form.slug || generateSlug(form.name));
+    fd.append('description', form.description || '');
+    fd.append('price', form.price);
+    fd.append('stock', String(parseInt(form.stock) || 0));
+    fd.append('gender', form.gender);
+    fd.append('status', form.status);
+    fd.append('featured', form.featured ? 'true' : 'false');
+    fd.append('is_active', form.is_active ? 'true' : 'false');
+    if (form.category) fd.append('category', form.category);
+    if (form.compare_price) fd.append('compare_price', form.compare_price);
+    if (form.brand) fd.append('brand', form.brand);
+    if (form.sku) fd.append('sku', form.sku);
+    if (form.age_group) fd.append('age_group', form.age_group);
+    if (form.age_range) fd.append('age_range', form.age_range);
+    if (form.size_label) fd.append('size_label', form.size_label);
 
-    // Only include optional fields if they have values
-    if (form.compare_price) payload.compare_price = form.compare_price;
-    if (form.brand) payload.brand = parseInt(form.brand);
-    if (form.sku) payload.sku = form.sku;
-    if (form.age_group) payload.age_group = form.age_group;
-    if (form.age_range) payload.age_range = form.age_range;
-    if (form.size_label) payload.size_label = form.size_label;
-    if (form.image_url) payload.image_url = form.image_url;
+    // Local file upload takes precedence over a pasted URL.
+    if (imageFile) {
+      fd.append('image', imageFile);
+    } else if (form.image_url) {
+      fd.append('image_url', form.image_url);
+    }
+
+    if (variants.length > 0) {
+      const clean = variants
+        .filter((v) => v.color)
+        .map((v) => ({
+          color: v.color,
+          size: v.size || null,
+          sku: v.sku || null,
+          price_modifier: v.price_modifier || '0',
+          stock: parseInt(v.stock) || 0,
+        }));
+      if (clean.length > 0) fd.append('variants', JSON.stringify(clean));
+    }
 
     try {
-      await api.post('/api/v1/products/admin/products/', payload);
+      await api.post('/api/v1/products/admin/products/', fd);
       showToast('Product created successfully!', 'success');
       router.push('/admin/products');
     } catch (err: any) {
@@ -163,16 +191,32 @@ export default function NewProductPage() {
             <ImageIcon size={18} style={{ color: 'var(--brand-gold)' }} />
             <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Product Image</h2>
           </div>
-          <div>
-            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Image URL (Cloudinary/CDN)</label>
-            <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…/product.jpg" className={inputClass} style={inputStyle} />
-            <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>Paste a Cloudinary URL. The backend will download and store it.</p>
+
+          <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Upload from your computer</label>
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-brown)' }}>
+              <Upload size={15} /> Choose image
+              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            </label>
+            {imageFile && <span className="text-xs truncate" style={{ color: 'var(--brand-text-muted)' }}>{imageFile.name}</span>}
           </div>
-          {form.image_url && (
+
+          {(imagePreview || form.image_url) && (
             <div className="mt-3 w-32 h-32 rounded-xl overflow-hidden border" style={{ borderColor: 'var(--brand-border)' }}>
-              <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
+              <img src={imagePreview || form.image_url} alt="Preview" className="w-full h-full object-cover" />
             </div>
           )}
+
+          <div className="my-4 border-t" style={{ borderColor: 'var(--brand-border)' }} />
+
+          <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>…or paste an image URL (Cloudinary/CDN)</label>
+          <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…/product.jpg" className={inputClass} style={inputStyle} disabled={!!imageFile} />
+        </div>
+
+        {/* Variants */}
+        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Variants (color / size)</h2>
+          <VariantEditor variants={variants} onChange={setVariants} />
         </div>
 
         {/* Pricing */}

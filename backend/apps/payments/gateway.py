@@ -83,6 +83,57 @@ class MockMpesaGateway(PaymentGateway):
         return {"status": "cancelled"}
 
 
+class PesapalGateway(PaymentGateway):
+    """Pesapal (M-Pesa + cards + mobile money) redirect-based gateway."""
+
+    def initiate(self, payment: Payment, **kwargs) -> dict[str, Any]:
+        from .pesapal import PesapalService
+
+        billing = {
+            "email": kwargs.get("email"),
+            "phone": kwargs.get("phone") or payment.phone_number,
+            "first_name": kwargs.get("first_name"),
+            "last_name": kwargs.get("last_name"),
+            "country_code": kwargs.get("country_code", "KE"),
+        }
+        result = PesapalService.submit_order(payment, billing)
+        return {
+            "redirect_url": result.get("redirect_url"),
+            "tracking_id": result.get("order_tracking_id"),
+            "status": "initiated",
+        }
+
+    def verify(self, payment: Payment, **kwargs) -> dict[str, Any]:
+        from .pesapal import PesapalService
+
+        if not payment.pesapal_tracking_id:
+            return {"status": payment.status}
+        try:
+            status = PesapalService.get_transaction_status(payment.pesapal_tracking_id)
+            return {
+                "status": payment.status,
+                "payment_status": status.get("payment_status"),
+                "confirmation_code": status.get("confirmation_code"),
+            }
+        except Exception as exc:
+            logger.warning("Pesapal verify failed for payment %s: %s", payment.pk, exc)
+            return {"status": payment.status, "error": str(exc)}
+
+    def cancel(self, payment: Payment, **kwargs) -> dict[str, Any]:
+        from .pesapal import PesapalService
+
+        with transaction.atomic():
+            p = Payment.objects.select_for_update().get(pk=payment.pk)
+            p.status = "cancelled"
+            p.save(update_fields=["status", "updated_at"])
+        if p.pesapal_tracking_id:
+            try:
+                PesapalService.cancel_order(p.pesapal_tracking_id)
+            except Exception as exc:
+                logger.warning("Pesapal cancel failed for payment %s: %s", payment.pk, exc)
+        return {"status": "cancelled"}
+
+
 class UnimplementedGateway(PaymentGateway):
     """Placeholder for future gateways (card, PayPal, bank transfer)."""
 
@@ -126,6 +177,7 @@ class PaymentGatewayFactory:
 
 PaymentGatewayFactory.register("mpesa", MpesaGateway)
 PaymentGatewayFactory.register("mock_mpesa", MockMpesaGateway)
+PaymentGatewayFactory.register("pesapal", PesapalGateway)
 PaymentGatewayFactory.register("paypal", lambda: UnimplementedGateway("paypal"))
 PaymentGatewayFactory.register("card", lambda: UnimplementedGateway("card"))
 PaymentGatewayFactory.register("bank_transfer", lambda: UnimplementedGateway("bank transfer"))

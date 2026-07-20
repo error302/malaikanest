@@ -26,6 +26,7 @@ import {
 import { Logo } from './logo';
 import { LanguageToggle } from './language-toggle';
 import { useI18n } from '@/lib/i18n';
+import type { Branding } from '@/lib/settings';
 
 const NAV_LINKS = [
   { nameKey: 'nav.home', href: '/' },
@@ -51,7 +52,7 @@ const SHOP_CATEGORIES = [
 
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
 
-export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
+export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCount?: number; wishlistCount?: number; branding?: Branding }) {
   const router = useRouter();
   const { t } = useI18n();
   const [shopOpen, setShopOpen] = useState(false);
@@ -127,7 +128,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             className="flex-shrink-0"
             aria-label="Malaika Nest home"
           >
-            <Logo />
+            <Logo logoUrl={branding?.logo_url} storeName={branding?.store_name} tagline={branding?.tagline} />
           </Link>
 
           {/* Desktop nav */}
@@ -542,7 +543,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               className="flex items-center justify-between h-16 px-5"
               style={{ borderBottom: '1px solid var(--brand-border)' }}
             >
-              <Logo />
+              <Logo logoUrl={branding?.logo_url} storeName={branding?.store_name} tagline={branding?.tagline} />
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}

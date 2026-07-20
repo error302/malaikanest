@@ -154,6 +154,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "meta_title",
             "meta_description",
             "image",
+            "images",
             "image_url",
             "is_active",
             "has_variants",
@@ -215,6 +216,25 @@ class ProductSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             return f"https://malaikanest.com{url}"
         return None
+
+    def get_images(self, obj):
+        items = []
+        for img in obj.images.all():
+            if not img.image:
+                continue
+            raw = img.image.name if hasattr(img.image, "name") else str(img.image)
+            if raw.startswith("http://") or raw.startswith("https://"):
+                url = raw
+            else:
+                url = img.image.url
+                if not (url.startswith("http://") or url.startswith("https://")):
+                    request = self.context.get("request")
+                    if request:
+                        url = request.build_absolute_uri(url)
+                    else:
+                        url = f"https://malaikanest.com{url}"
+            items.append({"url": url, "alt_text": img.alt_text, "is_primary": img.is_primary})
+        return items
 
     def get_is_in_stock(self, obj):
         try:

@@ -4,44 +4,34 @@ import React from 'react';
 import { useCart } from '@/lib/cartContext';
 import { useWishlist } from '@/lib/wishlistContext';
 import { AnnouncementBar } from '@/components/malaika/announcement-bar';
+import { Navbar } from '@/components/malaika/navbar';
+import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
 import type { Branding } from '@/lib/settings';
 
 /**
- * Wraps the storefront with live cart/wishlist counts injected into
- * the Navbar and MobileBottomNav. Children = the page body (main + footer).
+ * Wraps the storefront with live cart/wishlist counts injected into the Navbar
+ * and MobileBottomNav. We render Navbar/MobileBottomNav here (passing
+ * `branding` as a direct, serializable prop) rather than accepting them as
+ * element-props from the server layout — Next.js cannot reliably serialize an
+ * element that itself carries a complex object prop, which surfaced as a
+ * "Element type is invalid" during static prerendering.
+ *
+ * Children = the page body (main + footer).
  */
 interface StoreShellProps {
   branding: Branding;
-  navbar: React.ReactNode;
-  mobileNav: React.ReactNode;
   children: React.ReactNode;
 }
 
-function NavbarWithCounts({ navbar }: { navbar: React.ReactElement }) {
+export function StoreShell({ branding, children }: StoreShellProps) {
   const { items } = useCart();
   const { count: wishlistCount } = useWishlist();
-  return React.cloneElement(navbar, {
-    cartCount: items.length,
-    wishlistCount,
-  } as { cartCount: number; wishlistCount: number });
-}
-
-function MobileNavWithCounts({ mobileNav }: { mobileNav: React.ReactElement }) {
-  const { items } = useCart();
-  const { count: wishlistCount } = useWishlist();
-  return React.cloneElement(mobileNav, {
-    cartCount: items.length,
-    wishlistCount,
-  } as { cartCount: number; wishlistCount: number });
-}
-
-export function StoreShell({ branding, navbar, mobileNav, children }: StoreShellProps) {
   return (
     <div className="min-h-screen flex flex-col bg-grain pb-16 lg:pb-0">
       <AnnouncementBar messages={branding.announcement_messages} />
-      <NavbarWithCounts navbar={navbar} />
+      <Navbar branding={branding} cartCount={items.length} wishlistCount={wishlistCount} />
       {children}
-      <MobileNavWithCounts mobileNav={mobileNav} />
+      <MobileBottomNav cartCount={items.length} wishlistCount={wishlistCount} />
     </div>
   );
 }
