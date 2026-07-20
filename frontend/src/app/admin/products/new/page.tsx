@@ -108,27 +108,64 @@ export default function NewProductPage() {
 
   const payload = () => {
     const slug = form.slug.trim() || slugify(form.name);
-    const fd = new FormData();
-    fd.append('name', form.name);
-    fd.append('slug', slug);
-    fd.append('description', form.description);
-    fd.append('price', String(parseFloat(form.price) || 0));
-    fd.append('compare_price', form.compare_price ? String(parseFloat(form.compare_price)) : '');
-    fd.append('stock', String(parseInt(form.stock) || 0));
-    fd.append('category', form.category_id);
-    fd.append('sku', form.sku);
-    fd.append('gender', form.gender);
-    fd.append('age_group', form.age_group);
-    fd.append('age_range', form.age_range);
-    fd.append('size_label', form.size_label);
-    fd.append('featured', form.featured ? 'true' : 'false');
-    fd.append('status', form.status);
-    fd.append('is_active', form.status === 'published' ? 'true' : 'false');
-    if (form.image_url) fd.append('image_url', form.image_url);
-    if (imageFile) fd.append('image', imageFile);
+
+    if (imageFile) {
+      // File upload path: use multipart with all fields.
+      const fd = new FormData();
+      fd.append('name', form.name);
+      fd.append('slug', slug);
+      fd.append('description', form.description);
+      fd.append('price', String(parseFloat(form.price) || 0));
+      if (form.compare_price) fd.append('compare_price', String(parseFloat(form.compare_price)));
+      else fd.append('compare_price', '');
+      fd.append('stock', String(parseInt(form.stock) || 0));
+      fd.append('category', form.category_id);
+      fd.append('sku', form.sku);
+      fd.append('brand', form.brand);
+      fd.append('gender', form.gender);
+      fd.append('age_group', form.age_group);
+      fd.append('age_range', form.age_range);
+      fd.append('size_label', form.size_label);
+      fd.append('featured', form.featured ? 'true' : 'false');
+      fd.append('status', form.status);
+      fd.append('is_active', form.status === 'published' ? 'true' : 'false');
+      if (form.image_url) fd.append('image_url', form.image_url);
+      fd.append('image', imageFile);
+      const vp = buildVariantsPayload();
+      if (vp.length) {
+        // Send each variant as a separate form field so DRF MultipartParser
+        // receives a plain list, NOT a JSON string needing double-parse.
+        vp.forEach((variant, i) => {
+          Object.entries(variant).forEach(([k, v]) => fd.append(`variants[${i}][${k}]`, String(v)));
+        });
+      }
+      return fd;
+    }
+
+    // JSON body (no file). Nested arrays and primitives arrive to the serializer
+    // as native objects/strings — no JSON-in-formstring traps.
+    const body: Record<string, unknown> = {
+      name: form.name,
+      slug,
+      description: form.description,
+      price: parseFloat(form.price) || 0,
+      compare_price: form.compare_price ? parseFloat(form.compare_price) : null,
+      stock: parseInt(form.stock) || 0,
+      category: form.category_id,
+      sku: form.sku,
+      brand: form.brand,
+      gender: form.gender,
+      age_group: form.age_group,
+      age_range: form.age_range,
+      size_label: form.size_label,
+      featured: form.featured,
+      status: form.status,
+      is_active: form.status === 'published',
+    };
+    if (form.image_url) body.image_url = form.image_url;
     const vp = buildVariantsPayload();
-    if (vp.length) fd.append('variants', JSON.stringify(vp));
-    return fd;
+    if (vp.length) body.variants = vp;
+    return body;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,7 +229,8 @@ export default function NewProductPage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>SKU</label>
-                <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className={inputClass} style={inputStyle} />
+                <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="Auto-generated if left blank" className={inputClass} style={inputStyle} />
+                <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>Leave blank to auto-generate a unique SKU.</p>
               </div>
               <div>
                 <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Category</label>

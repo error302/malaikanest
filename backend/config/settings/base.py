@@ -187,6 +187,15 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_SAMESITE": os.getenv("AUTH_COOKIE_SAMESITE", "Strict"),
 }
 
+# SECURITY: require a dedicated SIMPLE_JWT_SECRET in production so a leaked
+# session-cookie SECRET_KEY doesn't also expose the JWT signing key. In
+# development we fall back to SECRET_KEY so local setup "just works".
+if production_env_requested and not os.getenv("SIMPLE_JWT_SECRET"):
+    raise ImproperlyConfigured(
+        "SIMPLE_JWT_SECRET environment variable is strictly required in production. "
+        "Reusing SECRET_KEY for JWT signing is rejected."
+    )
+
 # Optional cookie domain so auth works across www/non-www.
 # Example: ".malaikanest.com"
 AUTH_COOKIE_DOMAIN = os.getenv("AUTH_COOKIE_DOMAIN") or None

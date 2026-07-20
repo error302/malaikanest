@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /wishlist/
+Disallow: /orders/
+Disallow: /wishlist
+Disallow: /cart
+
+Sitemap: https://malaikanest.com/sitemap.xml
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /

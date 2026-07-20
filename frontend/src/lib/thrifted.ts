@@ -40,6 +40,27 @@ export const CONDITION_COLORS: Record<string, string> = {
 // Sample thrifted catalog emptied — admin uploads real mtumba items via Prisma/DB.
 const SAMPLE_THRIFTED: ThriftedProduct[] = [];
 
+const THRIFTED_CACHE_TTL = 60_000;
+const _thriftedCache = new Map<string, { data: unknown; ts: number }>();
+
+function _tCacheGet<T>(key: string, ttl: number): T | null {
+  const entry = _thriftedCache.get(key);
+  if (entry && Date.now() - entry.ts < ttl) return entry.data as T;
+  return null;
+}
+
+function _tCacheSet<T>(key: string, data: T): void {
+  _thriftedCache.set(key, { data, ts: Date.now() });
+  if (_thriftedCache.size > 30) {
+    const firstKey = _thriftedCache.keys().next().value;
+    if (firstKey !== undefined) _thriftedCache.delete(firstKey);
+  }
+}
+
+export function clearThriftedCache(): void {
+  _thriftedCache.clear();
+}
+
 function normalize(row: any): ThriftedProduct {
   return {
     id: row.id,
@@ -64,24 +85,32 @@ function normalize(row: any): ThriftedProduct {
 
 /** Get featured thrifted items for the homepage section. */
 export async function getFeaturedThrifted(limit = 4): Promise<ThriftedProduct[]> {
+  const cacheKey = `featured:${limit}`;
+  const cached = _tCacheGet<ThriftedProduct[]>(cacheKey, THRIFTED_CACHE_TTL);
+  if (cached) return cached;
+
+  let result: ThriftedProduct[] = [];
   try {
     const rows = await db.thriftedProduct.findMany({
       where: { isFeatured: true, isAvailable: true, isActive: true },
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
-    if (rows.length > 0) return rows.map(normalize);
-    // Fallback: any available thrifted items
-    const anyRows = await db.thriftedProduct.findMany({
-      where: { isAvailable: true, isActive: true },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
-    if (anyRows.length > 0) return anyRows.map(normalize);
-    return SAMPLE_THRIFTED.slice(0, limit);
+    if (rows.length > 0) {
+      result = rows.map(normalize);
+    } else {
+      const anyRows = await db.thriftedProduct.findMany({
+        where: { isAvailable: true, isActive: true },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      });
+      result = anyRows.length > 0 ? anyRows.map(normalize) : SAMPLE_THRIFTED.slice(0, limit);
+    }
   } catch {
-    return SAMPLE_THRIFTED.slice(0, limit);
+    result = SAMPLE_THRIFTED.slice(0, limit);
   }
+  _tCacheSet(cacheKey, result);
+  return result;
 }
 
 /** Get all available thrifted items for the browse page (with optional filters). */
@@ -91,6 +120,11 @@ export async function getThriftedProducts(filters?: {
   ageGroup?: string;
   search?: string;
 }): Promise<ThriftedProduct[]> {
+  const cacheKey = `list:${JSON.stringify(filters || {})}`;
+  const cached = _tCacheGet<ThriftedProduct[]>(cacheKey, THRIFTED_CACHE_TTL);
+  if (cached) return cached;
+
+  let result: ThriftedProduct[] = [];
   try {
     const where: any = { isAvailable: true, isActive: true };
     if (filters?.condition) where.condition = filters.condition;
@@ -102,15 +136,17 @@ export async function getThriftedProducts(filters?: {
       where,
       orderBy: { createdAt: 'desc' },
     });
-    if (rows.length > 0) return rows.map(normalize);
-    return SAMPLE_THRIFTED;
+    result = rows.length > 0 ? rows.map(normalize) : SAMPLE_THRIFTED;
   } catch {
-    return SAMPLE_THRIFTED;
+    result = SAMPLE_THRIFTED;
   }
+  _tCacheSet(cacheKey, result);
+  return result;
 }
 
 /** Get a single thrifted product by slug. */
 export async function getThriftedBySlug(slug: string): Promise<ThriftedProduct | null> {
+  // Single-product reads are assumed cheap; keep them uncached.
   try {
     const row = await db.thriftedProduct.findUnique({ where: { slug } });
     if (!row) return null;

@@ -30,6 +30,27 @@ const securityHeaders = [
   { key: 'Content-Security-Policy', value: ContentSecurityPolicy },
 ];
 
+const cacheHeaders = [
+  {
+    source: '/_next/static/:path*',
+    headers: [
+      { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+    ],
+  },
+  {
+    source: '/(favicon.ico|favicon-16x16.png|favicon-32x32.png|favicon-48x48.png|apple-touch-icon.png|android-chrome-192x192.png|android-chrome-512x512.png|mstile-150x150.png|site.webmanifest|logo-og.png|logo-social.png|logo.svg)',
+    headers: [
+      { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+    ],
+  },
+  {
+    source: '/.well-known/:path*',
+    headers: [
+      { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+    ],
+  },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
   typescript: { ignoreBuildErrors: true },
@@ -53,6 +74,7 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: securityHeaders,
       },
+      ...cacheHeaders,
     ];
   },
   async redirects() {

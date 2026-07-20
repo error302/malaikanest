@@ -1,0 +1,12 @@
+# Security disclosures for Malaika Nest
+# This file conforms to https://www.rfc-editor.org/rfc/rfc9116
+# Replace the contact and expiry before publishing.
+Contact: mailto:security@malaikanest.com?subject=Security%20Disclosure
+Contact: https://malaikanest.com/contact
+Expires: 2026-12-31T23:59:59Z
+Preferred-Languages: en, sw
+Canonical: https://malaikanest.com/.well-known/security.txt
+Policy: https://malaikanest.com/security-policy
+Hiring: https://malaikanest.com/about
+Acknowledgements: https://malaikanest.com/security-acknowledgements
+Encryption: https://malaikanest.com/pgp.txt

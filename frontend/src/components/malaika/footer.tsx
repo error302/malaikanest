@@ -259,18 +259,6 @@ export function Footer({ branding }: FooterProps) {
             >
               {t('footer.terms')}
             </Link>
-            <p
-              className="text-[11px] inline-flex items-center gap-1"
-              style={{ color: 'var(--brand-text-muted)' }}
-            >
-              Made with{' '}
-              <Heart
-                size={11}
-                className="fill-current"
-                style={{ color: 'var(--brand-terra)' }}
-              />{' '}
-              from {b?.location || 'Mombasa, Kenya'}
-            </p>
           </div>
         </div>
       </div>

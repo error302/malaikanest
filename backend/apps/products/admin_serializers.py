@@ -248,55 +248,121 @@ class AdminProductSerializer(serializers.ModelSerializer):
         product.image.name = url
 
     def _parse_variants(self):
+        """Normalize variant payloads coming from JSON or multipart bodies.
+
+        Accepts:
+
+        * Native list/dict (JSON body or DRF JSONParser on multipart with
+          nested parts) — each element is already a dict.
+        * A JSON string under the "variants" key — legacy multipart shape.
+        * A multipart flat "variants[N][field]" map — built into a list of
+          dicts grouped by index. Avoids the need to round-trip JSON.
+        """
         request = self.context.get("request")
         if not request:
             return None
 
-        raw_variants = request.data.get("variants")
-        if raw_variants in (None, "", "null"):
+        data = request.data
+        if data is None:
             return None
 
-        try:
-            parsed = json.loads(raw_variants) if isinstance(raw_variants, str) else raw_variants
-        except json.JSONDecodeError:
-            raise serializers.ValidationError({"variants": ["Variants payload is not valid JSON."]})
+        # 1) Already a list of dicts — fastest path (JSON body).
+        if isinstance(data, list):
+            raw = data
+        else:
+            # 2) "variants" under a single key as JSON string or list.
+            raw_variants = data.get("variants") if hasattr(data, "get") else None
+            if raw_variants is None:
+                # 3) Multipart flat map: variants[0][color], variants[0][size], ...
+                raw = self._collect_flat_variants(data)
+            elif isinstance(raw_variants, list):
+                raw = raw_variants
+            elif isinstance(raw_variants, str):
+                try:
+                    parsed = json.loads(raw_variants)
+                except json.JSONDecodeError as exc:
+                    raise serializers.ValidationError(
+                        {"variants": [f"Variants payload is not valid JSON: {exc}"]}
+                    )
+                if not isinstance(parsed, list):
+                    raise serializers.ValidationError(
+                        {"variants": ["Variants payload must be a list."]}
+                    )
+                raw = parsed
+            else:
+                raw = []
 
-        if not isinstance(parsed, list):
-            raise serializers.ValidationError({"variants": ["Variants payload must be a list."]})
+        if raw is None or raw == [] or raw == "":
+            return None
 
         variants = []
-        for index, item in enumerate(parsed):
+        for index, item in enumerate(raw):
             if not isinstance(item, dict):
-                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} is invalid."]})
+                raise serializers.ValidationError(
+                    {"variants": [f"Variant #{index + 1} is invalid."]}
+                )
 
             color = (item.get("color") or "").strip()
             stock = item.get("stock", 0)
             if not color:
-                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} must include a color."]})
+                raise serializers.ValidationError(
+                    {"variants": [f"Variant #{index + 1} must include a color."]}
+                )
 
             try:
                 stock_value = int(stock or 0)
             except (TypeError, ValueError):
-                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} stock must be a number."]})
+                raise serializers.ValidationError(
+                    {"variants": [f"Variant #{index + 1} stock must be a number."]}
+                )
 
             if stock_value < 0:
-                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} stock cannot be negative."]})
+                raise serializers.ValidationError(
+                    {"variants": [f"Variant #{index + 1} stock cannot be negative."]}
+                )
 
-            variants.append(
-                {
-                    "id": item.get("id"),
-                    "color": color,
-                    "size": (item.get("size") or "").strip() or None,
-                    "sku": (item.get("sku") or "").strip() or None,
-                    "price_modifier": item.get("price_modifier") or "0",
-                    "stock": stock_value,
-                    "is_active": bool(item.get("is_active", True)),
-                    "image_url": (item.get("image_url") or "").strip() or None,
-                    "image": request.FILES.get(f"variant_image_{index}"),
-                }
-            )
+            variant_payload = {
+                "id": item.get("id"),
+                "color": color,
+                "size": (item.get("size") or "").strip() or None,
+                "sku": (item.get("sku") or "").strip() or None,
+                "price_modifier": item.get("price_modifier") or "0",
+                "stock": stock_value,
+                "is_active": bool(item.get("is_active", True)),
+                "image": None,
+            }
+            variant_payload["image_url"] = (item.get("image_url") or "").strip() or None
+            variants.append(variant_payload)
 
         return variants
+
+    @staticmethod
+    def _collect_flat_variants(data):
+        """Group 'variants[N][field]' parts from a multipart QueryDict into a list."""
+        if not hasattr(data, "lists"):
+            return []
+        grouped: dict[int, dict[str, str]] = {}
+        for raw_key, values in data.lists():
+            if not raw_key.startswith("variants"):
+                continue
+            # Match variants[N][field] or variants[N] (entire item as JSON).
+            depth_bracket = raw_key.count("[")
+            if depth_bracket < 2:
+                continue
+            try:
+                open_idx = raw_key.index("[")
+                close_idx = raw_key.index("]", open_idx)
+                n_str = raw_key[open_idx + 1:close_idx]
+                idx = int(n_str)
+            except (ValueError, IndexError):
+                continue
+            remainder = raw_key[close_idx + 1:]
+            if remainder.startswith("[") and remainder.endswith("]"):
+                field = remainder[1:-1]
+            else:
+                continue
+            grouped.setdefault(idx, {})[field] = values[-1] if values else ""
+        return [grouped[k] for k in sorted(grouped.keys())]
 
     def _sync_variants(self, product, variants_payload):
         if variants_payload is None:

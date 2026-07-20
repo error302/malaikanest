@@ -51,6 +51,17 @@ class UserSerializer(serializers.ModelSerializer):
             "is_email_verified",
             "date_joined",
         )
+        # SECURITY: privilege/identity fields are read-only. Without this, the
+        # ProfileView (RetrieveUpdateAPIView) lets any authenticated user
+        # PATCH {"is_staff": true, "role": "ADMIN"} to self-promote. Changing
+        # these must go through the admin-only AdminUserViewSet actions.
+        read_only_fields = (
+            "id",
+            "role",
+            "is_staff",
+            "is_email_verified",
+            "date_joined",
+        )
 
 
 class RegisterSerializer(serializers.ModelSerializer):

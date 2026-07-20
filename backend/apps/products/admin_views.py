@@ -129,8 +129,14 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     def promote_to_admin(self, request, pk=None):
         user = self.get_object()
         user.is_staff = True
-        user.role = "admin"
-        user.save(update_fields=["is_staff", "role"])
+        user.role = User.ROLE_ADMIN
+        # Bump token_version so any existing access/refresh tokens are revoked
+        # at next refresh. Without this the user keeps elevated access until
+        # their old JWT expires even after a demote.
+        from apps.accounts.authentication import invalidate_all_user_tokens
+        with transaction.atomic():
+            user.save(update_fields=["is_staff", "role"])
+            invalidate_all_user_tokens(user)
         return Response(self.get_serializer(user).data)
 
     @action(detail=True, methods=["patch"])
@@ -142,8 +148,11 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user.is_staff = False
-        user.role = "customer"
-        user.save(update_fields=["is_staff", "role"])
+        user.role = User.ROLE_CUSTOMER
+        from apps.accounts.authentication import invalidate_all_user_tokens
+        with transaction.atomic():
+            user.save(update_fields=["is_staff", "role"])
+            invalidate_all_user_tokens(user)
         return Response(self.get_serializer(user).data)
 
     @action(detail=True, methods=["patch"])
@@ -154,8 +163,11 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 {"detail": "Cannot deactivate superuser"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        user.is_active = False
-        user.save(update_fields=["is_active"])
+        from apps.accounts.authentication import invalidate_all_user_tokens
+        with transaction.atomic():
+            user.is_active = False
+            user.save(update_fields=["is_active"])
+            invalidate_all_user_tokens(user)
         return Response(self.get_serializer(user).data)
 
     @action(detail=True, methods=["patch"])
@@ -189,20 +201,27 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
         new_status = request.data.get("status")
 
         if new_status not in [
-            "pending",
-            "paid",
-            "processing",
-            "shipped",
-            "delivered",
-            "cancelled",
+            Order.STATUS_PENDING,
+            Order.STATUS_PAID,
+            Order.STATUS_PROCESSING,
+            Order.STATUS_SHIPPED,
+            Order.STATUS_DELIVERED,
+            Order.STATUS_CANCELLED,
         ]:
             return Response(
                 {"detail": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         old_status = order.status
-        order.status = new_status
-        order.save(update_fields=["status", "updated_at"])
+        # Use the state machine so the timestamp fields (paid_at, shipped_at,
+        # etc.) are set automatically. Direct assignment skips those fields
+        # and leaves the order in a half-updated state.
+        ok, err = order.transition_to(new_status, save=True)
+        if not ok:
+            return Response(
+                {"detail": f"Invalid transition: {err}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             from apps.orders.tasks import handle_order_status_change

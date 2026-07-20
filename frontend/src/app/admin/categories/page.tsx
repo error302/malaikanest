@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, Folder, ChevronRight, X, Save } from 'lucide-react';
-import api from '@/lib/api';
+import api, { extractApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 
 interface Category {
@@ -66,7 +66,7 @@ export default function AdminCategoriesPage() {
       closeModal();
       fetchCategories();
     } catch (err: any) {
-      showToast(err?.response?.data?.name?.[0] || err?.response?.data?.detail || 'Failed to create category', 'error');
+      showToast(extractApiError(err, 'Failed to create category'), 'error');
     } finally {
       setSaving(false);
     }

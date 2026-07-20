@@ -34,8 +34,10 @@ ENV DATABASE_URL="file:/app/data/cms.db"
 RUN if [ -f prisma/dev.db ]; then cp prisma/dev.db prisma/seed.db; fi
 
 # Generate the Prisma client and build the optimized production bundle at image
-# build time so container startup is fast.
-RUN npx prisma generate && npx next build
+# build time so container startup is fast. `npm run build` is preferred over
+# `npx next build` because the package.json script chains the
+# public/ -> .next/standalone/public copy that the standalone runtime needs.
+RUN npm config set fund false && npm config set audit false && npx prisma generate && npm run build
 
 RUN chmod +x docker-entrypoint.sh
 

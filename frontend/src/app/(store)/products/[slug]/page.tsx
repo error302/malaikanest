@@ -28,10 +28,11 @@ function getApiBaseUrl(): string {
 async function getProduct(slug: string) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
     const res = await fetch(`${getApiBaseUrl()}/api/v1/products/products/${slug}/`, {
       cache: 'no-store',
       signal: controller.signal,
+      headers: { 'User-Agent': 'MalaikaNest-SSR/1.0' },
     });
     clearTimeout(timeout);
     if (!res.ok) return null;
