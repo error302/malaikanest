@@ -131,6 +131,7 @@ async function fetchProducts(
     const res = await fetch(`${baseUrl}/api/v1/products/products/?${qs.toString()}`, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
+      next: { revalidate: 60 },
     });
     clearTimeout(timeout);
     if (!res.ok) return { products: [], ok: false };
@@ -179,6 +180,7 @@ export async function getActiveBanners(): Promise<Banner[]> {
     const res = await fetch(`${baseUrl}/api/v1/products/banners/?is_active=true&ordering=position`, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
+      next: { revalidate: 60 },
     });
     clearTimeout(timeout);
     if (!res.ok) return [];

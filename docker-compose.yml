@@ -182,7 +182,7 @@ services:
       # Kept in sync with the build arg for any server-side reads.
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.malaikanest.com}
       # Server-side fetches from inside the docker network use the backend hostname.
-      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8000}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-https://api.malaikanest.com}
       # Canonical production domain used for SEO metadata, sitemap and robots.
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://malaikanest.com}
       NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
