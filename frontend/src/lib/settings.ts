@@ -29,8 +29,9 @@ export const DEFAULT_BRANDING = {
   contact_phone: '+254726771321',
   mpesa_till: '3370347',
   whatsapp_url: 'https://wa.me/254726771321',
-  facebook_url: 'https://facebook.com',
-  instagram_url: 'https://instagram.com',
+  facebook_url: 'https://web.facebook.com/profile.php?id=61592150003761',
+  instagram_url: 'https://www.instagram.com/malaikanest/',
+  tiktok_url: 'https://www.tiktok.com/@malaikanest',
   location: 'Mombasa, Kenya',
   copyright_name: 'Malaika Nest',
   // Find Us page — Google Maps embed
@@ -160,6 +161,7 @@ export interface Branding {
   whatsapp_url: string;
   facebook_url: string;
   instagram_url: string;
+  tiktok_url: string;
   location: string;
   copyright_name: string;
   map_embed_url: string;
@@ -179,7 +181,17 @@ const CACHE_TTL = 60_000;
 
 function parseBranding(rows: { key: string; value: string }[]): Branding {
   const map = new Map(rows.map((r) => [r.key, r.value]));
-  const get = (k: keyof typeof DEFAULT_BRANDING) => map.get(k) ?? DEFAULT_BRANDING[k];
+  const placeholderSocialUrls: Partial<Record<keyof typeof DEFAULT_BRANDING, string[]>> = {
+    facebook_url: ['https://facebook.com', 'https://www.facebook.com'],
+    instagram_url: ['https://instagram.com', 'https://www.instagram.com'],
+  };
+  const get = (k: keyof typeof DEFAULT_BRANDING) => {
+    const value = map.get(k)?.trim();
+    // Earlier admin defaults were generic social homepages. Treat those stored
+    // placeholders as unset so they cannot override the real shop profiles.
+    if (!value || placeholderSocialUrls[k]?.includes(value)) return DEFAULT_BRANDING[k];
+    return value;
+  };
   let announcement: string[] = [];
   try {
     announcement = JSON.parse(get('announcement_messages'));
@@ -209,6 +221,7 @@ function parseBranding(rows: { key: string; value: string }[]): Branding {
     whatsapp_url: get('whatsapp_url'),
     facebook_url: get('facebook_url'),
     instagram_url: get('instagram_url'),
+    tiktok_url: get('tiktok_url'),
     location: get('location'),
     copyright_name: get('copyright_name'),
     map_embed_url: get('map_embed_url'),

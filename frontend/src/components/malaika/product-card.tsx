@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBasket, Star, X } from 'lucide-react';
+import { useCart } from '@/lib/cartContext';
 
 export interface Product {
   id: number;
@@ -33,6 +35,8 @@ const PLACEHOLDER_GRADIENTS = [
 ];
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+  const router = useRouter();
+  const { add, loading } = useCart();
   const [wished, setWished] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -43,11 +47,23 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     : 0;
   const gradient = PLACEHOLDER_GRADIENTS[product.id % PLACEHOLDER_GRADIENTS.length];
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!inStock) return;
-    // cart hook integration would go here
+    if (product.hasVariants) {
+      router.push(`/products/${product.slug}`);
+      return;
+    }
+    await add({
+      id: `product-${product.id}`,
+      product_id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      image: product.image || '',
+      qty: 1,
+    });
   };
 
   return (
@@ -141,7 +157,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             <button
               type="button"
               onClick={handleAdd}
-              disabled={!inStock}
+              disabled={!inStock || loading}
               className="w-full py-2.5 rounded-full font-semibold text-[13px] shadow-warm-md backdrop-blur-sm transition-colors disabled:opacity-50"
               style={{
                 background: 'rgba(255,255,255,0.95)',
@@ -179,7 +195,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           )}
 
           <Link
-            href="#"
+            href={`/products/${product.slug}`}
             className="group/link"
             aria-label={`View ${product.name}`}
           >
@@ -236,7 +252,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <button
             type="button"
             onClick={handleAdd}
-            disabled={!inStock}
+            disabled={!inStock || loading}
             className="sm:hidden mt-3 min-h-[44px] w-full inline-flex items-center justify-center gap-2 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-50"
             style={{
               background: 'var(--brand-brown-dark)',
