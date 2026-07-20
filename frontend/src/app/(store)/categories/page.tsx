@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X } from 'lucide-react';
@@ -39,7 +39,7 @@ function normalizeProduct(p: any): Product {
   };
 }
 
-export default function CategoriesPage() {
+function CategoriesPageContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -249,5 +249,13 @@ export default function CategoriesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CategoriesPage() {
+  return (
+    <Suspense fallback={<div className="container-shell py-10"><div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">{[...Array(9)].map((_, i) => (<div key={i} className="rounded-2xl border animate-pulse" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}><div className="aspect-[4/5]" style={{ background: 'var(--brand-warm)' }} /><div className="p-4 space-y-2"><div className="h-3 w-3/4" style={{ background: 'var(--brand-warm)' }} /><div className="h-3 w-1/2" style={{ background: 'var(--brand-warm)' }} /></div></div>))}</div></div>}>
+      <CategoriesPageContent />
+    </Suspense>
   );
 }
