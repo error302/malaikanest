@@ -23,7 +23,7 @@ export default function AdminCustomersPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await api.get('/api/v1/products/admin/users/', { params: { search, limit: 50 } });
+        const res = await api.get('/api/v1/accounts/users/', { params: { search, limit: 50 } });
         if (cancelled) return;
         const data = res.data;
         setCustomers(data?.results ?? data?.data?.results ?? []);

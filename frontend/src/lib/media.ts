@@ -1,4 +1,4 @@
-const FALLBACK_API_URL = 'https://api.malaikanest.com';
+const FALLBACK_API_URL = 'https://malaikanest.duckdns.org';
 
 function getApiUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;

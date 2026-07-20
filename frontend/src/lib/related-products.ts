@@ -9,7 +9,7 @@ function getApiBaseUrl(): string {
   return (
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    'https://api.malaikanest.com'
+    'https://malaikanest.duckdns.org'
   );
 }
 

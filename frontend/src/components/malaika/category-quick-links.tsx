@@ -2,50 +2,49 @@
 
 import Link from 'next/link';
 import { Shirt, Package, Home, Gamepad2, Car, Gift, ChevronRight } from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
 
 const CATEGORIES = [
   {
-    nameKey: 'cat.clothing',
-    descKey: 'cat.clothingDesc',
+    name: 'Clothing',
+    desc: 'Onesies, rompers, dresses & more',
     Icon: Shirt,
     color: 'linear-gradient(135deg, #FCE7E1 0%, #F8D5C9 100%)',
-    countKey: 'cat.clothingCount',
+    count: '120+ items',
   },
   {
-    nameKey: 'cat.feeding',
-    descKey: 'cat.feedingDesc',
+    name: 'Baby Essentials',
+    desc: 'Feeding, bathing & daily care',
     Icon: Package,
     color: 'linear-gradient(135deg, #FEF3DC 0%, #F8E5B8 100%)',
-    countKey: 'cat.feedingCount',
+    count: '85+ items',
   },
   {
-    nameKey: 'cat.nursery',
-    descKey: 'cat.nurseryDesc',
+    name: 'Nursery',
+    desc: 'Furniture, bedding & decor',
     Icon: Home,
     color: 'linear-gradient(135deg, #E1EEF8 0%, #C5DCF0 100%)',
-    countKey: 'cat.nurseryCount',
+    count: '64+ items',
   },
   {
-    nameKey: 'cat.toys',
-    descKey: 'cat.toysDesc',
+    name: 'Toys & Learning',
+    desc: 'Play, explore & grow',
     Icon: Gamepad2,
     color: 'linear-gradient(135deg, #EFE3F8 0%, #D8C2EE 100%)',
-    countKey: 'cat.toysCount',
+    count: '92+ items',
   },
   {
-    nameKey: 'cat.travel',
-    descKey: 'cat.travelDesc',
+    name: 'Travel & Safety',
+    desc: 'Strollers, carriers & safety',
     Icon: Car,
     color: 'linear-gradient(135deg, #E1F4E8 0%, #BFE6CC 100%)',
-    countKey: 'cat.travelCount',
+    count: '48+ items',
   },
   {
-    nameKey: 'cat.books',
-    descKey: 'cat.booksDesc',
+    name: 'Gift Sets',
+    desc: 'Curated bundles for every occasion',
     Icon: Gift,
     color: 'linear-gradient(135deg, #FCE1EE 0%, #F8C5D8 100%)',
-    countKey: 'cat.booksCount',
+    count: '36+ items',
   },
 ];
 
@@ -54,7 +53,6 @@ interface CategoryQuickLinksProps {
 }
 
 export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
-  const { t } = useI18n();
   const c = content?.categories || {};
   return (
     <section
@@ -64,7 +62,7 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
     >
       <div className="container-shell">
         <div className="text-center max-w-2xl mx-auto mb-9 sm:mb-12">
-          <span className="section-label mb-3 justify-center">{c.label || t('cat.categoriesLabel')}</span>
+          <span className="section-label mb-3 justify-center">{c.label || 'Browse collections'}</span>
           <h2
             className="font-serif font-semibold tracking-tight mt-3"
             style={{
@@ -74,21 +72,21 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
               lineHeight: 1.15,
             }}
           >
-            {c.title || t('cat.categoriesTitle')}
+            {c.title || 'Curated Categories'}
           </h2>
           <p
             className="mt-2 text-sm"
             style={{ color: 'var(--brand-text-secondary)' }}
           >
-            {c.subtitle || t('cat.categoriesSub')}
+            {c.subtitle || 'Thoughtfully selected for every moment of your baby\'s journey.'}
           </p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {CATEGORIES.map((cat) => (
             <Link
-              key={cat.nameKey}
-              href="/categories"
+              key={cat.name}
+              href="#shop"
               className="group relative flex flex-col rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-warm-md hover:-translate-y-1"
               style={{
                 background: '#FFFFFF',
@@ -110,19 +108,19 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
                   className="text-[13px] sm:text-[14px] font-semibold leading-tight"
                   style={{ color: 'var(--brand-text)' }}
                 >
-                  {t(cat.nameKey)}
+                  {cat.name}
                 </div>
                 <div
                   className="text-[11px] mt-1 leading-snug line-clamp-2"
                   style={{ color: 'var(--brand-text-muted)' }}
                 >
-                  {t(cat.descKey)}
+                  {cat.desc}
                 </div>
                 <div
                   className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium"
                   style={{ color: 'var(--brand-gold)' }}
                 >
-                  {t(cat.countKey)}
+                  {cat.count}
                   <ChevronRight
                     size={12}
                     className="transition-transform group-hover:translate-x-0.5"

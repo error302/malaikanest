@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'FAQ',
   description: 'Frequently asked questions about orders, delivery, payments and returns at Malaika Nest.',
-  alternates: { canonical: `${SITE_URL}/faq` },
+  alternates: { canonical: 'https://malaikanest.duckdns.org/faq' },
 };
 
 const faqJsonLd = {

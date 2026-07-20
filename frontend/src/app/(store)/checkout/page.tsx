@@ -1,30 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CreditCard, Smartphone, Banknote, Lock, ArrowRight } from 'lucide-react';
+import { CreditCard, Smartphone, Banknote, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
 import api, { handleApiError } from '@/lib/api';
-import { getDeliveryZones } from '@/lib/delivery';
-import type { DeliveryZone } from '@/lib/delivery';
-import { getPublicSettings } from '@/lib/public-settings';
-import type { PublicSettings } from '@/lib/public-settings';
-import { useI18n } from '@/lib/i18n';
+
+const DELIVERY_REGIONS = [
+  { value: 'mombasa', label: 'Mombasa (Same Day)', fee: 0 },
+  { value: 'nairobi', label: 'Nairobi (1-2 Days)', fee: 300 },
+  { value: 'upcountry', label: 'Upcountry (2-3 Days)', fee: 500 },
+];
 
 const PAYMENT_METHODS = [
-  { value: 'mpesa', labelKey: 'checkout.mpesa', Icon: Smartphone, descKey: 'checkout.mpesaDesc' },
-  { value: 'card', labelKey: 'checkout.card', Icon: CreditCard, descKey: 'checkout.cardDesc' },
-  { value: 'cash', labelKey: 'checkout.cod', Icon: Banknote, descKey: 'checkout.codDesc' },
+  { value: 'mpesa', label: 'M-Pesa', Icon: Smartphone, desc: 'Pay via STK push to your phone' },
+  { value: 'card', label: 'Credit / Debit Card', Icon: CreditCard, desc: 'Visa, Mastercard accepted' },
+  { value: 'cash', label: 'Cash on Delivery', Icon: Banknote, desc: 'Pay when your order arrives' },
 ];
 
 export default function CheckoutPage() {
-  const { t } = useI18n();
   const { items } = useCart();
   const router = useRouter();
-  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
-  const [settings, setSettings] = useState<PublicSettings>({ free_shipping_threshold: '3000', shipping_fee: '300' });
   const [region, setRegion] = useState('nairobi');
   const [payment, setPayment] = useState('mpesa');
   const [submitting, setSubmitting] = useState(false);
@@ -33,23 +31,9 @@ export default function CheckoutPage() {
     address: '', city: '', postalCode: '',
   });
 
-  useEffect(() => {
-    Promise.all([getDeliveryZones(), getPublicSettings()]).then(([zones, s]) => {
-      if (zones.length > 0) setDeliveryZones(zones);
-      setSettings(s);
-    });
-  }, []);
-
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const zones = deliveryZones.length > 0 ? deliveryZones : [
-    { slug: 'mombasa_pickup', name: 'Mombasa (Pick up at Shop)', fee: '0', estimated_days: 'Same Day' },
-    { slug: 'mombasa', name: 'Mombasa (Delivery)', fee: '150', estimated_days: 'Same Day' },
-    { slug: 'nairobi', name: 'Nairobi (1-2 Days)', fee: '300', estimated_days: '1-2 Days' },
-    { slug: 'upcountry', name: 'Upcountry (2-3 Days)', fee: '500', estimated_days: '2-3 Days' },
-  ];
-  const regionObj = zones.find((r) => r.slug === region)!;
-  const freeThreshold = Number(settings.free_shipping_threshold) || 3000;
-  const deliveryFee = subtotal >= freeThreshold ? 0 : Number(regionObj?.fee || 0);
+  const regionObj = DELIVERY_REGIONS.find((r) => r.value === region)!;
+  const deliveryFee = subtotal >= 3000 ? 0 : regionObj.fee;
   const total = subtotal + deliveryFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,13 +109,13 @@ export default function CheckoutPage() {
     return (
       <div className="container-shell py-16 text-center">
         <h1 className="font-serif text-3xl font-semibold mb-3" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-          {t('checkout.empty')}
+          Nothing to check out
         </h1>
         <p className="text-sm mb-6" style={{ color: 'var(--brand-text-secondary)' }}>
-          {t('cart.emptySub')}
+          Your cart is empty. Add some products first.
         </p>
         <Link href="/categories" className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
-          {t('nav.shop')} <ArrowRight size={16} />
+          Browse Products <ArrowRight size={16} />
         </Link>
       </div>
     );
@@ -140,7 +124,7 @@ export default function CheckoutPage() {
   return (
     <div className="container-shell py-6 sm:py-10">
       <h1 className="font-serif text-3xl sm:text-4xl font-semibold mb-6" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-        {t('checkout.title')}
+        Checkout
       </h1>
 
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
@@ -149,36 +133,36 @@ export default function CheckoutPage() {
           {/* Contact */}
           <section className="p-5 sm:p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
             <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-              {t('checkout.contact')}
+              Contact Details
             </h2>
             <div className="grid sm:grid-cols-2 gap-3">
-              <input required placeholder={t('checkout.firstName')} value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-              <input required placeholder={t('checkout.lastName')} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-              <input required type="email" placeholder={t('checkout.email')} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-              <input required type="tel" placeholder={t('checkout.phone')} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required placeholder="First name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required placeholder="Last name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required type="tel" placeholder="Phone (+2547XXXXXXXX)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
             </div>
           </section>
 
           {/* Shipping */}
           <section className="p-5 sm:p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
             <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-              {t('checkout.shippingAddress')}
+              Shipping Address
             </h2>
             <div className="space-y-3">
-              <input required placeholder={t('checkout.address')} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required placeholder="Street address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
               <div className="grid sm:grid-cols-2 gap-3">
-                <input required placeholder={t('checkout.city')} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-                <input placeholder={`${t('checkout.postal')} (${t('common.cancel') === 'Cancel' ? 'optional' : 'hiari'})`} value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+                <input required placeholder="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+                <input placeholder="Postal code (optional)" value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
               </div>
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 className="input-warm w-full !pl-4"
                 style={{ background: 'var(--brand-bg-alt)' }}
-                aria-label={t('checkout.shippingAddress')}
+                aria-label="Delivery region"
               >
-                {zones.map((r) => (
-                  <option key={r.slug} value={r.slug}>{r.name} — KES {Number(r.fee).toLocaleString('en-KE')}</option>
+                {DELIVERY_REGIONS.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label} — KES {r.fee}</option>
                 ))}
               </select>
             </div>
@@ -187,10 +171,10 @@ export default function CheckoutPage() {
           {/* Payment */}
           <section className="p-5 sm:p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
             <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-              {t('checkout.payment')}
+              Payment Method
             </h2>
             <div className="space-y-2">
-              {PAYMENT_METHODS.map(({ value, labelKey, Icon, descKey }) => (
+              {PAYMENT_METHODS.map(({ value, label, Icon, desc }) => (
                 <label
                   key={value}
                   className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${payment === value ? 'ring-2' : ''}`}
@@ -209,8 +193,8 @@ export default function CheckoutPage() {
                   />
                   <Icon size={20} style={{ color: 'var(--brand-gold)' }} />
                   <div className="flex-1">
-                    <div className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>{t(labelKey)}</div>
-                    <div className="text-xs" style={{ color: 'var(--brand-text-muted)' }}>{t(descKey)}</div>
+                    <div className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>{label}</div>
+                    <div className="text-xs" style={{ color: 'var(--brand-text-muted)' }}>{desc}</div>
                   </div>
                   <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center" style={{ borderColor: payment === value ? 'var(--brand-gold)' : 'var(--brand-border)' }}>
                     {payment === value && <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--brand-gold)' }} />}
@@ -225,7 +209,7 @@ export default function CheckoutPage() {
         <div className="lg:col-span-1">
           <div className="sticky top-24 p-6 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
             <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-              {t('checkout.orderSummary')}
+              Your Order
             </h2>
             <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
               {items.map((item) => (
@@ -237,13 +221,13 @@ export default function CheckoutPage() {
             </div>
             <div className="space-y-2 text-sm pt-3" style={{ borderTop: '1px solid var(--brand-border)' }}>
               <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
-                <span>{t('cart.subtotal')}</span><span>KES {subtotal.toLocaleString('en-KE')}</span>
+                <span>Subtotal</span><span>KES {subtotal.toLocaleString('en-KE')}</span>
               </div>
               <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
-                <span>{t('cart.shipping')}{deliveryFee === 0 ? ` (${t('cart.shippingFree').toLowerCase()} ${t('checkout.over')} KES ${freeThreshold.toLocaleString('en-KE')})` : ''}</span><span>{deliveryFee === 0 ? t('cart.shippingFree') : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
+                <span>Delivery</span><span>{deliveryFee === 0 ? 'FREE' : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
               </div>
               <div className="flex justify-between text-base font-semibold pt-3" style={{ borderTop: '1px solid var(--brand-border)', color: 'var(--brand-text)' }}>
-                <span>{t('cart.total')}</span><span>KES {total.toLocaleString('en-KE')}</span>
+                <span>Total</span><span>KES {total.toLocaleString('en-KE')}</span>
               </div>
             </div>
             <button
@@ -252,10 +236,10 @@ export default function CheckoutPage() {
               className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold transition-all disabled:opacity-60"
               style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
             >
-              {submitting ? t('checkout.processing') : <>{t('checkout.placeOrder')} <Lock size={14} /></>}
+              {submitting ? 'Processing…' : <>Place Order <Lock size={14} /></>}
             </button>
             <p className="text-[11px] mt-3 text-center" style={{ color: 'var(--brand-text-muted)' }}>
-              {t('checkout.secured')}
+              Secured by 256-bit SSL encryption
             </p>
           </div>
         </div>

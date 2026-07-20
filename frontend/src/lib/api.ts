@@ -3,64 +3,6 @@ import { clearAccessToken, getAccessToken, setAccessToken } from './authToken';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export function extractApiError(err: any, fallback = 'Something went wrong'): string {
-  const data = err?.response?.data;
-  if (!data) {
-    // Network errors / server crashes — give the operator a useful diagnostic.
-    if (err?.code === 'ERR_NETWORK') return 'Network error. Please check your internet and try again.';
-    if (err?.code === 'ECONNABORTED') return 'The request timed out. Please try again.';
-    return err?.message || fallback;
-  }
-  if (typeof data === 'string') return data;
-
-  // The backend wraps errors as {"status":"error","error":{"message":"...","details":{...}}}.
-  const wrapped =
-    (typeof data.error === 'object' && data.error !== null && (data.error.message || data.error.detail)) ||
-    (data.status === 'error' && data.message);
-  if (wrapped) {
-    // If details has field-level errors, surface them flatly too.
-    const details = data.error?.details;
-    if (details && typeof details === 'object' && Object.keys(details).length) {
-      return [String(wrapped).trim(), flattenFieldErrors(details)].filter(Boolean).join('\n');
-    }
-    return String(wrapped).trim();
-  }
-
-  if (data.detail) {
-    if (typeof data.detail === 'string') return data.detail;
-    return flattenFieldErrors(data.detail) || JSON.stringify(data.detail);
-  }
-
-  if (data.non_field_errors) {
-    return joinMessages(data.non_field_errors);
-  }
-
-  if (typeof data === 'object') {
-    return flattenFieldErrors(data) || fallback;
-  }
-
-  return fallback;
-}
-
-function joinMessages(v: any): string {
-  if (Array.isArray(v)) return v.map(String).join('\n');
-  return String(v);
-}
-
-function flattenFieldErrors(details: any): string {
-  if (!details || typeof details !== 'object') return '';
-  const parts: string[] = [];
-  for (const [field, msgs] of Object.entries(details)) {
-    if (msgs === null || msgs === undefined || msgs === '') continue;
-    let text: string;
-    if (Array.isArray(msgs)) text = msgs.map(String).join(', ');
-    else if (typeof msgs === 'object') text = JSON.stringify(msgs);
-    else text = String(msgs);
-    parts.push(`${field}: ${text}`);
-  }
-  return parts.join('\n');
-}
-
 const CACHE_DURATION = {
   PRODUCTS: 5 * 60 * 1000,
   CATEGORIES: 10 * 60 * 1000,

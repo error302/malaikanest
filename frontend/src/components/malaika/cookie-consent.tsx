@@ -69,7 +69,7 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={accept}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-3 text-xs font-semibold min-h-[44px]"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold"
             style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
           >
             <Check size={14} /> Accept
@@ -77,7 +77,7 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={dismiss}
-            className="w-11 h-11 min-w-11 min-h-11 inline-flex items-center justify-center rounded-full border"
+            className="w-9 h-9 inline-flex items-center justify-center rounded-full border"
             style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-text-muted)' }}
             aria-label="Dismiss"
           >

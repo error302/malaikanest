@@ -28,16 +28,14 @@ function NavbarWithCounts({ navbar }: { navbar: React.ReactElement }) {
 
 function MobileNavWithCounts({ mobileNav }: { mobileNav: React.ReactElement }) {
   const { items } = useCart();
-  const { count: wishlistCount } = useWishlist();
   return React.cloneElement(mobileNav, {
     cartCount: items.length,
-    wishlistCount,
-  } as { cartCount: number; wishlistCount: number });
+  } as { cartCount: number });
 }
 
 export function StoreShell({ branding, navbar, mobileNav, children }: StoreShellProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-grain pb-16 lg:pb-0">
+    <div className="min-h-screen flex flex-col bg-grain">
       <AnnouncementBar messages={branding.announcement_messages} />
       <NavbarWithCounts navbar={navbar} />
       {children}

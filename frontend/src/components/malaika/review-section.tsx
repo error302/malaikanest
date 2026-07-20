@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Star, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Star, Write, Trash2, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 import { showToast } from '@/lib/toast';
 
@@ -113,7 +113,7 @@ export function ReviewSection({ productSlug }: ReviewSectionProps) {
           className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium"
           style={{ borderColor: 'var(--brand-gold)', color: 'var(--brand-gold)' }}
         >
-          <Pencil size={14} /> Write a Review
+          <Write size={14} /> Write a Review
         </button>
       </div>
 

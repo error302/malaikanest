@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { ProductCard, type Product } from './product-card';
-import { useI18n } from '@/lib/i18n';
 
 interface ProductSectionProps {
   id?: string;
@@ -21,13 +20,11 @@ export function ProductSection({
   label,
   title,
   viewAllHref = '#shop',
-  viewAllLabel,
+  viewAllLabel = 'View All',
   products,
   columns = 4,
   background = 'cream',
 }: ProductSectionProps) {
-  const { t } = useI18n();
-  const viewAll = viewAllLabel ?? t('section.viewAll');
   const bgMap = {
     cream: 'var(--brand-cream)',
     'bg-alt': 'var(--brand-bg-alt)',
@@ -63,10 +60,10 @@ export function ProductSection({
           </div>
           <Link
             href={viewAllHref}
-            className="hidden sm:inline-flex items-center gap-1 text-[13px] font-medium transition-all hover:gap-2 min-h-[44px]"
+            className="hidden sm:inline-flex items-center gap-1 text-[13px] font-medium transition-all hover:gap-2"
             style={{ color: 'var(--brand-gold)' }}
           >
-            {viewAll}
+            {viewAllLabel}
             <ChevronRight size={14} />
           </Link>
         </div>
@@ -87,7 +84,7 @@ export function ProductSection({
               color: 'var(--brand-gold)',
             }}
           >
-            {viewAll}
+            {viewAllLabel}
             <ChevronRight size={14} />
           </Link>
         </div>

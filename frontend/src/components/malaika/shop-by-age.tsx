@@ -3,19 +3,18 @@
 import { useRef } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Baby } from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
 
 const AGES = [
-  { name: 'Newborn', nameKey: 'age.newborn', rangeKey: 'age.newbornRange' },
-  { name: '0–3 Months', nameKey: 'age.0_3', rangeKey: 'age.0_3Range' },
-  { name: '3–6 Months', nameKey: 'age.3_6', rangeKey: 'age.3_6Range' },
-  { name: '6–9 Months', nameKey: 'age.6_9', rangeKey: 'age.6_9Range' },
-  { name: '9–12 Months', nameKey: 'age.9_12', rangeKey: 'age.9_12Range' },
-  { name: '1–2 Years', nameKey: 'age.1_2', rangeKey: 'age.1_2Range' },
-  { name: '2–4 Years', nameKey: 'age.2_4', rangeKey: 'age.2_4Range' },
-  { name: '4–6 Years', nameKey: 'age.4_6', rangeKey: 'age.4_6Range' },
-  { name: '6–9 Years', nameKey: 'age.6_9y', rangeKey: 'age.6_9yRange' },
-  { name: '9–12 Years', nameKey: 'age.9_12y', rangeKey: 'age.9_12yRange' },
+  { name: 'Newborn', range: '0–1 mo' },
+  { name: '0–3 Months', range: 'Tiny' },
+  { name: '3–6 Months', range: 'Growing' },
+  { name: '6–9 Months', range: 'Active' },
+  { name: '9–12 Months', range: 'Cruising' },
+  { name: '1–2 Years', range: 'Walking' },
+  { name: '2–4 Years', range: 'Talking' },
+  { name: '4–6 Years', range: 'Playful' },
+  { name: '6–9 Years', range: 'School' },
+  { name: '9–12 Years', range: 'Big kid' },
 ];
 
 interface ShopByAgeProps {
@@ -24,7 +23,6 @@ interface ShopByAgeProps {
 
 export function ShopByAge({ content }: ShopByAgeProps) {
   const c = content?.shop_by_age || {};
-  const { t } = useI18n();
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: 'left' | 'right') => {
@@ -43,7 +41,7 @@ export function ShopByAge({ content }: ShopByAgeProps) {
       <div className="container-shell">
         <div className="flex items-end justify-between gap-4 mb-7 sm:mb-9">
           <div>
-            <span className="section-label mb-3">{c.label || t('home.shopByAge')}</span>
+            <span className="section-label mb-3">{c.label || 'Find the perfect size'}</span>
             <h2
               className="font-serif font-semibold tracking-tight mt-3"
               style={{
@@ -53,13 +51,13 @@ export function ShopByAge({ content }: ShopByAgeProps) {
                 lineHeight: 1.15,
               }}
             >
-              {c.title || t('home.shopByAge')}
+              {c.title || 'Shop by Age'}
             </h2>
             <p
               className="mt-2 text-sm max-w-md"
               style={{ color: 'var(--brand-text-secondary)' }}
             >
-              {c.subtitle || t('home.shopByAgeSub')}
+              {c.subtitle || 'From newborn snuggles to first-day-of-school fits — we have got every stage covered.'}
             </p>
           </div>
 
@@ -99,8 +97,8 @@ export function ShopByAge({ content }: ShopByAgeProps) {
         >
           {AGES.map((age) => (
             <Link
-              key={age.nameKey}
-              href="/categories"
+              key={age.name}
+              href="#shop"
               className="group flex-shrink-0 flex flex-col items-center justify-center text-center gap-2 p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-warm-md min-w-[120px] sm:min-w-[140px]"
               role="listitem"
               style={{
@@ -123,13 +121,13 @@ export function ShopByAge({ content }: ShopByAgeProps) {
                   className="text-[13px] sm:text-sm font-semibold whitespace-nowrap"
                   style={{ color: 'var(--brand-text)' }}
                 >
-                  {t(age.nameKey)}
+                  {age.name}
                 </div>
                 <div
                   className="text-[10px] uppercase tracking-wider mt-0.5"
                   style={{ color: 'var(--brand-text-muted)' }}
                 >
-                  {t(age.rangeKey)}
+                  {age.range}
                 </div>
               </div>
             </Link>

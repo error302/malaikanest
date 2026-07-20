@@ -1,7 +1,5 @@
 'use client';
 
-import { Suspense } from 'react';
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -42,18 +40,6 @@ function normalizeProduct(p: any): Product {
 }
 
 export default function CategoriesPage() {
-  // useSearchParams needs a Suspense boundary in the App Router (Next 14+.
-  // We wrap the page's interactive body in <Suspense> so the rest of the
-  // storefront (header, footer, marketing blocks) renders without the
-  // bail-out forcing a full client-only tree.
-  return (
-    <Suspense fallback={null}>
-      <CategoriesBrowser />
-    </Suspense>
-  );
-}
-
-function CategoriesBrowser() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +110,7 @@ function CategoriesBrowser() {
                       key={opt.value}
                       type="button"
                       onClick={() => setAgeGroup(opt.value)}
-                      className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg transition-colors"
+                      className="block w-full text-left text-sm px-3 py-1.5 rounded-lg transition-colors"
                       style={{
                         background: ageGroup === opt.value ? 'var(--brand-warm)' : 'transparent',
                         color: ageGroup === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)',
@@ -144,7 +130,7 @@ function CategoriesBrowser() {
                       key={opt.value}
                       type="button"
                       onClick={() => setGender(opt.value)}
-                      className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg transition-colors"
+                      className="block w-full text-left text-sm px-3 py-1.5 rounded-lg transition-colors"
                       style={{
                         background: gender === opt.value ? 'var(--brand-warm)' : 'transparent',
                         color: gender === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)',
@@ -239,7 +225,7 @@ function CategoriesBrowser() {
                 <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>Age Group</label>
                 <div className="space-y-1">
                   {AGE_GROUPS.map((opt) => (
-                    <button key={opt.value} type="button" onClick={() => setAgeGroup(opt.value)} className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg" style={{ background: ageGroup === opt.value ? 'var(--brand-warm)' : 'transparent', color: ageGroup === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
+                    <button key={opt.value} type="button" onClick={() => setAgeGroup(opt.value)} className="block w-full text-left text-sm px-3 py-2 rounded-lg" style={{ background: ageGroup === opt.value ? 'var(--brand-warm)' : 'transparent', color: ageGroup === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
                       {opt.label}
                     </button>
                   ))}
@@ -249,7 +235,7 @@ function CategoriesBrowser() {
                 <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>Gender</label>
                 <div className="space-y-1">
                   {[{ label: 'All', value: '' }, { label: 'Boys', value: 'boy' }, { label: 'Girls', value: 'girl' }, { label: 'Unisex', value: 'unisex' }].map((opt) => (
-                    <button key={opt.value} type="button" onClick={() => setGender(opt.value)} className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg" style={{ background: gender === opt.value ? 'var(--brand-warm)' : 'transparent', color: gender === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
+                    <button key={opt.value} type="button" onClick={() => setGender(opt.value)} className="block w-full text-left text-sm px-3 py-2 rounded-lg" style={{ background: gender === opt.value ? 'var(--brand-warm)' : 'transparent', color: gender === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
                       {opt.label}
                     </button>
                   ))}

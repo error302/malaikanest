@@ -3,58 +3,49 @@
 import Link from 'next/link';
 import { Facebook, Instagram, MessageCircle, Phone, CreditCard, Mail, MapPin, Heart } from 'lucide-react';
 import { Logo } from './logo';
-import { useI18n } from '@/lib/i18n';
 import type { Branding } from '@/lib/settings';
 
 interface FooterProps {
   branding?: Branding;
 }
 
-import { TiktokLogo } from '@phosphor-icons/react';
-
-function TikTok({ size = 18 }: { size?: number }) {
-  return <TiktokLogo size={size} weight="fill" />;
-}
-
 const SHOP_LINKS = [
-  { key: 'footer.shopAll', href: '/categories' },
-  { key: 'cat.clothing', href: '/categories' },
-  { key: 'cat.thrifted', href: '/thrifted' },
-  { key: 'cat.feeding', href: '/categories' },
-  { key: 'cat.nursery', href: '/categories' },
-  { key: 'cat.toys', href: '/categories' },
-  { key: 'cat.books', href: '/categories' },
+  { label: 'All Products', href: '#shop' },
+  { label: 'Clothing', href: '#shop' },
+  { label: 'Mtumba / Thrifted', href: '/thrifted' },
+  { label: 'Baby Essentials', href: '#shop' },
+  { label: 'Nursery', href: '#shop' },
+  { label: 'Toys & Learning', href: '#shop' },
+  { label: 'Gifts', href: '#gifts' },
 ];
 
 const AGE_LINKS = [
-  { label: 'Newborn', href: '/categories' },
-  { label: '0–3 Months', href: '/categories' },
-  { label: '3–6 Months', href: '/categories' },
-  { label: '6–12 Months', href: '/categories' },
-  { label: '1–4 Years', href: '/categories' },
-  { label: '4–12 Years', href: '/categories' },
+  { label: 'Newborn', href: '#shop-by-age' },
+  { label: '0–3 Months', href: '#shop-by-age' },
+  { label: '3–6 Months', href: '#shop-by-age' },
+  { label: '6–12 Months', href: '#shop-by-age' },
+  { label: '1–4 Years', href: '#shop-by-age' },
+  { label: '4–12 Years', href: '#shop-by-age' },
 ];
 
 const SUPPORT_LINKS = [
-  { key: 'footer.faq', href: '/faq' },
-  { key: 'footer.shipping', href: '/shipping' },
-  { key: 'footer.trackOrder', href: '/track' },
-  { key: 'nav.contact', href: '/find-us' },
-  { key: 'nav.blog', href: '/blog' },
-  { key: 'footer.about', href: '/about' },
-  { key: 'footer.refund', href: '/returns' },
+  { label: 'FAQ', href: '#faq' },
+  { label: 'Shipping Info', href: '#shipping' },
+  { label: 'Track Your Order', href: '/track' },
+  { label: 'Find Us', href: '/find-us' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'About Us', href: '#about' },
+  { label: 'Returns', href: '#returns' },
 ];
 
 const SOCIAL = (b?: Branding) => [
-  { label: 'Facebook', href: b?.facebook_url || 'https://web.facebook.com/profile.php?id=61592150003761', Icon: Facebook },
-  { label: 'Instagram', href: b?.instagram_url || 'https://www.instagram.com/malaikanest/', Icon: Instagram },
-  { label: 'TikTok', href: b?.tiktok_url || 'https://www.tiktok.com/@malaikanest', Icon: TikTok },
+  { label: 'Facebook', href: b?.facebook_url || 'https://facebook.com', Icon: Facebook },
+  { label: 'Instagram', href: b?.instagram_url || 'https://instagram.com', Icon: Instagram },
   { label: 'WhatsApp', href: b?.whatsapp_url || 'https://wa.me/254726771321', Icon: MessageCircle },
 ];
 
 export function Footer({ branding }: FooterProps) {
   const b = branding;
-  const { t } = useI18n();
   return (
     <footer
       id="contact"
@@ -72,34 +63,34 @@ export function Footer({ branding }: FooterProps) {
           {/* Brand */}
           <div className="lg:col-span-4">
             <Logo />
-             <p
-               className="mt-4 text-sm leading-relaxed max-w-xs"
-               style={{ color: 'var(--brand-text-secondary)' }}
-             >
-               {b?.footer_tagline || t('footer.tagline')}
-             </p>
+            <p
+              className="mt-4 text-sm leading-relaxed max-w-xs"
+              style={{ color: 'var(--brand-text-secondary)' }}
+            >
+              {b?.footer_tagline || 'Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.'}
+            </p>
 
-             {/* M-Pesa callout */}
-             <div
-               className="mt-5 inline-flex items-center gap-3 rounded-xl px-4 py-3 border"
-               style={{
-                 background: '#FFFFFF',
-                 borderColor: 'var(--brand-border)',
-               }}
-             >
-               <div
-                 className="w-10 h-10 rounded-full flex items-center justify-center"
-                 style={{ background: 'rgba(139, 105, 20, 0.1)' }}
-               >
-                 <CreditCard size={18} style={{ color: 'var(--brand-gold)' }} />
-               </div>
-               <div>
-                 <p
-                   className="text-[11px]"
-                   style={{ color: 'var(--brand-text-muted)' }}
-                 >
-                   Lipa Na M-Pesa
-                 </p>
+            {/* M-Pesa callout */}
+            <div
+              className="mt-5 inline-flex items-center gap-3 rounded-xl px-4 py-3 border"
+              style={{
+                background: '#FFFFFF',
+                borderColor: 'var(--brand-border)',
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(139, 105, 20, 0.1)' }}
+              >
+                <CreditCard size={18} style={{ color: 'var(--brand-gold)' }} />
+              </div>
+              <div>
+                <p
+                  className="text-[11px]"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                >
+                  Lipa Na M-Pesa
+                </p>
                 <p
                   className="text-sm font-semibold"
                   style={{ color: 'var(--brand-text)' }}
@@ -139,17 +130,17 @@ export function Footer({ branding }: FooterProps) {
                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-4"
                   style={{ color: 'var(--brand-text)' }}
                 >
-                  {t('footer.shop')}
+                  Shop
                 </h4>
                 <ul className="space-y-2.5">
                   {SHOP_LINKS.map((l) => (
-                    <li key={l.key}>
+                    <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
+                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)]"
                         style={{ color: 'var(--brand-text-secondary)' }}
                       >
-                        {t(l.key)}
+                        {l.label}
                       </Link>
                     </li>
                   ))}
@@ -161,14 +152,14 @@ export function Footer({ branding }: FooterProps) {
                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-4"
                   style={{ color: 'var(--brand-text)' }}
                 >
-                  {t('nav.shopByAge')}
+                  Shop by Age
                 </h4>
                 <ul className="space-y-2.5">
                   {AGE_LINKS.map((l) => (
                     <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
+                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)]"
                         style={{ color: 'var(--brand-text-secondary)' }}
                       >
                         {l.label}
@@ -183,17 +174,17 @@ export function Footer({ branding }: FooterProps) {
                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-4"
                   style={{ color: 'var(--brand-text)' }}
                 >
-                  {t('footer.help')}
+                  Support
                 </h4>
                 <ul className="space-y-2.5">
                   {SUPPORT_LINKS.map((l) => (
-                    <li key={l.key}>
+                    <li key={l.label}>
                       <Link
                         href={l.href}
-                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
+                        className="text-[13px] transition-colors hover:text-[var(--brand-gold)]"
                         style={{ color: 'var(--brand-text-secondary)' }}
                       >
-                        {t(l.key)}
+                        {l.label}
                       </Link>
                     </li>
                   ))}
@@ -203,7 +194,7 @@ export function Footer({ branding }: FooterProps) {
                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-3 mt-6"
                   style={{ color: 'var(--brand-text)' }}
                 >
-                  {t('nav.contact')}
+                  Contact
                 </h4>
                 <ul className="space-y-2">
                   <li>
@@ -242,23 +233,35 @@ export function Footer({ branding }: FooterProps) {
             className="text-[11px]"
             style={{ color: 'var(--brand-text-muted)' }}
           >
-            {t('footer.copyright', { year: new Date().getFullYear() })}
+            © {new Date().getFullYear()} {b?.copyright_name || 'Malaika Nest'}. All rights reserved.
           </p>
-           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <Link
-              href="/privacy-policy"
-              className="text-[11px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
+              href="#privacy"
+              className="text-[11px] transition-colors hover:text-[var(--brand-gold)]"
               style={{ color: 'var(--brand-text-muted)' }}
             >
-              {t('footer.privacy')}
+              Privacy Policy
             </Link>
             <Link
-              href="/terms-of-service"
-              className="text-[11px] transition-colors hover:text-[var(--brand-gold)] min-h-[44px] flex items-center"
+              href="#terms"
+              className="text-[11px] transition-colors hover:text-[var(--brand-gold)]"
               style={{ color: 'var(--brand-text-muted)' }}
             >
-              {t('footer.terms')}
+              Terms of Service
             </Link>
+            <p
+              className="text-[11px] inline-flex items-center gap-1"
+              style={{ color: 'var(--brand-text-muted)' }}
+            >
+              Made with{' '}
+              <Heart
+                size={11}
+                className="fill-current"
+                style={{ color: 'var(--brand-terra)' }}
+              />{' '}
+              from {b?.location || 'Mombasa, Kenya'}
+            </p>
           </div>
         </div>
       </div>

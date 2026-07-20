@@ -7,7 +7,6 @@ import { ProductDetailClient } from './product-detail-client';
 import { ReviewSection } from '@/components/malaika/review-section';
 import { RelatedProducts } from '@/components/malaika/related-products';
 import { getRelatedProducts } from '@/lib/related-products';
-import { SITE_URL } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,25 +15,18 @@ interface Props {
 }
 
 function getApiBaseUrl(): string {
-  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL;
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    const url = process.env.NEXT_PUBLIC_API_URL;
-    if (url.includes('localhost') || url.includes('127.0.0.1')) return url;
-  }
-  if (process.env.NODE_ENV === 'development') return 'http://localhost:8000';
-  return 'https://api.malaikanest.com';
+  return (
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'https://malaikanest.duckdns.org'
+  );
 }
 
 async function getProduct(slug: string) {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
     const res = await fetch(`${getApiBaseUrl()}/api/v1/products/products/${slug}/`, {
       cache: 'no-store',
-      signal: controller.signal,
-      headers: { 'User-Agent': 'MalaikaNest-SSR/1.0' },
     });
-    clearTimeout(timeout);
     if (!res.ok) return null;
     const data = await res.json();
     return data?.data ?? data;
@@ -53,11 +45,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: { canonical: `${SITE_URL}/products/${slug}` },
+    alternates: { canonical: `https://malaikanest.duckdns.org/products/${slug}` },
     openGraph: {
       title,
       description,
-      url: `${SITE_URL}/products/${slug}`,
+      url: `https://malaikanest.duckdns.org/products/${slug}`,
       images: imageUrl ? [{ url: imageUrl, width: 600, height: 600, alt: title }] : [],
       type: 'product',
     },
@@ -88,9 +80,9 @@ function buildJsonLd(product: any, slug: string) {
     },
     category: product.category?.name || 'Baby Clothing',
     image: imageUrl ? [imageUrl] : undefined,
-      offers: {
-        '@type': 'Offer',
-        url: `${SITE_URL}/products/${slug}`,
+    offers: {
+      '@type': 'Offer',
+      url: `https://malaikanest.duckdns.org/products/${slug}`,
       priceCurrency: 'KES',
       price: price.toFixed(2),
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
@@ -113,8 +105,8 @@ function buildJsonLd(product: any, slug: string) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
-      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${SITE_URL}/categories` },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://malaikanest.duckdns.org/' },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: 'https://malaikanest.duckdns.org/categories' },
       ...(product.category?.name
         ? [{ '@type': 'ListItem', position: 3, name: product.category.name }]
         : []),

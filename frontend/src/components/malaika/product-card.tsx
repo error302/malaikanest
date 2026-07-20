@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Heart, ShoppingBasket, Star, X } from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
 
 export interface Product {
   id: number;
@@ -34,7 +33,6 @@ const PLACEHOLDER_GRADIENTS = [
 ];
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
-  const { t } = useI18n();
   const [wished, setWished] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -121,7 +119,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               e.stopPropagation();
               setWished((w) => !w);
             }}
-            aria-label={wished ? t('product.removeWishlist') : t('product.wishlist')}
+            aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
             aria-pressed={wished}
             className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-warm-sm transition-all hover:scale-110"
             style={{ background: 'rgba(255,255,255,0.95)' }}
@@ -150,7 +148,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 color: 'var(--brand-text)',
               }}
             >
-              {product.hasVariants ? t('product.viewDetails') : inStock ? t('product.quickAdd') : t('product.outOfStock')}
+              {product.hasVariants ? 'View Options' : inStock ? 'Quick Add' : 'Sold Out'}
             </button>
           </div>
 
@@ -163,7 +161,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded"
                 style={{ background: 'var(--brand-brown-dark)', color: '#FFFFFF' }}
               >
-                {t('product.outOfStock')}
+                Out of Stock
               </span>
             </div>
           )}
@@ -181,7 +179,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           )}
 
           <Link
-            href={`/products/${product.slug}`}
+            href="#"
             className="group/link"
             aria-label={`View ${product.name}`}
           >
@@ -244,10 +242,10 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               background: 'var(--brand-brown-dark)',
               color: '#FFFFFF',
             }}
-            aria-label={`${t('product.addToCart')} ${product.name}`}
+            aria-label={`Add ${product.name} to cart`}
           >
             <ShoppingBasket size={15} />
-            {product.hasVariants ? t('product.viewDetails') : inStock ? t('product.addToCart') : t('product.outOfStock')}
+            {product.hasVariants ? 'Choose' : inStock ? 'Add' : 'Sold Out'}
           </button>
         </div>
       </article>

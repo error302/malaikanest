@@ -12,10 +12,10 @@ import { db } from '@/lib/db';
 // ── Hardcoded defaults (used when DB has no override) ────────────────────────
 
 export const DEFAULT_BRANDING = {
-  logo_url: '/logo.png',                    // served from public/logo.png
-  favicon_url: '',                          // empty = use /logo.png
+  logo_url: '',                          // empty = use built-in SVG logo
+  favicon_url: '',                       // empty = use /logo.svg
   store_name: 'Malaika Nest',
-  tagline: 'Made for Little Angels',
+  tagline: 'Baby & Maternity',
   footer_tagline: 'Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.',
   primary_color: '#8B6914',
   accent_color: '#C4704A',
@@ -29,15 +29,14 @@ export const DEFAULT_BRANDING = {
   contact_phone: '+254726771321',
   mpesa_till: '3370347',
   whatsapp_url: 'https://wa.me/254726771321',
-  facebook_url: 'https://web.facebook.com/profile.php?id=61592150003761',
-  instagram_url: 'https://www.instagram.com/malaikanest/',
-  tiktok_url: 'https://www.tiktok.com/@malaikanest',
+  facebook_url: 'https://facebook.com',
+  instagram_url: 'https://instagram.com',
   location: 'Mombasa, Kenya',
   copyright_name: 'Malaika Nest',
   // Find Us page — Google Maps embed
-  map_embed_url: 'https://www.google.com/maps?q=-4.0856032,39.661555&z=17&output=embed',
-  address_line: 'Tawakal Toto Shop, Mombasa, Kenya',
-  address_directions: 'Find us at Tawakal Toto Shop in Mombasa for in-person shopping and pickups. Call ahead to ensure we\'re in!',
+  map_embed_url: 'https://www.google.com/maps?q=Mombasa,Kenya&z=13&output=embed',
+  address_line: 'Mombasa, Kenya',
+  address_directions: 'Visit our workshop in Mombasa for in-person shopping and pickups. Call ahead to ensure we\'re in!',
   business_hours: JSON.stringify([
     { day: 'Monday – Friday', hours: '9:00 AM – 6:00 PM' },
     { day: 'Saturday', hours: '9:00 AM – 4:00 PM' },
@@ -161,7 +160,6 @@ export interface Branding {
   whatsapp_url: string;
   facebook_url: string;
   instagram_url: string;
-  tiktok_url: string;
   location: string;
   copyright_name: string;
   map_embed_url: string;
@@ -211,7 +209,6 @@ function parseBranding(rows: { key: string; value: string }[]): Branding {
     whatsapp_url: get('whatsapp_url'),
     facebook_url: get('facebook_url'),
     instagram_url: get('instagram_url'),
-    tiktok_url: get('tiktok_url'),
     location: get('location'),
     copyright_name: get('copyright_name'),
     map_embed_url: get('map_embed_url'),

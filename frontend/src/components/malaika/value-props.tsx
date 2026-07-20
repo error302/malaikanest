@@ -1,7 +1,6 @@
 'use client';
 
 import * as Icons from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
 
 interface ValuePropData {
   id: string;
@@ -17,14 +16,13 @@ interface ValuePropsProps {
 }
 
 const FALLBACK = [
-  { id: '1', icon: 'Shield', titleKey: 'value.safe', subtitleKey: 'value.safeSub', isActive: true, position: 0 },
-  { id: '2', icon: 'Truck', titleKey: 'value.delivery', subtitleKey: 'value.deliverySub', isActive: true, position: 1 },
-  { id: '3', icon: 'Heart', titleKey: 'value.parent', subtitleKey: 'value.parentSub', isActive: true, position: 2 },
-  { id: '4', icon: 'CreditCard', titleKey: 'value.mpesa', subtitleKey: 'value.mpesaSub', isActive: true, position: 3 },
+  { id: '1', icon: 'Shield', title: 'Safe Materials', subtitle: 'OEKO-TEX certified, tested for your baby', isActive: true, position: 0 },
+  { id: '2', icon: 'Truck', title: 'Fast Delivery', subtitle: 'Same-day in Mombasa, 1–3 days countrywide', isActive: true, position: 1 },
+  { id: '3', icon: 'Heart', title: 'Parent Approved', subtitle: 'Trusted by 5,000+ Kenyan families', isActive: true, position: 2 },
+  { id: '4', icon: 'CreditCard', title: 'Secure M-Pesa', subtitle: 'Till 3370347 · Pay safely, every time', isActive: true, position: 3 },
 ];
 
 export function ValueProps({ props }: ValuePropsProps) {
-  const { t } = useI18n();
   const active = (props?.length ? props : FALLBACK).filter((p) => p.isActive).sort((a, b) => a.position - b.position);
 
   return (
@@ -40,8 +38,6 @@ export function ValueProps({ props }: ValuePropsProps) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
           {active.map((p) => {
             const Icon = (Icons as any)[p.icon] || Icons.Shield;
-            const title = 'titleKey' in p ? t(p.titleKey) : p.title;
-            const subtitle = 'subtitleKey' in p ? t(p.subtitleKey) : p.subtitle;
             return (
               <div key={p.id} className="flex items-start gap-3 sm:gap-4">
                 <div
@@ -52,10 +48,10 @@ export function ValueProps({ props }: ValuePropsProps) {
                 </div>
                 <div>
                   <p className="text-[13px] sm:text-sm font-semibold leading-tight" style={{ color: 'var(--brand-text)' }}>
-                    {title}
+                    {p.title}
                   </p>
                   <p className="text-[11px] sm:text-xs mt-1 leading-snug" style={{ color: 'var(--brand-text-secondary)' }}>
-                    {subtitle}
+                    {p.subtitle}
                   </p>
                 </div>
               </div>

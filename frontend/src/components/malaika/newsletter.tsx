@@ -2,14 +2,12 @@
 
 import { useState } from 'react';
 import { Mail, Check, Sparkles, Loader2 } from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
 
 interface NewsletterProps {
   content?: Record<string, Record<string, string>>;
 }
 
 export function Newsletter({ content }: NewsletterProps) {
-  const { t } = useI18n();
   const c = content?.newsletter || {};
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -56,24 +54,24 @@ export function Newsletter({ content }: NewsletterProps) {
               className="text-[10px] sm:text-[11px] uppercase tracking-[0.16em] font-semibold"
               style={{ color: 'var(--brand-gold-soft)' }}
             >
-               {c.badge || t('home.newsletterBadge')}
-             </span>
-           </div>
+              {c.badge || 'Join the Nest'}
+            </span>
+          </div>
 
-           <h2
-             className="font-serif font-semibold tracking-tight"
-             style={{
-               color: '#FFFFFF',
-               fontFamily: 'var(--font-cormorant)',
-               fontSize: 'clamp(1.8rem, 4.5vw, 2.6rem)',
-               lineHeight: 1.15,
-             }}
-           >
-             {c.title || t('home.newsletter')}
-           </h2>
-           <p className="mt-3 text-sm sm:text-base" style={{ color: 'rgba(255,255,255,0.7)' }}>
-             {c.subtitle || t('home.newsletterSub')}
-           </p>
+          <h2
+            className="font-serif font-semibold tracking-tight"
+            style={{
+              color: '#FFFFFF',
+              fontFamily: 'var(--font-cormorant)',
+              fontSize: 'clamp(1.8rem, 4.5vw, 2.6rem)',
+              lineHeight: 1.15,
+            }}
+          >
+            {c.title || 'Get 10% off your first order'}
+          </h2>
+          <p className="mt-3 text-sm sm:text-base" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            {c.subtitle || 'Subscribe for new arrivals, exclusive offers and parenting tips — straight to your inbox.'}
+          </p>
 
           <form onSubmit={handleSubmit} className="mt-7 sm:mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
             <div className="relative flex-1">
@@ -83,8 +81,8 @@ export function Newsletter({ content }: NewsletterProps) {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={c.placeholder || t('home.newsletterEmail')}
-                aria-label={t('home.newsletterEmail')}
+                placeholder={c.placeholder || 'you@email.com'}
+                aria-label="Email address"
                 disabled={status === 'loading'}
                 className="w-full rounded-full pl-11 pr-4 py-3.5 text-sm disabled:opacity-60"
                 style={{ background: '#FFFFFF', color: 'var(--brand-text)', border: '1px solid var(--brand-border)' }}
@@ -97,11 +95,11 @@ export function Newsletter({ content }: NewsletterProps) {
               style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
             >
               {status === 'loading' ? (
-                <><Loader2 size={16} className="animate-spin" /> {t('home.subscribing')}</>
+                <><Loader2 size={16} className="animate-spin" /> Subscribing…</>
               ) : status === 'success' ? (
-                <><Check size={16} /> {c.success_message || t('home.subscribed')}</>
+                <><Check size={16} /> {c.success_message || 'Subscribed'}</>
               ) : (
-                c.cta || t('home.subscribe')
+                c.cta || 'Subscribe'
               )}
             </button>
           </form>
@@ -114,7 +112,7 @@ export function Newsletter({ content }: NewsletterProps) {
           )}
 
           <p className="mt-4 text-[11px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            {c.disclaimer || t('home.newsletterDisclaimer')}
+            {c.disclaimer || 'No spam, only love. Unsubscribe anytime.'}
           </p>
         </div>
       </div>

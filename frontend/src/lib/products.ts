@@ -2,10 +2,6 @@
  * Server-side data fetchers for the Malaika Nest storefront.
  * These call the Django backend at /api/v1/products/* with graceful fallbacks
  * to sample data when the API is unreachable (e.g. sandbox/dev preview).
- *
- * All product-fetching functions use an in-memory cache with a 60-second TTL
- * to avoid hammering the backend API through the Cloudflare tunnel on every
- * page request.
  */
 import { getImageUrl } from '@/lib/media';
 import type { Product } from '@/components/malaika/product-card';
@@ -14,27 +10,6 @@ import {
   BEST_SELLERS,
   NEW_ARRIVALS,
 } from '@/components/malaika/sample-data';
-
-const PRODUCT_CACHE_TTL = 60_000;
-const _productCache = new Map<string, { data: unknown; ts: number }>();
-
-function _cacheGet<T>(key: string, ttl: number): T | null {
-  const entry = _productCache.get(key);
-  if (entry && Date.now() - entry.ts < ttl) return entry.data as T;
-  return null;
-}
-
-function _cacheSet<T>(key: string, data: T): void {
-  _productCache.set(key, { data, ts: Date.now() });
-  if (_productCache.size > 50) {
-    const firstKey = _productCache.keys().next().value;
-    if (firstKey !== undefined) _productCache.delete(firstKey);
-  }
-}
-
-export function clearProductCache(): void {
-  _productCache.clear();
-}
 
 export interface Banner {
   id: number;
@@ -46,8 +21,6 @@ export interface Banner {
   mobile_image?: string;
   image_url?: string;
   mobile_image_url?: string;
-  is_active: boolean;
-  position?: number;
 }
 
 export interface ApiProduct {
@@ -70,24 +43,11 @@ export interface ApiProduct {
 }
 
 function getApiBaseUrl(): string {
-  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL;
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    const url = process.env.NEXT_PUBLIC_API_URL;
-    if (url.includes('localhost') || url.includes('127.0.0.1')) return url;
-  }
-  if (
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ) {
-    return 'http://localhost:8000';
-  }
-  if (
-    typeof process !== 'undefined' &&
-    process.env.NODE_ENV === 'development'
-  ) {
-    return 'http://localhost:8000';
-  }
-  return 'https://api.malaikanest.com';
+  return (
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'https://malaikanest.duckdns.org'
+  );
 }
 
 function normalizeProduct(p: ApiProduct): Product {
@@ -117,18 +77,15 @@ function normalizeProduct(p: ApiProduct): Product {
 async function fetchProducts(
   params: Record<string, string | number | boolean>
 ): Promise<{ products: Product[]; ok: boolean }> {
-  const cacheKey = `products:${JSON.stringify(params)}`;
-  const cached = _cacheGet<{ products: Product[]; ok: boolean }>(cacheKey, PRODUCT_CACHE_TTL);
-  if (cached) return cached;
-
   const baseUrl = getApiBaseUrl();
   const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) qs.set(String(k), String(v));
+  for (const [k, v] of Object.entries(params)) qs.set(k, String(v));
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 2500);
     const res = await fetch(`${baseUrl}/api/v1/products/products/?${qs.toString()}`, {
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: controller.signal,
     });
@@ -140,9 +97,7 @@ async function fetchProducts(
     if (!Array.isArray(results) || results.length === 0) {
       return { products: [], ok: false };
     }
-    const result = { products: results.map(normalizeProduct), ok: true };
-    _cacheSet(cacheKey, result);
-    return result;
+    return { products: results.map(normalizeProduct), ok: true };
   } catch {
     return { products: [], ok: false };
   }
@@ -151,6 +106,7 @@ async function fetchProducts(
 export async function getFeaturedProducts(): Promise<Product[]> {
   const { products, ok } = await fetchProducts({ featured: true, limit: 8 });
   if (ok && products.length > 0) return products;
+  // Fallback to newest products if no featured flag is set
   const { products: recent } = await fetchProducts({ ordering: '-created_at', limit: 8 });
   return recent.length > 0 ? recent : FEATURED_PRODUCTS;
 }
@@ -168,15 +124,12 @@ export async function getNewArrivals(): Promise<Product[]> {
 }
 
 export async function getActiveBanners(): Promise<Banner[]> {
-  const cacheKey = 'banners:active';
-  const cached = _cacheGet<Banner[]>(cacheKey, PRODUCT_CACHE_TTL);
-  if (cached) return cached;
-
   const baseUrl = getApiBaseUrl();
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(`${baseUrl}/api/v1/products/banners/?is_active=true&ordering=position`, {
+    const timeout = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(`${baseUrl}/api/v1/products/banners/`, {
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: controller.signal,
     });
@@ -185,11 +138,10 @@ export async function getActiveBanners(): Promise<Banner[]> {
     const data = await res.json();
     const results: Banner[] = data?.results ?? data?.data?.results ?? data?.data ?? [];
     if (!Array.isArray(results)) return [];
-    const filtered = results.filter(
+    // Only keep banners with at least one usable image
+    return results.filter(
       (b) => Boolean(b.image || b.image_url || b.mobile_image || b.mobile_image_url)
     );
-    _cacheSet(cacheKey, filtered);
-    return filtered;
   } catch {
     return [];
   }

@@ -1,198 +1,104 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Image as ImageIcon, Upload, X } from 'lucide-react';
 import Link from 'next/link';
-import api, { extractApiError } from '@/lib/api';
+import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
-import { getImageUrl, shouldUseUnoptimizedImage } from '@/lib/media';
-import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
 
 interface Category {
-  id: string;
+  id: number;
   name: string;
   slug: string;
-}
-
-interface ProductForm {
-  name: string;
-  slug: string;
-  description: string;
-  price: string;
-  compare_price: string;
-  stock: string;
-  category_id: string;
-  brand: string;
-  sku: string;
-  gender: string;
-  age_group: string;
-  age_range: string;
-  size_label: string;
-  featured: boolean;
-  status: string;
-  seo_title: string;
-  seo_description: string;
-  image_url: string;
-}
-
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+  full_slug?: string;
+  parent?: number | null;
+  children?: Category[];
 }
 
 export default function NewProductPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState<ProductForm>({
+  const [form, setForm] = useState({
     name: '', slug: '', description: '', price: '', compare_price: '', stock: '0',
-    category_id: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
-    size_label: '', featured: false, status: 'draft', seo_title: '', seo_description: '',
+    category: '', brand: '', sku: '', gender: 'unisex', age_group: '', age_range: '',
+    size_label: '', featured: false, is_active: true, status: 'draft',
     image_url: '',
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [slugTouched, setSlugTouched] = useState(false);
-  const [variants, setVariants] = useState<VariantForm[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch categories for the dropdown
   useEffect(() => {
-    api.get('/api/v1/products/categories/').then(({ data }) => setCategories(data.results || data))
-      .catch(() => showToast('Failed to load categories', 'error'));
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await api.get('/api/v1/products/categories/', {
+          headers: { 'X-No-Auth-Redirect': 'true' },
+        });
+        if (cancelled) return;
+        const data = res.data;
+        const cats = data?.results ?? data?.data?.results ?? data ?? [];
+        setCategories(Array.isArray(cats) ? cats : []);
+      } catch {
+        if (!cancelled) setCategories([]);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
   }, []);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      showToast('Only PNG, JPEG or WebP images are allowed', 'error');
-      e.target.value = '';
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      showToast('Image must be 5 MB or smaller', 'error');
-      e.target.value = '';
-      return;
-    }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+  // Auto-generate slug from name
+  const generateSlug = (name: string) => {
+    return name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   };
 
-  const handleImageRemove = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setForm((f) => ({ ...f, image_url: '' }));
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const buildVariantsPayload = () =>
-    variants
-      .filter((v) => v.color)
-      .map((v) => ({
-        color: v.color,
-        size: v.size || null,
-        sku: v.sku || null,
-        price_modifier: v.price_modifier || '0',
-        stock: parseInt(v.stock) || 0,
-        is_active: true,
-      }));
-
-  const payload = () => {
-    const slug = form.slug.trim() || slugify(form.name);
-
-    if (imageFile) {
-      // File upload path: use multipart with all fields.
-      const fd = new FormData();
-      fd.append('name', form.name);
-      fd.append('slug', slug);
-      fd.append('description', form.description);
-      fd.append('price', String(parseFloat(form.price) || 0));
-      if (form.compare_price) fd.append('compare_price', String(parseFloat(form.compare_price)));
-      else fd.append('compare_price', '');
-      fd.append('stock', String(parseInt(form.stock) || 0));
-      fd.append('category', form.category_id);
-      fd.append('sku', form.sku);
-      fd.append('brand', form.brand);
-      fd.append('gender', form.gender);
-      fd.append('age_group', form.age_group);
-      fd.append('age_range', form.age_range);
-      fd.append('size_label', form.size_label);
-      fd.append('featured', form.featured ? 'true' : 'false');
-      fd.append('status', form.status);
-      fd.append('is_active', form.status === 'published' ? 'true' : 'false');
-      if (form.image_url) fd.append('image_url', form.image_url);
-      fd.append('image', imageFile);
-      const vp = buildVariantsPayload();
-      if (vp.length) {
-        // Send each variant as a separate form field so DRF MultipartParser
-        // receives a plain list, NOT a JSON string needing double-parse.
-        vp.forEach((variant, i) => {
-          Object.entries(variant).forEach(([k, v]) => fd.append(`variants[${i}][${k}]`, String(v)));
-        });
-      }
-      return fd;
-    }
-
-    // JSON body (no file). Nested arrays and primitives arrive to the serializer
-    // as native objects/strings — no JSON-in-formstring traps.
-    const body: Record<string, unknown> = {
-      name: form.name,
-      slug,
-      description: form.description,
-      price: parseFloat(form.price) || 0,
-      compare_price: form.compare_price ? parseFloat(form.compare_price) : null,
-      stock: parseInt(form.stock) || 0,
-      category: form.category_id,
-      sku: form.sku,
-      brand: form.brand,
-      gender: form.gender,
-      age_group: form.age_group,
-      age_range: form.age_range,
-      size_label: form.size_label,
-      featured: form.featured,
-      status: form.status,
-      is_active: form.status === 'published',
-    };
-    if (form.image_url) body.image_url = form.image_url;
-    const vp = buildVariantsPayload();
-    if (vp.length) body.variants = vp;
-    return body;
+  const handleNameChange = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      name: value,
+      slug: prev.slug || generateSlug(value),  // only auto-fill if slug is empty
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) {
-      showToast('Product name is required', 'error');
-      return;
-    }
-    if (!form.category_id) {
-      showToast('Please select a category', 'error');
-      return;
-    }
-    if (!form.price || parseFloat(form.price) <= 0) {
-      showToast('Please enter a valid price', 'error');
-      return;
-    }
-    if (variants.some((v) => !v.color)) {
-      showToast('Each variant must have a color selected', 'error');
-      return;
-    }
     setSaving(true);
+
+    // Build the payload matching AdminProductSerializer fields exactly
+    const payload: Record<string, any> = {
+      name: form.name,
+      slug: form.slug || generateSlug(form.name),
+      description: form.description || '',
+      price: form.price,  // send as string — Django Decimal field accepts string
+      stock: parseInt(form.stock) || 0,
+      gender: form.gender,
+      status: form.status,
+      featured: form.featured,
+      is_active: form.is_active,
+      category: form.category ? parseInt(form.category) : null,
+    };
+
+    // Only include optional fields if they have values
+    if (form.compare_price) payload.compare_price = form.compare_price;
+    if (form.brand) payload.brand = parseInt(form.brand);
+    if (form.sku) payload.sku = form.sku;
+    if (form.age_group) payload.age_group = form.age_group;
+    if (form.age_range) payload.age_range = form.age_range;
+    if (form.size_label) payload.size_label = form.size_label;
+    if (form.image_url) payload.image_url = form.image_url;
+
     try {
-      await api.post('/api/v1/products/admin/products/', payload());
-      showToast('Product created', 'success');
+      await api.post('/api/v1/products/admin/products/', payload);
+      showToast('Product created successfully!', 'success');
       router.push('/admin/products');
     } catch (err: any) {
-      showToast(extractApiError(err, 'Failed to create product'), 'error');
+      // Surface Django's field-level validation errors
+      const msg = handleApiError(err, 'Failed to create product');
+      showToast(msg, 'error');
+      // Log full error for debugging
+      if (err?.response?.data) {
+        console.error('Product creation error:', err.response.data);
+      }
     } finally {
       setSaving(false);
     }
@@ -211,16 +117,18 @@ export default function NewProductPage() {
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Basic Info */}
         <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
           <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Basic Information</h2>
           <div className="space-y-3">
             <div>
               <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Name *</label>
-              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: slugTouched ? form.slug : slugify(e.target.value) })} className={inputClass} style={inputStyle} />
+              <input required value={form.name} onChange={(e) => handleNameChange(e.target.value)} placeholder="e.g. Organic Cotton Onesie (3-Pack)" className={inputClass} style={inputStyle} />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Slug *</label>
-              <input required value={form.slug} onChange={(e) => { setSlugTouched(true); setForm({ ...form, slug: e.target.value }); }} className={inputClass} style={inputStyle} />
+              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Slug (URL) *</label>
+              <input required value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-generated from name" className={inputClass} style={inputStyle} />
+              <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>This is the URL: /products/<strong>{form.slug || 'your-slug'}</strong></p>
             </div>
             <div>
               <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Description</label>
@@ -228,72 +136,57 @@ export default function NewProductPage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>SKU</label>
-                <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="Auto-generated if left blank" className={inputClass} style={inputStyle} />
-                <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>Leave blank to auto-generate a unique SKU.</p>
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Category</label>
-                <select
-                  value={form.category_id}
-                  onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                  className={inputClass}
-                  style={inputStyle}
-                >
-                  <option value="">— Select category —</option>
+                <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Category *</label>
+                <select required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} style={inputStyle}>
+                  <option value="">Select a category…</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
+                {categories.length === 0 && (
+                  <p className="text-[11px] mt-1" style={{ color: 'var(--brand-terra)' }}>
+                    No categories loaded. Check your Django backend connection.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>SKU (optional)</label>
+                <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="e.g. MN-ONS-001" className={inputClass} style={inputStyle} />
               </div>
             </div>
           </div>
         </div>
 
+        {/* Image */}
         <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
           <div className="flex items-center gap-2 mb-4">
             <ImageIcon size={18} style={{ color: 'var(--brand-gold)' }} />
             <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Product Image</h2>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 rounded-xl border flex items-center justify-center overflow-hidden flex-shrink-0" style={{ background: 'var(--brand-bg-alt)', borderColor: 'var(--brand-border)' }}>
-              {imagePreview ? (
-                <img src={imagePreview} alt="Product preview" className="w-full h-full object-cover" />
-              ) : (
-                <ImageIcon size={28} style={{ color: 'var(--brand-text-muted)' }} />
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium cursor-pointer" style={{ background: 'var(--brand-warm)', color: 'var(--brand-gold)' }}>
-                <Upload size={14} /> Choose image
-                <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleImageSelect} />
-              </label>
-              {(imagePreview || form.image_url) && (
-                <button type="button" onClick={handleImageRemove} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs" style={{ background: 'rgba(196,112,74,0.1)', color: 'var(--brand-terra)' }}>
-                  <X size={12} /> Remove
-                </button>
-              )}
-              <p className="text-[11px]" style={{ color: 'var(--brand-text-muted)' }}>
-                PNG, JPEG or WebP. Max 5 MB.
-              </p>
-            </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Image URL (Cloudinary/CDN)</label>
+            <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…/product.jpg" className={inputClass} style={inputStyle} />
+            <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>Paste a Cloudinary URL. The backend will download and store it.</p>
           </div>
-          <div className="mt-3">
-            <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Or image URL</label>
-            <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://…" className={inputClass} style={inputStyle} />
-          </div>
+          {form.image_url && (
+            <div className="mt-3 w-32 h-32 rounded-xl overflow-hidden border" style={{ borderColor: 'var(--brand-border)' }}>
+              <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
+            </div>
+          )}
         </div>
 
+        {/* Pricing */}
         <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
           <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Pricing & Inventory</h2>
           <div className="grid sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Price (KES) *</label>
-              <input required type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} style={inputStyle} />
+              <input required type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="1800" className={inputClass} style={inputStyle} />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Compare price</label>
-              <input type="number" step="0.01" value={form.compare_price} onChange={(e) => setForm({ ...form, compare_price: e.target.value })} className={inputClass} style={inputStyle} />
+              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Compare price (KES)</label>
+              <input type="number" step="0.01" value={form.compare_price} onChange={(e) => setForm({ ...form, compare_price: e.target.value })} placeholder="2400" className={inputClass} style={inputStyle} />
+              <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>Original price (shows discount)</p>
             </div>
             <div>
               <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Stock</label>
@@ -302,6 +195,7 @@ export default function NewProductPage() {
           </div>
         </div>
 
+        {/* Attributes */}
         <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
           <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Attributes</h2>
           <div className="grid sm:grid-cols-3 gap-3">
@@ -325,33 +219,20 @@ export default function NewProductPage() {
             <div>
               <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Status</label>
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputClass} style={inputStyle}>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
+                <option value="draft">Draft (hidden)</option>
+                <option value="published">Published (visible)</option>
               </select>
             </div>
           </div>
-          <label className="flex items-center gap-2 mt-4 text-sm" style={{ color: 'var(--brand-brown)' }}>
-            <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
-            Featured product (show on homepage)
-          </label>
-        </div>
-
-        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Colors &amp; Sizes</h2>
-          <VariantEditor variants={variants} onChange={setVariants} />
-        </div>
-
-        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>SEO</h2>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>SEO Title</label>
-              <input value={form.seo_title} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} maxLength={70} className={inputClass} style={inputStyle} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>SEO Description</label>
-              <textarea value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} maxLength={160} rows={2} className={inputClass} style={inputStyle} />
-            </div>
+          <div className="flex gap-4 mt-4">
+            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--brand-brown)' }}>
+              <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
+              Featured (show on homepage)
+            </label>
+            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--brand-brown)' }}>
+              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
+              Active
+            </label>
           </div>
         </div>
 
