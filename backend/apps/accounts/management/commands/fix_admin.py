@@ -13,7 +13,7 @@ class Command(BaseCommand):
             '--email',
             type=str,
             help='Email of the admin user to fix',
-            default='malaikanest7@gmail.com',
+            default='hello@malaikanest.com',
         )
         parser.add_argument(
             '--password',

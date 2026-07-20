@@ -18,7 +18,7 @@ const BRANDING_DEFAULTS = [
     'Lipa Na M-Pesa · Till 3370347',
     'Handcrafted with love in Kenya',
   ]) },
-  { key: 'contact_email', value: 'malaikanest7@gmail.com' },
+  { key: 'contact_email', value: 'hello@malaikanest.com' },
   { key: 'contact_phone', value: '+254726771321' },
   { key: 'mpesa_till', value: '3370347' },
   { key: 'whatsapp_url', value: 'https://wa.me/254726771321' },

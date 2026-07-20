@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         <h2 className="font-serif text-xl font-semibold mt-6 mb-2" style={{ color: 'var(--brand-text)' }}>Data Security</h2>
         <p>All payment information is encrypted using 256-bit SSL and processed by PCI-compliant providers. We do not store full card numbers on our servers. M-Pesa payments are processed directly by Safaricom.</p>
         <h2 className="font-serif text-xl font-semibold mt-6 mb-2" style={{ color: 'var(--brand-text)' }}>Your Rights</h2>
-        <p>You have the right to access, correct or delete your personal data at any time. To exercise these rights, email malaikanest7@gmail.com. We respond to all requests within 30 days.</p>
+        <p>You have the right to access, correct or delete your personal data at any time. To exercise these rights, email hello@malaikanest.com. We respond to all requests within 30 days.</p>
         <p className="text-xs pt-4" style={{ color: 'var(--brand-text-muted)' }}>Last updated: January 2026</p>
       </div>
     </div>

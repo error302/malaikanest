@@ -20,7 +20,7 @@ export default function ContactPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
         {[
-          { Icon: Mail, label: 'Email', value: 'malaikanest7@gmail.com', href: 'mailto:malaikanest7@gmail.com' },
+          { Icon: Mail, label: 'Email', value: 'hello@malaikanest.com', href: 'mailto:hello@malaikanest.com' },
           { Icon: Phone, label: 'Phone', value: '+254 726 771 321', href: 'tel:+254726771321' },
           { Icon: MessageCircle, label: 'WhatsApp', value: 'Chat with us', href: 'https://wa.me/254726771321' },
           { Icon: MapPin, label: 'Location', value: 'Tawakal Toto Shop, Mombasa', href: 'https://maps.app.goo.gl/AHTa75obHAyjB3xZ8' },

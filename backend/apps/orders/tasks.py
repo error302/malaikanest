@@ -99,7 +99,7 @@ def send_order_confirmation(self, order_id):
             "order": order,
             "customer_name": order.customer_name,
             "company_name": "Malaika Nest",
-            "company_email": "malaikanest7@gmail.com",
+            "company_email": "hello@malaikanest.com",
         }
         
         html_body = render_to_string("emails/order_confirmation.html", context)
@@ -155,7 +155,7 @@ def send_payment_confirmation(self, order_id):
             "invoice": invoice,
             "customer_name": order.customer_name,
             "company_name": "Malaika Nest",
-            "company_email": "malaikanest7@gmail.com",
+            "company_email": "hello@malaikanest.com",
             "company_phone": "+254 726 771 321",
         }
         
@@ -219,7 +219,7 @@ def send_order_shipped(self, order_id):
             "order": order,
             "customer_name": order.customer_name,
             "company_name": "Malaika Nest",
-            "company_email": "malaikanest7@gmail.com",
+            "company_email": "hello@malaikanest.com",
             "tracking_number": order.tracking_number,
             "shipping_carrier": order.shipping_carrier,
         }
@@ -270,7 +270,7 @@ def send_order_delivered(self, order_id):
             "order": order,
             "customer_name": order.customer_name,
             "company_name": "Malaika Nest",
-            "company_email": "malaikanest7@gmail.com",
+            "company_email": "hello@malaikanest.com",
         }
         
         html_body = render_to_string("emails/order_delivered.html", context)
@@ -407,7 +407,7 @@ def send_review_request(self, order_id):
             "customer_name": order.customer_name,
             "items": items,
             "company_name": "Malaika Nest",
-            "company_email": "malaikanest7@gmail.com",
+            "company_email": "hello@malaikanest.com",
         }
         
         html_body = render_to_string("emails/review_request.html", context)
@@ -834,7 +834,7 @@ def send_critical_alert(self, alert_type, message, context=None):
     
     if not admin_emails:
         # Fallback to default
-        admin_emails = ['malaikanest7@gmail.com']
+        admin_emails = ['hello@malaikanest.com']
     
     try:
         subject = f"[Malaika Nest] Critical Alert: {alert_type}"

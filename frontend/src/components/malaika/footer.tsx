@@ -208,11 +208,11 @@ export function Footer({ branding }: FooterProps) {
                  <ul className="space-y-1.5">
                    <li>
                      <a
-                       href={`mailto:${b?.contact_email || "malaikanest7@gmail.com"}`}
+                       href={`mailto:${b?.contact_email || "hello@malaikanest.com"}`}
                        className="text-[13px] inline-flex items-center gap-2 transition-colors hover:text-[var(--brand-gold)]"
                        style={{ color: 'var(--brand-text-secondary)' }}
                      >
-                       <Mail size={13} /> {b?.contact_email || 'malaikanest7@gmail.com'}
+                       <Mail size={13} /> {b?.contact_email || 'hello@malaikanest.com'}
                      </a>
                    </li>
                    <li>

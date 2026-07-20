@@ -60,7 +60,7 @@ function buildBase(): string {
     `- Free delivery: orders over KES 3,000 in Mombasa`,
     `- Payment: M-Pesa Till 3370347, plus cash on delivery in Mombasa`,
     `- WhatsApp: +254 726 771 321`,
-    `- Email: malaikanest7@gmail.com`,
+    `- Email: hello@malaikanest.com`,
     `- Languages: English and Swahili`,
     ``,
     `## Product schema (JSON-LD)`,

@@ -33,7 +33,7 @@ class SiteSettings(BaseModel):
         max_length=255, default="Premium Baby Products in Kenya", blank=True
     )
 
-    contact_email = models.EmailField(default="malaikanest7@gmail.com")
+    contact_email = models.EmailField(default="hello@malaikanest.com")
     contact_phone = models.CharField(max_length=40, default="+254700000000", blank=True)
     address = models.CharField(max_length=180, default="Nairobi, Kenya", blank=True)
 

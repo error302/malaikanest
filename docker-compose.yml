@@ -61,7 +61,7 @@ services:
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-malaikanest7@gmail.com}
       # EMAIL_HOST_PASSWORD intentionally NOT set here so the value from backend/.env is used
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
-      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <malaikanest7@gmail.com>}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <hello@malaikanest.com>}
     depends_on:
       db:
         condition: service_healthy
@@ -123,7 +123,7 @@ services:
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-malaikanest7@gmail.com}
       # EMAIL_HOST_PASSWORD intentionally NOT set here so the value from backend/.env is used
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
-      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <malaikanest7@gmail.com>}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <hello@malaikanest.com>}
     depends_on:
       backend:
         condition: service_started

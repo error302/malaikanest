@@ -231,7 +231,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # - Dev/local: console backend by default (no env required)
 # - Prod: SMTP backend with required env vars
 #
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Malaika Nest <malaikanest7@gmail.com>")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Malaika Nest <hello@malaikanest.com>")
 
 _email_host = (os.getenv("EMAIL_HOST") or "").strip()
 if production_env_requested:

@@ -45,7 +45,7 @@ export default function ReturnsPage() {
         <RotateCcw size={22} className="mb-3" style={{ color: 'var(--brand-gold)' }} />
         <h2 className="font-serif text-xl font-semibold mb-3" style={{ color: 'var(--brand-text)' }}>How to return an item</h2>
         <ol className="space-y-2 text-sm list-decimal list-inside" style={{ color: 'var(--brand-text-secondary)' }}>
-          <li>Email malaikanest7@gmail.com with your order number and the item you wish to return.</li>
+          <li>Email hello@malaikanest.com with your order number and the item you wish to return.</li>
           <li>We&apos;ll send you a return authorization and the return address within 24 hours.</li>
           <li>Pack the item securely in its original packaging with all tags attached.</li>
           <li>Ship the parcel — return shipping is the customer&apos;s responsibility unless the item was damaged or incorrect.</li>

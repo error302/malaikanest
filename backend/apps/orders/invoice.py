@@ -52,7 +52,7 @@ def _build_invoice_context(order, invoice_number):
         'order_id': order.id,
         'receipt_number': order.receipt_number,
         'company_name': 'Malaika Nest',
-        'company_email': 'malaikanest7@gmail.com',
+        'company_email': 'hello@malaikanest.com',
         'company_phone': '+254 726 771 321',
         'company_address': 'Mombasa, Kenya',
         'customer_name': order.customer_name,
@@ -223,7 +223,7 @@ def generate_invoice_html(order):
     context = {
         'order': order,
         'company_name': 'Malaika Nest',
-        'company_email': 'malaikanest7@gmail.com',
+        'company_email': 'hello@malaikanest.com',
         'company_phone': '+254 726 771 321',
         'company_address': 'Mombasa, Kenya',
         'invoice_number': invoice_number,

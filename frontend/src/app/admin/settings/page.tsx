@@ -8,7 +8,7 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
     storeName: 'Malaika Nest',
-    storeEmail: 'malaikanest7@gmail.com',
+    storeEmail: 'hello@malaikanest.com',
     storePhone: '+254726771321',
     mpesaTill: '3370347',
     freeShippingThreshold: '3000',

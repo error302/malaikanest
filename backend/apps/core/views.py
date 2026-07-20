@@ -118,7 +118,7 @@ class ContactFormView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        recipient = getattr(settings, "DEFAULT_FROM_EMAIL", "malaikanest7@gmail.com")
+        recipient = getattr(settings, "DEFAULT_FROM_EMAIL", "hello@malaikanest.com")
         # Extract plain address if it has display name format
         if "<" in recipient and ">" in recipient:
             recipient = recipient.split("<")[1].rstrip(">").strip()

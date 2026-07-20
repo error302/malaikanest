@@ -12,7 +12,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Superuser already exists"))
         else:
             User.objects.create_superuser(
-                email="malaikanest7@gmail.com",
+                email="hello@malaikanest.com",
                 phone_number="+254712345678",
                 password="Dosho10701$",
             )
