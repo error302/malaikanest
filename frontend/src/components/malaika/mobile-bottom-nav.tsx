@@ -1,25 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, ShoppingBag, Baby, ShoppingCart, User } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { useWishlist } from '@/lib/wishlistContext';
+import { Home, ShoppingBag, Baby, Heart, ShoppingCart, User } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { name: 'Home', href: '#home', icon: Home },
-  { name: 'Shop', href: '#shop', icon: ShoppingBag },
-  { name: 'Age', href: '#shop-by-age', icon: Baby },
-  { name: 'Cart', href: '#cart', icon: ShoppingCart, showBadge: true },
-  { name: 'Account', href: '#account', icon: User },
+  { name: 'Home', href: '/', icon: Home },
+  { name: 'Shop', href: '/categories', icon: ShoppingBag },
+  { name: 'Age', href: '/categories', icon: Baby },
+  { name: 'Wishlist', href: '/wishlist', icon: Heart, showBadge: true },
+  { name: 'Cart', href: '/cart', icon: ShoppingCart, showBadge: true },
+  { name: 'Account', href: '/account', icon: User },
 ];
 
-export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
-  const handleNavClick = (e: React.MouseEvent, href: string) => {
-    // Smooth-scroll to anchor
-    e.preventDefault();
-    const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
+  const pathname = usePathname();
 
   return (
     <nav
@@ -35,18 +31,26 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
       <div className="flex items-stretch justify-around h-16">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
+          const active = pathname === item.href;
+          const badgeCount = item.showBadge
+            ? item.name === 'Cart'
+              ? cartCount
+              : item.name === 'Wishlist'
+              ? wishlistCount
+              : 0
+            : 0;
           return (
-            <a
+            <Link
               key={item.name}
               href={item.href}
-              onClick={(e) => handleNavClick(e, item.href)}
               className="flex flex-col items-center justify-center gap-1 flex-1 relative transition-colors"
-              style={{ color: 'var(--brand-text-muted)' }}
+              style={{ color: active ? 'var(--brand-gold)' : 'var(--brand-text-muted)' }}
               aria-label={item.name}
+              aria-current={active ? 'page' : undefined}
             >
               <div className="relative">
-                <Icon size={22} strokeWidth={1.75} />
-                {item.showBadge && cartCount > 0 && (
+                <Icon size={22} strokeWidth={active ? 2 : 1.75} />
+                {badgeCount > 0 && (
                   <span
                     className="absolute -top-1.5 -right-2 min-w-[16px] h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"
                     style={{
@@ -54,12 +58,12 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
                       color: '#FFFFFF',
                     }}
                   >
-                    {cartCount > 9 ? '9+' : cartCount}
+                    {badgeCount > 9 ? '9+' : badgeCount}
                   </span>
                 )}
               </div>
               <span className="text-[10px] font-medium">{item.name}</span>
-            </a>
+            </Link>
           );
         })}
       </div>

@@ -319,7 +319,11 @@ class Product(BaseModel):
     seo_title = models.CharField(max_length=70, blank=True)
     seo_description = models.CharField(max_length=160, blank=True)
     image = models.ImageField(
-        upload_to="products/", blank=True, null=True, validators=[validate_image_file]
+        upload_to="products/",
+        blank=True,
+        null=True,
+        max_length=500,
+        validators=[validate_image_file],
     )
     is_active = models.BooleanField(default=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="products")

@@ -377,6 +377,8 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
   return fallback;
 };
 
+export const extractApiError = handleApiError;
+
 export const isValidResponse = (data: any): boolean => {
   return data !== null && data !== undefined && (typeof data === 'object' ? Object.keys(data).length > 0 : true);
 };

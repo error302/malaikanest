@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   Heart,
@@ -22,15 +24,15 @@ import {
   Baby,
 } from 'lucide-react';
 import { Logo } from './logo';
-import { AnnouncementBar } from './announcement-bar';
 import { LanguageToggle } from './language-toggle';
+import { useI18n } from '@/lib/i18n';
 
 const NAV_LINKS = [
-  { name: 'Home', href: '#home' },
-  { name: 'Shop', href: '#shop', hasDropdown: true },
-  { name: 'Mtumba', href: '/thrifted' },
-  { name: 'Best Sellers', href: '#best-sellers' },
-  { name: 'Find Us', href: '/find-us' },
+  { nameKey: 'nav.home', href: '/' },
+  { nameKey: 'nav.shop', href: '/categories', hasDropdown: true },
+  { nameKey: 'nav.thrifted', href: '/thrifted' },
+  { nameKey: 'nav.bestsellers', href: '/best-sellers' },
+  { nameKey: 'nav.contact', href: '/find-us' },
 ];
 
 const SHOP_BY_AGE = [
@@ -39,17 +41,19 @@ const SHOP_BY_AGE = [
 ];
 
 const SHOP_CATEGORIES = [
-  { name: 'Clothing', desc: 'Onesies, rompers & more', Icon: Shirt, color: '#FCE7E1' },
-  { name: 'Baby Essentials', desc: 'Feeding, bathing & care', Icon: Package, color: '#FEF3DC' },
-  { name: 'Nursery', desc: 'Furniture, bedding & decor', Icon: Home, color: '#E1EEF8' },
-  { name: 'Toys & Learning', desc: 'Play, explore & grow', Icon: Gamepad2, color: '#EFE3F8' },
-  { name: 'Travel & Safety', desc: 'Strollers, carriers & safety', Icon: Car, color: '#E1F4E8' },
-  { name: 'Gift Sets', desc: 'Curated bundles', Icon: Gift, color: '#FCE1EE' },
+  { nameKey: 'cat.clothing', descKey: 'cat.clothingDesc', Icon: Shirt, color: '#FCE7E1' },
+  { nameKey: 'cat.feeding', descKey: 'cat.feedingDesc', Icon: Package, color: '#FEF3DC' },
+  { nameKey: 'cat.nursery', descKey: 'cat.nurseryDesc', Icon: Home, color: '#E1EEF8' },
+  { nameKey: 'cat.toys', descKey: 'cat.toysDesc', Icon: Gamepad2, color: '#EFE3F8' },
+  { nameKey: 'cat.travel', descKey: 'cat.travelDesc', Icon: Car, color: '#E1F4E8' },
+  { nameKey: 'cat.books', descKey: 'cat.booksDesc', Icon: Gift, color: '#FCE1EE' },
 ];
 
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
 
 export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
+  const router = useRouter();
+  const { t } = useI18n();
   const [shopOpen, setShopOpen] = useState(false);
   const [ageOpen, setAgeOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -90,8 +94,6 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
 
   return (
     <>
-      <AnnouncementBar />
-
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled
@@ -105,14 +107,14 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
         role="banner"
       >
         <nav
-          className="container-shell flex items-center h-[64px] sm:h-[72px] gap-4 sm:gap-6 lg:gap-8"
+          className="container-shell flex items-center h-[64px] sm:h-[72px] gap-2 sm:gap-3 lg:gap-5"
           aria-label="Main navigation"
         >
           {/* Mobile hamburger */}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+            className="lg:hidden w-11 h-11 min-w-11 min-h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
             style={{ color: 'var(--brand-brown)' }}
             aria-label="Open menu"
           >
@@ -121,7 +123,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
 
           {/* Logo */}
           <Link
-            href="#home"
+            href="/"
             className="flex-shrink-0"
             aria-label="Malaika Nest home"
           >
@@ -129,22 +131,22 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-7 flex-1">
+          <div className="hidden lg:flex items-center gap-6 xl:gap-7 flex-shrink-0">
             {NAV_LINKS.map((link) =>
               link.hasDropdown ? (
                 <div
-                  key={link.name}
+                  key={link.nameKey}
                   onMouseEnter={openShop}
                   onMouseLeave={closeShop}
                   className="relative"
                 >
                   <button
-                    className="inline-flex items-center gap-1 text-[14px] font-medium transition-colors"
+                    className="inline-flex items-center gap-1 text-[14px] font-medium whitespace-nowrap transition-colors"
                     style={{ color: 'var(--brand-brown)' }}
                     aria-expanded={shopOpen}
                     aria-haspopup="true"
                   >
-                    {link.name}
+                    {t(link.nameKey)}
                     <ChevronDown
                       size={14}
                       className={`transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`}
@@ -152,14 +154,14 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   </button>
                 </div>
               ) : (
-                <a
-                  key={link.name}
+                <Link
+                  key={link.nameKey}
                   href={link.href}
-                  className="text-[14px] font-medium transition-colors hover:text-[var(--brand-gold)]"
+                  className="text-[14px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  {link.name}
-                </a>
+                  {t(link.nameKey)}
+                </Link>
               )
             )}
 
@@ -170,12 +172,12 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
               className="relative"
             >
               <button
-                className="inline-flex items-center gap-1 text-[14px] font-medium transition-colors"
+                className="inline-flex items-center gap-1 text-[14px] font-medium whitespace-nowrap transition-colors"
                 style={{ color: 'var(--brand-brown)' }}
                 aria-expanded={ageOpen}
                 aria-haspopup="true"
               >
-                Shop by Age
+                {t('nav.shopByAge')}
                 <ChevronDown
                   size={14}
                   className={`transition-transform duration-200 ${ageOpen ? 'rotate-180' : ''}`}
@@ -185,14 +187,12 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
           </div>
 
           {/* Desktop search */}
-          <div className="hidden md:flex flex-1 max-w-xs lg:max-w-md ml-auto">
+          <div className="hidden md:flex flex-1 min-w-0 max-w-[200px] xl:max-w-[260px]">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 if (searchQuery.trim()) {
-                  document
-                    .getElementById('shop')
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
                 }
               }}
               className="relative w-full"
@@ -207,15 +207,15 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search baby essentials…"
+                placeholder={t('nav.search') + '…'}
                 className="input-warm w-full"
-                aria-label="Search products"
+                aria-label={t('nav.search')}
               />
             </form>
           </div>
 
           {/* Right icons */}
-          <div className="flex items-center gap-1 sm:gap-1.5 ml-auto md:ml-2">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {/* Language toggle */}
             <LanguageToggle className="hidden sm:inline-flex" />
 
@@ -230,7 +230,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             </button>
 
             <Link
-              href="#wishlist"
+              href="/wishlist"
               className="relative hidden sm:flex w-11 h-11 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
               aria-label={`Wishlist${wishlistCount > 0 ? `, ${wishlistCount} items` : ''}`}
@@ -247,7 +247,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             </Link>
 
             <Link
-              href="#account"
+              href="/login"
               className="hidden md:flex w-11 h-11 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
               aria-label="Account"
@@ -256,16 +256,16 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             </Link>
 
             <Link
-              href="#cart"
+              href="/cart"
               className="relative inline-flex items-center gap-2 h-10 sm:h-11 px-3 sm:px-4 rounded-full transition-all duration-300 hover:shadow-warm-md"
               style={{
                 background: 'var(--brand-gold)',
                 color: '#FFFFFF',
               }}
-              aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+               aria-label={`${t('nav.cart')}${cartCount > 0 ? `, ${cartCount} items` : ''}`}
             >
               <ShoppingCart size={16} strokeWidth={2} />
-              <span className="hidden sm:inline text-[13px] font-medium">Cart</span>
+              <span className="hidden sm:inline text-[13px] font-medium">{t('nav.cart')}</span>
               <span
                 className="inline-flex min-w-[20px] h-5 items-center justify-center rounded-full text-[10px] font-semibold px-1"
                 style={{
@@ -283,7 +283,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
         <div
           onMouseEnter={openShop}
           onMouseLeave={closeShop}
-          className={`absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
+          className={`hidden lg:block absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
             shopOpen
               ? 'opacity-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 -translate-y-2 pointer-events-none'
@@ -298,8 +298,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {SHOP_CATEGORIES.map((cat) => (
                 <Link
-                  key={cat.name}
-                  href="#shop"
+                  key={cat.nameKey}
+                  href="/categories"
                   onClick={() => setShopOpen(false)}
                   className="group flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden hover:shadow-warm-md"
                   style={{
@@ -322,13 +322,13 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                       className="text-[13px] font-semibold group-hover:text-[var(--brand-gold)] transition-colors"
                       style={{ color: 'var(--brand-text)' }}
                     >
-                      {cat.name}
+                      {t(cat.nameKey)}
                     </div>
                     <div
                       className="text-[11px] mt-0.5 leading-snug"
                       style={{ color: 'var(--brand-text-muted)' }}
                     >
-                      {cat.desc}
+                      {t(cat.descKey)}
                     </div>
                   </div>
                 </Link>
@@ -341,40 +341,40 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
             >
               <div className="flex flex-wrap gap-5">
                 <Link
-                  href="#best-sellers"
+                  href="/best-sellers"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-terra)' }}
                 >
-                  <Flame size={14} /> Best Sellers
+                  <Flame size={14} /> {t('nav.bestsellers')}
                 </Link>
                 <Link
-                  href="#new-arrivals"
+                  href="/categories"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <Sparkles size={14} /> New Arrivals
+                  <Sparkles size={14} /> {t('nav.new')}
                 </Link>
                 <Link
-                  href="#gifts"
+                  href="/categories"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <Gift size={14} /> Gift Ideas
+                  <Gift size={14} /> {t('cat.books')}
                 </Link>
               </div>
               <Link
-                href="#shop"
+                href="/categories"
                 onClick={() => setShopOpen(false)}
-                className="text-[12px] font-medium px-4 py-2 rounded-full transition-all"
+                className="text-[12px] font-medium px-4 py-2 min-h-11 rounded-full transition-all flex items-center"
                 style={{
                   background: 'var(--brand-warm)',
                   color: 'var(--brand-text)',
                 }}
               >
-                View All Products →
+                {t('nav.allProducts')} →
               </Link>
             </div>
           </div>
@@ -384,7 +384,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
         <div
           onMouseEnter={openAge}
           onMouseLeave={closeAge}
-          className={`absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
+          className={`hidden lg:block absolute top-full left-0 right-0 transition-all duration-200 origin-top ${
             ageOpen
               ? 'opacity-100 translate-y-0 pointer-events-auto'
               : 'opacity-0 -translate-y-2 pointer-events-none'
@@ -401,22 +401,22 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 className="font-serif text-[1.5rem] font-semibold"
                 style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}
               >
-                Shop by Age
+                {t('nav.shopByAge')}
               </h3>
               <Link
-                href="#shop"
+                href="/categories"
                 onClick={() => setAgeOpen(false)}
                 className="inline-flex items-center gap-1 text-[13px] font-medium hover:gap-2 transition-all"
                 style={{ color: 'var(--brand-gold)' }}
               >
-                View All <ChevronRight size={14} />
+                {t('section.viewAll')} <ChevronRight size={14} />
               </Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
               {SHOP_BY_AGE.map((age) => (
                 <Link
                   key={age}
-                  href="#shop"
+                  href="/categories"
                   onClick={() => setAgeOpen(false)}
                   className="group flex-shrink-0 flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 hover:shadow-warm-md min-w-[110px]"
                   style={{
@@ -478,9 +478,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                 e.preventDefault();
                 if (searchQuery.trim()) {
                   setSearchOpen(false);
-                  document
-                    .getElementById('shop')
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
                 }
               }}
               className="flex flex-col sm:flex-row gap-3"
@@ -516,11 +514,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
                   key={t}
                   type="button"
                   onClick={() => {
-                    setSearchQuery(t);
                     setSearchOpen(false);
-                    document
-                      .getElementById('shop')
-                      ?.scrollIntoView({ behavior: 'smooth' });
+                    router.push(`/categories?search=${encodeURIComponent(t)}`);
                   }}
                   className="text-xs px-3 py-1.5 rounded-full transition-colors"
                   style={{
@@ -537,135 +532,137 @@ export function Navbar({ cartCount = 0, wishlistCount = 0 }: { cartCount?: numbe
       )}
 
       {/* ── Mobile Menu ── */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-[200] lg:hidden overflow-y-auto"
-          style={{ background: 'var(--brand-cream)' }}
-        >
+      {mobileOpen &&
+        createPortal(
           <div
-            className="flex items-center justify-between h-16 px-5"
-            style={{ borderBottom: '1px solid var(--brand-border)' }}
+            className="fixed inset-0 z-[200] lg:hidden overflow-y-auto"
+            style={{ background: 'var(--brand-cream)' }}
           >
-            <Logo />
-            <button
-              type="button"
-              onClick={() => setMobileOpen(false)}
-              className="w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
-              style={{ color: 'var(--brand-brown)' }}
-              aria-label="Close menu"
+            <div
+              className="flex items-center justify-between h-16 px-5"
+              style={{ borderBottom: '1px solid var(--brand-border)' }}
             >
-              <X size={22} />
-            </button>
-          </div>
-
-          <div className="px-5 py-6 space-y-6">
-            <nav className="space-y-1" aria-label="Mobile navigation">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block py-3 text-lg font-medium border-b"
-                  style={{
-                    color: 'var(--brand-text)',
-                    borderColor: 'var(--brand-border)',
-                    fontFamily: 'var(--font-cormorant)',
-                  }}
-                >
-                  {link.name}
-                </a>
-              ))}
-            </nav>
-
-            <div>
-              <p
-                className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
-                style={{ color: 'var(--brand-text-muted)' }}
+              <Logo />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+                style={{ color: 'var(--brand-brown)' }}
+                aria-label="Close menu"
               >
-                Shop by Age
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SHOP_BY_AGE.slice(0, 6).map((age) => (
-                  <a
-                    key={age}
-                    href="#shop"
+                <X size={22} />
+              </button>
+            </div>
+
+            <div className="px-5 py-6 space-y-6">
+              <nav className="space-y-1" aria-label="Mobile navigation">
+                {NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.nameKey}
+                    href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="px-4 py-2 rounded-full border text-[13px] transition-all"
+                    className="block py-3 text-lg font-medium border-b"
                     style={{
+                      color: 'var(--brand-text)',
                       borderColor: 'var(--brand-border)',
-                      color: 'var(--brand-brown)',
+                      fontFamily: 'var(--font-cormorant)',
                     }}
                   >
-                    {age}
-                  </a>
+                    {t(link.nameKey)}
+                  </Link>
                 ))}
-              </div>
-            </div>
+              </nav>
 
-            <div>
-              <p
-                className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
-                style={{ color: 'var(--brand-text-muted)' }}
-              >
-                Shop Categories
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {SHOP_CATEGORIES.map((cat) => (
-                  <a
-                    key={cat.name}
-                    href="#shop"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
-                    style={{ background: 'var(--brand-warm)' }}
-                  >
-                    <cat.Icon
-                      size={22}
-                      strokeWidth={1.5}
-                      style={{ color: 'var(--brand-gold)' }}
-                    />
-                    <span
-                      className="text-[13px] font-medium"
-                      style={{ color: 'var(--brand-text)' }}
+              <div>
+                <p
+                  className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                >
+                  {t('nav.shopByAge')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SHOP_BY_AGE.slice(0, 6).map((age) => (
+                    <Link
+                      key={age}
+                      href="/categories"
+                      onClick={() => setMobileOpen(false)}
+                      className="px-4 py-2 rounded-full border text-[13px] transition-all"
+                      style={{
+                        borderColor: 'var(--brand-border)',
+                        color: 'var(--brand-brown)',
+                      }}
                     >
-                      {cat.name}
-                    </span>
-                  </a>
-                ))}
+                      {age}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p
+                  className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                >
+                  {t('nav.categories')}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {SHOP_CATEGORIES.map((cat) => (
+                    <Link
+                      key={cat.nameKey}
+                      href="/categories"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
+                      style={{ background: 'var(--brand-warm)' }}
+                    >
+                      <cat.Icon
+                        size={22}
+                        strokeWidth={1.5}
+                        style={{ color: 'var(--brand-gold)' }}
+                      />
+                      <span
+                        className="text-[13px] font-medium"
+                        style={{ color: 'var(--brand-text)' }}
+                      >
+                        {t(cat.nameKey)}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="pt-5 space-y-3"
+                style={{ borderTop: '1px solid var(--brand-border)' }}
+              >
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 text-sm py-2"
+                  style={{ color: 'var(--brand-brown)' }}
+                >
+                  <User size={18} /> {t('nav.account')} / {t('nav.signin')}
+                </Link>
+                <Link
+                  href="/wishlist"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 text-sm py-2"
+                  style={{ color: 'var(--brand-brown)' }}
+                >
+                  <Heart size={18} /> {t('nav.wishlist')} ({wishlistCount})
+                </Link>
+                <Link
+                  href="/cart"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 text-sm py-2"
+                  style={{ color: 'var(--brand-brown)' }}
+                >
+                  <ShoppingCart size={18} /> {t('nav.cart')} ({cartCount})
+                </Link>
               </div>
             </div>
-
-            <div
-              className="pt-5 space-y-3"
-              style={{ borderTop: '1px solid var(--brand-border)' }}
-            >
-              <a
-                href="#account"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-sm py-2"
-                style={{ color: 'var(--brand-brown)' }}
-              >
-                <User size={18} /> Account / Login
-              </a>
-              <a
-                href="#wishlist"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-sm py-2"
-                style={{ color: 'var(--brand-brown)' }}
-              >
-                <Heart size={18} /> Wishlist ({wishlistCount})
-              </a>
-              <a
-                href="#cart"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-sm py-2"
-                style={{ color: 'var(--brand-brown)' }}
-              >
-                <ShoppingCart size={18} /> Cart ({cartCount})
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

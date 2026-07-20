@@ -149,7 +149,7 @@ function FilterGroup({ label, options, value, onChange }: { label: string; optio
       <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>{label}</label>
       <div className="space-y-1">
         {options.map((opt) => (
-          <button key={opt.value} type="button" onClick={() => onChange(opt.value)} className="block w-full text-left text-sm px-3 py-1.5 rounded-lg transition-colors" style={{ background: value === opt.value ? 'var(--brand-warm)' : 'transparent', color: value === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)', fontWeight: value === opt.value ? 600 : 400 }}>
+          <button key={opt.value} type="button" onClick={() => onChange(opt.value)} className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg transition-colors" style={{ background: value === opt.value ? 'var(--brand-warm)' : 'transparent', color: value === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)', fontWeight: value === opt.value ? 600 : 400 }}>
             {opt.label}
           </button>
         ))}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { MapPin, Clock, Phone, Mail, MessageCircle, Navigation, Car, Bus } from 'lucide-react';
+import { MapPin, Clock, Phone, Mail, MessageCircle, Navigation, Car, Bus, Camera } from 'lucide-react';
 import { getSiteSettings } from '@/lib/settings';
+import { getShopPhotos } from '@/lib/shop-photos';
 
 export const metadata: Metadata = {
   title: 'Find Us',
@@ -11,6 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function FindUsPage() {
   const { branding } = await getSiteSettings();
+  const photos = await getShopPhotos();
 
   return (
     <div className="container-shell py-6 sm:py-10">
@@ -29,6 +31,42 @@ export default async function FindUsPage() {
           We&apos;d love to meet you and your little one in person. Pop by our workshop for in-person shopping, pickups, or just to say hello!
         </p>
       </div>
+
+      {/* Shop photos gallery */}
+      {photos.length > 0 && (
+        <div className="mb-8 sm:mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Camera size={18} style={{ color: 'var(--brand-gold)' }} />
+            <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
+              Our Workshop
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {photos.map((photo) => (
+              <a
+                key={photo.id}
+                href={photo.image}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group rounded-2xl overflow-hidden border aspect-square relative"
+                style={{ borderColor: 'var(--brand-border)' }}
+              >
+                <img
+                  src={photo.image}
+                  alt={photo.caption || 'Shop photo'}
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                {photo.caption && (
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                    <p className="text-white text-xs font-medium">{photo.caption}</p>
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-8">
         {/* Map */}

@@ -12,10 +12,10 @@ import { db } from '@/lib/db';
 // ── Hardcoded defaults (used when DB has no override) ────────────────────────
 
 export const DEFAULT_BRANDING = {
-  logo_url: '',                          // empty = use built-in SVG logo
-  favicon_url: '',                       // empty = use /logo.svg
+  logo_url: '/logo.png',                    // served from public/logo.png
+  favicon_url: '',                          // empty = use /logo.png
   store_name: 'Malaika Nest',
-  tagline: 'Baby & Maternity',
+  tagline: 'Made for Little Angels',
   footer_tagline: 'Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.',
   primary_color: '#8B6914',
   accent_color: '#C4704A',
@@ -35,9 +35,9 @@ export const DEFAULT_BRANDING = {
   location: 'Mombasa, Kenya',
   copyright_name: 'Malaika Nest',
   // Find Us page — Google Maps embed
-  map_embed_url: 'https://www.google.com/maps?q=Mombasa,Kenya&z=13&output=embed',
-  address_line: 'Mombasa, Kenya',
-  address_directions: 'Visit our workshop in Mombasa for in-person shopping and pickups. Call ahead to ensure we\'re in!',
+  map_embed_url: 'https://www.google.com/maps?q=-4.0856032,39.661555&z=17&output=embed',
+  address_line: 'Tawakal Toto Shop, Mombasa, Kenya',
+  address_directions: 'Find us at Tawakal Toto Shop in Mombasa for in-person shopping and pickups. Call ahead to ensure we\'re in!',
   business_hours: JSON.stringify([
     { day: 'Monday – Friday', hours: '9:00 AM – 6:00 PM' },
     { day: 'Saturday', hours: '9:00 AM – 4:00 PM' },
@@ -181,17 +181,7 @@ const CACHE_TTL = 60_000;
 
 function parseBranding(rows: { key: string; value: string }[]): Branding {
   const map = new Map(rows.map((r) => [r.key, r.value]));
-  const placeholderSocialUrls: Partial<Record<keyof typeof DEFAULT_BRANDING, string[]>> = {
-    facebook_url: ['https://facebook.com', 'https://www.facebook.com'],
-    instagram_url: ['https://instagram.com', 'https://www.instagram.com'],
-  };
-  const get = (k: keyof typeof DEFAULT_BRANDING) => {
-    const value = map.get(k)?.trim();
-    // Earlier admin defaults were generic social homepages. Treat those stored
-    // placeholders as unset so they cannot override the real shop profiles.
-    if (!value || placeholderSocialUrls[k]?.includes(value)) return DEFAULT_BRANDING[k];
-    return value;
-  };
+  const get = (k: keyof typeof DEFAULT_BRANDING) => map.get(k) ?? DEFAULT_BRANDING[k];
   let announcement: string[] = [];
   try {
     announcement = JSON.parse(get('announcement_messages'));

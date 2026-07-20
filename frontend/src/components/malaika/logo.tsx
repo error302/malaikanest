@@ -1,10 +1,6 @@
 'use client';
 
-/**
- * Malaika Nest wordmark + angel-baby icon logo.
- * Pure SVG so it scales crisply on mobile retina and desktop 4K.
- * If logoUrl is provided (from branding settings), renders that image instead.
- */
+import { useState } from 'react';
 interface LogoProps {
   variant?: 'full' | 'compact';
   className?: string;
@@ -20,11 +16,20 @@ export function Logo({ variant = 'full', className = '', onLight = false, logoUr
   const text = '#2C1810';
   const name = storeName || 'Malaika Nest';
   const sub = tagline || 'Baby & Maternity';
+  const src = logoUrl || '/logo.png';
+  const [imgError, setImgError] = useState(false);
 
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      {logoUrl ? (
-        <img src={logoUrl} alt={name} width={38} height={38} className="flex-shrink-0 object-contain" />
+      {(!imgError) ? (
+        <img
+          src={src}
+          alt={name}
+          width={38}
+          height={38}
+          onError={() => setImgError(true)}
+          className="flex-shrink-0 object-contain"
+        />
       ) : (
         <svg width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="flex-shrink-0">
           <circle cx="24" cy="14" r="7" stroke={goldSoft} strokeWidth="1.2" strokeDasharray="2 2" opacity="0.7" />

@@ -70,7 +70,7 @@ services:
     ports:
       # Host port 8000 is already used by another stack on this machine; bind
       # the backend to 8081 on the host instead.
-      - "8081:8000"
+      - "127.0.0.1:8081:8000"
     volumes:
       # NOTE: backend WORKDIR is /code, not /app — the original compose had a typo.
       - ./backend/media:/code/media
@@ -79,12 +79,19 @@ services:
       - sh
       - -c
       - |
-        python manage.py migrate --noinput &&
-        python manage.py create_superuser || true &&
-        python manage.py seed_categories || true &&
-        python manage.py seed_delivery_zones || true &&
-        python manage.py collectstatic --noinput &&
-        gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4
+        set -e
+        python manage.py migrate --noinput
+        python manage.py create_superuser || true
+        python manage.py seed_categories || true
+        python manage.py seed_delivery_zones || true
+        python manage.py collectstatic --noinput
+        exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; request = urllib.request.Request('http://127.0.0.1:8000/api/health/', headers={'Host': 'api.malaikanest.com', 'X-Forwarded-Proto': 'https'}); urllib.request.urlopen(request, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   celery_worker:
     build:
@@ -170,7 +177,7 @@ services:
     restart: unless-stopped
     ports:
       # Host port 3000 is occupied by another stack (metardu-app); use 3090.
-      - "3090:3000"
+      - "127.0.0.1:3090:3000"
     environment:
       # Kept in sync with the build arg for any server-side reads.
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.malaikanest.com}
@@ -187,7 +194,14 @@ services:
     volumes:
       - frontend_cms_data:/app/data
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -196,7 +210,10 @@ services:
     volumes:
       - ./cloudflared:/etc/cloudflared:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
 
 volumes:
   postgres_data:

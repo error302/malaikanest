@@ -1,6 +1,7 @@
 'use client';
 
 import { Star, Quote } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface Testimonial {
   id: string;
@@ -19,6 +20,7 @@ interface TestimonialsProps {
 }
 
 export function Testimonials({ content, testimonials = [] }: TestimonialsProps) {
+  const { t } = useI18n();
   const c = content?.testimonials || {};
   const active = testimonials.filter((t) => t.isActive);
 
@@ -29,7 +31,7 @@ export function Testimonials({ content, testimonials = [] }: TestimonialsProps) 
     >
       <div className="container-shell">
         <div className="text-center max-w-2xl mx-auto mb-9 sm:mb-12">
-          <span className="section-label mb-3 justify-center">{c.label || 'Loved by parents'}</span>
+          <span className="section-label mb-3 justify-center">{c.label || t('home.testimonialsLabel')}</span>
           <h2
             className="font-serif font-semibold tracking-tight mt-3"
             style={{
@@ -39,7 +41,7 @@ export function Testimonials({ content, testimonials = [] }: TestimonialsProps) 
               lineHeight: 1.15,
             }}
           >
-            {c.title || 'What Families Are Saying'}
+            {c.title || t('home.testimonials')}
           </h2>
           <div className="flex items-center justify-center gap-2 mt-3">
             <div className="flex">
@@ -48,7 +50,7 @@ export function Testimonials({ content, testimonials = [] }: TestimonialsProps) 
               ))}
             </div>
             <span className="text-[13px] font-medium" style={{ color: 'var(--brand-brown)' }}>
-              {c.aggregate_rating || '4.9 / 5 · 1,200+ reviews'}
+              {c.aggregate_rating || t('home.aggregateRating')}
             </span>
           </div>
         </div>
