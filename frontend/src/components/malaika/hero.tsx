@@ -85,8 +85,16 @@ export function Hero({ banners = [], content }: HeroProps) {
   const [current, setCurrent] = useState(0);
   const [imgErr, setImgErr] = useState<Record<number, boolean>>({});
   const [paused, setPaused] = useState(false);
+  const [seen, setSeen] = useState<Set<number>>(() => new Set([0]));
 
-  const go = useCallback((i: number) => setCurrent((i + slides.length) % slides.length), [slides.length]);
+  const go = useCallback((i: number) => {
+    setCurrent((i + slides.length) % slides.length);
+    setSeen((prev) => {
+      const next = new Set(prev);
+      next.add((i + slides.length) % slides.length);
+      return next;
+    });
+  }, [slides.length]);
 
   useEffect(() => {
     if (paused) return;
@@ -116,13 +124,14 @@ export function Hero({ banners = [], content }: HeroProps) {
           style={{ opacity: i === current ? 1 : 0 }}
           aria-hidden={i !== current}
         >
-          {slide.bgImage && !imgErr[i] && (
+          {slide.bgImage && !imgErr[i] && seen.has(i) && (
             <Image
               src={slide.bgImage}
               alt=""
               aria-hidden
               fill
               priority={i === 0}
+              fetchPriority={i === 0 ? 'high' : 'auto'}
               sizes="(max-width: 639px) 800px, 1920px"
               onError={() => setImgErr((p) => ({ ...p, [i]: true }))}
               className="absolute inset-0 w-full h-full object-cover"
