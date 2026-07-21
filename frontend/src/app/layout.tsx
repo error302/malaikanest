@@ -206,6 +206,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="shortcut icon" type="image/png" href="/logo.png" />
         <link rel="apple-touch-icon" type="image/png" href="/logo.png" />
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
+        <link rel="preconnect" href="https://api.malaikanest.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         {process.env.NEXT_PUBLIC_GA_ID && (

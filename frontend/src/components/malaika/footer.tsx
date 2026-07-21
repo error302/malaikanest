@@ -134,13 +134,13 @@ export function Footer({ branding }: FooterProps) {
            {/* Links */}
            <div className="lg:col-span-8">
              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-6">
-               <div>
-                 <h4
-                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-3"
-                   style={{ color: 'var(--brand-text)' }}
-                 >
-                   {t('footer.shop')}
-                 </h4>
+<div>
+                  <h3
+                    className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-3"
+                    style={{ color: 'var(--brand-text)' }}
+                  >
+                    {t('footer.shop')}
+                  </h3>
                  <ul className="space-y-1.5">
                    {SHOP_LINKS.map((l) => (
                      <li key={l.key}>
@@ -156,13 +156,13 @@ export function Footer({ branding }: FooterProps) {
                  </ul>
                </div>
 
-               <div>
-                 <h4
-                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-3"
-                   style={{ color: 'var(--brand-text)' }}
-                 >
-                   {t('nav.shopByAge')}
-                 </h4>
+<div>
+                  <h3
+                    className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-3"
+                    style={{ color: 'var(--brand-text)' }}
+                  >
+                    {t('nav.shopByAge')}
+                  </h3>
                  <ul className="space-y-1.5">
                    {AGE_LINKS.map((l) => (
                      <li key={l.label}>
@@ -178,13 +178,13 @@ export function Footer({ branding }: FooterProps) {
                  </ul>
                </div>
 
-               <div className="col-span-2 sm:col-span-1">
-                 <h4
-                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-3"
-                   style={{ color: 'var(--brand-text)' }}
-                 >
-                   {t('footer.help')}
-                 </h4>
+<div className="col-span-2 sm:col-span-1">
+                  <h3
+                    className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-3"
+                    style={{ color: 'var(--brand-text)' }}
+                  >
+                    {t('footer.help')}
+                  </h3>
                  <ul className="space-y-1.5">
                    {SUPPORT_LINKS.map((l) => (
                      <li key={l.key}>
@@ -199,12 +199,12 @@ export function Footer({ branding }: FooterProps) {
                    ))}
                  </ul>
 
-                 <h4
-                   className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-2 mt-4"
-                   style={{ color: 'var(--brand-text)' }}
-                 >
-                   {t('nav.contact')}
-                 </h4>
+<h3
+                    className="text-[11px] uppercase tracking-[0.14em] font-semibold mb-2 mt-4"
+                    style={{ color: 'var(--brand-text)' }}
+                  >
+                    {t('nav.contact')}
+                  </h3>
                  <ul className="space-y-1.5">
                    <li>
                      <a

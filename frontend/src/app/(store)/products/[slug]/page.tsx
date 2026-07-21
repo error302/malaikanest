@@ -140,7 +140,7 @@ export default async function ProductDetailPage({ params }: Props) {
   const price = parseFloat(product.price ?? '0');
   const originalPrice = product.compare_price ? parseFloat(product.compare_price) : null;
   const discount = originalPrice && originalPrice > price
-    ? Math.round(((originalPrice - price) / originalPrice) * 100)
+    ? parseFloat(((originalPrice - price) / originalPrice * 100).toFixed(1))
     : 0;
   const inStock = (product.available_stock ?? product.stock ?? 0) > 0;
   const jsonLdSchemas = buildJsonLd(product, slug);

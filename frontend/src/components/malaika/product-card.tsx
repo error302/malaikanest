@@ -46,7 +46,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
 
   const inStock = product.inStock !== false;
   const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    ? parseFloat(((product.originalPrice - product.price) / product.originalPrice * 100).toFixed(1))
     : 0;
   const gradient = PLACEHOLDER_GRADIENTS[product.id % PLACEHOLDER_GRADIENTS.length];
 
@@ -202,13 +202,14 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <Link
             href={`/products/${product.slug}`}
             className="group/link"
-            aria-label={`View ${product.name}`}
+            aria-label={`View ${product.name.charAt(0).toUpperCase() + product.name.slice(1)}`}
           >
             <h3
-              className="text-[13px] sm:text-[14px] font-semibold leading-snug line-clamp-2 min-h-[2.5rem] transition-colors"
+              className="text-[13px] sm:text-[14px] font-semibold leading-snug line-clamp-2 min-h-[2.5rem] transition-colors capitalize"
               style={{ color: 'var(--brand-text)' }}
             >
               {product.name}
+            </h3>
             </h3>
           </Link>
 
