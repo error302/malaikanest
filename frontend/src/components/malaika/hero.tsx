@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Banner } from '@/lib/products';
 import { getBannerUrl } from '@/lib/media';
@@ -94,7 +95,6 @@ export function Hero({ banners = [], content }: HeroProps) {
   }, [current, go, paused]);
 
   const s = slides[current];
-  const bgOk = s.bgImage && !imgErr[current];
   const headline = s.headline ?? (s.headlineKey ? t(s.headlineKey) : '');
   const sub = s.sub ?? (s.subKey ? t(s.subKey) : '');
   const cta = s.cta ?? (s.ctaKey ? t(s.ctaKey) : '');
@@ -117,23 +117,15 @@ export function Hero({ banners = [], content }: HeroProps) {
           aria-hidden={i !== current}
         >
           {slide.bgImage && !imgErr[i] && (
-            <img
-              src={i === current ? (bgOk ? s.mobileBgImage : undefined) : slide.mobileBgImage}
-              alt=""
-              aria-hidden
-              loading={i === 0 ? 'eager' : 'lazy'}
-              onError={() => setImgErr((p) => ({ ...p, [i]: true }))}
-              className="absolute inset-0 w-full h-full object-cover sm:hidden"
-            />
-          )}
-          {slide.bgImage && !imgErr[i] && (
-            <img
+            <Image
               src={slide.bgImage}
               alt=""
               aria-hidden
-              loading={i === 0 ? 'eager' : 'lazy'}
+              fill
+              priority={i === 0}
+              sizes="(max-width: 639px) 800px, 1920px"
               onError={() => setImgErr((p) => ({ ...p, [i]: true }))}
-              className="hidden sm:block absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
             />
           )}
         </div>
