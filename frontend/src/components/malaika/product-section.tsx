@@ -39,6 +39,10 @@ export function ProductSection({
       ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
       : 'grid-cols-2 md:grid-cols-3';
 
+  const genericLabels = ['see more', 'view all', 'view all products', 'see all'];
+  const isGeneric = genericLabels.includes(viewAll.trim().toLowerCase());
+  const viewAllText = isGeneric ? `View All ${title}` : viewAll;
+
   return (
     <section
       id={id}
@@ -66,7 +70,7 @@ export function ProductSection({
             className="hidden sm:inline-flex items-center gap-1 text-[13px] font-medium transition-all hover:gap-2 min-h-[44px]"
             style={{ color: 'var(--brand-gold)' }}
           >
-            {viewAll}
+            {viewAllText}
             <ChevronRight size={14} />
           </Link>
         </div>
@@ -87,7 +91,7 @@ export function ProductSection({
               color: 'var(--brand-gold)',
             }}
           >
-            {viewAll}
+            {viewAllText}
             <ChevronRight size={14} />
           </Link>
         </div>

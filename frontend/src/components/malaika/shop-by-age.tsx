@@ -102,7 +102,6 @@ export function ShopByAge({ content }: ShopByAgeProps) {
               key={age.nameKey}
               href="/categories"
               className="group flex-shrink-0 flex flex-col items-center justify-center text-center gap-2 p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-warm-md min-w-[120px] sm:min-w-[140px]"
-              role="listitem"
               style={{
                 background: '#FFFFFF',
                 borderColor: 'var(--brand-border)',
