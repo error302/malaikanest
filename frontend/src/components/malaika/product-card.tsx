@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart, ShoppingBasket, Star, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { useCart } from '@/lib/cartContext';
+import { showToast } from '@/lib/toast';
 
 export interface Product {
   id: number;
@@ -35,9 +38,11 @@ const PLACEHOLDER_GRADIENTS = [
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { t } = useI18n();
+  const { add: addToCart } = useCart();
   const [wished, setWished] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [imageErrored, setImageErrored] = useState(false);
 
   const inStock = product.inStock !== false;
   const discount = product.originalPrice
@@ -45,11 +50,22 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     : 0;
   const gradient = PLACEHOLDER_GRADIENTS[product.id % PLACEHOLDER_GRADIENTS.length];
 
-  const handleAdd = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAdd = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
     if (!inStock) return;
-    // cart hook integration would go here
+    if (product.hasVariants) {
+      window.location.href = `/products/${product.slug}`;
+      return;
+    }
+    addToCart({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      image: product.image,
+    }, 1);
+    showToast(t('product.addedToCart') || 'Added to cart', 'success');
   };
 
   return (
@@ -69,17 +85,20 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           style={{ background: gradient }}
           onClick={() => setZoom(true)}
         >
-          {product.image ? (
-            <img
+          {product.image && !imageErrored ? (
+            <Image
               src={product.image}
               alt={product.name}
-              loading={index < 4 ? 'eager' : 'lazy'}
+              fill
+              priority={index < 4}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              onError={() => setImageErrored(true)}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <span
-                className="font-serif text-5xl opacity-30"
+                className="font-serif text-5xl opacity-50"
                 style={{ color: 'var(--brand-gold)', fontFamily: 'var(--font-cormorant)' }}
               >
                 {product.name.charAt(0)}
@@ -275,10 +294,12 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             style={{ background: gradient }}
             onClick={(e) => e.stopPropagation()}
           >
-            {product.image ? (
-              <img
+            {product.image && !imageErrored ? (
+              <Image
                 src={product.image}
                 alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 672px"
                 className="h-full w-full object-cover"
               />
             ) : (
