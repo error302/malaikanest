@@ -70,6 +70,14 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Cache the homepage HTML at the edge for 60s, serve stale up to 10min while
+      // revalidating. Lets Cloudflare serve repeat visits from the closest PoP.
+      {
+        source: '/',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=60, stale-while-revalidate=600' },
+        ],
+      },
       {
         source: '/(.*)',
         headers: securityHeaders,

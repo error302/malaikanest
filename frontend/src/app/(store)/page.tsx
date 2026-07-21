@@ -18,7 +18,7 @@ import { getSiteSettings, getValueProps, getTestimonials } from '@/lib/settings'
 import { getFeaturedThrifted } from '@/lib/thrifted';
 
 export const revalidate = 60;
-export const dynamic = 'auto';
+export const dynamic = 'force-static';
 
 export default async function HomePage() {
   const [featured, bestSellers, newArrivals, banners, settings, valueProps, testimonials, thrifted] = await Promise.all([

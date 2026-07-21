@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ShoppingBasket, Heart, Check, Share2, Minus, Plus } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { useWishlist } from '@/lib/wishlistContext';
@@ -31,7 +32,15 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         style={{ background: 'var(--brand-warm)', borderColor: 'var(--brand-border)' }}
       >
         {safe[active] ? (
-          <img src={safe[active]} alt={alt} className="w-full h-full object-cover" loading="eager" />
+          <Image
+            src={safe[active]}
+            alt={alt}
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            fetchPriority="high"
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span
@@ -59,7 +68,13 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
               }}
             >
               {src ? (
-                <img src={src} alt="" className="w-full h-full object-cover" />
+                <Image
+                  src={src}
+                  alt=""
+                  fill
+                  sizes="64px"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full" style={{ background: 'var(--brand-warm)' }} />
               )}
