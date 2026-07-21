@@ -210,7 +210,6 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             >
               {product.name}
             </h3>
-            </h3>
           </Link>
 
           {product.rating !== undefined && (
