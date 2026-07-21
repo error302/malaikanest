@@ -208,19 +208,30 @@ class ProductSerializer(serializers.ModelSerializer):
         self._handle_gallery(instance, self.context)
         return instance
 
+    def _image_url(self, filed):
+        if not filed:
+            return None
+        raw = filed.name if hasattr(filed, "name") else str(filed)
+        if raw.startswith("http://") or raw.startswith("https://"):
+            return raw
+        url = filed.url
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(url)
+        return f"https://malaikanest.com{url}"
+
+    def _primary_gallery_url(self, obj):
+        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        if gallery and gallery.image:
+            return self._image_url(gallery.image)
+        return None
+
     def get_image(self, obj):
         if obj.image:
-            raw = obj.image.name if hasattr(obj.image, "name") else str(obj.image)
-            if raw.startswith("http://") or raw.startswith("https://"):
-                return raw
-            url = obj.image.url
-            if url.startswith("http://") or url.startswith("https://"):
-                return url
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(url)
-            return f"https://malaikanest.com{url}"
-        return None
+            return self._image_url(obj.image)
+        return self._primary_gallery_url(obj)
 
     def get_images(self, obj):
         items = []
@@ -395,16 +406,30 @@ class ProductListSerializer(serializers.ModelSerializer):
             "popularity",
         )
 
+    def _image_url(self, filed):
+        if not filed:
+            return None
+        raw = filed.name if hasattr(filed, "name") else str(filed)
+        if raw.startswith("http://") or raw.startswith("https://"):
+            return raw
+        url = filed.url
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(url)
+        return f"https://malaikanest.com{url}"
+
+    def _primary_gallery_url(self, obj):
+        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        if gallery and gallery.image:
+            return self._image_url(gallery.image)
+        return None
+
     def get_image(self, obj):
         if obj.image:
-            url = obj.image.url
-            if url.startswith("http://") or url.startswith("https://"):
-                return url
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(url)
-            return f"https://malaikanest.com{url}"
-        return None
+            return self._image_url(obj.image)
+        return self._primary_gallery_url(obj)
 
     def get_has_variants(self, obj):
         return obj.variants.filter(is_active=True).exists()
