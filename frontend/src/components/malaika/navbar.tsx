@@ -37,17 +37,24 @@ const NAV_LINKS = [
 ];
 
 const SHOP_BY_AGE = [
-  'Newborn', '0-3 Months', '3-6 Months', '6-9 Months',
-  '1-2 Years', '2-4 Years', '4-6 Years', '6-9 Years', '9-12 Years',
+  { label: 'Newborn', slug: 'baby' },
+  { label: '0-3 Months', slug: 'baby' },
+  { label: '3-6 Months', slug: 'baby' },
+  { label: '6-12 Months', slug: 'baby' },
+  { label: '1-2 Years', slug: 'toddler' },
+  { label: '2-4 Years', slug: 'toddler' },
+  { label: '4-6 Years', slug: 'kids' },
+  { label: '6-9 Years', slug: 'kids' },
+  { label: '9-12 Years', slug: 'kids' },
 ];
 
 const SHOP_CATEGORIES = [
-  { nameKey: 'cat.clothing', descKey: 'cat.clothingDesc', Icon: Shirt, color: '#FCE7E1' },
-  { nameKey: 'cat.feeding', descKey: 'cat.feedingDesc', Icon: Package, color: '#FEF3DC' },
-  { nameKey: 'cat.nursery', descKey: 'cat.nurseryDesc', Icon: Home, color: '#E1EEF8' },
-  { nameKey: 'cat.toys', descKey: 'cat.toysDesc', Icon: Gamepad2, color: '#EFE3F8' },
-  { nameKey: 'cat.travel', descKey: 'cat.travelDesc', Icon: Car, color: '#E1F4E8' },
-  { nameKey: 'cat.books', descKey: 'cat.booksDesc', Icon: Gift, color: '#FCE1EE' },
+  { nameKey: 'cat.clothing', slug: 'clothing', descKey: 'cat.clothingDesc', Icon: Shirt, color: '#FCE7E1' },
+  { nameKey: 'cat.feeding', slug: 'baby-essentials', descKey: 'cat.feedingDesc', Icon: Package, color: '#FEF3DC' },
+  { nameKey: 'cat.nursery', slug: 'nursery', descKey: 'cat.nurseryDesc', Icon: Home, color: '#E1EEF8' },
+  { nameKey: 'cat.toys', slug: 'toys', descKey: 'cat.toysDesc', Icon: Gamepad2, color: '#EFE3F8' },
+  { nameKey: 'cat.travel', slug: 'travel', descKey: 'cat.travelDesc', Icon: Car, color: '#E1F4E8' },
+  { nameKey: 'cat.gifts', slug: 'gifts', descKey: 'cat.giftsDesc', Icon: Gift, color: '#FCE1EE' },
 ];
 
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
@@ -301,7 +308,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               {SHOP_CATEGORIES.map((cat) => (
                 <Link
                   key={cat.nameKey}
-                  href="/categories"
+                  href={cat.slug ? `/categories?category=${cat.slug}` : '/categories'}
                   onClick={() => setShopOpen(false)}
                   className="group flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden hover:shadow-warm-md"
                   style={{
@@ -351,7 +358,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   <Flame size={14} /> {t('nav.bestsellers')}
                 </Link>
                 <Link
-                  href="/categories"
+                  href="/categories?ordering=-created_at"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
@@ -359,12 +366,12 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   <Sparkles size={14} /> {t('nav.new')}
                 </Link>
                 <Link
-                  href="/categories"
+                  href="/categories?category=gifts"
                   onClick={() => setShopOpen(false)}
                   className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <Gift size={14} /> {t('cat.books')}
+                  <Gift size={14} /> {t('cat.gifts')}
                 </Link>
               </div>
               <Link
@@ -417,8 +424,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
             <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
               {SHOP_BY_AGE.map((age) => (
                 <Link
-                  key={age}
-                  href="/categories"
+                  key={age.label}
+                  href={`/categories?age_group=${age.slug}`}
                   onClick={() => setAgeOpen(false)}
                   className="group flex-shrink-0 flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 hover:shadow-warm-md min-w-[110px]"
                   style={{
@@ -440,7 +447,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                     className="text-[12px] font-medium whitespace-nowrap"
                     style={{ color: 'var(--brand-text)' }}
                   >
-                    {age}
+                    {age.label}
                   </span>
                 </Link>
               ))}
@@ -586,8 +593,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 <div className="flex flex-wrap gap-2">
                   {SHOP_BY_AGE.slice(0, 6).map((age) => (
                     <Link
-                      key={age}
-                      href="/categories"
+                      key={age.label}
+                      href={`/categories?age_group=${age.slug}`}
                       onClick={() => setMobileOpen(false)}
                       className="px-4 py-2 rounded-full border text-[13px] transition-all"
                       style={{
@@ -595,7 +602,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                         color: 'var(--brand-brown)',
                       }}
                     >
-                      {age}
+                      {age.label}
                     </Link>
                   ))}
                 </div>
@@ -612,7 +619,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   {SHOP_CATEGORIES.map((cat) => (
                     <Link
                       key={cat.nameKey}
-                      href="/categories"
+                      href={cat.slug ? `/categories?category=${cat.slug}` : '/categories'}
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
                       style={{ background: 'var(--brand-warm)' }}

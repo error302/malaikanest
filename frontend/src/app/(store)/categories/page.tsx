@@ -67,6 +67,7 @@ function CategoriesBrowser() {
 
   const search = searchParams.get('search') || '';
   const age = searchParams.get('age') || '';
+  const categorySlug = searchParams.get('category') || '';
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +79,7 @@ function CategoriesBrowser() {
     if (search) params.search = search;
     if (age || ageGroup) params.age_group = ageGroup || age;
     if (gender) params.gender = gender;
+    if (categorySlug) params.category = categorySlug;
 
     const load = async () => {
       try {
@@ -98,7 +100,7 @@ function CategoriesBrowser() {
     setLoading(true);
     load();
     return () => { cancelled = true; };
-  }, [search, age, ageGroup, gender, sort, page]);
+  }, [search, age, ageGroup, gender, categorySlug, sort, page]);
 
   return (
     <div className="container-shell py-6 sm:py-10">

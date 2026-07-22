@@ -55,17 +55,22 @@ export default function TrackOrderPage() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!receipt.trim()) return;
+    const trimmed = receipt.trim();
+    if (!trimmed) {
+      showToast('Please enter a receipt number', 'error');
+      return;
+    }
     setLoading(true);
     setSearched(true);
     setOrder(null);
     try {
-      const res = await api.get(`/api/v1/orders/track/?receipt=${encodeURIComponent(receipt.trim())}`, {
+      const res = await api.get(`/api/v1/orders/track/?receipt=${encodeURIComponent(trimmed)}`, {
         headers: { 'X-No-Auth-Redirect': 'true' },
       });
       const data = res.data?.data ?? res.data;
       if (data?.id || data?.receipt_number) {
         setOrder(data);
+        showToast('Order found!', 'success');
       } else {
         showToast('Order not found. Check your receipt number.', 'error');
       }
@@ -96,12 +101,15 @@ export default function TrackOrderPage() {
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--brand-text-muted)' }} />
           <input
+            required
             value={receipt}
             onChange={(e) => setReceipt(e.target.value)}
             placeholder="MN-XXXXXXXXXXXX"
             className="input-warm w-full"
             style={{ background: '#FFFFFF', textTransform: 'uppercase' }}
             aria-label="Receipt number"
+            pattern="[Mm][Nn]-?[A-Za-z0-9]{4,}"
+            title="Enter a receipt number like MN-XXXX1234ABCD"
           />
         </div>
         <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>

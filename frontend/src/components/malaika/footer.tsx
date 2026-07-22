@@ -18,21 +18,18 @@ function TikTok({ size = 18 }: { size?: number }) {
 
 const SHOP_LINKS = [
   { key: 'footer.shopAll', href: '/categories' },
-  { key: 'cat.clothing', href: '/categories' },
+  { key: 'cat.clothing', href: '/categories?category=clothing' },
   { key: 'cat.thrifted', href: '/thrifted' },
-  { key: 'cat.feeding', href: '/categories' },
-  { key: 'cat.nursery', href: '/categories' },
-  { key: 'cat.toys', href: '/categories' },
-  { key: 'cat.books', href: '/categories' },
+  { key: 'cat.feeding', href: '/categories?category=baby-essentials' },
+  { key: 'cat.nursery', href: '/categories?category=nursery' },
+  { key: 'cat.toys', href: '/categories?category=toys' },
+  { key: 'cat.gifts', href: '/categories?category=gifts' },
 ];
 
 const AGE_LINKS = [
-  { label: 'Newborn', href: '/categories' },
-  { label: '0–3 Months', href: '/categories' },
-  { label: '3–6 Months', href: '/categories' },
-  { label: '6–12 Months', href: '/categories' },
-  { label: '1–4 Years', href: '/categories' },
-  { label: '4–12 Years', href: '/categories' },
+  { label: 'Baby (0–2yr)', href: '/categories?age_group=baby' },
+  { label: 'Toddler (2–5yr)', href: '/categories?age_group=toddler' },
+  { label: 'Kids (6–12yr)', href: '/categories?age_group=kids' },
 ];
 
 const SUPPORT_LINKS = [
