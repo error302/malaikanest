@@ -20,3 +20,19 @@ export const SITE_DOMAIN = (() => {
     return 'malaikanest.com';
   }
 })();
+
+/**
+ * Resolve the absolute API base URL for server-side fetches.
+ * - Production: uses https://api.malaikanest.com
+ * - Docker: uses internal bridge network via INTERNAL_API_URL
+ * - Local: uses localhost
+ */
+export function getApiBaseUrl(): string {
+  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL;
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    const url = process.env.NEXT_PUBLIC_API_URL;
+    if (url.includes('localhost') || url.includes('127.0.0.1')) return url;
+  }
+  if (process.env.NODE_ENV === 'development') return 'http://localhost:8000';
+  return 'https://api.malaikanest.com';
+}

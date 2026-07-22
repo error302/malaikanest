@@ -175,7 +175,7 @@ class MpesaInitiateView(APIView):
 
     def post(self, request):
         order_id = request.data.get("order_id")
-        phone = request.data.get("phone")
+        phone = request.data.get("phone") or request.data.get("phone_number")
         if not order_id or not phone:
             return Response({"detail": "order_id and phone are required"}, status=status.HTTP_400_BAD_REQUEST)
 

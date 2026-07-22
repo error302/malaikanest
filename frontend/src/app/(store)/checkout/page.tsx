@@ -153,7 +153,7 @@ export default function CheckoutPage() {
         coupon_code: appliedCoupon?.code || undefined,
       };
 
-      const orderRes = await api.post('/api/v1/orders/create/', orderPayload);
+      const orderRes = await api.post('/api/v1/orders/cart/checkout/', orderPayload);
       const orderData = orderRes.data?.data ?? orderRes.data;
       const orderId = orderData?.id || orderData?.order_id;
       const receiptNumber = orderData?.receipt_number;
@@ -169,7 +169,7 @@ export default function CheckoutPage() {
         // Initiate M-Pesa STK push
         const mpesaRes = await api.post('/api/v1/payments/mpesa/initiate/', {
           order_id: orderId,
-          phone_number: form.phone,
+          phone: form.phone,
         });
         const mpesaData = mpesaRes.data?.data ?? mpesaRes.data;
 

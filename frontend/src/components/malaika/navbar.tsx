@@ -203,9 +203,10 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 size={16}
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                 style={{ color: 'var(--brand-text-muted)' }}
+                aria-hidden="true"
               />
               <input
-                type="text"
+                type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('nav.search') + '…'}
@@ -483,6 +484,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 }
               }}
               className="flex flex-col sm:flex-row gap-3"
+              role="search"
             >
               <input
                 autoFocus
@@ -496,7 +498,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   color: 'var(--brand-text)',
                   background: 'var(--brand-bg-alt)',
                 }}
-                aria-label="Search query"
+                aria-label="Search items"
               />
               <button
                 type="submit"

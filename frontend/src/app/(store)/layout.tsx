@@ -3,6 +3,7 @@ import { Footer } from '@/components/malaika/footer';
 import { SITE_URL } from '@/lib/site-config';
 import { StoreShell } from '@/components/malaika/store-shell';
 import { getSiteSettings } from '@/lib/settings';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export const metadata: Metadata = {
   title: 'Shop Premium Baby & Kids Products',
@@ -15,7 +16,9 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <StoreShell branding={branding}>
-      {children}
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
       <Footer branding={branding} />
     </StoreShell>
   );

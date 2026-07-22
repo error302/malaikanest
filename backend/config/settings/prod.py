@@ -52,8 +52,8 @@ CACHES = {
 }
 
 # Database connection pooling for high traffic
-DATABASE_POOL_SIZE = int(os.getenv("DATABASE_POOL_SIZE", "20"))
-DATABASE_MAX_OVERFLOW = int(os.getenv("DATABASE_MAX_OVERFLOW", "10"))
+DATABASE_POOL_SIZE = int(os.getenv("DATABASE_POOL_SIZE", "50"))
+DATABASE_MAX_OVERFLOW = int(os.getenv("DATABASE_MAX_OVERFLOW", "20"))
 
 # Cloudinary configuration for image uploads
 _cloudinary_url = os.getenv("CLOUDINARY_URL", "").strip()

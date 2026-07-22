@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { X, Clock } from 'lucide-react';
 import { getRecentlyViewed, clearRecentlyViewed, type RecentlyViewedItem } from '@/lib/recently-viewed';
 import { getImageUrl } from '@/lib/media';
@@ -57,11 +58,13 @@ export function RecentlyViewedSection() {
               className="group flex-shrink-0 w-40 sm:w-48 rounded-2xl border overflow-hidden transition-all hover:shadow-warm-md"
               style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}
             >
-              <div className="aspect-[4/5] overflow-hidden" style={{ background: 'var(--brand-warm)' }}>
+              <div className="aspect-[4/5] overflow-hidden relative" style={{ background: 'var(--brand-warm)' }}>
                 {item.image ? (
-                  <img
+                  <Image
                     src={getImageUrl(item.image)}
                     alt={item.name}
+                    fill
+                    sizes="(max-width: 640px) 160px, 192px"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (

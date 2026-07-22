@@ -7,22 +7,12 @@ import { ProductDetailClient, ProductGallery } from './product-detail-client';
 import { ReviewSection } from '@/components/malaika/review-section';
 import { RelatedProducts } from '@/components/malaika/related-products';
 import { getRelatedProducts } from '@/lib/related-products';
-import { SITE_URL } from '@/lib/site-config';
+import { SITE_URL, getApiBaseUrl } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ slug: string }>;
-}
-
-function getApiBaseUrl(): string {
-  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL;
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    const url = process.env.NEXT_PUBLIC_API_URL;
-    if (url.includes('localhost') || url.includes('127.0.0.1')) return url;
-  }
-  if (process.env.NODE_ENV === 'development') return 'http://localhost:8000';
-  return 'https://api.malaikanest.com';
 }
 
 async function getProduct(slug: string) {
@@ -241,6 +231,7 @@ export default async function ProductDetailPage({ params }: Props) {
               image: imageUrl,
               inStock,
               hasVariants: Boolean(product.has_variants),
+              variants: product.variants || [],
             }}
           />
 

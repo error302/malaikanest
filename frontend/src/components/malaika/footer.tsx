@@ -63,6 +63,7 @@ export function Footer({ branding }: FooterProps) {
         background: 'var(--brand-bg-alt)',
         borderTop: '1px solid var(--brand-border)',
       }}
+      role="contentinfo"
     >
       <div className="container-shell">
         <div

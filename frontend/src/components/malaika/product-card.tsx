@@ -81,10 +81,10 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         onMouseLeave={() => setHovered(false)}
       >
         {/* Image */}
-        <div
-          className="relative aspect-[4/5] w-full overflow-hidden cursor-pointer"
+        <Link
+          href={`/products/${product.slug}`}
+          className="relative aspect-[4/5] w-full overflow-hidden block"
           style={{ background: gradient }}
-          onClick={() => setZoom(true)}
         >
           {product.image && !imageErrored ? (
             <Image
@@ -108,7 +108,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           )}
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
             {product.badge && (
               <span
                 className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full"
@@ -143,7 +143,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             }}
             aria-label={wished ? t('product.removeWishlist') : t('product.wishlist')}
             aria-pressed={wished}
-            className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-warm-sm transition-all hover:scale-110"
+            className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-warm-sm transition-all hover:scale-110 z-10"
             style={{ background: 'rgba(255,255,255,0.95)' }}
           >
             <Heart
@@ -156,9 +156,9 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
 
           {/* Quick add (desktop hover) */}
           <div
-            className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${
+            className={`absolute bottom-3 left-3 right-3 transition-all duration-300 z-10 ${
               hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-            }`}
+            } hidden sm:block`}
           >
             <button
               type="button"
@@ -176,7 +176,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
 
           {!inStock && (
             <div
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex items-center justify-center z-10"
               style={{ background: 'rgba(255,255,255,0.55)' }}
             >
               <span
@@ -187,7 +187,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               </span>
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Details */}
         <div className="p-3 sm:p-4 flex flex-col flex-1">
@@ -259,10 +259,11 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             type="button"
             onClick={handleAdd}
             disabled={!inStock}
-            className="sm:hidden mt-3 min-h-[44px] w-full inline-flex items-center justify-center gap-2 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-50"
+            className="mt-3 min-h-[44px] w-full inline-flex items-center justify-center gap-2 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-50 sm:bg-transparent sm:border sm:!text-[var(--brand-brown)] sm:hover:bg-brand-bg"
             style={{
               background: 'var(--brand-brown-dark)',
               color: '#FFFFFF',
+              borderColor: 'var(--brand-border)',
             }}
             aria-label={`${t('product.addToCart')} ${product.name}`}
           >

@@ -33,11 +33,6 @@ def product_pre_save(sender, instance, **kwargs):
     if not instance.sku:
         instance.sku = f"SKU-{uuid.uuid4().hex[:8].upper()}"
 
-    if instance.stock <= 0 and instance.status == "published":
-        instance.is_active = False
-    elif instance.stock > 0 and instance.status == "published":
-        instance.is_active = True
-
 
 @receiver(post_save, sender=Product)
 @receiver(post_delete, sender=Product)

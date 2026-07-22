@@ -17,6 +17,15 @@ interface DetailProps {
     image?: string;
     inStock: boolean;
     hasVariants: boolean;
+    variants?: Array<{
+      id: number;
+      size?: string;
+      size_label?: string;
+      color?: string;
+      color_label?: string;
+      price_modifier: string;
+      stock: number;
+    }>;
   };
 }
 
@@ -93,6 +102,21 @@ export function ProductDetailClient({ product }: DetailProps) {
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
+
+  const variants = product.variants || [];
+  const activeVariant = variants.find((v) => v.id === selectedVariant) || null;
+  const currentPrice = product.price + parseFloat(activeVariant?.price_modifier || '0');
+  const isOutOfStock = product.hasVariants
+    ? (activeVariant ? activeVariant.stock <= 0 : true)
+    : !product.inStock;
+
+  useEffect(() => {
+    if (product.hasVariants && variants.length > 0 && !selectedVariant) {
+      const firstInStock = variants.find((v) => v.stock > 0) || variants[0];
+      setSelectedVariant(firstInStock.id);
+    }
+  }, [product.hasVariants, variants, selectedVariant]);
 
   useEffect(() => {
     try {
@@ -107,22 +131,31 @@ export function ProductDetailClient({ product }: DetailProps) {
       id: product.id,
       name: product.name,
       slug: product.slug,
-      price: product.price,
+      price: currentPrice,
       image: product.image,
     });
-  }, [product.id, product.name, product.slug, product.price, product.image]);
+  }, [product.id, product.name, product.slug, currentPrice, product.image]);
 
   const handleAdd = async () => {
-    if (!product.inStock || qty < 1) return;
+    if (isOutOfStock || qty < 1) return;
+    if (product.hasVariants && !selectedVariant) {
+      showToast('Please select an option');
+      return;
+    }
+
     setAdding(true);
     await add({
-      id: `product-${product.id}`,
+      id: selectedVariant ? `variant-${selectedVariant}` : `product-${product.id}`,
       product_id: product.id,
+      variant_id: selectedVariant || undefined,
       name: product.name,
       slug: product.slug,
-      price: product.price,
+      price: currentPrice,
       image: product.image || '',
       qty,
+      variant_label: activeVariant
+        ? [activeVariant.size_label, activeVariant.color_label].filter(Boolean).join(' / ')
+        : undefined,
     });
     setAdding(false);
     setAdded(true);
@@ -157,11 +190,45 @@ export function ProductDetailClient({ product }: DetailProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm" style={{ color: product.inStock ? 'var(--brand-green-light)' : 'var(--brand-terra)' }}>
-        <span className={`w-2 h-2 rounded-full ${product.inStock ? 'animate-pulse-soft' : ''}`} style={{ background: product.inStock ? 'var(--brand-green-light)' : 'var(--brand-terra)' }} />
-        {product.inStock ? 'In stock' : 'Out of stock'}
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 text-sm" style={{ color: !isOutOfStock ? 'var(--brand-green-light)' : 'var(--brand-terra)' }}>
+        <span className={`w-2 h-2 rounded-full ${!isOutOfStock ? 'animate-pulse-soft' : ''}`} style={{ background: !isOutOfStock ? 'var(--brand-green-light)' : 'var(--brand-terra)' }} />
+        {!isOutOfStock ? 'In stock' : 'Out of stock'}
       </div>
+
+      {product.hasVariants && (
+        <div className="space-y-4">
+          <span className="text-sm font-medium block" style={{ color: 'var(--brand-text-secondary)' }}>
+            Select Option
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {variants.map((v) => {
+              const label = [v.size_label, v.color_label].filter(Boolean).join(' / ');
+              const isSelected = selectedVariant === v.id;
+              const isVariantOutOfStock = v.stock <= 0;
+
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setSelectedVariant(v.id)}
+                  className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                    isSelected ? 'ring-2' : ''
+                  } ${isVariantOutOfStock ? 'opacity-40 grayscale' : ''}`}
+                  style={{
+                    borderColor: isSelected ? 'var(--brand-gold)' : 'var(--brand-border)',
+                    background: isSelected ? 'rgba(139,105,20,0.04)' : '#FFFFFF',
+                    color: isSelected ? 'var(--brand-gold)' : 'var(--brand-text)',
+                  }}
+                >
+                  {label}
+                  {isVariantOutOfStock && ' (Sold out)'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Quantity selector */}
       <div className="flex items-center gap-3">
@@ -194,7 +261,7 @@ export function ProductDetailClient({ product }: DetailProps) {
         <button
           type="button"
           onClick={handleAdd}
-          disabled={!product.inStock || adding}
+          disabled={isOutOfStock || adding}
           className="flex-1 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-full font-semibold text-sm transition-all disabled:opacity-50"
           style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
         >

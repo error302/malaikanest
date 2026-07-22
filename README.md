@@ -23,7 +23,6 @@ A full-featured e-commerce platform for baby and children's clothing in Kenya, b
 - **Cache**: Redis 6
 - **Task Queue**: Celery + django-celery-beat
 - **Media Storage**: Cloudinary
-- **AI Integration**: Ollama (product descriptions, chatbot, embeddings)
 - **PDF Generation**: ReportLab
 
 ### Infrastructure & Deployment
@@ -73,14 +72,6 @@ A full-featured e-commerce platform for baby and children's clothing in Kenya, b
 - Gift orders with message support
 - PDF invoice generation
 - Order tracking page for guests
-
-### AI Features (Ollama)
-- Auto-generate SEO-friendly product descriptions
-- Auto-generate meta titles, descriptions, keywords
-- AI-suggested product tags
-- AI shopping assistant chatbot
-- Intelligent product bundle suggestions
-- Vector embeddings for semantic similarity
 
 ### Admin Dashboard
 - Full product CRUD with bulk operations
@@ -220,7 +211,6 @@ ALLOWED_HOSTS=localhost,backend
 DATABASE_URL=postgres://user:pass@localhost:5432/malaika_db
 REDIS_URL=redis://localhost:6379/0
 CLOUDINARY_URL=cloudinary://...
-OLLAMA_BASE_URL=http://localhost:11434
 MPESA_CONSUMER_KEY=...
 MPESA_CONSUMER_SECRET=...
 MPESA_SHORTCODE=...

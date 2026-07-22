@@ -31,6 +31,7 @@ class CartViewSet(viewsets.ViewSet):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_scope = "cart"
 
     def _get_prefetched_cart(self, cart_id):
         return Cart.objects.select_related("coupon").prefetch_related(

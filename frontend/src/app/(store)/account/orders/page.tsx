@@ -19,7 +19,7 @@ interface Order {
 const STATUS_COLORS: Record<string, string> = {
   pending: 'var(--brand-gold)',
   paid: 'var(--brand-green-light)',
-  processing: 'var(--brand-gold-light)',
+  processing: 'var(--brand-gold-contrast)',
   shipped: '#3B82F6',
   delivered: 'var(--brand-green-light)',
   cancelled: 'var(--brand-terra)',

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "@/components/malaika/providers";
 import { getSiteSettings } from "@/lib/settings";
@@ -124,22 +125,28 @@ const jsonLd = {
       "@type": "LocalBusiness",
       "@id": `${SITE_URL}/#store`,
       name: "Malaika Nest",
-      alternateName: "Tawakal Toto Shop",
+      alternateName: ["Tawakal Toto Shop", "Malaika Nest Kenya"],
       url: SITE_URL,
-      logo: `${SITE_URL}/logo.png`,
+      logo: {
+        "@type": "ImageObject",
+        "url": `${SITE_URL}/logo.png`,
+        "width": 512,
+        "height": 512
+      },
       image: `${SITE_URL}/logo.png`,
       description: "Premium baby and maternity store. Handcrafted organic clothing, accessories & toys made with love in Kenya.",
       email: "hello@malaikanest.com",
       telephone: "+254726771321",
       priceRange: "KES",
       currenciesAccepted: "KES",
-      paymentAccepted: "M-Pesa, Cash",
+      paymentAccepted: "M-Pesa, Cash, Credit Card",
       address: {
         "@type": "PostalAddress",
         streetAddress: "Tawakal Toto Shop",
         addressLocality: "Mombasa",
         addressRegion: "Mombasa County",
         addressCountry: "KE",
+        postalCode: "80100"
       },
       geo: {
         "@type": "GeoCoordinates",
@@ -150,7 +157,6 @@ const jsonLd = {
       openingHoursSpecification: [
         { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday"], opens: "09:00", closes: "18:00" },
         { "@type": "OpeningHoursSpecification", dayOfWeek: "Saturday", opens: "09:00", closes: "16:00" },
-        { "@type": "OpeningHoursSpecification", dayOfWeek: "Sunday", opens: "00:00", closes: "00:00" },
       ],
       sameAs: [
         "https://web.facebook.com/profile.php?id=61592150003761",
@@ -171,7 +177,7 @@ const jsonLd = {
       url: SITE_URL,
       name: "Malaika Nest",
       description: "Premium baby and maternity store in Kenya — handcrafted organic clothing, accessories & toys.",
-      publisher: { "@id": `${SITE_URL}/#organization` },
+      publisher: { "@id": `${SITE_URL}/#store` },
       inLanguage: "en",
       potentialAction: {
         "@type": "SearchAction",
@@ -181,19 +187,6 @@ const jsonLd = {
         },
         "query-input": "required name=search_term_string",
       },
-    },
-    {
-      "@type": "Store",
-      "@id": `${SITE_URL}/#store`,
-      name: "Malaika Nest",
-      url: SITE_URL,
-      telephone: "+254726771321",
-      email: "hello@malaikanest.com",
-      address: { "@type": "PostalAddress", addressLocality: "Mombasa", addressCountry: "KE" },
-      paymentAccepted: "M-Pesa, Credit Card, Cash on Delivery",
-      currenciesAccepted: "KES",
-      openingHours: "Mo-Sa 09:00-18:00",
-      priceRange: "KES 500 - 8000",
     },
   ],
 };
@@ -211,15 +204,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>
-            <script
-              async
+            <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+              strategy="afterInteractive"
             />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_ID}',{page_path:window.location.pathname});`,
-              }}
-            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+              `}
+            </Script>
           </>
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

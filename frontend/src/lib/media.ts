@@ -14,21 +14,35 @@ function getApiUrl(): string {
 export function getImageUrl(imageUrl: string | null | undefined): string {
   if (!imageUrl) return '/placeholder.svg';
 
-  if (imageUrl.startsWith('http')) {
-    return imageUrl;
+  let finalUrl = imageUrl;
+
+  if (!imageUrl.startsWith('http')) {
+    const apiUrl = getApiUrl();
+    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/uploads/')) {
+      finalUrl = `${apiUrl}${imageUrl}`;
+    } else if (imageUrl.startsWith('media/') || imageUrl.startsWith('uploads/')) {
+      finalUrl = `${apiUrl}/${imageUrl}`;
+    } else {
+      finalUrl = `${apiUrl}/media/${imageUrl}`;
+    }
   }
 
-  const apiUrl = getApiUrl();
+  // Optimize Cloudinary URLs if detected
+  if (finalUrl.includes('res.cloudinary.com')) {
+    // If it doesn't already have transformations, inject auto format and quality
+    if (!finalUrl.includes('/upload/')) return finalUrl;
 
-  if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/uploads/')) {
-    return `${apiUrl}${imageUrl}`;
+    const parts = finalUrl.split('/upload/');
+    // If it has transformations (e.g. /upload/c_fill,w_300/v123/...), we append our defaults
+    if (parts[1].includes('/') && !parts[1].startsWith('v')) {
+       // Keep existing transformations but add auto format/quality
+       return `${parts[0]}/upload/f_auto,q_auto,${parts[1]}`;
+    }
+    // No transformations, just inject them
+    return `${parts[0]}/upload/f_auto,q_auto/${parts[1]}`;
   }
 
-  if (imageUrl.startsWith('media/') || imageUrl.startsWith('uploads/')) {
-    return `${apiUrl}/${imageUrl}`;
-  }
-
-  return `${apiUrl}/media/${imageUrl}`;
+  return finalUrl;
 }
 
 export function getBannerUrl(imageUrl: string | null | undefined): string {

@@ -1,17 +1,9 @@
 /**
- * Related products — fetches AI-powered similar products from the Django backend.
- * Falls back to same-category products if the AI similarity endpoint is unavailable.
+ * Related products — fetches similar products from the same category.
  */
 import type { Product } from '@/components/malaika/product-card';
 import { getImageUrl } from '@/lib/media';
-
-function getApiBaseUrl(): string {
-  return (
-    process.env.INTERNAL_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    'https://api.malaikanest.com'
-  );
-}
+import { getApiBaseUrl } from '@/lib/site-config';
 
 function normalizeProduct(p: any): Product {
   return {
@@ -33,37 +25,15 @@ function normalizeProduct(p: any): Product {
 
 /**
  * Get related products for a given product slug.
- * Tries the AI similarity endpoint first, falls back to same-category.
+ * Returns products from the same category or best sellers.
  */
 export async function getRelatedProducts(slug: string, limit = 4): Promise<Product[]> {
   const baseUrl = getApiBaseUrl();
 
-  // Try AI similarity endpoint
+  // Get products from the same category or generally popular products
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`${baseUrl}/api/v1/ai/similar-products/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ product_slug: slug, limit }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    if (res.ok) {
-      const data = await res.json();
-      const results = data?.results ?? data?.data?.results ?? data?.data ?? [];
-      if (Array.isArray(results) && results.length > 0) {
-        return results.map(normalizeProduct);
-      }
-    }
-  } catch {
-    // fall through to category fallback
-  }
-
-  // Fallback: get products from the same category
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(`${baseUrl}/api/v1/products/products/?ordering=-rating&limit=${limit + 4}`, {
       signal: controller.signal,
     });

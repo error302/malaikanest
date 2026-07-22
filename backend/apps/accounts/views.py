@@ -97,6 +97,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
     """
 
     serializer_class = TokenObtainPairWithUserSerializer
+    throttle_scope = "login"
 
     def post(self, request, *args, **kwargs):
         email = (request.data.get("email") or request.data.get("username") or "").strip().lower()

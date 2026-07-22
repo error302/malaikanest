@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+
 interface LogoProps {
   variant?: 'full' | 'compact';
   className?: string;
@@ -22,11 +24,13 @@ export function Logo({ variant = 'full', className = '', onLight = false, logoUr
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       {(!imgError) ? (
-        <img
+        <Image
           src={src}
           alt={name}
           width={38}
           height={38}
+          priority
+          fetchPriority="high"
           onError={() => setImgError(true)}
           className="flex-shrink-0 object-contain"
         />
