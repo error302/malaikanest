@@ -1,12 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, ArrowRight, Trash2 } from 'lucide-react';
+import { Heart, ArrowRight, Trash2, ShoppingBasket } from 'lucide-react';
 import { useWishlist } from '@/lib/wishlistContext';
 import { getImageUrl } from '@/lib/media';
+import { useCart } from '@/lib/cartContext';
+import { showToast } from '@/lib/toast';
 
 export default function WishlistPage() {
   const { items, remove, clear } = useWishlist();
+  const { add: addToCart } = useCart();
+
+  const handleAddToCart = async (item: typeof items[0]) => {
+    addToCart({
+      id: item.productId,
+      name: item.name,
+      slug: item.slug,
+      price: item.price,
+      image: item.image,
+    }, 1);
+    showToast('Added to cart!', 'success');
+    remove(item.productId);
+  };
 
   if (items.length === 0) {
     return (
@@ -41,7 +56,7 @@ export default function WishlistPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
         {items.map((item) => (
           <div key={item.id} className="rounded-2xl border overflow-hidden" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-            <Link href={`/products/${item.slug}`} className="block relative aspect-[4/5]">
+            <div className="relative aspect-[4/5]">
               {item.image ? (
                 <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
               ) : (
@@ -61,14 +76,23 @@ export default function WishlistPage() {
               >
                 <Trash2 size={16} />
               </button>
-            </Link>
+            </div>
             <div className="p-3 sm:p-4">
               <Link href={`/products/${item.slug}`}>
                 <h3 className="text-sm font-semibold line-clamp-2 mb-1" style={{ color: 'var(--brand-text)' }}>{item.name}</h3>
               </Link>
-              <p className="text-sm font-semibold" style={{ color: 'var(--brand-gold)' }}>
+              <p className="text-sm font-semibold mb-3" style={{ color: 'var(--brand-gold)' }}>
                 KES {item.price.toLocaleString('en-KE')}
               </p>
+              <button
+                type="button"
+                onClick={() => handleAddToCart(item)}
+                className="w-full flex items-center justify-center gap-2 rounded-full min-h-[44px] text-sm font-medium"
+                style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+              >
+                <ShoppingBasket size={16} />
+                Add to Cart
+              </button>
             </div>
           </div>
         ))}

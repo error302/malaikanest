@@ -19,6 +19,7 @@ function normalizeProduct(p: any): Product {
     badge: p.badge || 'Top Rated',
     inStock: (p.available_stock ?? p.stock ?? 0) > 0,
     hasVariants: Boolean(p.has_variants),
+    variantCount: typeof p.variant_count === 'number' ? p.variant_count : 0,
   };
 }
 
@@ -28,7 +29,7 @@ export function BestSellersClient() {
 
   useEffect(() => {
     api
-      .get('/api/v1/products/products/', { params: { ordering: '-rating', limit: 12 } })
+      .get('/api/v1/products/products/', { params: { ordering: '-avg_rating', page_size: 12 } })
       .then((res) => {
         const data = res.data;
         const results: any[] = data?.results ?? data?.data?.results ?? [];

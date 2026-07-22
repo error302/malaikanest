@@ -100,7 +100,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const contains = useCallback(
-    (productId: number) => items.some((item) => item.productId === productId),
+    (productId: number | string) => (items ?? []).some((item) => String(item.productId) === String(productId)),
     [items]
   );
 

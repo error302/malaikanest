@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { CreditCard, Smartphone, Banknote, Lock, ArrowRight, Wallet } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
-import api, { handleApiError } from '@/lib/api';
+import api, { handleApiError, getPaymentStatusByCheckoutId } from '@/lib/api';
 import { getDeliveryZones } from '@/lib/delivery';
 import type { DeliveryZone } from '@/lib/delivery';
 import { getPublicSettings } from '@/lib/public-settings';
@@ -29,6 +29,10 @@ export default function CheckoutPage() {
   const [region, setRegion] = useState('nairobi');
   const [payment, setPayment] = useState('mpesa');
   const [submitting, setSubmitting] = useState(false);
+  const [paymentPending, setPaymentPending] = useState(false);
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
+  const [paymentPollingError, setPaymentPollingError] = useState<string | null>(null);
+  const [pendingReceiptNumber, setPendingReceiptNumber] = useState<string | null>(null);
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     address: '', city: '', postalCode: '',
@@ -40,6 +44,47 @@ export default function CheckoutPage() {
       setSettings(s);
     });
   }, []);
+
+  useEffect(() => {
+    if (!paymentPending || !checkoutRequestId) return;
+
+    let pollCount = 0;
+    const MAX_POLLS = 40;
+    const POLL_INTERVAL = 3000;
+
+    const poll = async () => {
+      try {
+        const status = await getPaymentStatusByCheckoutId(checkoutRequestId);
+        if (status.status === 'completed' || status.status === 'paid') {
+          setPaymentPending(false);
+          showToast('Payment confirmed!', 'success');
+          router.push(`/checkout/success?order=${pendingReceiptNumber}&status=paid`);
+          return;
+        }
+        if (status.status === 'failed') {
+          setPaymentPending(false);
+          setPaymentPollingError('Payment failed. Please try again.');
+          showToast('M-Pesa payment failed. Please try again.', 'error');
+          return;
+        }
+      } catch {
+        // continue polling on error
+      }
+
+      pollCount++;
+      if (pollCount >= MAX_POLLS) {
+        setPaymentPending(false);
+        setPaymentPollingError('Payment timed out. Please check your phone and try again.');
+        showToast('Payment timed out. Please check your phone and try again.', 'error');
+        return;
+      }
+
+      setTimeout(poll, POLL_INTERVAL);
+    };
+
+    const timeoutId = setTimeout(poll, POLL_INTERVAL);
+    return () => clearTimeout(timeoutId);
+  }, [paymentPending, checkoutRequestId, router, pendingReceiptNumber]);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const zones = deliveryZones.length > 0 ? deliveryZones : [
@@ -95,8 +140,10 @@ export default function CheckoutPage() {
         // Check if STK push was initiated
         if (mpesaData?.checkout_request_id || mpesaRes.status === 200) {
           showToast('M-Pesa prompt sent to your phone. Enter your PIN to complete payment.', 'success');
-          // Redirect to success page — the backend will confirm payment via callback
-          router.push(`/checkout/success?order=${receiptNumber}`);
+          setPaymentPending(true);
+          setCheckoutRequestId(mpesaData.checkout_request_id);
+          setPendingReceiptNumber(receiptNumber);
+          setPaymentPollingError(null);
         } else {
           throw new Error(mpesaData?.message || 'M-Pesa initiation failed');
         }
@@ -276,6 +323,31 @@ export default function CheckoutPage() {
             >
               {submitting ? t('checkout.processing') : <>{t('checkout.placeOrder')} <Lock size={14} /></>}
             </button>
+            {paymentPending && (
+              <div className="mt-4 p-4 rounded-xl border text-center" style={{ background: 'rgba(139,105,20,0.06)', borderColor: 'var(--brand-gold)' }}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--brand-gold)' }} />
+                  <span className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>Waiting for M-Pesa payment…</span>
+                </div>
+                <p className="text-xs mb-3" style={{ color: 'var(--brand-text-secondary)' }}>Check your phone and enter your PIN</p>
+                {paymentPollingError ? (
+                  <p className="text-xs text-red-600 mb-3">{paymentPollingError}</p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentPending(false);
+                    setCheckoutRequestId(null);
+                    setPaymentPollingError(null);
+                    setPendingReceiptNumber(null);
+                  }}
+                  className="text-xs underline"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                >
+                  Cancel and try again
+                </button>
+              </div>
+            )}
             <p className="text-[11px] mt-3 text-center" style={{ color: 'var(--brand-text-muted)' }}>
               {t('checkout.secured')}
             </p>

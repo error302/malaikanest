@@ -382,3 +382,12 @@ export const extractApiError = handleApiError;
 export const isValidResponse = (data: any): boolean => {
   return data !== null && data !== undefined && (typeof data === 'object' ? Object.keys(data).length > 0 : true);
 };
+
+export const getPaymentStatusByCheckoutId = async (checkoutRequestId: string): Promise<{
+  checkout_request_id: string;
+  status: 'initiated' | 'completed' | 'failed' | string;
+  mpesa_receipt_number?: string;
+}> => {
+  const response = await api.get(`/api/v1/payments/verify/${checkoutRequestId}/`);
+  return response.data;
+};

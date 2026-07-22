@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CheckCircle, Package, Mail, Phone } from 'lucide-react';
+import OrderStatus from './OrderStatus';
 
 export default async function CheckoutSuccessPage({
   searchParams,
@@ -30,11 +31,7 @@ export default async function CheckoutSuccessPage({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 text-left">
-        <div className="p-4 rounded-xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-          <Package size={18} className="mb-2" style={{ color: 'var(--brand-gold)' }} />
-          <div className="text-sm font-semibold" style={{ color: 'var(--brand-text)' }}>Order Status</div>
-          <div className="text-xs" style={{ color: 'var(--brand-text-muted)' }}>Processing — we&apos;ll ship within 24h</div>
-        </div>
+        <OrderStatus receiptNumber={receiptNumber} />
         <div className="p-4 rounded-xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
           <Mail size={18} className="mb-2" style={{ color: 'var(--brand-gold)' }} />
           <div className="text-sm font-semibold" style={{ color: 'var(--brand-text)' }}>Confirmation</div>

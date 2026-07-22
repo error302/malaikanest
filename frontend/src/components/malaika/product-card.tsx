@@ -21,6 +21,7 @@ export interface Product {
   badge?: string;
   inStock?: boolean;
   hasVariants?: boolean;
+  variantCount?: number;
 }
 
 function formatKES(n: number) {
@@ -54,7 +55,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     e?.preventDefault?.();
     e?.stopPropagation?.();
     if (!inStock) return;
-    if (product.hasVariants) {
+    if ((product.variantCount ?? 0) > 1) {
       window.location.href = `/products/${product.slug}`;
       return;
     }
@@ -169,7 +170,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 color: 'var(--brand-text)',
               }}
             >
-              {product.hasVariants ? t('product.viewDetails') : inStock ? t('product.quickAdd') : t('product.outOfStock')}
+              {inStock ? (product.variantCount ?? 0) > 1 ? t('product.viewDetails') : t('product.quickAdd') : t('product.outOfStock')}
             </button>
           </div>
 
@@ -266,7 +267,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             aria-label={`${t('product.addToCart')} ${product.name}`}
           >
             <ShoppingBasket size={15} />
-            {product.hasVariants ? t('product.viewDetails') : inStock ? t('product.addToCart') : t('product.outOfStock')}
+            {inStock ? (product.variantCount ?? 0) > 1 ? t('product.viewDetails') : t('product.addToCart') : t('product.outOfStock')}
           </button>
         </div>
       </article>

@@ -27,6 +27,7 @@ function normalizeProduct(p: any): Product {
     badge: p.badge,
     inStock: (p.available_stock ?? p.stock ?? 0) > 0,
     hasVariants: Boolean(p.has_variants),
+    variantCount: typeof p.variant_count === 'number' ? p.variant_count : 0,
   };
 }
 

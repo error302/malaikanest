@@ -88,20 +88,19 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
 
 export function ProductDetailClient({ product }: DetailProps) {
   const { add } = useCart();
-  const { toggle, contains: containsRaw } = useWishlist();
+  const { toggle } = useWishlist();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setIsWishlisted(containsRaw(product.id));
-  }, [containsRaw, product.id]);
+    try {
+      const raw = localStorage.getItem('malaika_wishlist_v1');
+      const items: Array<{ productId: number | string }> = JSON.parse(raw || '[]');
+      setIsWishlisted(items.some((item) => String(item.productId) === String(product.id)));
+    } catch { }
+  }, [product.id]);
 
   useEffect(() => {
     trackRecentlyViewed({
@@ -205,11 +204,11 @@ export function ProductDetailClient({ product }: DetailProps) {
           type="button"
           onClick={handleWishlist}
           aria-label="Add to wishlist"
-          aria-pressed={mounted ? isWishlisted : false}
+          aria-pressed={isWishlisted}
           className="w-12 h-[52px] inline-flex items-center justify-center rounded-full border transition-colors"
-          style={{ borderColor: 'var(--brand-border)', color: mounted && isWishlisted ? 'var(--brand-terra)' : 'var(--brand-brown)' }}
+          style={{ borderColor: 'var(--brand-border)', color: isWishlisted ? 'var(--brand-terra)' : 'var(--brand-brown)' }}
         >
-          <Heart size={18} className={mounted && isWishlisted ? 'fill-current' : ''} />
+          <Heart size={18} className={isWishlisted ? 'fill-current' : ''} />
         </button>
         <button
           type="button"
