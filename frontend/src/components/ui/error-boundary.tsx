@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { AlertCircle, RotateCcw } from '@/lib/icons';
 
 interface Props {
   children?: ReactNode;
@@ -32,7 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex flex-col items-center justify-center p-8 text-center bg-white rounded-2xl border border-[var(--brand-border)]">
           <div className="w-12 h-12 rounded-full bg-[var(--brand-warm)] flex items-center justify-center mb-4">
-            <AlertTriangle className="text-[var(--brand-terra)]" size={24} />
+            <AlertCircle className="text-[var(--brand-terra)]" size={24} />
           </div>
           <h2 className="font-serif text-lg font-semibold mb-2" style={{ color: 'var(--brand-text)' }}>
             Something went wrong
