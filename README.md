@@ -1,250 +1,264 @@
-# Malaika Nest - E-Commerce Platform
+# Malaika Nest — E-Commerce Platform
 
-A full-featured e-commerce platform for baby and children's clothing in Kenya.
+A full-featured e-commerce platform for baby and children's clothing in Kenya, built with Next.js and Django.
+
+**Live site**: [malaikanest.com](https://malaikanest.com)
+**Admin**: [admin.malaikanest.com](https://admin.malaikanest.com)
 
 ## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 15 (React 18)
-- **Styling**: Tailwind CSS 3.4
+- **Framework**: Next.js 15 (App Router, React 18, TypeScript)
+- **Styling**: Tailwind CSS 3.4 + CSS custom properties (brand system)
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
-- **State Management**: React hooks + Context
-- **HTTP Client**: Axios
-- **Analytics**: Vercel Analytics & Speed Insights
-- **Language**: TypeScript
+- **State**: React Context + hooks (cart, wishlist, auth, i18n)
+- **HTTP Client**: Axios with interceptors
+- **Analytics**: Cloudflare Analytics (RUM)
 
-### Backend
-- **Framework**: Django 5.1
-- **API**: Django REST Framework 3.15
+### Backend (API)
+- **Framework**: Django 5.1 + Django REST Framework 3.15
 - **Authentication**: JWT (djangorestframework-simplejwt)
-- **Database**: PostgreSQL 15
+- **Database**: PostgreSQL 15 (via Docker)
 - **Cache**: Redis 6
-- **Task Queue**: Celery with django-celery-beat
-- **WebSockets**: Django Channels (for real-time features)
+- **Task Queue**: Celery + django-celery-beat
 - **Media Storage**: Cloudinary
-- **AI Integration**: Ollama (LLM for product descriptions, chatbots, embeddings)
-- **Image Processing**: Pillow
+- **AI Integration**: Ollama (product descriptions, chatbot, embeddings)
 - **PDF Generation**: ReportLab
 
-### DevOps & Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Web Server**: Gunicorn (Django), Nginx
-- **Hosting**: Google Cloud Platform (GCP)
-- **DNS**: DuckDNS
-- **SSL**: Let's Encrypt (via Certbot)
+### Infrastructure & Deployment
+- **Frontend Hosting**: Cloudflare Pages (Next.js standalone)
+- **Backend Hosting**: Cloudflare Workers (containerized Docker)
+- **CDN/DNS**: Cloudflare
+- **Object Storage**: Cloudflare R2
+- **Database**: Cloudflare D1 (SQLite) — Workers builds
+- **Email**: Gmail SMTP
 
 ## Core Features
 
 ### Products & Catalog
-- **Product Management**: Full CRUD with variants (size, color)
-- **Categories**: Hierarchical categories with parent/child relationships
-- **Brands**: Brand management with logos
-- **Banners**: Promotional banners with scheduling (start/end dates)
-- **Inventory Tracking**: Real-time stock with reserved quantities
-- **Product Variants**: Size and color variations with individual SKU
-- **Image Gallery**: Multiple product images with primary image support
-- **SEO**: Meta titles, descriptions, auto-generated content
+- Product variants: size (0-3M, 3-6M, etc.) + color with individual SKUs
+- Hierarchical categories with parent/child relationships
+- Brand management with logos
+- Promotional banners with scheduling
+- Inventory tracking with reserved quantities
+- Multiple product images with primary image
+- AI-generated descriptions, SEO metadata, and tags
+- Semantic search via vector embeddings
 
 ### Shopping Experience
-- **Shopping Cart**: Persistent cart (user + guest sessions)
-- **Wishlist**: Save products for later
-- **Product Reviews**: Rating and review system
-- **Search**: Full-text search with filters
-- **Product Filtering**: By category, age group, gender, size, price
-- **Similar Products**: AI-powered semantic search using embeddings
-- **Product Bundles**: AI-generated product bundles
+- Persistent cart (user + guest via session)
+- Wishlist with localStorage + sync
+- Product reviews and ratings
+- Full-text search with filters (category, age group, gender, size, price)
+- Similar products via AI embeddings
+- Product bundles (AI-generated)
+- Recently viewed products
 
 ### User Accounts
-- **Authentication**: Email + password with JWT tokens
-- **Registration**: Email verification required
-- **Password Reset**: Token-based password recovery
-- **Phone Authentication**: Phone number as required field
-- **User Roles**: Admin and Customer roles
-- **Address Book**: Multiple saved addresses
+- Email + password registration with verification
+- JWT access + refresh tokens
+- Phone number as required field
+- Password reset via email
+- Saved addresses (multiple)
+- Order history and reorder functionality
+- Order tracking via `checkout_token`
 
 ### Checkout & Orders
-- **Guest Checkout**: Checkout without account
-- **Order State Machine**: Valid status transitions (pending → paid → processing → shipped → delivered)
-- **Multiple Payment Methods**:
-  - M-Pesa (Kenya mobile money)
-  - Credit/Debit Cards
-  - Bank Transfer
-  - Cash on Delivery
-- **Delivery Zones**: Mombasa (same-day), Nairobi (1-2 days), Upcountry (2-3 days)
-- **Coupons & Discounts**: Flat and percentage-based coupons
-- **Order Tracking**: Tracking number and carrier info
-- **Gift Orders**: Gift message support
-- **Invoice Generation**: Auto-generated PDF invoices
+- Guest checkout supported
+- Order status machine: `pending → paid → processing → shipped → delivered`
+- Payment methods: **M-Pesa STK** (with real-time polling), **Pesapal**, **Card**, **Cash on Delivery**
+- Delivery zones: Mombasa (same-day, free pickup), Nairobi (1-2 days), Upcountry (2-3 days)
+- Coupons: flat and percentage-based
+- Gift orders with message support
+- PDF invoice generation
+- Order tracking page for guests
 
 ### AI Features (Ollama)
-- **Product Descriptions**: Auto-generate SEO-friendly descriptions
-- **SEO Metadata**: Auto-generate meta titles, descriptions, keywords
-- **Product Tags**: AI-suggested tags for filtering
-- **Chatbot**: AI shopping assistant for product recommendations
-- **Product Bundles**: Intelligent bundle suggestions
-- **Semantic Search**: Vector embeddings for similarity matching
-- **Product Embeddings**: Store and query product embeddings
+- Auto-generate SEO-friendly product descriptions
+- Auto-generate meta titles, descriptions, keywords
+- AI-suggested product tags
+- AI shopping assistant chatbot
+- Intelligent product bundle suggestions
+- Vector embeddings for semantic similarity
 
 ### Admin Dashboard
-- **Product Management**: Full product CRUD with bulk operations
-- **Order Management**: Order status updates, tracking
-- **Category Management**: Hierarchical category editor
-- **Banner Management**: Promotional banner scheduling
-- **User Management**: Customer and admin management
-- **Analytics**: Sales and inventory reports
-- **Bulk Operations**: Generate descriptions, optimize content
+- Full product CRUD with bulk operations
+- Full order management (status, tracking)
+- Category and brand management
+- Banner scheduling
+- User management
+- Coupon management
+- Sales reports and analytics
+- Bulk AI content generation
 
 ## Project Structure
 
 ```
-malaika-nest/
+malaikanest/
 ├── backend/
 │   ├── apps/
-│   │   ├── accounts/       # User authentication & profiles
-│   │   ├── ai/            # AI services (Ollama integration)
-│   │   ├── products/      # Product catalog & inventory
-│   │   ├── orders/       # Order processing & cart
-│   │   ├── payments/     # Payment integrations (M-Pesa, etc.)
-│   │   └── users/        # Additional user features
-│   ├── config/           # Django settings
-│   ├── scripts/          # Utility scripts
+│   │   ├── accounts/     # Auth, profiles, JWT tokens
+│   │   ├── ai/           # Ollama integration, embeddings, chatbot
+│   │   ├── core/        # Health checks, cache, utils
+│   │   ├── orders/       # Cart, orders, coupons, delivery zones
+│   │   ├── payments/     # M-Pesa, Pesapal, card payments
+│   │   ├── products/     # Catalog, categories, brands, variants
+│   │   └── users/        # User model extensions
+│   ├── config/           # Django settings, ASGI, Celery
+│   ├── scripts/         # Utility scripts
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
 │   │   ├── app/          # Next.js App Router pages
-│   │   ├── components/  # React components
-│   │   └── lib/         # Utilities & API clients
+│   │   │   └── (store)/  # Storefront pages
+│   │   ├── components/  # Shared React components
+│   │   └── lib/         # API client, contexts, utilities
 │   ├── public/           # Static assets
 │   └── package.json
-├── deployment/           # Deployment configs & scripts
-├── docker-compose.yml   # Docker orchestration
+├── docker-compose.yml    # Development orchestration
+├── docker-compose.prod.yml  # Production (Cloudflare Workers)
 └── README.md
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 15
-- Redis 6
+- Python 3.10+, Node.js 18+, Docker, Docker Compose
 
-### Backend Setup
+### Development (Docker)
+
+```bash
+# Start all services (frontend :3090, backend :8081, db, redis)
+docker compose up
+
+# Run migrations
+docker compose exec backend python manage.py migrate
+
+# Create admin user
+docker compose exec backend python manage.py createsuperuser
+
+# Frontend dev server (hot reload)
+docker compose up frontend
+```
+
+### Backend (Local without Docker)
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Copy environment file
-cp .env.example .env
-# Edit .env with your settings
-
-# Run migrations
+cp .env.example .env  # Edit with your settings
 python manage.py migrate
-
-# Create superuser
-python manage.py createsuperuser
-
-# Start development server
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8081
 ```
 
-### Frontend Setup
+### Frontend (Local)
 
 ```bash
 cd frontend
 npm install
-
-# Copy environment file
-cp .env.example .env.local
-# Edit .env.local with your API URL
-
-# Start development server
+cp .env.example .env.local  # Set NEXT_PUBLIC_API_URL=http://localhost:8081
 npm run dev
 ```
 
-### Docker Setup
+## API Reference
 
-```bash
-# Development
-docker-compose up
-
-# Production
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-## API Endpoints
+All endpoints are prefixed with `/api/v1/`.
 
 ### Authentication
-- `POST /api/auth/register/` - User registration
-- `POST /api/auth/login/` - User login (JWT)
-- `POST /api/auth/refresh/` - Refresh access token
-- `POST /api/auth/logout/` - Blacklist refresh token
-- `POST /api/auth/password-reset/` - Request password reset
-- `POST /api/auth/password-reset/confirm/` - Confirm password reset
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/accounts/register/` | User registration |
+| POST | `/accounts/token/` | Login (returns JWT) |
+| POST | `/accounts/token/refresh/` | Refresh access token |
+| GET | `/accounts/profile/` | Get/update current user |
 
 ### Products
-- `GET /api/products/` - List products (with filters)
-- `POST /api/products/` - Create product (admin)
-- `GET /api/products/{slug}/` - Product detail
-- `PUT /api/products/{slug}/` - Update product (admin)
-- `DELETE /api/products/{slug}/` - Delete product (admin)
-- `GET /api/categories/` - List categories
-- `GET /api/banners/` - Active banners
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/products/` | List products (filters: category, brand, age_group, gender, min_price, max_price, search, ordering) |
+| GET | `/products/{slug}/` | Product detail |
+| GET | `/categories/` | List categories |
+| GET | `/banners/` | Active banners |
 
-### Cart & Checkout
-- `GET /api/cart/` - Get cart
-- `POST /api/cart/add/` - Add to cart
-- `POST /api/cart/remove/` - Remove from cart
-- `POST /api/orders/create/` - Create order
-- `GET /api/orders/` - List user orders
-- `GET /api/orders/{id}/` - Order detail
+### Cart & Wishlist
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/orders/cart/` | Get current cart |
+| POST | `/orders/cart/add/` | Add item to cart |
+| POST | `/orders/cart/remove/` | Remove item from cart |
+| GET | `/orders/wishlist/` | Get wishlist |
+| POST | `/orders/wishlist/add/` | Add to wishlist |
+| POST | `/orders/wishlist/remove/` | Remove from wishlist |
 
-### AI Services
-- `POST /api/ai/chat/` - AI chatbot
-- `POST /api/ai/generate-description/` - Generate product description
-- `POST /api/ai/generate-seo/` - Generate SEO metadata
-- `POST /api/ai/similar-products/` - Find similar products
+### Orders & Checkout
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/orders/create/` | Create order (with guest or authenticated user) |
+| GET | `/orders/` | List user's orders |
+| GET | `/orders/{id}/` | Order detail |
+| POST | `/orders/coupon/apply/` | Validate and apply coupon |
+| GET | `/orders/track/` | Track order (POST: receipt_number + email) |
 
 ### Payments
-- `POST /api/payments/mpesa/initiate/` - Initiate M-Pesa payment
-- `POST /api/payments/mpesa/callback/` - M-Pesa callback
-- `POST /api/payments/verify/` - Verify payment status
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/payments/mpesa/initiate/` | Initiate M-Pesa STK push |
+| GET | `/payments/verify/{checkout_request_id}/` | Poll M-Pesa payment status |
+| POST | `/payments/pesapal/initiate/` | Initiate Pesapal payment |
+| GET | `/payments/{id}/status/` | Get payment status by ID |
+
+## Environment Variables
+
+### Backend (.env)
+```
+SECRET_KEY=...
+DEBUG=False
+ALLOWED_HOSTS=localhost,backend
+DATABASE_URL=postgres://user:pass@localhost:5432/malaika_db
+REDIS_URL=redis://localhost:6379/0
+CLOUDINARY_URL=cloudinary://...
+OLLAMA_BASE_URL=http://localhost:11434
+MPESA_CONSUMER_KEY=...
+MPESA_CONSUMER_SECRET=...
+MPESA_SHORTCODE=...
+MPESA_PASSKEY=...
+PESAPAL_CONSUMER_KEY=...
+PESAPAL_CONSUMER_SECRET=...
+PESAPAL_IPN_URL=...
+```
+
+### Frontend (.env.local)
+```
+NEXT_PUBLIC_API_URL=http://localhost:8081
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
 
 ## Deployment
 
-### Production Requirements
-- Domain name (configured with DuckDNS)
-- SSL certificate (Let's Encrypt)
-- GCP VM instance
-- PostgreSQL database (Cloud SQL or managed)
-- Redis (Cloud SQL Memorystore or managed)
-- Cloudinary account for media storage
+### Production (Cloudflare Workers)
 
-### Environment Variables
+```bash
+# Build and deploy backend Docker image to Cloudflare Workers
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 
-**Backend (.env)**
-```
-SECRET_KEY=your-secret-key
-DEBUG=False
-ALLOWED_HOSTS=yourdomain.com
-DB_NAME=malaika_db
-DB_USER=postgres
-DB_PASSWORD=your-db-password
-DB_HOST=localhost
-REDIS_URL=redis://localhost:6379/0
-CLOUDINARY_URL=cloudinary://...
-OLLAMA_API_KEY=your-ollama-api-key
+# Deploy frontend to Cloudflare Pages
+# Push to GitHub main branch — Cloudflare Pages auto-deploys
+git push origin main
 ```
 
-**Frontend (.env.production)**
-```
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-```
+### Cloudflare Cache Rule (Required)
+Create a Cache Rule in the Cloudflare dashboard to cache static assets:
+- **Static cache**: `.next/static/*`, `/images/*`, `.woff2`
+- **API cache**: `/api/v1/products/` with 5min TTL
+
+### Admin Access
+- URL: `/admin/`
+- Credentials: `malaikanest7@gmail.com` / `Dosho10701$`
 
 ## License
 
-MIT License
+MIT
