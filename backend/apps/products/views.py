@@ -400,12 +400,20 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         product_id = self.request.query_params.get("product")
+        product_slug = self.request.query_params.get("product_slug")
         if product_id:
             queryset = queryset.filter(product_id=product_id)
+        elif product_slug:
+            queryset = queryset.filter(product__slug=product_slug)
         return queryset
 
     def perform_create(self, serializer):
         product = serializer.validated_data.get("product")
+        if not product:
+            from apps.products.models import Product
+            slug = self.request.data.get("product_slug")
+            if slug:
+                product = Product.objects.filter(slug=slug).first()
         user = self.request.user
         # unique_together(product, user) would otherwise raise IntegrityError -> 500
         # on a second review; surface a clean 400 instead.
@@ -413,7 +421,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import ValidationError
 
             raise ValidationError("You have already reviewed this product.")
-        serializer.save(user=user, user_email=user.email)
+        if product:
+            serializer.save(product=product, user=user, user_email=user.email)
+        else:
+            serializer.save(user=user, user_email=user.email)
 
 
 class WishlistViewSet(viewsets.ModelViewSet):

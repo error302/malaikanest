@@ -28,7 +28,7 @@ export function ReviewSection({ productSlug }: ReviewSectionProps) {
 
   const fetchReviews = async () => {
     try {
-      const res = await api.get(`/api/v1/products/products/${productSlug}/reviews/`, {
+      const res = await api.get(`/api/v1/products/reviews/?product_slug=${productSlug}&page_size=20`, {
         headers: { 'X-No-Auth-Redirect': 'true' },
       });
       const data = res.data;
@@ -44,7 +44,7 @@ export function ReviewSection({ productSlug }: ReviewSectionProps) {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await api.get(`/api/v1/products/products/${productSlug}/reviews/`, {
+        const res = await api.get(`/api/v1/products/reviews/?product_slug=${productSlug}&page_size=20`, {
           headers: { 'X-No-Auth-Redirect': 'true' },
         });
         if (cancelled) return;
@@ -64,12 +64,13 @@ export function ReviewSection({ productSlug }: ReviewSectionProps) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await api.post(`/api/v1/products/products/${productSlug}/reviews/`, {
+      const res = await api.post(`/api/v1/products/reviews/`, {
         rating: form.rating,
         title: form.title,
         body: form.body,
         user_email: form.email,
         name: form.name,
+        product_slug: productSlug,
       });
       const newReview = res.data?.data ?? res.data;
       setReviews((r) => [newReview, ...r]);
