@@ -30,11 +30,10 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "order_link", "product_name", "quantity", "unit_price")
+    list_display = ("order_link", "product_name", "quantity", "price_display")
     list_filter = ("order__status",)
     search_fields = ("product__name", "order__receipt_number")
     readonly_fields = ("product", "variant_reference", "variant_details", "price", "quantity")
-    inlines = []
 
     @admin.display(description="Order", ordering="order__receipt_number")
     def order_link(self, obj):
@@ -45,6 +44,10 @@ class OrderItemAdmin(admin.ModelAdmin):
     @admin.display(description="Product")
     def product_name(self, obj):
         return obj.product.name
+
+    @admin.display(description="Price")
+    def price_display(self, obj):
+        return f"KES {obj.price}"
 
 
 @admin.register(Cart)
@@ -72,9 +75,9 @@ class CartItemInline(admin.TabularInline):
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "cart_link", "product_name", "quantity")
+    list_display = ("cart_link", "product_name", "quantity", "price_display")
     search_fields = ("cart__user__email",)
-    readonly_fields = ("cart", "product", "variant", "quantity", "unit_price")
+    readonly_fields = ("cart", "product", "variant", "quantity")
 
     @admin.display(description="Cart")
     def cart_link(self, obj):
@@ -85,6 +88,10 @@ class CartItemAdmin(admin.ModelAdmin):
     @admin.display(description="Product")
     def product_name(self, obj):
         return obj.product.name
+
+    @admin.display(description="Price")
+    def price_display(self, obj):
+        return f"KES {obj.price}"
 
 
 @admin.register(Coupon)
@@ -99,7 +106,7 @@ class CouponAdmin(admin.ModelAdmin):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = ("id", "order_link", "invoice_number", "created_at")
     search_fields = ("invoice_number", "order__receipt_number")
-    readonly_fields = ("order", "invoice_number", "pdf_file", "pdf_url", "created_at", "sent_at", "download_count")
+    readonly_fields = ("order", "invoice_number", "created_at", "sent_at")
 
     @admin.display(description="Order")
     def order_link(self, obj):
