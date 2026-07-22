@@ -1,115 +1,66 @@
+# Test/scratch artifacts (clean up scripts run during audits)
+audit*.json
+fix-verification.json
+interactive-audit.json
+home-mobile.png
+product-verified.png
+categories-mobile.png
+best-sellers-mobile.png
+cart-mobile.png
+checkout-mobile.png
+contact-mobile.png
+faq-mobile.png
+wishlist-mobile.png
+register-mobile.png
+about-mobile.png
+track-mobile.png
+error-*.png
+terms-*.png
+privacy-*.png
+audit.js
+audit_report.txt
+interactive.js
+verify.js
+verify-product.js
+err-trace.js
+json
+
+# Existing
+node_modules/
+.next/
+.vercel/
+*.log
+.env*
+!.env.example
+
+# Internal generated/test pages
+.mn-test/
+*bytecode*
+
 # Python
 __pycache__/
-*.py[cod]
 *.pyc
+*.pyo
+*.pyd
+*.py.bak
 *.egg-info/
-.venv/
-venv/
-env/
 
 # Django
-backend/.env
-.env
-.env.*
-*.log
 backend/staticfiles/
 backend/static/
 
-# Node
-node_modules/
-.next/
-out/
-.turbo/
-.vercel/
-npm-debug.log
-yarn-error.log
+# Prisma local DB
+frontend/prisma/dev.db
+frontend/prisma/migrations/dev/
 
-# Build
-dist/
+# Cloudflared logs
+cloudflared/*.log
+cloudflared/*.json
+
+# IDEs
+.idea/
+.vscode/
 
 # OS
-.DS_Store
 Thumbs.db
-
-# Editor
-.vscode/
-.idea/
-
-# OpenCode
-.agents/
-skills-lock.json
-
-# AI Agent folders - don't track these
-.adal/
-.agent/
-.augment/
-.claude/
-.codebuddy/
-.commandcode/
-.continue/
-.cortex/
-.crush/
-.factory/
-.goose/
-.iflow/
-.junie/
-.kilocode/
-.kiro/
-.kode/
-.mcpjam/
-.mux/
-.neovate/
-.openhands/
-.pi/
-.pochi/
-.qoder/
-.qwen/
-.roo/
-.trae/
-.vibe/
-.windsurf/
-.zencoder/
-skills/
-
-# Keep example files and frontend env (public URLs only, no secrets)
-!.env.example
-!frontend/.env.production
-
-# Debug/temp scripts — never commit these
-backend/temp_script*.py
-backend/dump_phase_*.py
-frontend/tsc_errors.txt
-backend/media/
-backend/config/media/
-
-test_traceback.txt
-
-# TypeScript incremental build artifacts
-*.tsbuildinfo
-
-# Production logs and temp files
-*.err.log
-*.out.log
-nohup.out
-
-# Legacy debug/migration scripts
-backend/wipe_db.py
-backend/fix_base.py
-backend/refactor_models.py
-
-# Build and Tool Artifacts
-.playwright-cli/
-_deps/
-_incoming/
-_wheelhouse/
-
-# Cloudflare Tunnel credentials — secret, never commit
-cloudflared/*.json
-cloudflared/cert.pem
-
-# Admin-uploaded media — never commit (admin can change logos at any time)
-frontend/public/uploads/
-
-# Prisma dev SQLite DB — local state only, not tracked
-frontend/prisma/dev.db
-frontend/prisma/dev.db-journal
+.DS_Store

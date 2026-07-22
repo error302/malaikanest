@@ -93,50 +93,58 @@ function normalize(row: any): BlogPost {
 
 export async function getPublishedPosts(limit = 12): Promise<BlogPost[]> {
   try {
-    const rows = await db.blogPost.findMany({
-      where: { isPublished: true },
-      orderBy: { publishedAt: 'desc' },
-      take: limit,
-    });
-    if (rows.length > 0) return rows.map(normalize);
-    return SAMPLE_POSTS.slice(0, limit);
+    if (db && db.blogPost) {
+      const rows = await db.blogPost.findMany({
+        where: { isPublished: true },
+        orderBy: { publishedAt: 'desc' },
+        take: limit,
+      });
+      if (rows.length > 0) return rows.map(normalize);
+    }
   } catch {
-    return SAMPLE_POSTS.slice(0, limit);
+    // fall through to sample
   }
+  return SAMPLE_POSTS.slice(0, limit);
 }
 
 export async function getFeaturedPosts(limit = 3): Promise<BlogPost[]> {
   try {
-    const rows = await db.blogPost.findMany({
-      where: { isPublished: true, isFeatured: true },
-      orderBy: { publishedAt: 'desc' },
-      take: limit,
-    });
-    if (rows.length > 0) return rows.map(normalize);
-    return SAMPLE_POSTS.filter((p) => p.isFeatured).slice(0, limit);
+    if (db && db.blogPost) {
+      const rows = await db.blogPost.findMany({
+        where: { isPublished: true, isFeatured: true },
+        orderBy: { publishedAt: 'desc' },
+        take: limit,
+      });
+      if (rows.length > 0) return rows.map(normalize);
+    }
   } catch {
-    return SAMPLE_POSTS.filter((p) => p.isFeatured).slice(0, limit);
+    // fall through to sample
   }
+  return SAMPLE_POSTS.filter((p) => p.isFeatured).slice(0, limit);
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
-    const row = await db.blogPost.findUnique({ where: { slug } });
-    if (!row) return null;
-    return normalize(row);
+    if (db && db.blogPost) {
+      const row = await db.blogPost.findUnique({ where: { slug } });
+      if (row) return normalize(row);
+    }
   } catch {
-    return SAMPLE_POSTS.find((p) => p.slug === slug) || null;
+    // fall through to sample
   }
+  return SAMPLE_POSTS.find((p) => p.slug === slug) || null;
 }
 
 export async function getCategories(): Promise<string[]> {
   try {
-    const rows = await db.blogPost.findMany({
-      where: { isPublished: true },
-      select: { category: true },
-      distinct: ['category'],
-    });
-    if (rows.length > 0) return rows.map((r) => r.category);
+    if (db && db.blogPost) {
+      const rows = await db.blogPost.findMany({
+        where: { isPublished: true },
+        select: { category: true },
+        distinct: ['category'],
+      });
+      if (rows.length > 0) return rows.map((r) => r.category);
+    }
   } catch {
     // fall through to sample
   }
