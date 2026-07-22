@@ -114,7 +114,7 @@ class CartViewSet(viewsets.ViewSet):
                 if variant_id:
                     inv = self._get_locked_variant_inventory(variant_id)
                     variant = inv.variant
-                    if product_id and int(product_id) != variant.product_id:
+                    if product_id and str(product_id) != str(variant.product_id):
                         return Response(
                             {"detail": "Selected color does not belong to this product"},
                             status=status.HTTP_400_BAD_REQUEST,
