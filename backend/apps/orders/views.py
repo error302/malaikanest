@@ -728,10 +728,10 @@ class GuestOrderTrackView(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
     def create(self, request):
-        # Preferred: per-order checkout_token alone (unguessable secret). Backward
-        # compatibility: receipt_number + email (receipt_number is unguessable so
-        # the combination remains safe, but is being phased out for the token).
         checkout_token = (request.data.get("checkout_token") or "").strip()
+        receipt_number = (request.data.get("receipt_number") or "").strip()
+        email = (request.data.get("email") or "").strip().lower()
+
         if checkout_token:
             order = (
                 Order.objects.select_related("user")
@@ -741,7 +741,23 @@ class GuestOrderTrackView(viewsets.ViewSet):
             )
             if not order:
                 return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-        return Response(OrderSerializer(order).data)
+            return Response(OrderSerializer(order).data)
+
+        if receipt_number and email:
+            order = (
+                Order.objects.select_related("user")
+                .prefetch_related("items__product")
+                .filter(receipt_number=receipt_number, user__email=email)
+                .first()
+            )
+            if not order:
+                return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(OrderSerializer(order).data)
+
+        return Response(
+            {"detail": "Please provide either checkout_token or receipt_number + email"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 class DeliveryZonesView(APIView):

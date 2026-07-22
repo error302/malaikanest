@@ -120,8 +120,9 @@ class ProductSerializer(serializers.ModelSerializer):
     tags = serializers.SerializerMethodField()
     meta_title = serializers.CharField(source="seo_title", read_only=True)
     meta_description = serializers.CharField(source="seo_description", read_only=True)
-    variants = serializers.SerializerMethodField()
     has_variants = serializers.SerializerMethodField()
+    variant_count = serializers.SerializerMethodField()
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -161,6 +162,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_url",
             "is_active",
             "has_variants",
+            "variant_count",
             "variants",
             "avg_rating",
             "review_count",
@@ -329,7 +331,10 @@ class ProductSerializer(serializers.ModelSerializer):
         return list(obj.tags.values("id", "name", "slug"))
 
     def get_has_variants(self, obj):
-        return obj.variants.filter(is_active=True).exists()
+        return obj.variants.filter(is_active=True).count() > 1
+
+    def get_variant_count(self, obj):
+        return obj.variants.filter(is_active=True).count()
 
     def get_variants(self, obj):
         variants = obj.variants.filter(is_active=True).select_related("inventory").order_by("color", "size", "id")
@@ -376,6 +381,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     review_count = serializers.IntegerField(read_only=True)
     popularity = serializers.IntegerField(read_only=True)
     has_variants = serializers.SerializerMethodField()
+    variant_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -401,6 +407,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "in_stock",
             "is_active",
             "has_variants",
+            "variant_count",
             "avg_rating",
             "review_count",
             "popularity",
@@ -432,7 +439,10 @@ class ProductListSerializer(serializers.ModelSerializer):
         return self._primary_gallery_url(obj)
 
     def get_has_variants(self, obj):
-        return obj.variants.filter(is_active=True).exists()
+        return obj.variants.filter(is_active=True).count() > 1
+
+    def get_variant_count(self, obj):
+        return obj.variants.filter(is_active=True).count()
 
 
 class InventorySerializer(serializers.ModelSerializer):

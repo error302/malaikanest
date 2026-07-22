@@ -33,6 +33,10 @@ export default function CheckoutPage() {
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
   const [paymentPollingError, setPaymentPollingError] = useState<string | null>(null);
   const [pendingReceiptNumber, setPendingReceiptNumber] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number; discount_label: string } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     address: '', city: '', postalCode: '',
@@ -86,6 +90,36 @@ export default function CheckoutPage() {
     return () => clearTimeout(timeoutId);
   }, [paymentPending, checkoutRequestId, router, pendingReceiptNumber]);
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const res = await api.post('/api/v1/orders/coupon/apply/', { code: couponCode.trim().toUpperCase() });
+      const data = res.data?.data ?? res.data;
+      if (data?.valid) {
+        setAppliedCoupon({ code: data.code, discount_amount: data.discount_amount, discount_label: data.discount_label || `-${data.discount_label}` });
+        showToast('Coupon applied!', 'success');
+      } else {
+        setCouponError(data?.message || 'Invalid or expired coupon');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.response?.data?.message || 'Coupon not valid';
+      setCouponError(msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError(null);
+  };
+
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const zones = deliveryZones.length > 0 ? deliveryZones : [
     { slug: 'mombasa_pickup', name: 'Mombasa (Pick up at Shop)', fee: '0', estimated_days: 'Same Day' },
@@ -96,7 +130,8 @@ export default function CheckoutPage() {
   const regionObj = zones.find((r) => r.slug === region)!;
   const freeThreshold = Number(settings.free_shipping_threshold) || 3000;
   const deliveryFee = subtotal >= freeThreshold ? 0 : Number(regionObj?.fee || 0);
-  const total = subtotal + deliveryFee;
+  const discountAmount = appliedCoupon?.discount_amount || 0;
+  const total = subtotal + deliveryFee - discountAmount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +150,7 @@ export default function CheckoutPage() {
         guest_email: form.email,
         guest_phone: form.phone,
         payment_method: payment,
+        coupon_code: appliedCoupon?.code || undefined,
       };
 
       const orderRes = await api.post('/api/v1/orders/create/', orderPayload);
@@ -304,6 +340,40 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
+
+            {!appliedCoupon && (
+              <div className="flex gap-2 py-2">
+                <input
+                  type="text"
+                  placeholder="Coupon code"
+                  value={couponCode}
+                  onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(null); }}
+                  className="input-warm flex-1 !pl-3 text-xs"
+                  style={{ background: 'var(--brand-bg-alt)' }}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyCoupon())}
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading}
+                  className="px-3 py-2 rounded-full text-xs font-medium disabled:opacity-50"
+                  style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+                >
+                  {couponLoading ? '...' : 'Apply'}
+                </button>
+              </div>
+            )}
+            {couponError && (
+              <p className="text-xs pb-2" style={{ color: 'var(--brand-terra)' }}>{couponError}</p>
+            )}
+
+            {appliedCoupon && (
+              <div className="flex items-center justify-between text-sm py-2" style={{ color: 'var(--brand-green-light)' }}>
+                <span>{appliedCoupon.discount_label || `Coupon: ${appliedCoupon.code}`}</span>
+                <button type="button" onClick={handleRemoveCoupon} className="text-xs underline" style={{ color: 'var(--brand-text-muted)' }}>Remove</button>
+              </div>
+            )}
+
             <div className="space-y-2 text-sm pt-3" style={{ borderTop: '1px solid var(--brand-border)' }}>
               <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
                 <span>{t('cart.subtotal')}</span><span>KES {subtotal.toLocaleString('en-KE')}</span>
@@ -311,6 +381,12 @@ export default function CheckoutPage() {
               <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
                 <span>{t('cart.shipping')}{deliveryFee === 0 ? ` (${t('cart.shippingFree').toLowerCase()} ${t('checkout.over')} KES ${freeThreshold.toLocaleString('en-KE')})` : ''}</span><span>{deliveryFee === 0 ? t('cart.shippingFree') : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between" style={{ color: 'var(--brand-green-light)' }}>
+                  <span>Discount</span>
+                  <span>-KES {discountAmount.toLocaleString('en-KE')}</span>
+                </div>
+              )}
               <div className="flex justify-between text-base font-semibold pt-3" style={{ borderTop: '1px solid var(--brand-border)', color: 'var(--brand-text)' }}>
                 <span>{t('cart.total')}</span><span>KES {total.toLocaleString('en-KE')}</span>
               </div>
