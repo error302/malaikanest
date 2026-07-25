@@ -22,8 +22,11 @@ RUN set -ex && \
     rm -rf /root/.cache/
 COPY . /code
 
-ENV SECRET_KEY "BhAZuNDGwqHvfiFM4oz0vEecVCLGzD2aOSrSLwxGPHX7sEbzfr"
-ENV DJANGO_SETTINGS_MODULE "config.settings"
+ENV DJANGO_SETTINGS_MODULE="config.settings"
+# Build-only SECRET_KEY so `collectstatic` can run inside the image. This is
+# ALWAYS overridden at runtime by docker-compose.yml (or your orchestrator of
+# choice). Never use this default for actual deployment.
+ENV SECRET_KEY="build-time-only-not-a-real-secret-you-must-override-this-in-production"
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000

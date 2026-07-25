@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
 from apps.accounts.permissions import IsAdminUser as RoleAwareIsAdminUser
+from apps.core.cache import cache_service  # noqa: F401  (used by _invalidate_products_cache)
 
 try:
     from django_filters.rest_framework import DjangoFilterBackend
@@ -80,29 +81,20 @@ class BrandViewSet(viewsets.ModelViewSet):
             return [RoleAwareIsAdminUser()]
         return [permissions.AllowAny()]
 
+    def _invalidate_products_cache(self):
+        cache_service.delete_pattern("products:*")
+
     def perform_create(self, serializer):
         super().perform_create(serializer)
-        try:
-            for key in cache.keys('products_list_*'):
-                cache.delete(key)
-        except Exception:
-            cache.clear()
+        self._invalidate_products_cache()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        try:
-            for key in cache.keys('products_list_*'):
-                cache.delete(key)
-        except Exception:
-            cache.clear()
+        self._invalidate_products_cache()
 
     def perform_destroy(self, instance):
         super().perform_destroy(instance)
-        try:
-            for key in cache.keys('products_list_*'):
-                cache.delete(key)
-        except Exception:
-            cache.clear()
+        self._invalidate_products_cache()
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -329,7 +321,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return ProductSerializer
 
     def _invalidate_products_cache(self):
-        cache.clear()
+        cache_service.delete_pattern("products:*")
 
     def perform_create(self, serializer):
         super().perform_create(serializer)

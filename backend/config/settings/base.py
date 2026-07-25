@@ -297,6 +297,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.products.tasks.low_stock_check",
         "schedule": timedelta(days=1),
     },
+    # Cancel pending orders older than 24h and restore their inventory
+    # reservations. Without this, abandoned checkouts lock up stock forever
+    # (system-design-101: inventory reservation leak prevention).
+    "orders-cancel-stale-pending-hourly": {
+        "task": "apps.orders.tasks.cancel_stale_pending_orders",
+        "schedule": timedelta(hours=1),
+    },
 }
 
 # Default DB pooling value used by dev/prod settings.

@@ -63,15 +63,15 @@ def payments_failure_alert(window_minutes=5, failure_threshold=20, failure_ratio
     """RED-style alerting: if M-Pesa failures spike, page admins via the existing
     critical-alert task. Reads lightweight Redis counters (see apps.core.metrics).
     """
-    from .metrics import get_counter
+    from .metrics import get
 
     try:
         from apps.orders.tasks import send_critical_alert
     except Exception:
         return "metrics/alert unavailable"
 
-    completed = get_counter("payments.completed")
-    failed = get_counter("payments.failed")
+    completed = get("payments.completed")
+    failed = get("payments.failed")
 
     triggered = failed >= failure_threshold and (
         completed == 0 or (failed / max(completed + failed, 1)) >= failure_ratio

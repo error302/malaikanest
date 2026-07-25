@@ -41,6 +41,9 @@ class Brand(BaseModel):
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ["name"]
+
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(self.name) or "brand"
