@@ -58,7 +58,7 @@ function buildBase(): string {
     `- Currency: Kenyan Shilling (KES)`,
     `- Delivery zones: mombasa_pickup (free, same day) · mombasa (KES 150, same day) · nairobi (KES 300, 1-2 days) · upcountry (KES 500, 2-3 days)`,
     `- Free delivery: orders over KES 3,000 in Mombasa`,
-    `- Payment: M-Pesa Till 3370347, plus cash on delivery in Mombasa`,
+    `- Payment: M-Pesa Till 3370347 · Pesapal (cards & mobile money) — pay first, then we dispatch (no cash on delivery).`,
     `- WhatsApp: +254 726 771 321`,
     `- Email: hello@malaikanest.com`,
     `- Languages: English and Swahili`,

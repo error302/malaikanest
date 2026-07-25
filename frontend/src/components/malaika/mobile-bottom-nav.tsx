@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useWishlist } from '@/lib/wishlistContext';
+import { useAuth } from '@/lib/authContext';
 import { Home, ShoppingBag, Baby, Heart, ShoppingCart, User } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -16,6 +17,8 @@ const NAV_ITEMS = [
 
 export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
   const pathname = usePathname();
+  const { user, isAuthenticated } = useAuth();
+  const userInitial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
 
   return (
     <nav
@@ -39,17 +42,33 @@ export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCoun
               ? wishlistCount
               : 0
             : 0;
+          const isAccount = item.name === 'Account';
+          const showAvatar = isAccount && isAuthenticated;
           return (
             <Link
               key={item.name}
-              href={item.href}
+              href={isAccount ? (isAuthenticated ? '/account' : '/login') : item.href}
               className="flex flex-col items-center justify-center gap-1 flex-1 relative transition-colors"
               style={{ color: active ? 'var(--brand-gold)' : 'var(--brand-text-muted)' }}
-              aria-label={item.name}
+              aria-label={isAccount && user ? `${item.name} (signed in as ${user.name || user.email})` : item.name}
               aria-current={active ? 'page' : undefined}
             >
               <div className="relative">
-                <Icon size={22} strokeWidth={active ? 2 : 1.75} />
+                {showAvatar ? (
+                  <span
+                    className="flex items-center justify-center font-semibold text-[13px] rounded-full"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      background: active ? 'var(--brand-gold)' : 'var(--brand-brown)',
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {userInitial}
+                  </span>
+                ) : (
+                  <Icon size={22} strokeWidth={active ? 2 : 1.75} />
+                )}
                 {badgeCount > 0 && (
                   <span
                     className="absolute -top-1.5 -right-2 min-w-[16px] h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"

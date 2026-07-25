@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CreditCard, Smartphone, Banknote, Lock, ArrowRight, Wallet } from 'lucide-react';
+import { CreditCard, Smartphone, Lock, ArrowRight, Wallet } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
 import api, { handleApiError, getPaymentStatusByCheckoutId } from '@/lib/api';
@@ -17,7 +17,6 @@ const PAYMENT_METHODS = [
   { value: 'mpesa', labelKey: 'checkout.mpesa', Icon: Smartphone, descKey: 'checkout.mpesaDesc' },
   { value: 'card', labelKey: 'checkout.card', Icon: CreditCard, descKey: 'checkout.cardDesc' },
   { value: 'pesapal', labelKey: 'checkout.pesapal', Icon: Wallet, descKey: 'checkout.pesapalDesc' },
-  { value: 'cash', labelKey: 'checkout.cod', Icon: Banknote, descKey: 'checkout.codDesc' },
 ];
 
 export default function CheckoutPage() {

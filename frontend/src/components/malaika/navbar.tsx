@@ -22,10 +22,17 @@ import {
   Sparkles,
   Flame,
   Baby,
+  ChevronUp,
+  Settings,
+  LogOut,
+  UserCheck,
+  Heart as HeartIcon,
 } from 'lucide-react';
 import { Logo } from './logo';
 import { LanguageToggle } from './language-toggle';
 import { useI18n } from '@/lib/i18n';
+import { useAuth } from '@/lib/authContext';
+import { showToast } from '@/lib/toast';
 import type { Branding } from '@/lib/settings';
 
 const NAV_LINKS = [
@@ -62,13 +69,44 @@ const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor'
 export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCount?: number; wishlistCount?: number; branding?: Branding }) {
   const router = useRouter();
   const { t } = useI18n();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const [shopOpen, setShopOpen] = useState(false);
   const [ageOpen, setAgeOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const shopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    if (accountMenuOpen) {
+      document.addEventListener('click', onClickOutside);
+      return () => document.removeEventListener('click', onClickOutside);
+    }
+  }, [accountMenuOpen]);
+
+  const handleLogout = async () => {
+    setAccountMenuOpen(false);
+    try {
+      await logout();
+      showToast('Signed out', 'success');
+      router.push('/');
+    } catch {
+      // Even if API logout fails, local state is cleared already
+      router.push('/');
+    }
+  };
+
+  const userInitial =
+    (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
+  const userDisplayName = user?.name || user?.email?.split('@')[0] || '';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -139,7 +177,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-6 xl:gap-7 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-4 xl:gap-6 flex-shrink-0">
             {NAV_LINKS.map((link) =>
               link.hasDropdown ? (
                 <div
@@ -149,7 +187,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   className="relative"
                 >
                   <button
-                    className="inline-flex items-center gap-1 text-[14px] font-medium whitespace-nowrap transition-colors"
+                    className="inline-flex items-center gap-1 text-[13px] font-medium whitespace-nowrap transition-colors"
                     style={{ color: 'var(--brand-brown)' }}
                     aria-expanded={shopOpen}
                     aria-haspopup="true"
@@ -165,7 +203,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 <Link
                   key={link.nameKey}
                   href={link.href}
-                  className="text-[14px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
+                  className="text-[13px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
                   style={{ color: 'var(--brand-brown)' }}
                 >
                   {t(link.nameKey)}
@@ -180,7 +218,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               className="relative"
             >
               <button
-                className="inline-flex items-center gap-1 text-[14px] font-medium whitespace-nowrap transition-colors"
+                className="inline-flex items-center gap-1 text-[13px] font-medium whitespace-nowrap transition-colors"
                 style={{ color: 'var(--brand-brown)' }}
                 aria-expanded={ageOpen}
                 aria-haspopup="true"
@@ -195,7 +233,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           </div>
 
           {/* Desktop search */}
-          <div className="hidden md:flex flex-1 min-w-0 max-w-[200px] xl:max-w-[260px]">
+          <div className="hidden md:flex flex-1 min-w-0 max-w-[220px] lg:max-w-[280px]">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -224,7 +262,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           </div>
 
           {/* Right icons */}
-          <div className="flex items-center gap-0.5 sm:gap-1">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             {/* Language toggle */}
             <LanguageToggle className="hidden sm:inline-flex" />
 
@@ -255,14 +293,123 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               )}
             </Link>
 
-            <Link
-              href="/login"
-              className="hidden md:flex w-11 h-11 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
-              style={{ color: 'var(--brand-brown)' }}
-              aria-label="Account"
-            >
-              <User size={19} strokeWidth={1.75} />
-            </Link>
+            {isAuthenticated ? (
+              <div ref={accountMenuRef} className="relative hidden md:block">
+                <button
+                  type="button"
+                  onClick={() => setAccountMenuOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={accountMenuOpen}
+                  aria-label={`Account menu for ${userDisplayName}`}
+                  className="flex items-center gap-2 pl-1 pr-3 h-11 rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+                  style={{ color: 'var(--brand-brown)' }}
+                >
+                  <span
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm"
+                    style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+                  >
+                    {userInitial}
+                  </span>
+                  <span className="hidden lg:inline text-[13px] font-medium max-w-[140px] truncate">
+                    {userDisplayName}
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-150 ${accountMenuOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {accountMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-[calc(100%+8px)] w-64 rounded-2xl border shadow-warm-lg overflow-hidden z-50"
+                    style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}
+                  >
+                    <div className="p-4 border-b" style={{ borderColor: 'var(--brand-border)', background: 'var(--brand-bg-alt)' }}>
+                      <p className="text-[11px] uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--brand-text-muted)' }}>
+                        Signed in as
+                      </p>
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--brand-text)' }}>
+                        {user?.name || 'Welcome back'}
+                      </p>
+                      <p className="text-xs truncate mt-0.5" style={{ color: 'var(--brand-text-muted)' }}>
+                        {user?.email}
+                      </p>
+                    </div>
+                    <div className="py-2">
+                      <Link
+                        href="/account"
+                        onClick={() => setAccountMenuOpen(false)}
+                        role="menuitem"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--brand-warm)]"
+                        style={{ color: 'var(--brand-text)' }}
+                      >
+                        <User size={16} style={{ color: 'var(--brand-gold)' }} />
+                        My Account
+                      </Link>
+                      <Link
+                        href="/account/orders"
+                        onClick={() => setAccountMenuOpen(false)}
+                        role="menuitem"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--brand-warm)]"
+                        style={{ color: 'var(--brand-text)' }}
+                      >
+                        <Package2 size={16} style={{ color: 'var(--brand-gold)' }} />
+                        My Orders
+                      </Link>
+                      <Link
+                        href="/wishlist"
+                        onClick={() => setAccountMenuOpen(false)}
+                        role="menuitem"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--brand-warm)]"
+                        style={{ color: 'var(--brand-text)' }}
+                      >
+                        <HeartIcon size={16} style={{ color: 'var(--brand-gold)' }} />
+                        My Wishlist
+                      </Link>
+                      {isAdmin && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setAccountMenuOpen(false)}
+                          role="menuitem"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--brand-warm)]"
+                          style={{ color: 'var(--brand-text)' }}
+                        >
+                          <Settings size={16} style={{ color: 'var(--brand-gold)' }} />
+                          Admin Dashboard
+                        </Link>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      role="menuitem"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm transition-colors border-t"
+                      style={{
+                        borderColor: 'var(--brand-border)',
+                        background: 'var(--brand-bg-alt)',
+                        color: 'var(--brand-terra)',
+                      }}
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="hidden md:flex items-center gap-1.5 h-10 px-4 rounded-full text-sm font-medium transition-all hover:shadow-warm-md border"
+                style={{
+                  borderColor: 'var(--brand-border)',
+                  color: 'var(--brand-brown)',
+                  background: '#FFFFFF',
+                }}
+              >
+                <User size={16} strokeWidth={1.75} />
+                {t('nav.signin')}
+              </Link>
+            )}
 
             <Link
               href="/cart"
@@ -480,7 +627,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
               style={{ color: 'var(--brand-text-muted)' }}
             >
-              Search products
+              {t('nav.searchOverlayLabel')}
             </p>
             <form
               onSubmit={(e) => {
@@ -498,14 +645,14 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="e.g. baby onesie, feeding bottle…"
+                placeholder={t('nav.searchPlaceholder')}
                 className="flex-1 rounded-xl px-4 py-3 text-sm transition-colors"
                 style={{
                   border: '1px solid var(--brand-border)',
                   color: 'var(--brand-text)',
                   background: 'var(--brand-bg-alt)',
                 }}
-                aria-label="Search items"
+                aria-label={t('nav.search')}
               />
               <button
                 type="submit"
@@ -515,7 +662,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   color: '#FFFFFF',
                 }}
               >
-                Search
+                {t('nav.searchAction')}
               </button>
             </form>
             <div className="mt-4 flex gap-2 flex-wrap">
@@ -644,14 +791,68 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 className="pt-5 space-y-3"
                 style={{ borderTop: '1px solid var(--brand-border)' }}
               >
+                {isAuthenticated && (
+                  <div
+                    className="flex items-center gap-3 p-3 rounded-2xl mb-2"
+                    style={{ background: 'var(--brand-bg-alt)' }}
+                  >
+                    <span
+                      className="w-11 h-11 rounded-full flex items-center justify-center font-semibold flex-shrink-0"
+                      style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+                    >
+                      {userInitial}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--brand-text)' }}>
+                        {user?.name || 'Welcome back'}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: 'var(--brand-text-muted)' }}>
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <Link
-                  href="/login"
+                  href={isAuthenticated ? '/account' : '/login'}
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-3 text-sm py-2"
                   style={{ color: 'var(--brand-brown)' }}
                 >
-                  <User size={18} /> {t('nav.account')} / {t('nav.signin')}
+                  <User size={18} /> {isAuthenticated ? 'My Account' : `Account / ${t('nav.signin')}`}
                 </Link>
+                {isAuthenticated && (
+                  <>
+                    <Link
+                      href="/account/orders"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 text-sm py-2"
+                      style={{ color: 'var(--brand-brown)' }}
+                    >
+                      <Package size={18} /> My Orders
+                    </Link>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-3 text-sm py-2"
+                        style={{ color: 'var(--brand-brown)' }}
+                      >
+                        <Settings size={18} /> Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex items-center gap-3 text-sm py-2 w-full text-left"
+                      style={{ color: 'var(--brand-terra)' }}
+                    >
+                      <LogOut size={18} /> Sign Out
+                    </button>
+                  </>
+                )}
                 <Link
                   href="/wishlist"
                   onClick={() => setMobileOpen(false)}

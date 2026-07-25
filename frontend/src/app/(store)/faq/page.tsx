@@ -19,7 +19,7 @@ const faqJsonLd = {
     {
       '@type': 'Question',
       name: 'What payment methods do you accept?',
-      acceptedAnswer: { '@type': 'Answer', text: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), bank transfer, and cash on delivery within Mombasa. All online payments are secured by 256-bit SSL encryption.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), and Pesapal (mobile money & bank). Pay first, then we dispatch — so we never risk fraud. All online payments are secured by 256-bit SSL encryption.' },
     },
     {
       '@type': 'Question',
@@ -61,7 +61,7 @@ const FAQS = [
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), bank transfer, and cash on delivery within Mombasa. All online payments are secured by 256-bit SSL encryption.',
+    a: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), and Pesapal (mobile money & bank). Pay first, then we dispatch — so we never risk fraud. All online payments are secured by 256-bit SSL encryption.',
   },
   {
     q: 'Is delivery really free?',
