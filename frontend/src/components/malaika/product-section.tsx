@@ -29,7 +29,7 @@ export function ProductSection({
   const { t } = useI18n();
   const viewAll = viewAllLabel ?? t('section.viewAll');
   const bgMap = {
-    cream: 'var(--brand-cream)',
+    cream: '#FFFFFF',
     'bg-alt': 'var(--brand-bg-alt)',
     white: '#FFFFFF',
   };
@@ -38,7 +38,6 @@ export function ProductSection({
     columns === 4
       ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
       : 'grid-cols-2 md:grid-cols-3';
-
   const genericLabels = ['see more', 'view all', 'view all products', 'see all'];
   const isGeneric = genericLabels.includes(viewAll.trim().toLowerCase());
   const viewAllText = isGeneric ? `View All ${title}` : viewAll;
@@ -75,7 +74,7 @@ export function ProductSection({
           </Link>
         </div>
 
-        <div className={`grid ${colClass} gap-3 sm:gap-5`}>
+        <div className={`grid ${colClass} gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8`}>
           {products.map((p, i) => (
             <ProductCard key={p.id} product={p} index={i} />
           ))}

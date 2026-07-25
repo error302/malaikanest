@@ -141,36 +141,61 @@ export function Hero({ banners = [], content }: HeroProps) {
         </div>
       ))}
 
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" aria-hidden />
+      {/* Subtle scrim only at the bottom-left to protect headline text */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden
+        style={{
+          background:
+            'linear-gradient(105deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 35%, rgba(0,0,0,0) 60%)',
+        }}
+      />
+
+      {/* Bottom soft scrim for mobile legibility */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none sm:hidden"
+        aria-hidden
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45), transparent)' }}
+      />
 
       {/* Content */}
-      <div className="relative z-10 flex items-center min-h-[clamp(70vh,85vh,800px)]">
-        <div className="container-shell w-full py-12 sm:py-16">
+      <div className="relative z-10 flex items-end sm:items-center min-h-[clamp(70vh,85vh,800px)]">
+        <div className="container-shell w-full py-10 sm:py-16">
           <div key={current} className="max-w-xl animate-fade-in-up">
+            <span
+              className="section-label mb-4 sm:mb-6"
+              style={{ color: 'rgba(255,255,255,0.85)' }}
+            >
+              Malaika Nest
+            </span>
             <h1
-              className="font-serif font-semibold leading-[1.1] mb-4"
+              className="font-serif font-semibold leading-[1.08] mb-4"
               style={{
                 color: '#FFFFFF',
                 fontFamily: 'var(--font-cormorant)',
-                fontSize: 'clamp(1.75rem, 5.5vw, 3.25rem)',
+                fontSize: 'clamp(2rem, 6.5vw, 4rem)',
+                textWrap: 'balance',
               }}
             >
               {headline}
             </h1>
             <p
-              className="text-sm sm:text-base leading-relaxed mb-8 max-w-lg"
-              style={{ color: 'rgba(255,255,255,0.8)' }}
+              className="text-[13px] sm:text-[15px] leading-relaxed mb-8 max-w-lg"
+              style={{ color: 'rgba(255,255,255,0.92)' }}
             >
               {sub}
             </p>
             <a
               href={s.ctaHref}
-              className="inline-flex items-center gap-2 rounded-full font-medium text-sm sm:text-base px-7 py-3.5 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
-              style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+              className="inline-flex items-center gap-2 rounded-full font-medium text-[13px] sm:text-sm uppercase tracking-[0.12em] px-7 py-3.5 transition-all duration-300 hover:bg-white hover:text-[var(--brand-brown)] hover:border-white"
+              style={{
+                background: 'transparent',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255,255,255,0.7)',
+              }}
             >
               {cta}
-              <ChevronRight size={16} />
+              <ChevronRight size={15} strokeWidth={2} />
             </a>
           </div>
         </div>

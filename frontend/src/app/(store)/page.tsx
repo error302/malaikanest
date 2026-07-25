@@ -50,7 +50,7 @@ export default async function HomePage() {
           viewAllLabel={content.featured?.view_all || 'View All'}
           products={featured}
           columns={4}
-          background="bg-alt"
+          background="white"
         />
         <ValueProps props={valueProps} />
         <ProductSection
@@ -61,7 +61,7 @@ export default async function HomePage() {
           viewAllLabel={content.best_sellers?.view_all || 'See More'}
           products={bestSellers}
           columns={4}
-          background="cream"
+          background="bg-alt"
         />
         <ThriftedSection products={thrifted} />
         <Testimonials content={content} testimonials={testimonials} />
@@ -73,7 +73,7 @@ export default async function HomePage() {
           viewAllLabel={content.new_arrivals?.view_all || 'Shop New'}
           products={newArrivals}
           columns={4}
-          background="bg-alt"
+          background="white"
         />
         <Newsletter content={content} />
       </main>
