@@ -2,15 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useWishlist } from '@/lib/wishlistContext';
 import { useAuth } from '@/lib/authContext';
-import { Home, ShoppingBag, Baby, Heart, ShoppingCart, User } from 'lucide-react';
+import { Home, ShoppingBag, Search, ShoppingCart, User } from 'lucide-react';
 
 const NAV_ITEMS = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Shop', href: '/categories', icon: ShoppingBag },
-  { name: 'Age', href: '/categories?age_group=baby', icon: Baby },
-  { name: 'Wishlist', href: '/wishlist', icon: Heart, showBadge: true },
+  { name: 'Search', href: '/search', icon: Search },
   { name: 'Cart', href: '/cart', icon: ShoppingCart, showBadge: true },
   { name: 'Account', href: '/account', icon: User },
 ];
@@ -34,14 +32,8 @@ export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCoun
       <div className="flex items-stretch justify-around h-16">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href;
-          const badgeCount = item.showBadge
-            ? item.name === 'Cart'
-              ? cartCount
-              : item.name === 'Wishlist'
-              ? wishlistCount
-              : 0
-            : 0;
+          const active = pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/');
+          const badgeCount = item.showBadge && item.name === 'Cart' ? cartCount : 0;
           const isAccount = item.name === 'Account';
           const showAvatar = isAccount && isAuthenticated;
           return (

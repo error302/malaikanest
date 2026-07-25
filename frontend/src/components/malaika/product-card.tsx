@@ -176,7 +176,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       <div className="flex flex-col flex-1 mt-2.5">
         {product.category && (
           <div
-            className="text-[10px] uppercase tracking-[0.14em] font-medium mb-1"
+            className="hidden sm:block text-[10px] uppercase tracking-[0.14em] font-medium mb-1"
             style={{ color: 'var(--brand-text-muted)' }}
           >
             {product.category}
@@ -197,15 +197,15 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         </Link>
 
         {product.rating !== undefined && (
-          <div className="flex items-center gap-1 mt-1">
+          <div className="flex items-center gap-1.5 mt-1.5">
             <Star
               size={11}
               className="fill-current"
               style={{ color: 'var(--brand-gold)' }}
             />
             <span
-              className="text-[11px] font-medium"
-              style={{ color: 'var(--brand-brown)' }}
+              className="text-[11px] font-semibold"
+              style={{ color: 'var(--brand-text)' }}
             >
               {product.rating.toFixed(1)}
             </span>
@@ -214,7 +214,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 className="text-[11px]"
                 style={{ color: 'var(--brand-text-muted)' }}
               >
-                ({product.reviewCount})
+                · {product.reviewCount} review{product.reviewCount === 1 ? '' : 's'}
               </span>
             )}
           </div>

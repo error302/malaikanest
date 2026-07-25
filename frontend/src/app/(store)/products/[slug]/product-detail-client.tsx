@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { ShoppingBasket, Heart, Check, Share2, Minus, Plus } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
@@ -103,6 +103,8 @@ export function ProductDetailClient({ product }: DetailProps) {
   const [qty, setQty] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
+  const [showSticky, setShowSticky] = useState(false);
+  const addBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const variants = product.variants || [];
   const activeVariant = variants.find((v) => v.id === selectedVariant) || null;
@@ -117,6 +119,24 @@ export function ProductDetailClient({ product }: DetailProps) {
       setSelectedVariant(firstInStock.id);
     }
   }, [product.hasVariants, variants, selectedVariant]);
+
+  // Show sticky CTA when in-page Add-to-Cart scrolls out of view (mobile only)
+  useEffect(() => {
+    const el = addBtnRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        setShowSticky(!entry.isIntersecting);
+      },
+      { root: null, rootMargin: '0px', threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     try {
@@ -259,9 +279,11 @@ export function ProductDetailClient({ product }: DetailProps) {
 
       <div className="flex gap-3">
         <button
+          ref={addBtnRef}
           type="button"
           onClick={handleAdd}
           disabled={isOutOfStock || adding}
+          data-pdp-cta
           className="flex-1 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-full font-semibold text-sm transition-all disabled:opacity-50"
           style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
         >
@@ -286,6 +308,69 @@ export function ProductDetailClient({ product }: DetailProps) {
         >
           <Share2 size={18} />
         </button>
+      </div>
+
+      {/* Trust badges (materials & sustainability) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 mt-6" style={{ borderTop: '1px solid var(--brand-border)' }}>
+        {[
+          { label: 'Made in Kenya' },
+          { label: 'Organic Cotton' },
+          { label: 'OEKO-TEX Certified' },
+          { label: 'Handcrafted' },
+        ].map((b) => (
+          <div
+            key={b.label}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{ background: 'var(--brand-green-soft, #E8F0EB)' }}
+          >
+            <span
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold flex-shrink-0"
+              style={{ background: 'var(--brand-success, #4A7C59)', color: '#FFFFFF' }}
+              aria-hidden
+            >
+              ✓
+            </span>
+            <span className="text-[12px] font-medium leading-tight" style={{ color: 'var(--brand-text)' }}>
+              {b.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Sticky bottom CTA bar — mobile only, appears when in-page CTA is out of view */}
+      <div
+        aria-hidden={!showSticky}
+        className={`lg:hidden fixed left-0 right-0 z-50 transition-transform duration-300 ${
+          showSticky ? 'translate-y-0' : 'translate-y-full'
+        }`}
+        style={{
+          bottom: '64px',
+          background: 'rgba(255, 255, 255, 0.97)',
+          backdropFilter: 'blur(12px)',
+          borderTop: '1px solid var(--brand-border)',
+          boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        <div className="flex items-stretch gap-3 px-4 py-3">
+          <div className="flex flex-col justify-center min-w-0 flex-1">
+            <span className="text-[10px] uppercase tracking-[0.16em] font-medium" style={{ color: 'var(--brand-text-muted)' }}>
+              {product.name.length > 28 ? product.name.slice(0, 28) + '…' : product.name}
+            </span>
+            <span className="text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>
+              KES {currentPrice.toLocaleString('en-KE')}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={isOutOfStock || adding}
+            className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold text-sm transition-all disabled:opacity-50"
+            style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+            aria-label={added ? 'Added to cart' : 'Add to cart'}
+          >
+            {added ? <><Check size={18} /> Added</> : <><ShoppingBasket size={18} /> {adding ? 'Adding…' : 'Add to Cart'}</>}
+          </button>
+        </div>
       </div>
     </div>
   );
