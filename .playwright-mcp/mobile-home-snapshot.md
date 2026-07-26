@@ -1,0 +1,147 @@
+- generic [active] [ref=e1] [box=0,-532,375,5939]:
+  - generic [ref=e2] [box=0,-532,375,5939]:
+    - banner [ref=e3] [box=0,-532,375,38]:
+      - generic [ref=e568] [box=98,-521,178,17]: Same-day delivery in Mombasa
+    - banner [ref=e8] [box=0,0,375,64]:
+      - navigation "Main navigation" [ref=e9] [box=0,0,375,64]:
+        - button "Open menu" [ref=e505] [box=20,10,44,44]
+        - link "Malaika Nest home" [ref=e10] [cursor=pointer] [box=72,14,195,36]:
+          - /url: /
+          - generic [ref=e11] [box=72,14,195,34]
+        - generic [ref=e30] [box=275,10,178,44]:
+          - button "Switch to Swahili" [ref=e31] [box=275,18,58,28]
+          - button "Search" [ref=e508] [box=337,10,44,44]
+          - link "Cart" [ref=e44] [cursor=pointer] [box=385,12,68,40]:
+            - /url: /cart
+    - main [ref=e50] [box=0,-430,375,4751]:
+      - region "Featured collections" [ref=e51] [box=0,-430,375,717]:
+        - generic [ref=e571] [box=20,53,335,194]:
+          - generic [ref=e572] [box=20,61,133,17]: Malaika Nest
+          - heading "Tiny Styles, Big Smiles" [level=1] [ref=e573] [box=20,94,335,35]
+          - paragraph [ref=e574] [box=20,145,335,21]: Curated baby & kids fashion delivered to your door.
+          - link "Shop New Arrivals" [ref=e575] [cursor=pointer] [box=20,198,236,50]:
+            - /url: /categories?age=newborn
+        - button "Previous slide" [ref=e65] [box=12,-92,40,40]
+        - button "Next slide" [ref=e68] [box=323,-92,40,40]
+        - generic [ref=e71] [box=114,219,148,44]:
+          - button "Go to slide 1" [ref=e72] [box=114,219,44,44]
+          - button "Go to slide 2" [ref=e73] [box=166,219,44,44]
+          - button "Go to slide 3" [ref=e74] [box=218,219,44,44]
+      - generic [ref=e76] [box=0,335,375,305]:
+        - generic [ref=e78] [box=20,335,335,127]:
+          - generic [ref=e79] [box=20,344,193,17]: Find the perfect size
+          - heading "Shop by Age" [level=2] [ref=e80] [box=20,384,335,29]
+          - paragraph [ref=e81] [box=20,422,335,40]: From newborn snuggles to first-day-of-school fits — we've got every stage covered.
+        - list [ref=e89] [box=0,490,375,151]:
+          - link "Newborn (0-3m) 0–1 mo" [ref=e90] [cursor=pointer] [box=20,490,148,143]:
+            - /url: /categories
+          - link "0–3 Months Tiny" [ref=e98] [cursor=pointer] [box=180,490,120,143]:
+            - /url: /categories
+          - link "3–6 Months Growing" [ref=e106] [cursor=pointer] [box=312,490,120,143]:
+            - /url: /categories
+          - link "6–9 Months Active" [ref=e114] [cursor=pointer] [box=444,490,120,143]:
+            - /url: /categories
+          - link "9–12 Months Cruising" [ref=e122] [cursor=pointer] [box=576,490,122,143]:
+            - /url: /categories
+          - link "1–2 Years Walking" [ref=e130] [cursor=pointer] [box=709,490,120,143]:
+            - /url: /categories
+          - link "2–4 Years Talking" [ref=e138] [cursor=pointer] [box=841,490,120,143]:
+            - /url: /categories
+          - link "4–6 Years Playful" [ref=e146] [cursor=pointer] [box=973,490,120,143]:
+            - /url: /categories
+          - link "6–9 Years School" [ref=e154] [cursor=pointer] [box=1105,490,120,143]:
+            - /url: /categories
+          - link "9–12 Years Big kid" [ref=e162] [cursor=pointer] [box=1237,490,120,143]:
+            - /url: /categories
+      - generic [ref=e171] [box=0,736,375,944]:
+        - generic [ref=e172] [box=20,736,335,127]:
+          - generic [ref=e173] [box=93,745,190,17]: Browse collections
+          - heading "Curated Categories" [level=2] [ref=e174] [box=20,786,335,29]
+          - paragraph [ref=e175] [box=20,823,335,40]: Thoughtfully selected for every moment of your baby's journey.
+        - generic [ref=e176] [box=20,899,335,781]:
+          - link "Clothing Onesies, rompers & more 120+ items" [ref=e177] [cursor=pointer] [box=20,899,162,247]:
+            - /url: /categories
+          - link "Feeding Feeding, bathing & care 85+ items" [ref=e188] [cursor=pointer] [box=194,899,162,247]:
+            - /url: /categories
+          - link "Nursery Furniture, bedding & decor 64+ items" [ref=e199] [cursor=pointer] [box=20,1158,162,263]:
+            - /url: /categories
+          - link "Toys Play, explore & grow 92+ items" [ref=e210] [cursor=pointer] [box=194,1158,162,263]:
+            - /url: /categories
+          - link "Travel & Car Seats Strollers, carriers & safety 48+ items" [ref=e221] [cursor=pointer] [box=20,1433,162,247]:
+            - /url: /categories
+          - link "Books & Learning Curated bundles 36+ items" [ref=e232] [cursor=pointer] [box=194,1433,162,247]:
+            - /url: /categories
+      - generic [ref=e244] [box=0,1776,375,180]:
+        - generic [ref=e246] [box=20,1776,173,79]:
+          - generic [ref=e247] [box=20,1785,129,17]: Hand-picked
+          - heading "Featured Products" [level=2] [ref=e248] [box=20,1826,173,29]
+        - link "View All Featured Products" [ref=e521] [cursor=pointer] [box=71,1911,233,46]:
+          - /url: /categories
+      - generic [ref=e254] [box=20,2045,335,152]:
+        - generic [ref=e260] [box=76,2045,102,66]:
+          - paragraph [ref=e261] [box=76,2045,102,16]: Safe Materials
+          - paragraph [ref=e262] [box=76,2066,102,45]: OEKO-TEX certified, tested for your baby
+        - generic [ref=e268] [box=254,2045,102,66]:
+          - paragraph [ref=e269] [box=254,2045,102,16]: Fast Delivery
+          - paragraph [ref=e270] [box=254,2066,102,45]: Same-day in Mombasa, 1–3 days countrywide
+        - generic [ref=e276] [box=76,2131,102,67]:
+          - paragraph [ref=e277] [box=76,2131,102,33]: Parent Approved
+          - paragraph [ref=e278] [box=76,2168,102,30]: Trusted by 5,000+ Kenyan families
+        - generic [ref=e284] [box=254,2131,102,51]:
+          - paragraph [ref=e285] [box=254,2131,102,16]: Secure M-Pesa
+          - paragraph [ref=e286] [box=254,2151,102,30]: Till 3370347 · Pay safely, every time
+      - generic [ref=e288] [box=0,2287,375,180]:
+        - generic [ref=e290] [box=20,2287,121,79]:
+          - generic [ref=e291] [box=20,2296,121,17]: Most loved
+          - heading "Best Sellers" [level=2] [ref=e292] [box=20,2336,121,29]
+        - link "View All Best Sellers" [ref=e525] [cursor=pointer] [box=92,2422,190,46]:
+          - /url: /best-sellers
+      - generic [ref=e297] [box=0,2563,375,1032]:
+        - generic [ref=e298] [box=20,2563,335,110]:
+          - generic [ref=e299] [box=106,2572,164,17]: Loved by parents
+          - heading "What Families Are Saying" [level=2] [ref=e300] [box=20,2612,335,29]
+          - generic [ref=e301] [box=20,2654,335,20]: 4.9 / 5 · 1,200+ reviews
+        - generic [ref=e314] [box=20,2709,335,886]:
+          - figure "AW Amina W. Mombasa, Kenya" [ref=e315] [box=20,2709,335,285]
+          - figure "GM Grace M. Nairobi, Kenya" [ref=e336] [box=20,3010,335,285]
+          - figure "JK Joy K. Kisumu, Kenya" [ref=e357] [box=20,3311,335,285]
+      - generic [ref=e379] [box=0,3691,375,180]:
+        - generic [ref=e381] [box=20,3691,126,79]:
+          - generic [ref=e382] [box=20,3700,126,17]: Just landed
+          - heading "New Arrivals" [level=2] [ref=e383] [box=20,3741,126,29]
+        - link "Shop New" [ref=e529] [cursor=pointer] [box=123,3826,129,46]:
+          - /url: /categories
+      - generic [ref=e389] [box=20,3968,335,305]:
+        - generic [ref=e390] [box=113,3968,148,29]: Join the Nest
+        - heading "Get 10% off your first order" [level=2] [ref=e395] [box=20,4017,335,33]
+        - paragraph [ref=e396] [box=20,4062,335,40]: Subscribe for new arrivals, exclusive offers and parenting tips — straight to your inbox.
+        - generic [ref=e397] [box=20,4130,335,110]:
+          - textbox "Your email address" [ref=e399] [box=20,4130,335,50]:
+            - /placeholder: you@email.com
+          - button "Subscribe" [ref=e400] [box=20,4192,335,48]
+        - paragraph [ref=e401] [box=20,4256,335,17]: No spam, only love. Unsubscribe anytime.
+    - contentinfo [ref=e402] [box=0,4320,375,1022]:
+      - generic [ref=e403] [box=0,4357,375,949]:
+        - generic [ref=e404] [box=20,4357,335,884]:
+          - generic [ref=e405] [box=20,4357,335,239]
+          - generic [ref=e434] [box=20,4628,335,584]
+        - generic [ref=e492] [box=20,5241,335,65]:
+          - paragraph [ref=e493] [box=85,5261,205,17]: © 2026 Malaika Nest. All rights reserved.
+          - generic [ref=e494] [box=100,5290,175,17]
+    - navigation "Mobile navigation" [ref=e532] [box=0,764,375,65]:
+      - generic [ref=e533] [box=0,765,375,64]:
+        - link "Home" [ref=e534] [cursor=pointer] [box=0,765,75,64]:
+          - /url: /
+        - link "Shop" [ref=e540] [cursor=pointer] [box=75,765,75,64]:
+          - /url: /categories
+        - link "Search" [ref=e546] [cursor=pointer] [box=150,765,75,64]:
+          - /url: /search
+        - link "Cart" [ref=e551] [cursor=pointer] [box=225,765,75,64]:
+          - /url: /cart
+        - link "Account" [ref=e557] [cursor=pointer] [box=300,765,75,64]:
+          - /url: /login
+  - button "Chat on WhatsApp" [ref=e498] [box=303,693,56,56]
+  - region "Notifications alt+T" [box=0,5406,375,0]
+  - region "Notifications (F8)" [box=0,5406,375,0]:
+    - list [box=0,0,375,32]
+  - alert [ref=e563] [box=-1,5405,1,1]

@@ -1,0 +1,226 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - banner [ref=f3e3]:
+      - generic [ref=f3e6]:
+        - text: Free delivery on orders over
+        - strong [ref=f3e7]: KES 3,000
+    - banner [ref=f3e8]:
+      - navigation "Main navigation" [ref=f3e9]:
+        - link "Malaika Nest home" [ref=f3e10] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f3e11]:
+            - img "Malaika Nest" [ref=f3e12]
+            - generic [ref=f3e13]:
+              - generic [ref=f3e14]: Malaika Nest
+              - generic [ref=f3e15]: Made for Little Angels
+        - generic [ref=f3e16]:
+          - link "Home" [ref=f3e17] [cursor=pointer]:
+            - /url: /
+          - button "Shop" [ref=f3e19]
+          - link "Thrifted" [ref=f3e22] [cursor=pointer]:
+            - /url: /thrifted
+          - link "Best Sellers" [ref=f3e23] [cursor=pointer]:
+            - /url: /best-sellers
+          - link "Contact" [ref=f3e24] [cursor=pointer]:
+            - /url: /find-us
+          - button "Shop by Age" [ref=f3e26]
+        - generic:
+          - search:
+            - searchbox "Search" [ref=f3e29]
+        - generic [ref=f3e30]:
+          - button "Switch to Swahili" [ref=f3e31]:
+            - generic [ref=f3e35]: EN
+          - link "Wishlist" [ref=f3e36] [cursor=pointer]:
+            - /url: /wishlist
+          - link "Sign In" [ref=f3e40] [cursor=pointer]:
+            - /url: /login
+          - link "Cart" [ref=f3e44] [cursor=pointer]:
+            - /url: /cart
+            - generic [ref=f3e49]: "0"
+      - generic:
+        - generic:
+          - generic:
+            - link "Clothing Onesies, rompers & more":
+              - /url: /categories?category=clothing
+              - generic:
+                - generic: Clothing
+                - generic: Onesies, rompers & more
+            - link "Feeding Feeding, bathing & care":
+              - /url: /categories?category=baby-essentials
+              - generic:
+                - generic: Feeding
+                - generic: Feeding, bathing & care
+            - link "Nursery Furniture, bedding & decor":
+              - /url: /categories?category=nursery
+              - generic:
+                - generic: Nursery
+                - generic: Furniture, bedding & decor
+            - link "Toys Play, explore & grow":
+              - /url: /categories?category=toys
+              - generic:
+                - generic: Toys
+                - generic: Play, explore & grow
+            - link "Travel & Car Seats Strollers, carriers & safety":
+              - /url: /categories?category=travel
+              - generic:
+                - generic: Travel & Car Seats
+                - generic: Strollers, carriers & safety
+            - link "Gifts Gift sets & bundles":
+              - /url: /categories?category=gifts
+              - generic:
+                - generic: Gifts
+                - generic: Gift sets & bundles
+          - generic:
+            - generic:
+              - link "Best Sellers":
+                - /url: /best-sellers
+              - link "New":
+                - /url: /categories?ordering=-created_at
+              - link "Gifts":
+                - /url: /categories?category=gifts
+            - link "All Products →":
+              - /url: /categories
+      - generic:
+        - generic:
+          - generic:
+            - heading "Shop by Age" [level=3]
+            - link "View All":
+              - /url: /categories
+          - generic:
+            - link "Newborn":
+              - /url: /categories?age_group=baby
+            - link "0-3 Months":
+              - /url: /categories?age_group=baby
+            - link "3-6 Months":
+              - /url: /categories?age_group=baby
+            - link "6-12 Months":
+              - /url: /categories?age_group=baby
+            - link "1-2 Years":
+              - /url: /categories?age_group=toddler
+            - link "2-4 Years":
+              - /url: /categories?age_group=toddler
+            - link "4-6 Years":
+              - /url: /categories?age_group=kids
+            - link "6-9 Years":
+              - /url: /categories?age_group=kids
+            - link "9-12 Years":
+              - /url: /categories?age_group=kids
+    - generic [ref=f3e51]:
+      - heading "What are you looking for?" [level=1] [ref=f3e52]
+      - paragraph [ref=f3e53]: Search across our full catalog of baby essentials, nursery, gifts and more.
+      - search [ref=f3e54]:
+        - searchbox "Search products" [ref=f3e55]
+        - button "Search" [ref=f3e56]
+      - generic [ref=f3e58]:
+        - heading "Popular searches" [level=2] [ref=f3e62]
+        - generic [ref=f3e63]:
+          - button "Onesie" [ref=f3e64]
+          - button "Newborn" [ref=f3e65]
+          - button "Stroller" [ref=f3e66]
+          - button "Feeding" [ref=f3e67]
+          - button "Cotton" [ref=f3e68]
+          - button "Thrifted" [ref=f3e69]
+    - contentinfo [ref=f3e70]:
+      - generic [ref=f3e71]:
+        - generic [ref=f3e72]:
+          - generic [ref=f3e73]:
+            - generic [ref=f3e74]:
+              - img "Malaika Nest" [ref=f3e75]
+              - generic [ref=f3e76]:
+                - generic [ref=f3e77]: Malaika Nest
+                - generic [ref=f3e78]: Made for Little Angels
+            - paragraph [ref=f3e79]: Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.
+            - generic [ref=f3e85]:
+              - paragraph [ref=f3e86]: Lipa Na M-Pesa
+              - paragraph [ref=f3e87]: "Till: 3370347"
+            - generic [ref=f3e88]:
+              - link "Facebook" [ref=f3e89] [cursor=pointer]:
+                - /url: https://web.facebook.com/profile.php?id=61592150003761
+              - link "Instagram" [ref=f3e92] [cursor=pointer]:
+                - /url: https://www.instagram.com/malaikanest/
+              - link "TikTok" [ref=f3e95] [cursor=pointer]:
+                - /url: https://www.tiktok.com/@malaikanest
+              - link "WhatsApp" [ref=f3e98] [cursor=pointer]:
+                - /url: https://wa.me/254726771321
+          - generic [ref=f3e102]:
+            - generic [ref=f3e103]:
+              - heading "Shop" [level=3] [ref=f3e104]
+              - list [ref=f3e105]:
+                - listitem [ref=f3e106]:
+                  - link "All Products" [ref=f3e107] [cursor=pointer]:
+                    - /url: /categories
+                - listitem [ref=f3e108]:
+                  - link "Clothing" [ref=f3e109] [cursor=pointer]:
+                    - /url: /categories?category=clothing
+                - listitem [ref=f3e110]:
+                  - link "Thrifted" [ref=f3e111] [cursor=pointer]:
+                    - /url: /thrifted
+                - listitem [ref=f3e112]:
+                  - link "Feeding" [ref=f3e113] [cursor=pointer]:
+                    - /url: /categories?category=baby-essentials
+                - listitem [ref=f3e114]:
+                  - link "Nursery" [ref=f3e115] [cursor=pointer]:
+                    - /url: /categories?category=nursery
+                - listitem [ref=f3e116]:
+                  - link "Toys" [ref=f3e117] [cursor=pointer]:
+                    - /url: /categories?category=toys
+                - listitem [ref=f3e118]:
+                  - link "Gifts" [ref=f3e119] [cursor=pointer]:
+                    - /url: /categories?category=gifts
+            - generic [ref=f3e120]:
+              - heading "Shop by Age" [level=3] [ref=f3e121]
+              - list [ref=f3e122]:
+                - listitem [ref=f3e123]:
+                  - link "Baby (0–2yr)" [ref=f3e124] [cursor=pointer]:
+                    - /url: /categories?age_group=baby
+                - listitem [ref=f3e125]:
+                  - link "Toddler (2–5yr)" [ref=f3e126] [cursor=pointer]:
+                    - /url: /categories?age_group=toddler
+                - listitem [ref=f3e127]:
+                  - link "Kids (6–12yr)" [ref=f3e128] [cursor=pointer]:
+                    - /url: /categories?age_group=kids
+            - generic [ref=f3e129]:
+              - heading "Help" [level=3] [ref=f3e130]
+              - list [ref=f3e131]:
+                - listitem [ref=f3e132]:
+                  - link "FAQ" [ref=f3e133] [cursor=pointer]:
+                    - /url: /faq
+                - listitem [ref=f3e134]:
+                  - link "Shipping & Returns" [ref=f3e135] [cursor=pointer]:
+                    - /url: /shipping
+                - listitem [ref=f3e136]:
+                  - link "Track Order" [ref=f3e137] [cursor=pointer]:
+                    - /url: /track
+                - listitem [ref=f3e138]:
+                  - link "Contact" [ref=f3e139] [cursor=pointer]:
+                    - /url: /find-us
+                - listitem [ref=f3e140]:
+                  - link "Blog" [ref=f3e141] [cursor=pointer]:
+                    - /url: /blog
+                - listitem [ref=f3e142]:
+                  - link "About Us" [ref=f3e143] [cursor=pointer]:
+                    - /url: /about
+                - listitem [ref=f3e144]:
+                  - link "Refund Policy" [ref=f3e145] [cursor=pointer]:
+                    - /url: /returns
+              - heading "Contact" [level=3] [ref=f3e146]
+              - list [ref=f3e147]:
+                - listitem [ref=f3e148]:
+                  - link "hello@malaikanest.com" [ref=f3e149] [cursor=pointer]:
+                    - /url: mailto:hello@malaikanest.com
+                - listitem [ref=f3e153]:
+                  - link "+254726771321" [ref=f3e154] [cursor=pointer]:
+                    - /url: tel:+254726771321
+                - listitem [ref=f3e157]: Mombasa, Kenya
+        - generic [ref=f3e160]:
+          - paragraph [ref=f3e161]: © 2026 Malaika Nest. All rights reserved.
+          - generic [ref=f3e162]:
+            - link "Privacy Policy" [ref=f3e163] [cursor=pointer]:
+              - /url: /privacy-policy
+            - link "Terms of Service" [ref=f3e164] [cursor=pointer]:
+              - /url: /terms-of-service
+  - button "Chat on WhatsApp" [ref=f3e166]
+  - region "Notifications alt+T"
+  - region "Notifications (F8)":
+    - list
+  - alert [ref=f3e170]

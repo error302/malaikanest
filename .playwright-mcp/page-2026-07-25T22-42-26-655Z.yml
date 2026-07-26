@@ -1,0 +1,154 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - banner [ref=f4e3]:
+      - generic [ref=f4e6]:
+        - text: Free delivery on orders over
+        - strong [ref=f4e7]: KES 3,000
+    - banner [ref=f4e8]:
+      - navigation "Main navigation" [ref=f4e9]:
+        - button "Open menu" [ref=f4e10]
+        - link "Malaika Nest home" [ref=f4e13] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f4e14]:
+            - img "Malaika Nest" [ref=f4e15]
+            - generic [ref=f4e16]:
+              - generic [ref=f4e17]: Malaika Nest
+              - generic [ref=f4e18]: Made for Little Angels
+        - generic [ref=f4e19]:
+          - button "Switch to Swahili" [ref=f4e20]:
+            - generic [ref=f4e24]: EN
+          - button "Search" [ref=f4e25]
+          - link "Cart" [ref=f4e28] [cursor=pointer]:
+            - /url: /cart
+            - generic [ref=f4e32]: "0"
+    - generic [ref=f4e34]:
+      - heading "What are you looking for?" [level=1] [ref=f4e35]
+      - paragraph [ref=f4e36]: Search across our full catalog of baby essentials, nursery, gifts and more.
+      - search [ref=f4e37]:
+        - searchbox "Search products" [ref=f4e38]
+        - button "Search" [ref=f4e39]
+      - generic [ref=f4e41]:
+        - heading "Popular searches" [level=2] [ref=f4e45]
+        - generic [ref=f4e46]:
+          - button "Onesie" [ref=f4e47]
+          - button "Newborn" [ref=f4e48]
+          - button "Stroller" [ref=f4e49]
+          - button "Feeding" [ref=f4e50]
+          - button "Cotton" [ref=f4e51]
+          - button "Thrifted" [ref=f4e52]
+    - contentinfo [ref=f4e53]:
+      - generic [ref=f4e54]:
+        - generic [ref=f4e55]:
+          - generic [ref=f4e56]:
+            - generic [ref=f4e57]:
+              - img "Malaika Nest" [ref=f4e58]
+              - generic [ref=f4e59]:
+                - generic [ref=f4e60]: Malaika Nest
+                - generic [ref=f4e61]: Made for Little Angels
+            - paragraph [ref=f4e62]: Handcrafted organic clothing, accessories & toys made with love in Kenya. For little ones aged 0–12 years.
+            - generic [ref=f4e68]:
+              - paragraph [ref=f4e69]: Lipa Na M-Pesa
+              - paragraph [ref=f4e70]: "Till: 3370347"
+            - generic [ref=f4e71]:
+              - link "Facebook" [ref=f4e72] [cursor=pointer]:
+                - /url: https://web.facebook.com/profile.php?id=61592150003761
+              - link "Instagram" [ref=f4e75] [cursor=pointer]:
+                - /url: https://www.instagram.com/malaikanest/
+              - link "TikTok" [ref=f4e78] [cursor=pointer]:
+                - /url: https://www.tiktok.com/@malaikanest
+              - link "WhatsApp" [ref=f4e81] [cursor=pointer]:
+                - /url: https://wa.me/254726771321
+          - generic [ref=f4e85]:
+            - generic [ref=f4e86]:
+              - heading "Shop" [level=3] [ref=f4e87]
+              - list [ref=f4e88]:
+                - listitem [ref=f4e89]:
+                  - link "All Products" [ref=f4e90] [cursor=pointer]:
+                    - /url: /categories
+                - listitem [ref=f4e91]:
+                  - link "Clothing" [ref=f4e92] [cursor=pointer]:
+                    - /url: /categories?category=clothing
+                - listitem [ref=f4e93]:
+                  - link "Thrifted" [ref=f4e94] [cursor=pointer]:
+                    - /url: /thrifted
+                - listitem [ref=f4e95]:
+                  - link "Feeding" [ref=f4e96] [cursor=pointer]:
+                    - /url: /categories?category=baby-essentials
+                - listitem [ref=f4e97]:
+                  - link "Nursery" [ref=f4e98] [cursor=pointer]:
+                    - /url: /categories?category=nursery
+                - listitem [ref=f4e99]:
+                  - link "Toys" [ref=f4e100] [cursor=pointer]:
+                    - /url: /categories?category=toys
+                - listitem [ref=f4e101]:
+                  - link "Gifts" [ref=f4e102] [cursor=pointer]:
+                    - /url: /categories?category=gifts
+            - generic [ref=f4e103]:
+              - heading "Shop by Age" [level=3] [ref=f4e104]
+              - list [ref=f4e105]:
+                - listitem [ref=f4e106]:
+                  - link "Baby (0–2yr)" [ref=f4e107] [cursor=pointer]:
+                    - /url: /categories?age_group=baby
+                - listitem [ref=f4e108]:
+                  - link "Toddler (2–5yr)" [ref=f4e109] [cursor=pointer]:
+                    - /url: /categories?age_group=toddler
+                - listitem [ref=f4e110]:
+                  - link "Kids (6–12yr)" [ref=f4e111] [cursor=pointer]:
+                    - /url: /categories?age_group=kids
+            - generic [ref=f4e112]:
+              - heading "Help" [level=3] [ref=f4e113]
+              - list [ref=f4e114]:
+                - listitem [ref=f4e115]:
+                  - link "FAQ" [ref=f4e116] [cursor=pointer]:
+                    - /url: /faq
+                - listitem [ref=f4e117]:
+                  - link "Shipping & Returns" [ref=f4e118] [cursor=pointer]:
+                    - /url: /shipping
+                - listitem [ref=f4e119]:
+                  - link "Track Order" [ref=f4e120] [cursor=pointer]:
+                    - /url: /track
+                - listitem [ref=f4e121]:
+                  - link "Contact" [ref=f4e122] [cursor=pointer]:
+                    - /url: /find-us
+                - listitem [ref=f4e123]:
+                  - link "Blog" [ref=f4e124] [cursor=pointer]:
+                    - /url: /blog
+                - listitem [ref=f4e125]:
+                  - link "About Us" [ref=f4e126] [cursor=pointer]:
+                    - /url: /about
+                - listitem [ref=f4e127]:
+                  - link "Refund Policy" [ref=f4e128] [cursor=pointer]:
+                    - /url: /returns
+              - heading "Contact" [level=3] [ref=f4e129]
+              - list [ref=f4e130]:
+                - listitem [ref=f4e131]:
+                  - link "hello@malaikanest.com" [ref=f4e132] [cursor=pointer]:
+                    - /url: mailto:hello@malaikanest.com
+                - listitem [ref=f4e136]:
+                  - link "+254726771321" [ref=f4e137] [cursor=pointer]:
+                    - /url: tel:+254726771321
+                - listitem [ref=f4e140]: Mombasa, Kenya
+        - generic [ref=f4e143]:
+          - paragraph [ref=f4e144]: © 2026 Malaika Nest. All rights reserved.
+          - generic [ref=f4e145]:
+            - link "Privacy Policy" [ref=f4e146] [cursor=pointer]:
+              - /url: /privacy-policy
+            - link "Terms of Service" [ref=f4e147] [cursor=pointer]:
+              - /url: /terms-of-service
+    - navigation "Mobile navigation" [ref=f4e148]:
+      - generic [ref=f4e149]:
+        - link "Home" [ref=f4e150] [cursor=pointer]:
+          - /url: /
+        - link "Shop" [ref=f4e156] [cursor=pointer]:
+          - /url: /categories
+        - link "Search" [ref=f4e162] [cursor=pointer]:
+          - /url: /search
+        - link "Cart" [ref=f4e167] [cursor=pointer]:
+          - /url: /cart
+        - link "Account" [ref=f4e173] [cursor=pointer]:
+          - /url: /login
+  - button "Chat on WhatsApp" [ref=f4e180]
+  - region "Notifications alt+T"
+  - region "Notifications (F8)":
+    - list
+  - alert [ref=f4e184]
