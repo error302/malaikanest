@@ -215,9 +215,12 @@ class ProductSerializer(serializers.ModelSerializer):
             return None
         raw = filed.name if hasattr(filed, "name") else str(filed)
         if raw.startswith("http://") or raw.startswith("https://"):
-            return raw
-        url = filed.url
+            url = raw
+        else:
+            url = filed.url
         if url.startswith("http://") or url.startswith("https://"):
+            if "res.cloudinary.com" in url and not any(url.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"]):
+                url = f"{url}.jpg"
             return url
         request = self.context.get("request")
         if request:

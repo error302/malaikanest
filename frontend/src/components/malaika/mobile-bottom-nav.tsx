@@ -40,18 +40,25 @@ export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCoun
             <Link
               key={item.name}
               href={isAccount ? (isAuthenticated ? '/account' : '/login') : item.href}
-              className="flex flex-col items-center justify-center gap-1 flex-1 relative transition-colors"
+              className="flex flex-col items-center justify-center gap-1 flex-1 relative transition-all duration-200"
               style={{ color: active ? 'var(--brand-gold)' : 'var(--brand-text-muted)' }}
               aria-label={isAccount && user ? `${item.name} (signed in as ${user.name || user.email})` : item.name}
               aria-current={active ? 'page' : undefined}
             >
+              {active && (
+                <span
+                  className="absolute top-0 w-8 h-0.5 rounded-full transition-all duration-300"
+                  style={{ background: 'var(--brand-gold)' }}
+                  aria-hidden
+                />
+              )}
               <div className="relative">
                 {showAvatar ? (
                   <span
-                    className="flex items-center justify-center font-semibold text-[13px] rounded-full"
+                    className="flex items-center justify-center font-semibold text-[12px] rounded-full transition-transform active:scale-95"
                     style={{
-                      width: 22,
-                      height: 22,
+                      width: 24,
+                      height: 24,
                       background: active ? 'var(--brand-gold)' : 'var(--brand-brown)',
                       color: '#FFFFFF',
                     }}
@@ -59,13 +66,17 @@ export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCoun
                     {userInitial}
                   </span>
                 ) : (
-                  <Icon size={22} strokeWidth={active ? 2 : 1.75} />
+                  <Icon
+                    size={21}
+                    strokeWidth={active ? 2.2 : 1.75}
+                    className={`transition-transform duration-200 ${active ? 'scale-110' : ''}`}
+                  />
                 )}
                 {badgeCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-2 min-w-[16px] h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"
+                    className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1 animate-pulse-soft"
                     style={{
-                      background: 'var(--brand-gold)',
+                      background: 'var(--brand-terra)',
                       color: '#FFFFFF',
                     }}
                   >
@@ -73,7 +84,7 @@ export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCoun
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium">{item.name}</span>
+              <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{item.name}</span>
             </Link>
           );
         })}
@@ -81,3 +92,4 @@ export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCoun
     </nav>
   );
 }
+

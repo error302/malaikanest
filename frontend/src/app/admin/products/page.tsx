@@ -8,11 +8,12 @@ import { getImageUrl } from '@/lib/media';
 import { showToast } from '@/lib/toast';
 
 interface Product {
-  id: number;
+  id: string;  // UUID from Django
   name: string;
   slug: string;
   price: string;
   stock: number;
+  available_stock?: number;
   is_active: boolean;
   status: string;
   image?: string | null;
@@ -54,11 +55,11 @@ export default function AdminProductsPage() {
     return () => { cancelled = true; clearTimeout(t); };
   }, [search]);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product? This cannot be undone.')) return;
     try {
       await api.delete(`/api/v1/products/admin/products/${id}/`);
-      showToast('Product deleted', 'success');
+      showToast('Product deleted successfully', 'success');
       setProducts((p) => p.filter((x) => x.id !== id));
     } catch (err: any) {
       const msg = handleApiError(err, 'Failed to delete product');
@@ -148,10 +149,10 @@ export default function AdminProductsPage() {
                       </td>
                       <td className="p-4 hidden md:table-cell">
                         <span className="text-xs px-2 py-1 rounded-full" style={{
-                          background: p.stock > 5 ? 'rgba(45,90,66,0.12)' : 'rgba(196,112,74,0.12)',
-                          color: p.stock > 5 ? 'var(--brand-green-light)' : 'var(--brand-terra)',
+                          background: (p.available_stock ?? p.stock) > 5 ? 'rgba(45,90,66,0.12)' : 'rgba(196,112,74,0.12)',
+                          color: (p.available_stock ?? p.stock) > 5 ? 'var(--brand-green-light)' : 'var(--brand-terra)',
                         }}>
-                          {p.stock} in stock
+                          {p.available_stock ?? p.stock} in stock
                         </span>
                       </td>
                       <td className="p-4 hidden lg:table-cell">

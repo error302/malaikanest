@@ -6,16 +6,16 @@ import { ChevronLeft, ChevronRight, Baby } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 const AGES = [
-  { name: 'Newborn', nameKey: 'age.newborn', rangeKey: 'age.newbornRange' },
-  { name: '0–3 Months', nameKey: 'age.0_3', rangeKey: 'age.0_3Range' },
-  { name: '3–6 Months', nameKey: 'age.3_6', rangeKey: 'age.3_6Range' },
-  { name: '6–9 Months', nameKey: 'age.6_9', rangeKey: 'age.6_9Range' },
-  { name: '9–12 Months', nameKey: 'age.9_12', rangeKey: 'age.9_12Range' },
-  { name: '1–2 Years', nameKey: 'age.1_2', rangeKey: 'age.1_2Range' },
-  { name: '2–4 Years', nameKey: 'age.2_4', rangeKey: 'age.2_4Range' },
-  { name: '4–6 Years', nameKey: 'age.4_6', rangeKey: 'age.4_6Range' },
-  { name: '6–9 Years', nameKey: 'age.6_9y', rangeKey: 'age.6_9yRange' },
-  { name: '9–12 Years', nameKey: 'age.9_12y', rangeKey: 'age.9_12yRange' },
+  { name: 'Newborn', nameKey: 'age.newborn', rangeKey: 'age.newbornRange', group: 'baby' },
+  { name: '0–3 Months', nameKey: 'age.0_3', rangeKey: 'age.0_3Range', group: 'baby' },
+  { name: '3–6 Months', nameKey: 'age.3_6', rangeKey: 'age.3_6Range', group: 'baby' },
+  { name: '6–9 Months', nameKey: 'age.6_9', rangeKey: 'age.6_9Range', group: 'baby' },
+  { name: '9–12 Months', nameKey: 'age.9_12', rangeKey: 'age.9_12Range', group: 'baby' },
+  { name: '1–2 Years', nameKey: 'age.1_2', rangeKey: 'age.1_2Range', group: 'baby' },
+  { name: '2–4 Years', nameKey: 'age.2_4', rangeKey: 'age.2_4Range', group: 'toddler' },
+  { name: '4–6 Years', nameKey: 'age.4_6', rangeKey: 'age.4_6Range', group: 'toddler' },
+  { name: '6–9 Years', nameKey: 'age.6_9y', rangeKey: 'age.6_9yRange', group: 'kids' },
+  { name: '9–12 Years', nameKey: 'age.9_12y', rangeKey: 'age.9_12yRange', group: 'kids' },
 ];
 
 interface ShopByAgeProps {
@@ -100,7 +100,7 @@ export function ShopByAge({ content }: ShopByAgeProps) {
           {AGES.map((age) => (
             <Link
               key={age.nameKey}
-              href="/categories"
+              href={`/categories?age=${age.group}`}
               className="group flex-shrink-0 flex flex-col items-center justify-center text-center gap-2 p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-warm-md min-w-[120px] sm:min-w-[140px]"
               style={{
                 background: '#FFFFFF',

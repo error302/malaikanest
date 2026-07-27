@@ -67,29 +67,52 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Django-side products (best-effort, never fails the build)
   let productUrls: MetadataRoute.Sitemap = [];
-  if (process.env.INTERNAL_API_URL) {
-    try {
-      const r = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/products/products/?limit=200&status=published`, {
-        headers: { accept: 'application/json' },
-        signal: AbortSignal.timeout(2500),
-        cache: 'no-store',
-      });
-      if (r.ok) {
-        const j: any = await r.json();
-        const results: any[] = j?.data?.results ?? j?.data ?? j?.results ?? [];
-        productUrls = results
-          .filter((p) => p.slug)
-          .map((p) => ({
-            url: `${BASE_URL}/products/${p.slug}`,
-            lastModified: p.updated_at ? new Date(p.updated_at) : now,
-            changeFrequency: 'weekly' as const,
-            priority: 0.8,
-          }));
-      }
-    } catch {
-      // backend offline — skip
+  const apiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.malaikanest.com';
+  try {
+    const r = await fetch(`${apiBase}/api/v1/products/products/?limit=200&status=published`, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    });
+    if (r.ok) {
+      const j: any = await r.json();
+      const results: any[] = j?.data?.results ?? j?.data ?? j?.results ?? [];
+      productUrls = results
+        .filter((p) => p.slug)
+        .map((p) => ({
+          url: `${BASE_URL}/products/${p.slug}`,
+          lastModified: p.updated_at ? new Date(p.updated_at) : now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.8,
+        }));
     }
+  } catch {
+    // backend offline — skip
   }
 
-  return [...staticPages, ...productUrls, ...thriftedUrls, ...blogUrls];
+  // Category pages
+  let categoryUrls: MetadataRoute.Sitemap = [];
+  try {
+    const r = await fetch(`${apiBase}/api/v1/products/categories/`, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(3000),
+      cache: 'no-store',
+    });
+    if (r.ok) {
+      const j: any = await r.json();
+      const cats: any[] = j?.results ?? j?.data?.results ?? j?.data ?? [];
+      categoryUrls = cats
+        .filter((c) => c.slug)
+        .map((c) => ({
+          url: `${BASE_URL}/categories/${c.full_slug || c.slug}`,
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }));
+    }
+  } catch {
+    // skip
+  }
+
+  return [...staticPages, ...productUrls, ...categoryUrls, ...thriftedUrls, ...blogUrls];
 }

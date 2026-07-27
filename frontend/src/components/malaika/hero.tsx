@@ -109,8 +109,7 @@ export function Hero({ banners = [], content }: HeroProps) {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-[#3D2B1F]"
-      style={{ minHeight: 'clamp(70vh, 85vh, 800px)' }}
+      className="relative w-full overflow-hidden bg-[#3D2B1F] h-[450px] sm:h-[550px] lg:min-h-[800px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
@@ -159,7 +158,7 @@ export function Hero({ banners = [], content }: HeroProps) {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex items-end sm:items-center min-h-[clamp(70vh,85vh,800px)]">
+      <div className="relative z-10 flex items-end sm:items-center h-[450px] sm:h-[550px] lg:min-h-[800px]">
         <div className="container-shell w-full py-10 sm:py-16">
           <div key={current} className="max-w-xl animate-fade-in-up">
             <span
@@ -233,11 +232,15 @@ export function Hero({ banners = [], content }: HeroProps) {
               onClick={() => go(i)}
               aria-label={`Go to slide ${i + 1}`}
               aria-current={i === current}
-              className="h-2 w-2 min-w-11 min-h-11 rounded-full transition-all duration-300 flex items-center justify-center"
-              style={{
-                background: i === current ? 'var(--brand-gold)' : 'rgba(255,255,255,0.4)',
-              }}
-            />
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center group"
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full transition-all duration-300 group-hover:scale-125"
+                style={{
+                  background: i === current ? 'var(--brand-gold)' : 'rgba(255,255,255,0.4)',
+                }}
+              />
+            </button>
           ))}
         </div>
       )}

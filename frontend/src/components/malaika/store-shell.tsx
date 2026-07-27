@@ -6,6 +6,7 @@ import { useWishlist } from '@/lib/wishlistContext';
 import { AnnouncementBar } from '@/components/malaika/announcement-bar';
 import { Navbar } from '@/components/malaika/navbar';
 import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
+import { CategoriesProvider } from '@/lib/categoriesContext';
 import type { Branding } from '@/lib/settings';
 
 /**
@@ -27,11 +28,13 @@ export function StoreShell({ branding, children }: StoreShellProps) {
   const { items } = useCart();
   const { count: wishlistCount } = useWishlist();
   return (
-    <div className="min-h-screen flex flex-col bg-grain pb-20 lg:pb-0">
-      <AnnouncementBar messages={branding.announcement_messages} />
-      <Navbar branding={branding} cartCount={items.length} wishlistCount={wishlistCount} />
-      {children}
-      <MobileBottomNav cartCount={items.length} wishlistCount={wishlistCount} />
-    </div>
+    <CategoriesProvider>
+      <div className="min-h-screen flex flex-col bg-grain pb-20 lg:pb-0">
+        <AnnouncementBar messages={branding.announcement_messages} />
+        <Navbar branding={branding} cartCount={items.length} wishlistCount={wishlistCount} />
+        {children}
+        <MobileBottomNav cartCount={items.length} wishlistCount={wishlistCount} />
+      </div>
+    </CategoriesProvider>
   );
 }

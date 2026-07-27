@@ -88,7 +88,7 @@ class AuthService:
         serializer = RegisterSerializer(data=data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.save(is_active=False)
+        user = serializer.save(is_active=True)
 
         token = get_random_string(64)
         user.verification_token = token
@@ -109,7 +109,7 @@ class AuthService:
         try:
             user = User.objects.get(verification_token=token)
 
-            if user.is_active:
+            if user.is_email_verified:
                 raise ValueError("Email already verified")
 
             expires_at = _ensure_aware(user.verification_token_expires)
@@ -133,7 +133,7 @@ class AuthService:
 
         try:
             user = User.objects.get(email=email)
-            if not user.is_active:
+            if not user.is_email_verified:
                 token = get_random_string(64)
                 user.verification_token = token
                 user.verification_token_expires = timezone.now() + timezone.timedelta(hours=24)

@@ -10,8 +10,8 @@ from django.utils.translation import gettext_lazy as _
 
 
 KENYAN_PHONE_VALIDATOR = RegexValidator(
-    regex=r"^\+2547\d{8}$",
-    message=_("Phone number must be in Kenyan format: +2547XXXXXXXX."),
+    regex=r"^\+254[71]\d{8}$",
+    message=_("Phone number must be in Kenyan format (+2547XXXXXXXX or +2541XXXXXXXX)."),
 )
 
 
@@ -19,16 +19,17 @@ def normalize_kenyan_phone(value: str) -> str:
     if value is None:
         return ""
     raw = str(value).strip()
-    raw = raw.replace(" ", "").replace("-", "")
+    raw = raw.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
     if raw.startswith("0") and len(raw) == 10:
         raw = "+254" + raw[1:]
     elif raw.startswith("254") and len(raw) == 12:
         raw = "+" + raw
     elif raw.startswith("+254") and len(raw) == 13:
         pass
-    elif raw.startswith("7") and len(raw) == 9:
+    elif (raw.startswith("7") or raw.startswith("1")) and len(raw) == 9:
         raw = "+254" + raw
     return raw
+
 
 
 class UserManager(BaseUserManager):

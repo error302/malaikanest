@@ -8,41 +8,52 @@ function getApiUrl(): string {
 
 /**
  * Resolve a product/banner/category image URL from the Django backend.
- * Handles Cloudinary URLs (returned verbatim), local /media/ paths
- * (prefixed with the API origin), and bare relative paths.
+ *
+ * Rules:
+ *  - Cloudinary URLs: inject f_auto,q_auto ONCE (idempotent) and return.
+ *    Cloudinary's CDN is already global – do NOT re-route through Next.js
+ *    image optimizer (use unoptimized={true} on the <Image> component).
+ *  - /media/ or relative paths: prefix with backend API origin.
+ *  - Everything else: return as-is.
  */
 export function getImageUrl(imageUrl: string | null | undefined): string {
   if (!imageUrl) return '/placeholder.svg';
 
-  let finalUrl = imageUrl;
-
-  if (!imageUrl.startsWith('http')) {
-    const apiUrl = getApiUrl();
-    if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/uploads/')) {
-      finalUrl = `${apiUrl}${imageUrl}`;
-    } else if (imageUrl.startsWith('media/') || imageUrl.startsWith('uploads/')) {
-      finalUrl = `${apiUrl}/${imageUrl}`;
-    } else {
-      finalUrl = `${apiUrl}/media/${imageUrl}`;
+  // ── 1. Already an absolute URL ───────────────────────────────────────────
+  if (imageUrl.startsWith('http')) {
+    if (imageUrl.includes('res.cloudinary.com')) {
+      return optimizeCloudinaryUrl(imageUrl);
     }
+    return imageUrl;
   }
 
-  // Optimize Cloudinary URLs if detected
+  // ── 2. Relative path → prefix with backend origin ────────────────────────
+  const apiUrl = getApiUrl();
+  let finalUrl: string;
+  if (imageUrl.startsWith('/media/') || imageUrl.startsWith('/uploads/')) {
+    finalUrl = `${apiUrl}${imageUrl}`;
+  } else if (imageUrl.startsWith('media/') || imageUrl.startsWith('uploads/')) {
+    finalUrl = `${apiUrl}/${imageUrl}`;
+  } else {
+    finalUrl = `${apiUrl}/media/${imageUrl}`;
+  }
+
   if (finalUrl.includes('res.cloudinary.com')) {
-    // If it doesn't already have transformations, inject auto format and quality
-    if (!finalUrl.includes('/upload/')) return finalUrl;
-
-    const parts = finalUrl.split('/upload/');
-    // If it has transformations (e.g. /upload/c_fill,w_300/v123/...), we append our defaults
-    if (parts[1].includes('/') && !parts[1].startsWith('v')) {
-       // Keep existing transformations but add auto format/quality
-       return `${parts[0]}/upload/f_auto,q_auto,${parts[1]}`;
-    }
-    // No transformations, just inject them
-    return `${parts[0]}/upload/f_auto,q_auto/${parts[1]}`;
+    return optimizeCloudinaryUrl(finalUrl);
   }
-
   return finalUrl;
+}
+
+/**
+ * Insert f_auto,q_auto into a Cloudinary URL exactly once.
+ * Safe to call multiple times — idempotent.
+ */
+function optimizeCloudinaryUrl(url: string): string {
+  if (!url.includes('/upload/')) return url;
+  const [before, after] = url.split('/upload/');
+  // Already has transformation prefix — return as-is
+  if (/^[a-z_,]+\//.test(after)) return url;
+  return `${before}/upload/f_auto,q_auto/${after}`;
 }
 
 export function getBannerUrl(imageUrl: string | null | undefined): string {
@@ -53,10 +64,15 @@ export function getProductImageUrl(imageUrl: string | null | undefined): string 
   return getImageUrl(imageUrl);
 }
 
+/**
+ * Returns true when the <Image> component should bypass Next.js optimizer.
+ * Cloudinary URLs are already globally distributed — no double-optimization needed.
+ */
 export function shouldUseUnoptimizedImage(src?: string | null): boolean {
   if (!src) return false;
   const lower = src.toLowerCase();
   if (lower.startsWith('data:') || lower.startsWith('blob:')) return true;
   if (lower.startsWith('http://localhost') || lower.startsWith('http://127.0.0.1')) return true;
+  if (lower.includes('res.cloudinary.com')) return true;
   return false;
 }

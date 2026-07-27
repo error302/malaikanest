@@ -22,7 +22,7 @@ export function Logo({ variant = 'full', className = '', onLight = false, logoUr
   const [imgError, setImgError] = useState(false);
 
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+    <span className={`inline-flex items-center gap-2 sm:gap-2.5 min-w-0 ${className}`}>
       {(!imgError) ? (
         <Image
           src={src}
@@ -48,15 +48,15 @@ export function Logo({ variant = 'full', className = '', onLight = false, logoUr
       )}
 
       {variant === 'full' && (
-        <span className="flex flex-col leading-tight">
+        <span className="flex flex-col leading-tight min-w-0">
           <span
-            className="font-serif text-[1.15rem] font-semibold tracking-tight"
+            className="font-serif text-[1rem] sm:text-[1.15rem] font-semibold tracking-tight truncate"
             style={{ color: text, fontFamily: 'var(--font-cormorant)' }}
           >
             {name}
           </span>
           <span
-            className="text-[9px] uppercase tracking-[0.18em] font-medium"
+            className="hidden sm:block text-[9px] uppercase tracking-[0.18em] font-medium"
             style={{ color: 'var(--brand-brown-light)' }}
           >
             {sub}

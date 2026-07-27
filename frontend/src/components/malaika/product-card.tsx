@@ -7,6 +7,7 @@ import { Heart, ShoppingBag, Star, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
+import { shouldUseUnoptimizedImage } from '@/lib/media';
 
 export interface Product {
   id: number;
@@ -89,6 +90,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             priority={index < 4}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={() => setImageErrored(true)}
+            unoptimized={shouldUseUnoptimizedImage(product.image)}
             className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.04]"
           />
         ) : (
@@ -239,16 +241,20 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
 
         {/* Add action — understated, not a giant CTA bar */}
         <div className="mt-3">
-          {/* Mobile: text link with + icon */}
+          {/* Mobile: rounded pill button with icon */}
           <button
             type="button"
             onClick={handleAdd}
             disabled={!inStock}
-            className="sm:hidden inline-flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.1em] transition-colors disabled:opacity-40"
-            style={{ color: 'var(--brand-brown)' }}
+            className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 active:scale-95 disabled:opacity-40"
+            style={{
+              background: 'var(--brand-warm)',
+              color: 'var(--brand-brown-dark)',
+              border: '1px solid var(--brand-border)',
+            }}
             aria-label={`${t('product.addToCart')} ${product.name}`}
           >
-            <Plus size={14} strokeWidth={2} />
+            <Plus size={13} strokeWidth={2.2} />
             {inStock
               ? (product.variantCount ?? 0) > 1
                 ? t('product.viewDetails')

@@ -75,7 +75,7 @@ const nextConfig: NextConfig = {
       {
         source: '/',
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=60, stale-while-revalidate=600' },
+          { key: 'Cache-Control', value: 'no-cache, must-revalidate' },
         ],
       },
       {
@@ -93,12 +93,17 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2592000, // 30 days for product images
+    deviceSizes: [360, 414, 640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'malaikanest.com' },
       { protocol: 'https', hostname: 'www.malaikanest.com' },
       { protocol: 'https', hostname: 'api.malaikanest.com' },
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'http', hostname: '127.0.0.1' },
     ],
   },
 };

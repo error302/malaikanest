@@ -14,7 +14,7 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
     <button
       type="button"
       onClick={toggle}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${className}`}
+      className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all ${className}`}
       style={{
         background: lang === 'sw' ? 'var(--brand-gold)' : 'var(--brand-warm)',
         color: lang === 'sw' ? '#FFFFFF' : 'var(--brand-brown)',
@@ -22,7 +22,7 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
       aria-label={`Switch to ${lang === 'en' ? 'Swahili' : 'English'}`}
       title={lang === 'en' ? 'Badilisha kuwa Kiswahili' : 'Switch to English'}
     >
-      <Languages size={13} />
+      <Languages size={12} />
       <span>{lang === 'en' ? 'EN' : 'SW'}</span>
     </button>
   );

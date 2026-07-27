@@ -33,7 +33,13 @@ import { LanguageToggle } from './language-toggle';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/authContext';
 import { showToast } from '@/lib/toast';
+import { useCategories } from '@/lib/categoriesContext';
+import Image from 'next/image';
 import type { Branding } from '@/lib/settings';
+
+const FALLBACK_COLORS = [
+  '#FCE7E1', '#FEF3DC', '#E1EEF8', '#EFE3F8', '#E1F4E8', '#FCE1EE'
+];
 
 const NAV_LINKS = [
   { nameKey: 'nav.home', href: '/' },
@@ -55,21 +61,13 @@ const SHOP_BY_AGE = [
   { label: '9-12 Years', slug: 'kids' },
 ];
 
-const SHOP_CATEGORIES = [
-  { nameKey: 'cat.clothing', slug: 'clothing', descKey: 'cat.clothingDesc', Icon: Shirt, color: '#FCE7E1' },
-  { nameKey: 'cat.feeding', slug: 'baby-essentials', descKey: 'cat.feedingDesc', Icon: Package, color: '#FEF3DC' },
-  { nameKey: 'cat.nursery', slug: 'nursery', descKey: 'cat.nurseryDesc', Icon: Home, color: '#E1EEF8' },
-  { nameKey: 'cat.toys', slug: 'toys', descKey: 'cat.toysDesc', Icon: Gamepad2, color: '#EFE3F8' },
-  { nameKey: 'cat.travel', slug: 'travel', descKey: 'cat.travelDesc', Icon: Car, color: '#E1F4E8' },
-  { nameKey: 'cat.gifts', slug: 'gifts', descKey: 'cat.giftsDesc', Icon: Gift, color: '#FCE1EE' },
-];
-
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
 
 export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCount?: number; wishlistCount?: number; branding?: Branding }) {
   const router = useRouter();
   const { t } = useI18n();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { categories } = useCategories();
   const [shopOpen, setShopOpen] = useState(false);
   const [ageOpen, setAgeOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -153,14 +151,14 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
         role="banner"
       >
         <nav
-          className="container-shell flex items-center h-[64px] sm:h-[72px] gap-2 sm:gap-3 lg:gap-5"
+          className="container-shell flex items-center h-[64px] sm:h-[72px] gap-1.5 sm:gap-3 lg:gap-5 overflow-hidden"
           aria-label="Main navigation"
         >
           {/* Mobile hamburger */}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden w-11 h-11 min-w-11 min-h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+            className="lg:hidden w-10 h-10 min-w-10 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)] flex-shrink-0"
             style={{ color: 'var(--brand-brown)' }}
             aria-label="Open menu"
           >
@@ -170,7 +168,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           {/* Logo */}
           <Link
             href="/"
-            className="flex-shrink-0"
+            className="flex-shrink min-w-0"
             aria-label="Malaika Nest home"
           >
             <Logo logoUrl={branding?.logo_url} storeName={branding?.store_name} tagline={branding?.tagline} />
@@ -233,7 +231,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           </div>
 
           {/* Desktop search */}
-          <div className="hidden md:flex flex-1 min-w-0 max-w-[220px] lg:max-w-[280px]">
+          <div className="hidden lg:flex flex-1 min-w-0 max-w-[220px] lg:max-w-[280px]">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -261,24 +259,13 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
             </form>
           </div>
 
-          {/* Right icons */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
+          <div className="flex items-center gap-0.5 sm:gap-1.5 flex-shrink-0 ml-auto">
             {/* Language toggle */}
-            <LanguageToggle className="hidden sm:inline-flex" />
-
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="md:hidden w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
-              style={{ color: 'var(--brand-brown)' }}
-              aria-label="Search"
-            >
-              <Search size={20} strokeWidth={1.75} />
-            </button>
+            <LanguageToggle className="inline-flex mr-0.5 sm:mr-2" />
 
             <Link
               href="/wishlist"
-              className="relative hidden sm:flex w-11 h-11 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+              className="relative flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
               aria-label={`Wishlist${wishlistCount > 0 ? `, ${wishlistCount} items` : ''}`}
             >
@@ -294,7 +281,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
             </Link>
 
             {isAuthenticated ? (
-              <div ref={accountMenuRef} className="relative hidden md:block">
+              <div ref={accountMenuRef} className="relative hidden lg:block">
                 <button
                   type="button"
                   onClick={() => setAccountMenuOpen((v) => !v)}
@@ -399,7 +386,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
             ) : (
               <Link
                 href="/login"
-                className="hidden md:flex items-center gap-1.5 h-10 px-4 rounded-full text-sm font-medium transition-all hover:shadow-warm-md border"
+                className="hidden lg:flex items-center gap-1.5 h-10 px-4 rounded-full text-sm font-medium transition-all hover:shadow-warm-md border"
                 style={{
                   borderColor: 'var(--brand-border)',
                   color: 'var(--brand-brown)',
@@ -413,7 +400,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
 
             <Link
               href="/cart"
-              className="relative inline-flex items-center gap-2 h-10 sm:h-11 px-3 sm:px-4 rounded-full transition-all duration-300 hover:shadow-warm-md"
+              className="relative hidden lg:inline-flex items-center gap-1.5 h-9 sm:h-11 px-2.5 sm:px-4 rounded-full transition-all duration-300 hover:shadow-warm-md"
               style={{
                 background: 'var(--brand-gold)',
                 color: '#FFFFFF',
@@ -452,9 +439,9 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
         >
           <div className="container-shell py-8">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {SHOP_CATEGORIES.map((cat) => (
+              {categories.slice(0, 6).map((cat, idx) => (
                 <Link
-                  key={cat.nameKey}
+                  key={cat.id}
                   href={cat.slug ? `/categories?category=${cat.slug}` : '/categories'}
                   onClick={() => setShopOpen(false)}
                   className="group flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden hover:shadow-warm-md"
@@ -464,28 +451,40 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   }}
                 >
                   <div
-                    className="h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
-                    style={{ background: cat.color }}
+                    className="h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 relative"
+                    style={{ background: cat.image ? undefined : FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
                   >
-                    <cat.Icon
-                      size={36}
-                      strokeWidth={1.5}
-                      style={{ color: 'var(--brand-gold)' }}
-                    />
+                    {cat.image ? (
+                      <Image
+                        src={cat.image}
+                        alt={cat.name}
+                        fill
+                        sizes="(max-width: 1024px) 33vw, 16vw"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <Package
+                        size={36}
+                        strokeWidth={1.5}
+                        style={{ color: 'var(--brand-gold)' }}
+                      />
+                    )}
                   </div>
                   <div className="p-3">
                     <div
-                      className="text-[13px] font-semibold group-hover:text-[var(--brand-gold)] transition-colors"
+                      className="text-[13px] font-semibold group-hover:text-[var(--brand-gold)] transition-colors truncate"
                       style={{ color: 'var(--brand-text)' }}
                     >
-                      {t(cat.nameKey)}
+                      {cat.name}
                     </div>
-                    <div
-                      className="text-[11px] mt-0.5 leading-snug"
-                      style={{ color: 'var(--brand-text-muted)' }}
-                    >
-                      {t(cat.descKey)}
-                    </div>
+                    {cat.product_count !== undefined && (
+                      <div
+                        className="text-[11px] mt-0.5 leading-snug"
+                        style={{ color: 'var(--brand-text-muted)' }}
+                      >
+                        {cat.product_count} items
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}
@@ -763,24 +762,42 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   {t('nav.categories')}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {SHOP_CATEGORIES.map((cat) => (
+                  {categories.slice(0, 6).map((cat, idx) => (
                     <Link
-                      key={cat.nameKey}
+                      key={cat.id}
                       href={cat.slug ? `/categories?category=${cat.slug}` : '/categories'}
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2.5 p-3 rounded-xl transition-colors"
-                      style={{ background: 'var(--brand-warm)' }}
+                      className="flex items-center gap-2.5 p-3 rounded-xl transition-colors border"
+                      style={{ 
+                        background: '#FFFFFF',
+                        borderColor: 'var(--brand-border)'
+                      }}
                     >
-                      <cat.Icon
-                        size={22}
-                        strokeWidth={1.5}
-                        style={{ color: 'var(--brand-gold)' }}
-                      />
+                      <div 
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden"
+                        style={{ background: cat.image ? undefined : FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
+                      >
+                        {cat.image ? (
+                          <Image
+                            src={cat.image}
+                            alt={cat.name}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <Package
+                            size={20}
+                            strokeWidth={1.5}
+                            style={{ color: 'var(--brand-gold)' }}
+                          />
+                        )}
+                      </div>
                       <span
-                        className="text-[13px] font-medium"
+                        className="text-[13px] font-medium truncate"
                         style={{ color: 'var(--brand-text)' }}
                       >
-                        {t(cat.nameKey)}
+                        {cat.name}
                       </span>
                     </Link>
                   ))}

@@ -8,30 +8,21 @@ import re
 def validate_password_strength(password):
     """Validate password meets strength requirements:
     - At least 8 characters
-    - At least 1 uppercase letter
-    - At least 1 lowercase letter
-    - At least 1 number
-    - At least 1 special character
+    - Must contain at least one letter and one digit
     """
     errors = []
     
     if len(password) < 8:
         errors.append("Password must be at least 8 characters long.")
     
-    if not re.search(r'[A-Z]', password):
-        errors.append("Password must contain at least 1 uppercase letter.")
-    
-    if not re.search(r'[a-z]', password):
-        errors.append("Password must contain at least 1 lowercase letter.")
+    if not re.search(r'[a-zA-Z]', password):
+        errors.append("Password must contain at least 1 letter.")
     
     if not re.search(r'\d', password):
         errors.append("Password must contain at least 1 number.")
     
-    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-        errors.append("Password must contain at least 1 special character (!@#$%^&* etc.).")
-    
     if errors:
-        raise serializers.ValidationError({"password": errors})
+        raise serializers.ValidationError(errors)
     
     return password
 
@@ -100,22 +91,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate_phone_number(self, value):
-        cleaned = re.sub(r"[^\d+]", "", str(value or ""))
-        # Accept: 07XXXXXXXX, 7XXXXXXXX, 2547XXXXXXXX, +2547XXXXXXXX
-        if cleaned.startswith("0") and len(cleaned) == 10:
-            cleaned = "+254" + cleaned[1:]
-        elif cleaned.startswith("254") and len(cleaned) == 12:
-            cleaned = "+" + cleaned
-        elif cleaned.startswith("7") and len(cleaned) == 9:
-            cleaned = "+254" + cleaned
-
-        if not re.match(r"^\+2547\d{8}$", cleaned):
-            raise serializers.ValidationError("Phone number must be in Kenyan format: +2547XXXXXXXX.")
+        from .models import normalize_kenyan_phone
+        cleaned = normalize_kenyan_phone(value)
+        if User.objects.filter(phone_number=cleaned).exists():
+            raise serializers.ValidationError("An account with this phone number already exists.")
+        if not re.match(r"^\+254[71]\d{8}$", cleaned):
+            raise serializers.ValidationError("Phone number must be a valid Kenyan mobile number (e.g. 0712345678 or 0112345678).")
         return cleaned
 
     def validate_password(self, value):
         validate_password_strength(value)
         return value
+
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
