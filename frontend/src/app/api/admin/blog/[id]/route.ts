@@ -7,28 +7,35 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await req.json();
 
-    // If publishing for the first time, set publishedAt
-    const current = await db.blogPost.findUnique({ where: { id } });
-    const publishingNow = body.isPublished === true && !current?.isPublished;
+    // Find post by ID or slug
+    const current = await db.blogPost.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
+    });
+
+    if (!current) {
+      return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
+    }
+
+    const publishingNow = body.isPublished === true && !current.isPublished;
 
     const updated = await db.blogPost.update({
-      where: { id },
+      where: { id: current.id },
       data: {
         ...(body.title !== undefined && { title: body.title }),
         ...(body.excerpt !== undefined && { excerpt: body.excerpt }),
         ...(body.content !== undefined && { content: body.content }),
         ...(body.coverImage !== undefined && { coverImage: body.coverImage || null }),
         ...(body.category !== undefined && { category: body.category }),
-        ...(body.tags !== undefined && { tags: body.tags }),
+        ...(body.tags !== undefined && { tags: typeof body.tags === 'string' ? body.tags : Array.isArray(body.tags) ? body.tags.join(',') : '' }),
         ...(body.author !== undefined && { author: body.author }),
-        ...(body.isPublished !== undefined && { isPublished: body.isPublished }),
-        ...(body.isFeatured !== undefined && { isFeatured: body.isFeatured }),
+        ...(body.isPublished !== undefined && { isPublished: Boolean(body.isPublished) }),
+        ...(body.isFeatured !== undefined && { isFeatured: Boolean(body.isFeatured) }),
         ...(publishingNow && { publishedAt: new Date() }),
       },
     });
     return NextResponse.json({ post: updated });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Failed to update post' }, { status: 500 });
   }
 }
 
@@ -36,9 +43,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    await db.blogPost.delete({ where: { id } });
+    const current = await db.blogPost.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
+    });
+    if (current) {
+      await db.blogPost.delete({ where: { id: current.id } });
+    }
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Failed to delete post' }, { status: 500 });
   }
 }

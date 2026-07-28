@@ -14,31 +14,45 @@ export default function EditBlogPostPage() {
   const [form, setForm] = useState<any>(null);
 
   useEffect(() => {
+    let cancelled = false;
     fetch('/api/admin/blog')
       .then((r) => r.json())
       .then((data) => {
-        const found = (data.posts || []).find((p: any) => p.id === params.id);
-        if (found) setForm(found);
-        else { showToast('Post not found', 'error'); router.push('/admin/blog'); }
+        if (cancelled) return;
+        const posts = data.posts || data.data || [];
+        const found = posts.find((p: any) => p.id === params.id || p.slug === params.id);
+        if (found) {
+          setForm(found);
+        } else {
+          showToast('Blog post not found', 'error');
+          router.push('/admin/blog');
+        }
       })
-      .catch(() => router.push('/admin/blog'))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) router.push('/admin/blog');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [params.id, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/blog/${params.id}`, {
+      const targetId = form?.id || params.id;
+      const res = await fetch(`/api/admin/blog/${targetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error('Failed');
-      showToast('Post updated', 'success');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save blog post');
+      showToast('Post updated successfully', 'success');
       router.push('/admin/blog');
-    } catch {
-      showToast('Failed to save', 'error');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save post', 'error');
     } finally {
       setSaving(false);
     }

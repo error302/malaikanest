@@ -13,17 +13,22 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={toggle}
-      className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all ${className}`}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggle();
+      }}
+      className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-semibold flex-shrink-0 transition-all cursor-pointer select-none ${className}`}
       style={{
         background: lang === 'sw' ? 'var(--brand-gold)' : 'var(--brand-warm)',
         color: lang === 'sw' ? '#FFFFFF' : 'var(--brand-brown)',
+        border: '1px solid var(--brand-border)',
       }}
       aria-label={`Switch to ${lang === 'en' ? 'Swahili' : 'English'}`}
       title={lang === 'en' ? 'Badilisha kuwa Kiswahili' : 'Switch to English'}
     >
-      <Languages size={12} />
-      <span>{lang === 'en' ? 'EN' : 'SW'}</span>
+      <Languages size={13} className="flex-shrink-0" />
+      <span className="leading-none">{lang === 'en' ? 'EN' : 'SW'}</span>
     </button>
   );
 }

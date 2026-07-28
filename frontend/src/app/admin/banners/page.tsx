@@ -7,7 +7,7 @@ import { getImageUrl } from '@/lib/media';
 import { showToast } from '@/lib/toast';
 
 interface Banner {
-  id: number;
+  id: string | number;
   title?: string;
   subtitle?: string;
   image?: string | null;
@@ -63,7 +63,7 @@ export default function AdminBannersPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string | number) => {
     if (!confirm('Delete this banner?')) return;
     try {
       await api.delete(`/api/v1/products/banners/${id}/`);

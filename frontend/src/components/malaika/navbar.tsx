@@ -231,7 +231,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           </div>
 
           {/* Desktop search */}
-          <div className="hidden lg:flex flex-1 min-w-0 max-w-[220px] lg:max-w-[280px]">
+          <div className="hidden xl:flex items-center flex-shrink-0 w-[160px] xl:w-[220px] 2xl:w-[260px]">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -243,8 +243,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               role="search"
             >
               <Search
-                size={16}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                 style={{ color: 'var(--brand-text-muted)' }}
                 aria-hidden="true"
               />
@@ -253,15 +253,26 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('nav.search') + '…'}
-                className="input-warm w-full"
+                className="input-warm w-full text-xs py-2 pl-9 pr-3"
                 aria-label={t('nav.search')}
               />
             </form>
           </div>
 
-          <div className="flex items-center gap-0.5 sm:gap-1.5 flex-shrink-0 ml-auto">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto">
+            {/* Search trigger icon for medium screens / tablet */}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="xl:hidden flex w-9 h-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)] flex-shrink-0"
+              style={{ color: 'var(--brand-brown)' }}
+              aria-label="Search"
+            >
+              <Search size={18} strokeWidth={1.75} />
+            </button>
+
             {/* Language toggle */}
-            <LanguageToggle className="inline-flex mr-0.5 sm:mr-2" />
+            <LanguageToggle className="flex-shrink-0" />
 
             <Link
               href="/wishlist"
@@ -297,7 +308,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   >
                     {userInitial}
                   </span>
-                  <span className="hidden lg:inline text-[13px] font-medium max-w-[140px] truncate">
+                  <span className="hidden lg:inline text-[13px] font-medium max-w-[100px] xl:max-w-[150px] truncate">
                     {userDisplayName}
                   </span>
                   <ChevronDown

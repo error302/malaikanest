@@ -40,12 +40,18 @@ export default function EditProductPage() {
         if (cancelled) return;
 
         const product = productRes.data?.data ?? productRes.data;
+        const getCategoryId = (cat: any) => {
+          if (!cat) return '';
+          if (typeof cat === 'object') return cat.id || '';
+          return String(cat);
+        };
+
         setForm({
           ...product,
           price: String(product.price ?? ''),
           compare_price: product.compare_price ? String(product.compare_price) : '',
           stock: String(product.stock ?? 0),
-          category: product.category ? String(product.category) : '',
+          category: getCategoryId(product.category),
           brand: product.brand ? String(product.brand) : '',
           image_url: product.image_full_url || product.image_url || '',
         });
