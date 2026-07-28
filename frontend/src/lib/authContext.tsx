@@ -5,11 +5,12 @@ import api from '@/lib/api';
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/authToken';
 
 type User = {
-  id: number;
+  id: number | string;
   email: string;
   name: string;
   role?: string;
   is_staff?: boolean;
+  is_superuser?: boolean;
 };
 
 type RegisterData = {
@@ -75,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: profile.email,
           name: fullName || profile.email,
           role: profile.role,
-          is_staff: profile.is_staff,
+          is_staff: Boolean(profile.is_staff || profile.is_superuser),
+          is_superuser: Boolean(profile.is_superuser),
         };
         setUser(userData);
       }
@@ -166,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       isAdmin: !!(
         user &&
-        (String(user.role || '').toUpperCase().trim() === 'ADMIN' || user.is_staff)
+        (String(user.role || '').toUpperCase().trim() === 'ADMIN' || user.is_staff || user.is_superuser)
       ),
       isLoading,
       login,

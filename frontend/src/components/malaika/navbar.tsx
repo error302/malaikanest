@@ -265,7 +265,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
 
             <Link
               href="/wishlist"
-              className="relative flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+              className="relative hidden lg:flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
               aria-label={`Wishlist${wishlistCount > 0 ? `, ${wishlistCount} items` : ''}`}
             >

@@ -222,28 +222,6 @@ export function Hero({ banners = [], content }: HeroProps) {
         </>
       )}
 
-      {/* Dots */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => go(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              aria-current={i === current}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center group"
-            >
-              <span
-                className="h-2.5 w-2.5 rounded-full transition-all duration-300 group-hover:scale-125"
-                style={{
-                  background: i === current ? 'var(--brand-gold)' : 'rgba(255,255,255,0.4)',
-                }}
-              />
-            </button>
-          ))}
-        </div>
-      )}
     </section>
   );
 }

@@ -2,7 +2,8 @@ FROM node:22-alpine
 
 ENV NODE_ENV=production \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
