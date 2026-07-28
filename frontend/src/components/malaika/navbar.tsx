@@ -168,14 +168,14 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           {/* Logo */}
           <Link
             href="/"
-            className="flex-shrink min-w-0"
+            className="flex-shrink-0 mr-2 lg:mr-4 select-none"
             aria-label="Malaika Nest home"
           >
             <Logo logoUrl={branding?.logo_url} storeName={branding?.store_name} tagline={branding?.tagline} />
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-4 xl:gap-6 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-2.5 xl:gap-5 flex-shrink-0">
             {NAV_LINKS.map((link) =>
               link.hasDropdown ? (
                 <div
@@ -185,7 +185,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   className="relative"
                 >
                   <button
-                    className="inline-flex items-center gap-1 text-[13px] font-medium whitespace-nowrap transition-colors"
+                    className="inline-flex items-center gap-1 text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors"
                     style={{ color: 'var(--brand-brown)' }}
                     aria-expanded={shopOpen}
                     aria-haspopup="true"
@@ -201,7 +201,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 <Link
                   key={link.nameKey}
                   href={link.href}
-                  className="text-[13px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
+                  className="text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
                   style={{ color: 'var(--brand-brown)' }}
                 >
                   {t(link.nameKey)}
@@ -216,7 +216,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               className="relative"
             >
               <button
-                className="inline-flex items-center gap-1 text-[13px] font-medium whitespace-nowrap transition-colors"
+                className="inline-flex items-center gap-1 text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors"
                 style={{ color: 'var(--brand-brown)' }}
                 aria-expanded={ageOpen}
                 aria-haspopup="true"
