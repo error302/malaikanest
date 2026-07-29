@@ -29,7 +29,7 @@ export function StoreShell({ branding, children }: StoreShellProps) {
   const { count: wishlistCount } = useWishlist();
   return (
     <CategoriesProvider>
-      <div className="min-h-screen flex flex-col bg-grain pb-20 lg:pb-0">
+      <div className="min-h-screen flex flex-col bg-grain pb-[calc(4rem_+_env(safe-area-inset-bottom))] lg:pb-0">
         <AnnouncementBar messages={branding.announcement_messages} />
         <Navbar branding={branding} cartCount={items.length} wishlistCount={wishlistCount} />
         {children}

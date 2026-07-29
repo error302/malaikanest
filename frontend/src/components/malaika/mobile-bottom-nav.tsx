@@ -25,7 +25,7 @@ export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCoun
         background: 'rgba(255, 255, 255, 0.97)',
         backdropFilter: 'blur(12px)',
         borderTop: '1px solid var(--brand-border)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
       aria-label="Mobile navigation"
     >
