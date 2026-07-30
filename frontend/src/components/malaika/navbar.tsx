@@ -13,19 +13,13 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Shirt,
   Package,
-  Home,
-  Gamepad2,
-  Car,
   Gift,
   Sparkles,
   Flame,
   Baby,
-  ChevronUp,
   Settings,
   LogOut,
-  UserCheck,
   Heart as HeartIcon,
 } from 'lucide-react';
 import { Logo } from './logo';
@@ -264,7 +258,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="xl:hidden flex w-9 h-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)] flex-shrink-0"
+              className="hidden lg:flex xl:hidden w-9 h-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)] flex-shrink-0"
               style={{ color: 'var(--brand-brown)' }}
               aria-label="Search"
             >
@@ -351,7 +345,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                         className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--brand-warm)]"
                         style={{ color: 'var(--brand-text)' }}
                       >
-                        <Package2 size={16} style={{ color: 'var(--brand-gold)' }} />
+                        <Package size={16} style={{ color: 'var(--brand-gold)' }} />
                         My Orders
                       </Link>
                       <Link
@@ -617,7 +611,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
       {searchOpen && (
         <div
           className="fixed inset-0 z-[200] flex items-start justify-center pt-20 sm:pt-24 px-4 animate-fade-in-up"
-          style={{ background: 'rgba(44, 24, 16, 0.5)', backdropFilter: 'blur(6px)' }}
+          style={{ background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(6px)' }}
           onClick={() => setSearchOpen(false)}
         >
           <div

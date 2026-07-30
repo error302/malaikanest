@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Facebook, Instagram, MessageCircle, Phone, CreditCard, Mail, MapPin, Heart } from 'lucide-react';
+import { Facebook, Instagram, MessageCircle, Phone, CreditCard, Mail, MapPin } from 'lucide-react';
 import { Logo } from './logo';
 import { useI18n } from '@/lib/i18n';
 import type { Branding } from '@/lib/settings';

@@ -3,8 +3,7 @@
 import { Suspense } from 'react';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { ProductCard, type Product } from '@/components/malaika/product-card';
 import api from '@/lib/api';
@@ -56,6 +55,7 @@ export default function CategoriesPage() {
 
 function CategoriesBrowser() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -68,6 +68,22 @@ function CategoriesBrowser() {
   const search = searchParams.get('search') || '';
   const age = searchParams.get('age') || '';
   const categorySlug = searchParams.get('category') || '';
+  const activeAge = ageGroup || age;
+  const activeFilters = Boolean(activeAge || gender || categorySlug || search);
+  const pageTitle = search
+    ? `Results for "${search}"`
+    : categorySlug
+      ? `${categorySlug.replace(/-/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())} essentials`
+      : activeAge
+        ? `${AGE_GROUPS.find((group) => group.value === activeAge)?.label || 'Baby'} picks`
+        : 'All Products';
+
+  const clearFilters = () => {
+    setAgeGroup('');
+    setGender('');
+    setPage(1);
+    router.replace('/categories');
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +93,7 @@ function CategoriesBrowser() {
       page_size: '24',
     };
     if (search) params.search = search;
-    if (age || ageGroup) params.age_group = ageGroup || age;
+    if (activeAge) params.age_group = activeAge;
     if (gender) params.gender = gender;
     if (categorySlug) params.category = categorySlug;
 
@@ -88,7 +104,7 @@ function CategoriesBrowser() {
         const data = res.data;
         const results: any[] = data?.results ?? data?.data?.results ?? [];
         const normalized = results.map(normalizeProduct);
-        setProducts(normalized);
+        setProducts((current) => (page === 1 ? normalized : [...current, ...normalized]));
         setHasMore(Boolean(data?.next));
       } catch {
         if (!cancelled) setProducts([]);
@@ -100,17 +116,29 @@ function CategoriesBrowser() {
     setLoading(true);
     load();
     return () => { cancelled = true; };
-  }, [search, age, ageGroup, gender, categorySlug, sort, page]);
+  }, [search, activeAge, gender, categorySlug, sort, page]);
 
   return (
     <div className="container-shell py-6 sm:py-10">
       <div className="mb-6">
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-          {search ? `Results for "${search}"` : 'All Products'}
+          {pageTitle}
         </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--brand-text-muted)' }}>
-          {loading ? 'Loading…' : `${products.length} item${products.length === 1 ? '' : 's'} found`}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <p className="text-sm" style={{ color: 'var(--brand-text-muted)' }}>
+            {loading ? 'Loading…' : `${products.length} item${products.length === 1 ? '' : 's'} found`}
+          </p>
+          {activeFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex min-h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium"
+              style={{ background: 'var(--brand-warm)', color: 'var(--brand-brown)' }}
+            >
+              Clear filters <X size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-[240px_1fr] gap-6">
@@ -126,12 +154,12 @@ function CategoriesBrowser() {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setAgeGroup(opt.value)}
+                      onClick={() => { setAgeGroup(opt.value); setPage(1); }}
                       className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg transition-colors"
                       style={{
-                        background: ageGroup === opt.value ? 'var(--brand-warm)' : 'transparent',
-                        color: ageGroup === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)',
-                        fontWeight: ageGroup === opt.value ? 600 : 400,
+                        background: activeAge === opt.value ? 'var(--brand-warm)' : 'transparent',
+                        color: activeAge === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)',
+                        fontWeight: activeAge === opt.value ? 600 : 400,
                       }}
                     >
                       {opt.label}
@@ -146,7 +174,7 @@ function CategoriesBrowser() {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setGender(opt.value)}
+                      onClick={() => { setGender(opt.value); setPage(1); }}
                       className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg transition-colors"
                       style={{
                         background: gender === opt.value ? 'var(--brand-warm)' : 'transparent',
@@ -176,7 +204,7 @@ function CategoriesBrowser() {
             </button>
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              onChange={(e) => { setSort(e.target.value); setPage(1); }}
               className="ml-auto text-sm rounded-full px-4 py-2 border"
               style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
               aria-label="Sort products"
@@ -242,7 +270,7 @@ function CategoriesBrowser() {
                 <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>Age Group</label>
                 <div className="space-y-1">
                   {AGE_GROUPS.map((opt) => (
-                    <button key={opt.value} type="button" onClick={() => setAgeGroup(opt.value)} className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg" style={{ background: ageGroup === opt.value ? 'var(--brand-warm)' : 'transparent', color: ageGroup === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
+                    <button key={opt.value} type="button" onClick={() => { setAgeGroup(opt.value); setPage(1); }} className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg" style={{ background: activeAge === opt.value ? 'var(--brand-warm)' : 'transparent', color: activeAge === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
                       {opt.label}
                     </button>
                   ))}
@@ -252,7 +280,7 @@ function CategoriesBrowser() {
                 <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'var(--brand-text-muted)' }}>Gender</label>
                 <div className="space-y-1">
                   {[{ label: 'All', value: '' }, { label: 'Boys', value: 'boy' }, { label: 'Girls', value: 'girl' }, { label: 'Unisex', value: 'unisex' }].map((opt) => (
-                    <button key={opt.value} type="button" onClick={() => setGender(opt.value)} className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg" style={{ background: gender === opt.value ? 'var(--brand-warm)' : 'transparent', color: gender === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
+                    <button key={opt.value} type="button" onClick={() => { setGender(opt.value); setPage(1); }} className="block w-full text-left text-sm px-3 py-2 min-h-[44px] flex items-center rounded-lg" style={{ background: gender === opt.value ? 'var(--brand-warm)' : 'transparent', color: gender === opt.value ? 'var(--brand-gold)' : 'var(--brand-brown)' }}>
                       {opt.label}
                     </button>
                   ))}

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Banner } from '@/lib/products';
 import { getBannerUrl } from '@/lib/media';
@@ -21,7 +22,6 @@ interface ResolvedSlide {
 
 interface HeroProps {
   banners?: Banner[];
-  content?: Record<string, Record<string, string>>;
 }
 
 const FALLBACK_SLIDES: ResolvedSlide[] = [
@@ -75,7 +75,7 @@ function bannersToSlides(banners: Banner[]): ResolvedSlide[] {
   }));
 }
 
-export function Hero({ banners = [], content }: HeroProps) {
+export function Hero({ banners = [] }: HeroProps) {
   const { t } = useI18n();
   const slides: ResolvedSlide[] =
     banners.length > 0
@@ -184,7 +184,7 @@ export function Hero({ banners = [], content }: HeroProps) {
             >
               {sub}
             </p>
-            <a
+            <Link
               href={s.ctaHref}
               className="inline-flex items-center gap-2 rounded-full font-medium text-[13px] sm:text-sm uppercase tracking-[0.12em] px-7 py-3.5 transition-all duration-300 hover:bg-white hover:text-[var(--brand-brown)] hover:border-white"
               style={{
@@ -195,7 +195,7 @@ export function Hero({ banners = [], content }: HeroProps) {
             >
               {cta}
               <ChevronRight size={15} strokeWidth={2} />
-            </a>
+            </Link>
           </div>
         </div>
       </div>

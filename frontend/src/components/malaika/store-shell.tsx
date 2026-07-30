@@ -6,6 +6,7 @@ import { useWishlist } from '@/lib/wishlistContext';
 import { AnnouncementBar } from '@/components/malaika/announcement-bar';
 import { Navbar } from '@/components/malaika/navbar';
 import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
+import { ScrollToTop } from '@/components/malaika/scroll-to-top';
 import { CategoriesProvider } from '@/lib/categoriesContext';
 import type { Branding } from '@/lib/settings';
 
@@ -34,6 +35,7 @@ export function StoreShell({ branding, children }: StoreShellProps) {
         <Navbar branding={branding} cartCount={items.length} wishlistCount={wishlistCount} />
         {children}
         <MobileBottomNav cartCount={items.length} wishlistCount={wishlistCount} />
+        <ScrollToTop />
       </div>
     </CategoriesProvider>
   );

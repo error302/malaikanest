@@ -8,12 +8,12 @@ import { Home, ShoppingBag, Search, ShoppingCart, User } from 'lucide-react';
 const NAV_ITEMS = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Shop', href: '/categories', icon: ShoppingBag },
-  { name: 'Search', href: '/search', icon: Search },
+  { name: 'Search', href: '/categories', icon: Search },
   { name: 'Cart', href: '/cart', icon: ShoppingCart, showBadge: true },
   { name: 'Account', href: '/account', icon: User },
 ];
 
-export function MobileBottomNav({ cartCount = 0, wishlistCount = 0 }: { cartCount?: number; wishlistCount?: number }) {
+export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
   const userInitial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();

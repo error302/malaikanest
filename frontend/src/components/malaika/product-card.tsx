@@ -74,6 +74,10 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       className="group relative flex flex-col"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false);
+      }}
     >
       {/* Image — sharp corners, no border, no shadow, portrait aspect */}
       <Link
