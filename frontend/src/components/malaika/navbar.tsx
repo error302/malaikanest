@@ -405,24 +405,19 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
 
             <Link
               href="/cart"
-              className="relative hidden lg:inline-flex items-center gap-1.5 h-9 sm:h-11 px-2.5 sm:px-4 rounded-full transition-all duration-300 hover:shadow-warm-md"
-              style={{
-                background: 'var(--brand-gold)',
-                color: '#FFFFFF',
-              }}
-               aria-label={`${t('nav.cart')}${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+              className="relative hidden lg:flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+              style={{ color: 'var(--brand-brown)' }}
+              aria-label={`${t('nav.cart')}${cartCount > 0 ? `, ${cartCount} items` : ''}`}
             >
-              <ShoppingCart size={16} strokeWidth={2} />
-              <span className="hidden sm:inline text-[13px] font-medium">{t('nav.cart')}</span>
-              <span
-                className="inline-flex min-w-[20px] h-5 items-center justify-center rounded-full text-[10px] font-semibold px-1"
-                style={{
-                  background: '#FFFFFF',
-                  color: 'var(--brand-gold)',
-                }}
-              >
-                {cartCount}
-              </span>
+              <ShoppingCart size={19} strokeWidth={1.75} />
+              {cartCount > 0 && (
+                <span
+                  className="absolute -right-0.5 -top-0.5 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full text-[10px] font-semibold text-white px-1"
+                  style={{ background: 'var(--brand-gold)' }}
+                >
+                  {cartCount}
+                </span>
+              )}
             </Link>
           </div>
         </nav>
