@@ -158,6 +158,7 @@ REST_FRAMEWORK = {
         "payments": "10/minute",
         "login": "5/minute",
         "password_reset": "5/hour",
+        "data_export": "1/day",
         "cart": "60/minute",  # Cart operations
         "order": "20/minute",  # Order operations
     },
@@ -303,6 +304,11 @@ CELERY_BEAT_SCHEDULE = {
     "orders-cancel-stale-pending-hourly": {
         "task": "apps.orders.tasks.cancel_stale_pending_orders",
         "schedule": timedelta(hours=1),
+    },
+    # GDPR data export archive cleanup — deletes expired archives every 6 hours.
+    "data-export-cleanup-every-6-hours": {
+        "task": "apps.core.tasks.clean_expired_data_exports",
+        "schedule": timedelta(hours=6),
     },
     # Lightweight SMTP health check — alerts admins if Brevo SMTP goes down.
     "email-health-check-every-30-min": {

@@ -21,6 +21,7 @@ const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
   '/api/v1/accounts/register/',
   '/api/v1/accounts/admin/login/',
   '/api/v1/accounts/profile/',
+  '/api/v1/orders/cart/merge/',
   '/api/accounts/token/',
   '/api/accounts/token/refresh/',
   '/api/accounts/register/',
@@ -138,6 +139,8 @@ const processQueue = (error: any) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
+    } else {
+      prom.resolve();
     }
   });
   failedQueue = [];
@@ -223,10 +226,7 @@ api.interceptors.response.use(
         data: response.data,
         timestamp: Date.now(),
       });
-      if (responseCache.size > 100) {
-        const oldestKey = responseCache.keys().next().value;
-        if (oldestKey !== undefined) responseCache.delete(oldestKey);
-      }
+      evictCache();
     }
 
     return response;
@@ -323,9 +323,20 @@ export const apiGet = async <T>(
   if (useCache && isCacheableEndpoint(url)) {
     const cacheKey = getCacheKey('GET', url, params);
     responseCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
+    evictCache();
   }
 
   return response.data;
+};
+
+const MAX_CACHE_SIZE = 100;
+
+const evictCache = () => {
+  while (responseCache.size > MAX_CACHE_SIZE) {
+    const oldestKey = responseCache.keys().next().value;
+    if (oldestKey !== undefined) responseCache.delete(oldestKey);
+    else break;
+  }
 };
 
 export const clearCache = (urlPattern?: string) => {

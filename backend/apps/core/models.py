@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 
 
@@ -156,3 +157,63 @@ class EmailLog(BaseModel):
 
     def __str__(self):
         return f"EmailLog({self.email_type} → {self.recipient}, {'✓' if self.success else '✗'})"
+
+
+class DataExportRequest(BaseModel):
+    """
+    GDPR-compliant personal data export request.
+
+    When a user requests their data, a ``DataExportRequest`` is created with
+    status=``pending``. A Celery task generates the archive and updates the
+    record. The archive is available for download for 7 days, then the cleanup
+    task deletes it.
+    """
+
+    STATUS_PENDING = "pending"
+    STATUS_PROCESSING = "processing"
+    STATUS_READY = "ready"
+    STATUS_EXPIRED = "expired"
+    STATUS_FAILED = "failed"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_PROCESSING, "Processing"),
+        (STATUS_READY, "Ready"),
+        (STATUS_EXPIRED, "Expired"),
+        (STATUS_FAILED, "Failed"),
+    ]
+
+    EXPIRY_DAYS = 7
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="data_export_requests",
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True
+    )
+    archive_file = models.FileField(
+        upload_to="data_exports/%Y/%m/",
+        null=True,
+        blank=True,
+        help_text="Generated JSON archive file",
+    )
+    archive_size = models.PositiveIntegerField(
+        default=0, help_text="Archive size in bytes"
+    )
+    error_message = models.TextField(blank=True, default="")
+    expires_at = models.DateTimeField(null=True, blank=True)
+    notification_sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["status", "expires_at"]),
+        ]
+        verbose_name = "Data Export Request"
+        verbose_name_plural = "Data Export Requests"
+
+    def __str__(self):
+        return f"DataExport({self.user.email}, {self.status})"

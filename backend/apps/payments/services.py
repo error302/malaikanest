@@ -142,35 +142,34 @@ def audit_log(
 
 import re
 
+
 def normalize_phone(phone):
     """
-    Normalize a phone number to Kenyan format (254XXXXXXXXX).
-    
-    Valid formats accepted:
-    - +2547XXXXXXXX
-    - 2547XXXXXXXX
-    - 07XXXXXXXX
-    - 7XXXXXXXX
-    
+    Normalize a phone number to Safaricom format (254XXXXXXXXX, no + prefix).
+
+    This format is required by Safaricom's M-Pesa STK push API.
+    For the +254... variant used by model validators, see
+    apps.accounts.models.normalize_kenyan_phone.
+
     Raises:
         ValueError: If phone number is not a valid Kenyan mobile number.
     """
     if not phone:
         return ""
-    
+
     p = str(phone).replace("+254", "254").replace(" ", "").replace("-", "")
-    
+
     if p.startswith("0"):
         p = "254" + p[1:]
     elif not p.startswith("254"):
         p = "254" + p
-    
+
     if not re.match(r'^254[17]\d{8}$', p):
         raise ValueError(
             f"Invalid Kenyan phone number: {phone}. "
-            "Expected format: +2547XXXXXXXX, 07XXXXXXXX, or 7XXXXXXXX (10 digits after country code)."
+            "Expected format: +2547XXXXXXXX, 07XXXXXXXX, or 7XXXXXXXX."
         )
-    
+
     return p
 
 

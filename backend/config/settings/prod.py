@@ -259,4 +259,3 @@ LOGGING["loggers"]["django"]["level"] = "WARNING"
 
 validate_production_env(os.environ)
 
-print("Running in PRODUCTION mode")

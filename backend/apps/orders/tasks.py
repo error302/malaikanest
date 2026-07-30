@@ -280,7 +280,7 @@ def reduce_inventory(self, order_id):
         with transaction.atomic():
             from apps.products.models import Product
 
-            for item in order.items.select_related('product').all():
+            for item in order.items.all():
                 if item.variant_reference:
                     updated = VariantInventory.objects.filter(
                         variant_id=item.variant_reference,
@@ -332,7 +332,7 @@ def restore_inventory(self, order_id):
         with transaction.atomic():
             from apps.products.models import Product
 
-            for item in order.items.select_related('product').all():
+            for item in order.items.all():
                 if item.variant_reference:
                     released = VariantInventory.objects.filter(
                         variant_id=item.variant_reference,

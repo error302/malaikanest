@@ -32,6 +32,7 @@ ABANDONED_CART = "abandoned_cart"
 INVOICE = "invoice"
 CRITICAL_ALERT = "critical_alert"
 HEALTH_CHECK = "health_check"
+DATA_EXPORT = "data_export"
 ORDER_CONFIRMATION_PLAIN = "order_confirmation"  # keeping for backward compat
 
 
@@ -83,6 +84,10 @@ class EmailService:
         HEALTH_CHECK: (
             None,  # plain-text only
             "[Malaika Nest] Email Health Check",
+        ),
+        DATA_EXPORT: (
+            "emails/data_export_ready.html",
+            "Your Data Export Is Ready — Malaika Nest",
         ),
     }
 
@@ -375,3 +380,16 @@ class EmailService:
             f"Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
         return cls.send(CRITICAL_ALERT, admin_emails, subject, text_body=text)
+
+    @classmethod
+    def send_data_export_ready(cls, email: str, first_name: str, download_url: str) -> tuple[bool, str]:
+        """Notify a user that their data export archive is ready to download."""
+        subject = cls.TEMPLATE_MAP[DATA_EXPORT][1]
+        context = {
+            "customer_name": first_name or "Valued Customer",
+            "download_url": download_url,
+        }
+        return cls.send(
+            DATA_EXPORT, [email], subject,
+            cls.TEMPLATE_MAP[DATA_EXPORT][0], context,
+        )

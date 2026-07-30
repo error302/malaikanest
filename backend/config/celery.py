@@ -1,3 +1,4 @@
+import logging
 import os
 from dotenv import load_dotenv
 
@@ -18,6 +19,7 @@ if CELERY_AVAILABLE:
 
     @app.task(bind=True, ignore_result=True)
     def debug_task(self):
-        print(f"Request: {self.request!r}")
+        logger = logging.getLogger("celery.debug")
+        logger.debug("Request: %r", self.request)
 else:
     app = None

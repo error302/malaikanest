@@ -161,8 +161,8 @@ class Coupon(BaseModel):
 
 
 class Cart(BaseModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    session_key = models.CharField(max_length=40, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
+    session_key = models.CharField(max_length=40, null=True, blank=True, db_index=True)
     coupon = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL, related_name="carts")
     coupon_applied_at = models.DateTimeField(null=True, blank=True)
     delivery_region = models.CharField(
@@ -204,7 +204,7 @@ class Cart(BaseModel):
 
 
 class CartItem(BaseModel):
-    cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE, db_index=True)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
@@ -478,7 +478,7 @@ class Order(BaseModel):
 
 
 class OrderItem(BaseModel):
-    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE, db_index=True)
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     variant_reference = models.CharField(max_length=64, blank=True, null=True, db_index=True)
     variant_details = models.JSONField(blank=True, null=True)
