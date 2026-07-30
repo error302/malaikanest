@@ -1,105 +1,209 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      body { font-family: Arial, sans-serif; color: #111827; margin: 0; padding: 0; }
-      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-      .header { background: #ffd6e0; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
-      .header h2 { margin: 0; color: #be185d; }
-      .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
-      .success-badge { background: #d1fae5; color: #065f46; padding: 8px 16px; border-radius: 20px; display: inline-block; margin-bottom: 20px; font-weight: bold; }
-      .order-details { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
-      .order-details h3 { margin-top: 0; color: #374151; }
-      .order-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
-      .order-row:last-child { border-bottom: none; }
-      .order-row .label { color: #6b7280; }
-      .order-row .value { font-weight: 600; }
-      .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-      .items-table th { text-align: left; padding: 12px; background: #f9fafb; border-bottom: 2px solid #e5e7eb; }
-      .items-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
-      .items-table .price { text-align: right; }
-      .items-table .total-row { font-weight: bold; background: #f9fafb; }
-      .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; }
-      .btn { display: inline-block; background: #be185d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h2>Payment Confirmed!</h2>
-      </div>
-      <div class="content">
-        <div class="success-badge">Payment Successful</div>
-        
-        <p>Hi {{ customer_name }},</p>
-        
-        <p>Thank you for your payment! Your order has been confirmed and is being processed.</p>
-        
-        <div class="order-details">
-          <h3>Order Details</h3>
-          <div class="order-row">
-            <span class="label">Order Number:</span>
-            <span class="value">#{{ order.id }}</span>
-          </div>
-          {% if invoice %}
-          <div class="order-row">
-            <span class="label">Invoice Number:</span>
-            <span class="value">{{ invoice.invoice_number }}</span>
-          </div>
-          {% endif %}
-          <div class="order-row">
-            <span class="label">Amount Paid:</span>
-            <span class="value">KSH {{ order.total }}</span>
-          </div>
-          <div class="order-row">
-            <span class="label">Payment Method:</span>
-            <span class="value">{{ order.get_payment_method_display|default:"M-Pesa" }}</span>
-          </div>
-          <div class="order-row">
-            <span class="label">Date:</span>
-            <span class="value">{{ order.paid_at|date:"F j, Y" }}</span>
-          </div>
-        </div>
-        
-        <h4>Items Ordered</h4>
-        <table class="items-table">
-          <thead>
+{% extends "emails/base_email.html" %}
+
+{% block title %}Payment Confirmed — Malaika Nest{% endblock %}
+
+{% block accent_bar %}
+<tr>
+  <td style="height:6px;background:linear-gradient(90deg,#C8956C,#B07D5A,#C8956C);font-size:0;line-height:0;">&nbsp;</td>
+</tr>
+{% endblock %}
+
+{% block header_content %}
+<tr>
+  <td style="background:#FDF3EA;padding:40px 40px 32px;text-align:center;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center" style="font-size:0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="background:#7A8E6B;border-radius:50%;width:64px;height:64px;">
             <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th class="price">Price</th>
+              <td align="center" valign="middle" style="font-family:Georgia,'Times New Roman',serif;font-size:30px;color:#FFFFFF;">✓</td>
             </tr>
-          </thead>
-          <tbody>
-            {% for item in order.items.all %}
+          </table>
+        </td>
+      </tr>
+      <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:700;color:#2D1810;line-height:1.3;">
+          Payment Confirmed!
+        </td>
+      </tr>
+      <tr><td style="height:8px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;color:#6B4A3A;line-height:1.5;">
+          Thank you for your purchase. Your order is now being prepared.
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{% endblock %}
+
+{% block body_content %}
+<tr>
+  <td style="padding:32px 40px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:16px;color:#2D1810;line-height:1.7;">
+          <p style="margin:0 0 4px;">Hi <strong>{{ customer_name }}</strong>,</p>
+          <p style="margin:0 0 20px;">Your payment was successful and we've attached your invoice below.</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="background:#FDF3EA;border-radius:12px;padding:20px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td>{{ item.product.name }}</td>
-              <td>{{ item.quantity }}</td>
-              <td class="price">KSH {{ item.price }}</td>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B7A6A;padding-bottom:12px;">Order Summary</td>
+            </tr>
+            <tr>
+              <td style="padding-bottom:8px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;">Order Number</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;">#{{ order.id }}</td>
+                  </tr>
+                  {% if invoice %}
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Invoice Number</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ invoice.invoice_number }}</td>
+                  </tr>
+                  {% endif %}
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Date</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.paid_at|date:"F j, Y"|default:"Today" }}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Payment</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.get_payment_method_display|default:"M-Pesa" }}</td>
+                  </tr>
+                  {% if order.mpesa_receipt_number %}
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">M-Pesa Receipt</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;font-family:monospace;padding-top:6px;">{{ order.mpesa_receipt_number }}</td>
+                  </tr>
+                  {% endif %}
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Delivery</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.get_delivery_region_display }}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B7A6A;padding-bottom:8px;">Items Ordered</td>
+            </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr style="border-bottom:2px solid #EDDCC8;">
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:600;color:#5C3A21;padding:8px 0;">Item</td>
+              <td align="center" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:600;color:#5C3A21;padding:8px 0;">Qty</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:600;color:#5C3A21;padding:8px 0;">Price</td>
+            </tr>
+            {% for item in order.items.all %}
+            <tr style="border-bottom:1px solid #EDDCC8;">
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:10px 0;">{{ item.product.name }}</td>
+              <td align="center" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:10px 0;">{{ item.quantity }}</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:10px 0;">KES {{ item.price }}</td>
             </tr>
             {% endfor %}
-            <tr class="total-row">
-              <td colspan="2">Total</td>
-              <td class="price">KSH {{ order.total }}</td>
+          </table>
+        </td>
+      </tr>
+
+      <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:4px 0;">Subtotal</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:4px 0;">KES {{ order.subtotal }}</td>
             </tr>
-          </tbody>
-        </table>
-        
-        <p>Your order is now being prepared and will be shipped soon. We'll send you another email once your order is dispatched!</p>
-        
-        <p>Thank you for shopping with <strong>Malaika Nest</strong>!</p>
-        
-        <div class="footer">
-          <p>Malaika Nest - Premium Products in Kenya</p>
-          <p>{{ company_email }} | {{ company_phone }}</p>
-        </div>
-      </div>
-    </div>
-  </body>
-</html>
+            {% if order.discount_amount and order.discount_amount != "0.00" %}
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#7A8E6B;padding:4px 0;">Discount</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#7A8E6B;padding:4px 0;">- KES {{ order.discount_amount }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:4px 0;">Delivery Fee</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:4px 0;">KES {{ order.delivery_fee }}</td>
+            </tr>
+            <tr>
+              <td style="padding-top:8px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">Total Paid</td>
+              <td align="right" style="padding-top:8px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">KES {{ order.total }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
+      {% if order.shipping_address or order.shipping_city %}
+      <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="background:#FDF3EA;border-radius:12px;padding:16px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B7A6A;padding-bottom:8px;">Shipping To</td>
+            </tr>
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;line-height:1.6;">
+                {{ order.shipping_name }}<br>
+                {% if order.shipping_address %}{{ order.shipping_address }}<br>{% endif %}
+                {% if order.shipping_city %}{{ order.shipping_city }}{% if order.shipping_region %}, {{ order.shipping_region }}{% endif %}{% endif %}
+                {% if order.shipping_phone %}<br>📞 {{ order.shipping_phone }}{% endif %}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      {% endif %}
 
+      <tr><td style="height:28px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background:linear-gradient(135deg,#C8956C,#B07D5A);border-radius:50px;padding:0;">
+                <a href="https://malaikanest.com/account/orders" target="_blank" style="display:inline-block;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:50px;background:transparent;">View My Order</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
+      <tr><td style="height:20px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;line-height:1.6;">
+          We'll send you another email as soon as your order ships. If you have any questions, reply to this email or reach out on WhatsApp.
+        </td>
+      </tr>
 
+      {% if invoice %}
+      <tr><td style="height:12px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#8B7A6A;">
+          📎 Your invoice ({{ invoice.invoice_number }}) is attached as a PDF.
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+  </td>
+</tr>
+{% endblock %}
+
+{% block footer_disclaimer %}
+You received this email because you placed an order on Malaika Nest.
+{% endblock %}
+
+{% block footer_contacts %}
+<a href="mailto:hello@malaikanest.com" style="color:#C8956C;text-decoration:none;">hello@malaikanest.com</a>
+&nbsp;|&nbsp;
+<a href="https://wa.me/254726771321" style="color:#C8956C;text-decoration:none;">WhatsApp Support</a>
+{% endblock %}

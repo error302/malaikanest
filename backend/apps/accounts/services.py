@@ -1,8 +1,6 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.html import strip_tags
 import logging
 from urllib.parse import urlencode
 
@@ -51,37 +49,27 @@ def _build_frontend_url(path, **params):
 
 class AuthService:
     @staticmethod
-    def send_verification_email(user, token):
+    def _enqueue_verification_email(email, token, first_name):
+        """Dispatch the verification email via Celery, falling back to synchronous."""
+        verify_url = _build_frontend_url("verify-email", token=token, email=email)
+
         try:
-            verify_url = _build_frontend_url("verify-email", token=token, email=user.email)
-
-            html_message = f"""
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #8B4513;">Welcome to Malaika Nest!</h2>
-                <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
-                <a href="{verify_url}" style="display: inline-block; background-color: #8B4513; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 16px 0;">Verify Email</a>
-                <p>Or copy this link: {verify_url}</p>
-                <p>This link expires in 24 hours.</p>
-                <p>If you didn't create an account, please ignore this email.</p>
-                <hr>
-                <p style="color: #666; font-size: 12px;">Malaika Nest - Premium Baby Products in Kenya</p>
-            </div>
-            """
-
-            plain_message = strip_tags(html_message)
-
-            send_mail(
-                subject="Verify Your Email - Malaika Nest",
-                message=plain_message,
-                html_message=html_message,
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@malaikanest.com"),
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
+            from .tasks import send_verification_email_task
+            send_verification_email_task.delay(email, verify_url, first_name)
             return True
-        except Exception as e:
-            logger.error("Failed to send verification email to %s: %s", user.email, e)
-            return False
+        except Exception as exc:
+            logger.warning(
+                "Celery unavailable for verification email, sending synchronously: %s", exc
+            )
+            from apps.core.email_service import EmailService
+            ok, _ = EmailService.send_verification(email, verify_url, first_name)
+            return ok
+
+    @staticmethod
+    def send_verification_email(user, token):
+        return AuthService._enqueue_verification_email(
+            user.email, token, getattr(user, "first_name", "")
+        )
 
     @staticmethod
     def register_user(data, ip, user_agent):
@@ -175,16 +163,10 @@ class AuthService:
 
         reset_url = _build_frontend_url("reset-password", token=token)
 
-        try:
-            send_mail(
-                subject="Reset Your Password - Malaika Nest",
-                message=f"Click here to reset your password: {reset_url}\n\nThis link expires in 24 hours.",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            logger.error("Failed to send password reset email: %s", e)
+        from apps.core.email_service import EmailService
+        ok, msg = EmailService.send_password_reset(email, reset_url)
+        if not ok:
+            logger.error("Failed to send password reset email: %s", msg)
             raise RuntimeError("Failed to send reset email. Please try again later.")
 
         return True

@@ -1,63 +1,129 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Abandoned Cart Reminder</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background-color: #BFA46F; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">Malaika Nest</h1>
-    </div>
-    
-    <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2>You left something behind!</h2>
-        
-        <p>Hi {{ user.first_name|default:"there" }},</p>
-        
-        <p>We noticed you left some items in your cart {{ cart_age_hours }} hours ago. Don't miss out on these great products!</p>
-        
-        <div style="background-color: white; padding: 15px; margin: 20px 0; border-radius: 8px;">
-            <h3 style="margin-top: 0;">Your Cart Items:</h3>
-            {% for item in items %}
-            <div style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee;">
-                {% if item.image %}
-                <img src="{{ item.image }}" alt="{{ item.name }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px; border-radius: 4px;">
-                {% else %}
-                <div style="width: 60px; height: 60px; background-color: #eee; margin-right: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-                    Malaika Nest
-                </div>
-                {% endif %}
-                <div>
-                    <strong>{{ item.name }}</strong><br>
-                    <small>Qty: {{ item.quantity }} x KSH {{ item.price }}</small>
-                </div>
-            </div>
-            {% endfor %}
-            
-            <div style="text-align: right; font-size: 18px; font-weight: bold; padding-top: 10px;">
-                Total: KSH {{ total|floatformat:0 }}
-            </div>
-        </div>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="https://malaikanest.shop/cart" style="background-color: #C8A98D; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
-                Complete Your Order
-            </a>
-        </div>
-        
-        <p style="color: #666; font-size: 14px;">
-            Need help? Contact us at hello@malaikanest.com or call +254 726 771 321
-        </p>
-    </div>
-    
-    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-        <p>(c) {{ cart_age_hours|date:"Y" }} Malaika Nest. All rights reserved.</p>
-        <p>
-            <a href="https://malaikanest.shop" style="color: #BFA46F;">Shop</a> | 
-            <a href="https://malaikanest.shop/contact" style="color: #BFA46F;">Contact</a> | 
-            <a href="https://malaikanest.shop/privacy" style="color: #BFA46F;">Privacy Policy</a>
-        </p>
-    </div>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
 
+{% block title %}Complete Your Order — Malaika Nest{% endblock %}
+
+{% block accent_bar %}
+<tr>
+  <td style="height:6px;background:linear-gradient(90deg,#C8956C,#B07D5A,#C8956C);font-size:0;line-height:0;">&nbsp;</td>
+</tr>
+{% endblock %}
+
+{% block header_content %}
+<tr>
+  <td style="background:#FDF3EA;padding:40px 40px 32px;text-align:center;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center" style="font-size:0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#C8956C,#B07D5A);border-radius:50%;width:64px;height:64px;">
+            <tr>
+              <td align="center" valign="middle" style="font-family:Georgia,'Times New Roman',serif;font-size:26px;color:#FFFFFF;">🛒</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:700;color:#2D1810;line-height:1.3;">
+          You Left Something Behind!
+        </td>
+      </tr>
+      <tr><td style="height:8px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;color:#6B4A3A;line-height:1.5;">
+          Your cart is waiting — complete your order before someone else snatches these up.
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{% endblock %}
+
+{% block body_content %}
+<tr>
+  <td style="padding:32px 40px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:16px;color:#2D1810;line-height:1.7;">
+          <p style="margin:0 0 16px;">Hi {{ user.first_name|default:"there" }},</p>
+          <p style="margin:0 0 20px;">You left some items in your cart — and we've saved them for you. Here's a quick reminder so you don't miss out.</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="background:#FDF3EA;border-radius:12px;padding:20px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B7A6A;padding-bottom:12px;">Your Cart</td>
+            </tr>
+            {% for item in items %}
+            <tr style="border-bottom:1px solid #EDDCC8;">
+              <td style="padding:10px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="48" valign="middle" style="padding-right:12px;">
+                      {% if item.image %}
+                      <img src="{{ item.image }}" alt="{{ item.name }}" width="48" height="48" style="display:block;width:48px;height:48px;border-radius:8px;object-fit:cover;">
+                      {% else %}
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="width:48px;height:48px;background:#EDDCC8;border-radius:8px;">
+                        <tr><td align="center" valign="middle" style="font-size:10px;color:#8B7A6A;">MN</td></tr>
+                      </table>
+                      {% endif %}
+                    </td>
+                    <td valign="middle">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;">{{ item.name }}</td>
+                          <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;">KES {{ item.price }}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#8B7A6A;padding-top:2px;">Qty: {{ item.quantity }}</td>
+                          <td></td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            {% endfor %}
+            <tr>
+              <td style="padding-top:12px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:700;color:#2D1810;">Total</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:700;color:#2D1810;">KES {{ total|floatformat:0 }}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <tr><td style="height:28px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background:linear-gradient(135deg,#C8956C,#B07D5A);border-radius:50px;padding:0;">
+                <a href="https://malaikanest.com/cart" target="_blank" style="display:inline-block;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:50px;background:transparent;">Complete Your Order</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <tr><td style="height:20px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr>
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;line-height:1.6;">
+          Need help? Reply to this email or reach out on <a href="https://wa.me/254726771321" style="color:#C8956C;text-decoration:none;">WhatsApp</a>.
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{% endblock %}
+
+{% block footer_disclaimer %}
+You received this email because you have items saved in your cart on Malaika Nest.
+{% endblock %}

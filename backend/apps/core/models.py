@@ -125,3 +125,34 @@ class OutboxEvent(BaseModel):
 
     def __str__(self):
         return f"OutboxEvent({self.aggregate_type}:{self.aggregate_id}:{self.event_type}:{self.status})"
+
+
+class EmailLog(BaseModel):
+    """
+    Audit log for every outbound email.
+
+    Written by ``EmailService`` after each send attempt so operators can
+    verify delivery, inspect failures, and monitor email health over time.
+    """
+
+    email_type = models.CharField(max_length=40, db_index=True)
+    recipient = models.EmailField(db_index=True)
+    subject = models.CharField(max_length=255, blank=True, default="")
+    template_name = models.CharField(max_length=120, blank=True, default="")
+    success = models.BooleanField(default=False, db_index=True)
+    duration_ms = models.PositiveIntegerField(default=0, help_text="SMTP round-trip in milliseconds")
+    error_message = models.TextField(blank=True, default="")
+    order_id = models.CharField(max_length=64, blank=True, default="", db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["-created_at"]),
+            models.Index(fields=["email_type", "-created_at"]),
+            models.Index(fields=["success", "-created_at"]),
+        ]
+        verbose_name = "Email Log"
+        verbose_name_plural = "Email Logs"
+
+    def __str__(self):
+        return f"EmailLog({self.email_type} → {self.recipient}, {'✓' if self.success else '✗'})"

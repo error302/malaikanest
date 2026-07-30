@@ -184,7 +184,7 @@ SIMPLE_JWT = {
     "AUTH_COOKIE": "refresh_token",
     "AUTH_COOKIE_SECURE": os.getenv("AUTH_COOKIE_SECURE", "true").strip().lower() in {"1", "true", "yes", "on"},
     "AUTH_COOKIE_HTTP_ONLY": True,
-    "AUTH_COOKIE_SAMESITE": os.getenv("AUTH_COOKIE_SAMESITE", "Strict"),
+    "AUTH_COOKIE_SAMESITE": os.getenv("AUTH_COOKIE_SAMESITE", "Lax"),
 }
 
 # SECURITY: require a dedicated SIMPLE_JWT_SECRET in production so a leaked
@@ -303,6 +303,11 @@ CELERY_BEAT_SCHEDULE = {
     "orders-cancel-stale-pending-hourly": {
         "task": "apps.orders.tasks.cancel_stale_pending_orders",
         "schedule": timedelta(hours=1),
+    },
+    # Lightweight SMTP health check — alerts admins if Brevo SMTP goes down.
+    "email-health-check-every-30-min": {
+        "task": "apps.core.tasks.email_health_check",
+        "schedule": timedelta(minutes=30),
     },
 }
 
