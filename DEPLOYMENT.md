@@ -1,13 +1,32 @@
 # Malaika Nest — Deployment Guide
 ## From Fresh Ubuntu 22.04 to Live Production
 
-> **Target environment**: Google Cloud VM, Ubuntu 22.04 LTS, 2+ vCPUs, 4 GB+ RAM  
+> **Target environment**: Google Cloud VM (100% Always Free Tier: `e2-micro`, 30 GB `pd-standard` Disk, `us-central1`/`us-west1`/`us-east1`)
+> **OS**: Ubuntu 22.04 LTS  
 > **Domain**: malaikanest.com  
 > **Stack**: Django 4 + Gunicorn + Celery + Redis + PostgreSQL + Next.js + Nginx + Certbot
 
 ---
 
-## Step 0 — Prerequisites on your LOCAL machine
+## Step 0 — GCP Always Free Tier Machine Setup
+
+To run Malaika Nest **100% Free** on GCP without incurring any monthly costs, configure your Google Cloud Compute Engine instance as follows:
+
+- **Machine Type**: `e2-micro` (2 vCPUs, 1 GB RAM — **100% Free**)
+- **Region**: `us-central1` (Iowa), `us-west1` (Oregon), or `us-east1` (South Carolina)
+- **Boot Disk**: 30 GB Standard Persistent Disk (`pd-standard`) with Ubuntu 22.04 LTS
+- **Network**: Standard Tier / Public IP with ports `80` (HTTP) and `443` (HTTPS) opened in GCP Firewall.
+
+### Step 0.1 — Add 4GB Swap Space (Essential for Free Tier)
+Because `e2-micro` comes with 1 GB RAM, run this command once on your VM to prevent Out-Of-Memory (OOM) crashes:
+
+```bash
+sudo bash /var/www/malaikanest/deployment/setup-swap-and-tuning.sh
+```
+
+---
+
+## Step 0.2 — Prerequisites on your LOCAL machine
 
 ```bash
 # SSH to your VM (replace with your actual IP)

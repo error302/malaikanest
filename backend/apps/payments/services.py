@@ -384,10 +384,13 @@ class PaymentService:
     def initiate_mpesa_stk(payment, phone):
         consumer_key = os.getenv("MPESA_CONSUMER_KEY")
         consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
-        shortcode = os.getenv("MPESA_SHORTCODE") or os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
+        shortcode = os.getenv("MPESA_SHORTCODE") or os.getenv("MPESA_BUSINESS_SHORT_CODE", "3104615")
+        till_number = (os.getenv("MPESA_TILL_NUMBER") or "3370347").strip()
         passkey = os.getenv("MPESA_PASSKEY")
         callback_url = os.getenv("MPESA_CALLBACK_URL")
         mpesa_env = PaymentService._mpesa_env()
+        transaction_type = os.getenv("MPESA_TRANSACTION_TYPE") or ("CustomerBuyGoodsOnline" if till_number else "CustomerPayBillOnline")
+        party_b = till_number if till_number else shortcode
 
         mpesa_values = [consumer_key, consumer_secret, passkey, callback_url, shortcode]
         mpesa_configured = all(mpesa_values) and not any(
@@ -424,10 +427,10 @@ class PaymentService:
             "BusinessShortCode": shortcode,
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
+            "TransactionType": transaction_type,
             "Amount": format_mpesa_amount(payment.amount),
             "PartyA": phone,
-            "PartyB": shortcode,
+            "PartyB": party_b,
             "PhoneNumber": phone,
             "CallBackURL": callback_url,
             "AccountReference": f"MalaikaNest-{payment.order.id}",

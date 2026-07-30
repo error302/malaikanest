@@ -34,6 +34,13 @@ done
 echo "Copying unit files to /etc/systemd/system/"
 sudo cp "$TMP_DIR"/malaika_nest-* /etc/systemd/system/
 
+# Also install the gunicorn-replica service (not in the systemd/ subdir
+# since it's a production-only companion to the main gunicorn service).
+if [[ -f "$REPO_DIR/deployment/gunicorn-replica.service" ]]; then
+    sudo cp "$REPO_DIR/deployment/gunicorn-replica.service" /etc/systemd/system/
+    echo "Installed gunicorn-replica.service"
+fi
+
 echo "Copying helper scripts to /usr/local/bin/"
 sudo cp "$REPO_DIR"/deployment/healthcheck.sh /usr/local/bin/malaika_healthcheck.sh
 sudo cp "$REPO_DIR"/deployment/renew_certs.sh /usr/local/bin/malaika_renew_certs.sh

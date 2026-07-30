@@ -454,21 +454,13 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                     className="h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 relative"
                     style={{ background: cat.image ? undefined : FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
                   >
-                    {cat.image ? (
-                      <Image
-                        src={cat.image}
-                        alt={cat.name}
-                        fill
-                        sizes="(max-width: 1024px) 33vw, 16vw"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <Package
-                        size={36}
-                        strokeWidth={1.5}
-                        style={{ color: 'var(--brand-gold)' }}
-                      />
-                    )}
+                    <Image
+                      src={cat.image || 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop&q=80'}
+                      alt={cat.name}
+                      fill
+                      sizes="(max-width: 1024px) 33vw, 16vw"
+                      className="object-cover"
+                    />
                   </div>
                   <div className="p-3">
                     <div

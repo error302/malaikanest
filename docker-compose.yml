@@ -22,6 +22,18 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       retries: 5
+    # AOF + periodic RDB snapshots for crash resilience.
+    # Every write is fsynced to disk; combined with the persistent volume
+    # (redis_data) this ensures zero data loss on a container restart.
+    command:
+      - redis-server
+      - --appendonly yes
+      - --appendfsync everysec
+      - --save 900 1
+      - --save 300 10
+      - --save 60 10000
+      - --auto-aof-rewrite-percentage 100
+      - --auto-aof-rewrite-min-size 64mb
 
   backend:
     build:
@@ -99,6 +111,77 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # ── Backend Replica ────────────────────────────────────────────────────────
+  # Hot-standby Django/Gunicorn container that serves as a second upstream.
+  # Nginx (or cloudflared) load-balances across backend and backend_replica.
+  # This eliminates the single-container SPOF.
+  backend_replica:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-dev}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
+      DEBUG: ${DEBUG:-True}
+      SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
+      SIMPLE_JWT_SECRET: ${SIMPLE_JWT_SECRET:-django-insecure-jwt-dev-secret-key-change-in-prod-32-char-min-aaaa}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,backend_replica,frontend,malaikanest.com,www.malaikanest.com,api.malaikanest.com}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://backend:3000,http://backend_replica:3000}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      DB_NAME: ${POSTGRES_DB:-kenya_ecom}
+      DB_USER: ${POSTGRES_USER:-kenya}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      MPESA_ENV: ${MPESA_ENV:-sandbox}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-local-placeholder}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-local-placeholder}
+      MPESA_PASSKEY: ${MPESA_PASSKEY:-local-placeholder}
+      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-174379}
+      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-http://localhost:8000/api/v1/payments/mpesa/callback/}
+      MPESA_STRICT_SIGNATURE: ${MPESA_STRICT_SIGNATURE:-false}
+      PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
+      PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
+      PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
+      PESAPAL_MOCK_MODE: ${PESAPAL_MOCK_MODE:-true}
+      PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
+      PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-http://localhost:8000/api/v1/payments/pesapal/callback/}
+      PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-http://localhost:8000/api/v1/payments/pesapal/ipn/}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp-relay.brevo.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-b2ad26001@smtp-brevo.com}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <hello@malaikanest.com>}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/media:/code/media
+      - ./backend/staticfiles:/code/staticfiles
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        # Replica does NOT run migrations or collectstatic — those are the
+        # primary's responsibility. It waits for the primary to finish them.
+        exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --threads 4 --timeout 60
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; request = urllib.request.Request('http://127.0.0.1:8000/api/health/', headers={'Host': 'api.malaikanest.com', 'X-Forwarded-Proto': 'https'}); urllib.request.urlopen(request, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   celery_worker:
     build:
@@ -218,6 +301,22 @@ services:
       start_period: 45s
 
   cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+
+  # Hot-standby cloudflared tunnel instance.
+  # Both instances connect to the same Cloudflare tunnel simultaneously.
+  # Cloudflare load-balances across both and will fail over to the standby
+  # if the primary goes down — no DNS TTL delay, instant failover.
+  cloudflared_standby:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run

@@ -7,14 +7,34 @@ import { useI18n } from '@/lib/i18n';
 import { useCategories } from '@/lib/categoriesContext';
 
 /* ── Pastel gradient palette for cards without uploaded images ── */
-const FALLBACK_COLORS = [
-  'linear-gradient(135deg, #FCE7E1 0%, #F8D5C9 100%)',
-  'linear-gradient(135deg, #FEF3DC 0%, #F8E5B8 100%)',
-  'linear-gradient(135deg, #E1EEF8 0%, #C5DCF0 100%)',
-  'linear-gradient(135deg, #EFE3F8 0%, #D8C2EE 100%)',
-  'linear-gradient(135deg, #E1F4E8 0%, #BFE6CC 100%)',
-  'linear-gradient(135deg, #FCE1EE 0%, #F8C5D8 100%)',
+const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
+  clothing: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop&q=80',
+  feeding: 'https://images.unsplash.com/photo-1584839627923-d58f3e829da6?w=500&auto=format&fit=crop&q=80',
+  nursery: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=500&auto=format&fit=crop&q=80',
+  toys: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80',
+  travel: 'https://images.unsplash.com/photo-1591154669695-5f2a8d20c089?w=500&auto=format&fit=crop&q=80',
+  books: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&auto=format&fit=crop&q=80',
+  gifts: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80',
+  thrifted: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=500&auto=format&fit=crop&q=80',
+};
+
+const FALLBACK_PHOTO_ARRAY = [
+  'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1584839627923-d58f3e829da6?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1591154669695-5f2a8d20c089?w=500&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80',
 ];
+
+function getCategoryPhoto(cat: { name: string; image?: string | null }, idx: number): string {
+  if (cat.image) return cat.image;
+  const name = cat.name.toLowerCase();
+  for (const [key, url] of Object.entries(DEFAULT_CATEGORY_IMAGES)) {
+    if (name.includes(key)) return url;
+  }
+  return FALLBACK_PHOTO_ARRAY[idx % FALLBACK_PHOTO_ARRAY.length];
+}
 
 interface CategoryQuickLinksProps {
   content?: Record<string, Record<string, string>>;
@@ -108,25 +128,14 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
                 borderColor: 'var(--brand-border)',
               }}
             >
-              <div
-                className="aspect-square flex items-center justify-center transition-transform duration-300 group-hover:scale-105 relative overflow-hidden"
-                style={{ background: cat.image ? undefined : FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
-              >
-                {cat.image ? (
-                  <Image
-                    src={cat.image}
-                    alt={cat.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <Package
-                    size={40}
-                    strokeWidth={1.4}
-                    style={{ color: 'var(--brand-gold)' }}
-                  />
-                )}
+              <div className="aspect-square flex items-center justify-center transition-transform duration-300 group-hover:scale-105 relative overflow-hidden">
+                <Image
+                  src={getCategoryPhoto(cat, idx)}
+                  alt={cat.name}
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                  className="object-cover"
+                />
               </div>
               <div className="p-3 sm:p-4">
                 <div

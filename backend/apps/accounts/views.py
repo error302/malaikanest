@@ -209,10 +209,21 @@ class ResendVerificationThrottle(AnonRateThrottle):
     scope = "resend_verification"
 
 
+class RegisterThrottle(AnonRateThrottle):
+    rate = "2/hour"
+    scope = "register"
+
+
+class PasswordResetThrottle(AnonRateThrottle):
+    rate = "3/hour"
+    scope = "password_reset"
+
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [RegisterThrottle]
 
     def create(self, request, *args, **kwargs):
         ip = get_client_ip(request)
@@ -327,6 +338,7 @@ def logout_view(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([PasswordResetThrottle])
 def password_reset_request_view(request):
     email = request.data.get("email")
     if not email:

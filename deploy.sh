@@ -78,8 +78,14 @@ if [[ -d "$FRONTEND_DIR" ]]; then
 fi
 
 # ── Services ─────────────────────────────────────────────────────────────────
+# ── Enable & start the replica gunicorn if the unit file is present ─
+if [[ -f "/etc/systemd/system/gunicorn-replica.service" ]]; then
+    log "Enabling gunicorn-replica service..."
+    sudo systemctl enable gunicorn-replica 2>/dev/null || true
+fi
+
 log "Restarting backend services..."
-sudo systemctl restart gunicorn celery celerybeat
+sudo systemctl restart gunicorn gunicorn-replica celery celerybeat
 
 log "Testing nginx config..."
 sudo nginx -t
@@ -88,10 +94,16 @@ log "Reloading nginx..."
 sudo systemctl reload nginx
 
 log "Checking service status..."
-sudo systemctl is-active --quiet gunicorn && log "gunicorn:    running ✓" || warn "gunicorn:    FAILED ✗"
-sudo systemctl is-active --quiet celery    && log "celery:      running ✓" || warn "celery:      FAILED ✗"
-sudo systemctl is-active --quiet celerybeat && log "celerybeat:  running ✓" || warn "celerybeat:  FAILED ✗"
-sudo systemctl is-active --quiet nginx     && log "nginx:       running ✓" || warn "nginx:       FAILED ✗"
+_all_ok=0
+sudo systemctl is-active --quiet gunicorn         && log "gunicorn:           running ✓" || { warn "gunicorn:           FAILED ✗"; _all_ok=1; }
+sudo systemctl is-active --quiet gunicorn-replica && log "gunicorn-replica:   running ✓" || { warn "gunicorn-replica:   FAILED ✗"; _all_ok=1; }
+sudo systemctl is-active --quiet celery           && log "celery:             running ✓" || { warn "celery:             FAILED ✗"; _all_ok=1; }
+sudo systemctl is-active --quiet celerybeat       && log "celerybeat:         running ✓" || { warn "celerybeat:         FAILED ✗"; _all_ok=1; }
+sudo systemctl is-active --quiet nginx            && log "nginx:              running ✓" || { warn "nginx:              FAILED ✗"; _all_ok=1; }
+
+if [[ "$_all_ok" -ne 0 ]]; then
+    warn "One or more services failed to start. Check logs with: sudo journalctl -u <service-name> --no-pager -n 50"
+fi
 
 echo ""
 echo "========================================"
