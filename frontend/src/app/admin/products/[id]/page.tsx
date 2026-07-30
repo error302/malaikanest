@@ -65,6 +65,7 @@ export default function EditProductPage() {
               sku: v.sku || '',
               price_modifier: v.price_modifier ? String(v.price_modifier) : '0',
               stock: String(v.stock ?? 0),
+              image_url: v.image_url || v.image || '',
             }))
           );
         }
@@ -77,7 +78,6 @@ export default function EditProductPage() {
             is_primary: im.is_primary,
           }))
         );
-
         const cats = catRes.data?.results ?? catRes.data?.data?.results ?? catRes.data?.data ?? catRes.data ?? [];
         setCategories(Array.isArray(cats) ? cats : []);
       } catch (err: any) {
@@ -110,7 +110,6 @@ export default function EditProductPage() {
     e.preventDefault();
     setSaving(true);
 
-    // Category/brand ids are UUIDs — send them as strings (never parseInt).
     const payload: Record<string, any> = {
       name: form.name,
       slug: form.slug,
@@ -142,6 +141,7 @@ export default function EditProductPage() {
           sku: v.sku || null,
           price_modifier: v.price_modifier || '0',
           stock: parseInt(v.stock) || 0,
+          image_url: v.image_url || null,
         }));
       payload.variants = clean;
     }

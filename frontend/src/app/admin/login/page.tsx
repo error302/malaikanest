@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/authContext';
 import { showToast } from '@/lib/toast';
 
 export default function AdminLoginPage() {
-  const { login } = useAuth();
+  const { adminLogin } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,11 +17,11 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      await adminLogin(email, password);
       showToast('Welcome, admin', 'success');
       router.push('/admin');
     } catch (err: any) {
-      showToast(err?.response?.data?.detail || 'Invalid credentials', 'error');
+      showToast(err?.response?.data?.detail || 'Invalid credentials or missing admin privileges', 'error');
     } finally {
       setLoading(false);
     }

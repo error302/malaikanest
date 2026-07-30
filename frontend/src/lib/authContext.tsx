@@ -28,6 +28,7 @@ type AuthContextType = {
   isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string, captchaToken?: string) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -146,6 +147,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [checkAuth]
   );
 
+  const adminLogin = useCallback(
+    async (email: string, password: string) => {
+      const payload: Record<string, string> = { email, password };
+      const res = await api.post('/api/v1/accounts/admin/login/', payload);
+      const access = (res.data as any)?.access || (res.data as any)?.data?.access;
+      if (access) setAccessToken(access);
+      await checkAuth();
+    },
+    [checkAuth]
+  );
+
   const logout = useCallback(async () => {
     try {
       await api.post('/api/v1/accounts/logout/');
@@ -172,11 +184,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ),
       isLoading,
       login,
+      adminLogin,
       logout,
       register,
       checkAuth,
     }),
-    [checkAuth, isLoading, login, logout, register, user]
+    [adminLogin, checkAuth, isLoading, login, logout, register, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

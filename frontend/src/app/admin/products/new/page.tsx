@@ -113,6 +113,7 @@ export default function NewProductPage() {
           sku: v.sku || null,
           price_modifier: v.price_modifier || '0',
           stock: parseInt(v.stock) || 0,
+          image_url: v.image_url || null,
         }));
       if (clean.length > 0) fd.append('variants', JSON.stringify(clean));
     }

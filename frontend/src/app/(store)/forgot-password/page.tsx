@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
     if (!email) return;
     setLoading(true);
     try {
-      await api.post('/api/v1/accounts/password-reset/', { email });
+      await api.post('/api/v1/accounts/password/reset/', { email });
       setSent(true);
       showToast('Password reset link sent! Check your email.', 'success');
     } catch (err) {

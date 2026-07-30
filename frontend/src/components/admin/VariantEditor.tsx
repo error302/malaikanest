@@ -45,10 +45,11 @@ export interface VariantForm {
   sku: string;
   price_modifier: string;
   stock: string;
+  image_url?: string;
 }
 
 export function emptyVariant(): VariantForm {
-  return { color: '', size: '', sku: '', price_modifier: '0', stock: '0' };
+  return { color: '', size: '', sku: '', price_modifier: '0', stock: '0', image_url: '' };
 }
 
 const inputClass = 'w-full rounded-lg px-3 py-2 text-sm focus:outline-none';
@@ -106,6 +107,10 @@ export default function VariantEditor({ variants, onChange }: Props) {
               <div className="sm:col-span-2">
                 <label className="text-[10px] uppercase tracking-wider font-semibold mb-1 block" style={{ color: 'var(--brand-text-muted)' }}>SKU</label>
                 <input value={v.sku} onChange={(e) => update(i, { sku: e.target.value })} className={inputClass} style={inputStyle} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-[10px] uppercase tracking-wider font-semibold mb-1 block" style={{ color: 'var(--brand-text-muted)' }}>Image URL (opt)</label>
+                <input value={v.image_url || ''} onChange={(e) => update(i, { image_url: e.target.value })} placeholder="https://..." className={inputClass} style={inputStyle} />
               </div>
               <div className="sm:col-span-1 flex justify-end">
                 <button type="button" onClick={() => remove(i)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(196,112,74,0.12)' }} aria-label="Remove variant">
