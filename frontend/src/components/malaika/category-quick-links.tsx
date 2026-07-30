@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Package, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
-import api from '@/lib/api';
+import { useCategories } from '@/lib/categoriesContext';
 
 /* ── Pastel gradient palette for cards without uploaded images ── */
 const FALLBACK_COLORS = [
@@ -17,16 +16,6 @@ const FALLBACK_COLORS = [
   'linear-gradient(135deg, #FCE1EE 0%, #F8C5D8 100%)',
 ];
 
-interface ApiCategory {
-  id: number;
-  name: string;
-  slug: string;
-  full_slug?: string;
-  image?: string | null;
-  product_count?: number;
-  children?: ApiCategory[];
-}
-
 interface CategoryQuickLinksProps {
   content?: Record<string, Record<string, string>>;
 }
@@ -34,22 +23,11 @@ interface CategoryQuickLinksProps {
 export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
   const { t } = useI18n();
   const c = content?.categories || {};
+  const { categories: rawCategories, loading } = useCategories();
 
-  const [categories, setCategories] = useState<ApiCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api
-      .get('/api/v1/products/categories/')
-      .then((res) => {
-        const data = res.data;
-        const results: ApiCategory[] = data?.results ?? data?.data?.results ?? (Array.isArray(data) ? data : []);
-        // Only show top-level (root) categories
-        setCategories(results.filter((cat: ApiCategory) => !('parent' in cat) || cat.children !== undefined || results.length <= 8));
-      })
-      .catch(() => setCategories([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const categories = rawCategories.filter(
+    (cat: any) => !cat.parent || cat.children !== undefined || rawCategories.length <= 8
+  );
 
   if (loading && categories.length === 0) {
     return (
@@ -162,7 +140,7 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
                     className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium"
                     style={{ color: 'var(--brand-gold)' }}
                   >
-                    {cat.product_count} items
+                    {(cat.product_count ?? 0) === 1 ? '1 item' : `${cat.product_count ?? 0} items`}
                     <ChevronRight
                       size={12}
                       className="transition-transform group-hover:translate-x-0.5"

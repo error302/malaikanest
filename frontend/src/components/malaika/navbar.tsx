@@ -482,7 +482,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                         className="text-[11px] mt-0.5 leading-snug"
                         style={{ color: 'var(--brand-text-muted)' }}
                       >
-                        {cat.product_count} items
+                        {(cat.product_count ?? 0) === 1 ? '1 item' : `${cat.product_count ?? 0} items`}
                       </div>
                     )}
                   </div>
