@@ -198,9 +198,12 @@ def generate_invoice(self, order_id):
             logger.info(f"Invoice generated for order {order_id}: {invoice.invoice_number}")
             return f"generated: {invoice.invoice_number}"
         return "failed: could not generate PDF"
+    except (IOError, OSError) as e:
+        logger.error(f"Failed to generate invoice for order {order_id} (file I/O): {e}")
+        raise
     except Exception as e:
         logger.error(f"Failed to generate invoice for order {order_id}: {e}")
-        raise e
+        raise
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
@@ -310,9 +313,12 @@ def reduce_inventory(self, order_id):
                     Product.objects.filter(pk=item.product_id).update(stock=F("stock") - item.quantity)
         logger.info(f"Inventory reduced for order {order_id}")
         return "success"
+    except ValueError as e:
+        logger.error(f"Failed to reduce inventory for order {order_id} (data error): {e}")
+        raise
     except Exception as e:
         logger.error(f"Failed to reduce inventory for order {order_id}: {e}")
-        raise e
+        raise
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60, autoretry_for=(Exception,), retry_backoff=True)
@@ -354,14 +360,16 @@ def restore_inventory(self, order_id):
                 if released == 1:
                     continue
                 Inventory.objects.filter(product=item.product).update(
-                    quantity=F("quantity") + item.quantity
-                )
+                    quantity=F("quantity") + item.quantity)
                 Product.objects.filter(pk=item.product_id).update(stock=F("stock") + item.quantity)
 
             order.inventory_restored = True
             order.save(update_fields=["inventory_restored", "updated_at"])
         logger.info(f"Inventory restored for order {order_id}")
         return "success"
+    except ValueError as e:
+        logger.error(f"Failed to restore inventory for order {order_id} (data error): {e}")
+        return f"failed: {str(e)}"
     except Exception as e:
         logger.error(f"Failed to restore inventory for order {order_id}: {e}")
         return f"failed: {str(e)}"

@@ -23,6 +23,8 @@ from apps.core.outbox import publish_event
 from apps.core import metrics
 from .models import Payment, PaymentAuditLog
 from .tasks import verify_mpesa_payment_async
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger("apps.payments")
 
@@ -194,16 +196,18 @@ def _coerce_json_object(value):
         if hasattr(value, "dict"):
             try:
                 return value.dict()
-            except Exception:
-                pass
+            except (AttributeError, TypeError) as exc:
+                logger.debug("_coerce_json_object: .dict() failed: %s", exc)
         try:
             return dict(value)
-        except Exception:
+        except (TypeError, ValueError) as exc:
+            logger.debug("_coerce_json_object: dict() coercion failed: %s", exc)
             return {}
     if isinstance(value, str):
         try:
             parsed = json.loads(value)
-        except Exception:
+        except ValueError as exc:
+            logger.debug("_coerce_json_object: JSON parse failed: %s", exc)
             return {}
         return parsed if isinstance(parsed, dict) else {}
     return {}
@@ -233,6 +237,21 @@ def is_placeholder_secret(value):
 
 
 class PaymentService:
+    @staticmethod
+    def _broadcast_payment_update(order_id, status, receipt=None):
+        try:
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f'payment_{order_id}',
+                    {
+                        'type': 'payment_update',
+                        'payload': {'status': status, 'receipt': receipt}
+                    }
+                )
+        except Exception as e:
+            logger.error("Failed to broadcast payment update for order %s: %s", order_id, e)
+
     @staticmethod
     def should_use_mock_mpesa():
         explicit = os.getenv("MPESA_MOCK_MODE")
@@ -313,8 +332,8 @@ class PaymentService:
                     import time
 
                     time.sleep(backoff_seconds * (2 ** (attempt - 1)))
-                except Exception:
-                    pass
+                except OSError as exc:
+                    logger.debug("Retry sleep interrupted: %s", exc)
         raise last_exc
 
     @staticmethod
@@ -377,6 +396,7 @@ class PaymentService:
             notes="Mock M-Pesa payment completed in development mode",
         )
         PaymentService.trigger_post_payment_tasks(payment.order_id)
+        PaymentService._broadcast_payment_update(payment.order_id, "completed", receipt)
         return checkout_request_id
 
     @staticmethod
@@ -559,9 +579,10 @@ class PaymentService:
                             # Durable side-effect via outbox (restock) instead of
                             # fire-and-forget on_commit enqueue.
                             publish_event("order", order.id, "order.cancelled", {"order_id": order.id})
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            logger.error("Order transition/publish failed (amount mismatch, order=%s): %s", payment.order_id, exc)
                         audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="AMOUNT_MISMATCH", notes=f"Expected {payment.amount}, got {amount}")
+                        PaymentService._broadcast_payment_update(order.id, "failed")
                         return {"ResultCode": 1, "ResultDesc": "Amount mismatch"}
                 except (InvalidOperation, TypeError):
                     payment.status = "failed"
@@ -589,9 +610,10 @@ class PaymentService:
                             order.save(update_fields=["status", "updated_at"])
 
                         publish_event("order", order.id, "order.cancelled", {"order_id": order.id})
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logger.error("Order transition/publish failed (phone mismatch, order=%s): %s", payment.order_id, exc)
                     audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="PHONE_MISMATCH")
+                    PaymentService._broadcast_payment_update(order.id, "failed")
                     return {"ResultCode": 1, "ResultDesc": "Phone mismatch"}
 
                 if receipt and Payment.objects.filter(mpesa_receipt_number=receipt).exclude(pk=payment.pk).exists():
@@ -631,6 +653,7 @@ class PaymentService:
                 metrics.incr("payments.completed")
 
                 audit_log(event_type="callback_completed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
+                PaymentService._broadcast_payment_update(order.id, "completed", receipt)
                 return {"ResultCode": 0, "ResultDesc": "Accepted"}
 
             result_desc = callback_result.get("ResultDesc", "Unknown error")
@@ -650,9 +673,10 @@ class PaymentService:
             metrics.incr("payments.failed")
             try:
                 publish_event("order", payment.order_id, "order.cancelled", {"order_id": payment.order_id})
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.error("Failed to publish order.cancelled event for order %s: %s", payment.order_id, exc)
             audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes=result_desc)
+            PaymentService._broadcast_payment_update(payment.order_id, "failed")
             return {"ResultCode": 0, "ResultDesc": "Accepted"}
 
 
