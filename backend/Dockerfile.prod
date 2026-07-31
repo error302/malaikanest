@@ -25,4 +25,4 @@ EXPOSE 8000
 ENV DJANGO_ENV=prod
 ENV DJANGO_SETTINGS_MODULE=config.settings
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]
