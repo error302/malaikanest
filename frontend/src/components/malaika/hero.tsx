@@ -131,7 +131,6 @@ export function Hero({ banners = [], content }: HeroProps) {
               fill
               priority={i === 0}
               fetchPriority={i === 0 ? 'high' : 'auto'}
-              unoptimized
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1920px"
               onError={() => setImgErr((p) => ({ ...p, [i]: true }))}
               className="absolute inset-0 w-full h-full object-cover"
