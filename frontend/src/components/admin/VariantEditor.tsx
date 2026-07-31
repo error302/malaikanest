@@ -46,6 +46,7 @@ export interface VariantForm {
   price_modifier: string;
   stock: string;
   image_url?: string;
+  image_file?: File;
 }
 
 export function emptyVariant(): VariantForm {
@@ -109,8 +110,27 @@ export default function VariantEditor({ variants, onChange }: Props) {
                 <input value={v.sku} onChange={(e) => update(i, { sku: e.target.value })} className={inputClass} style={inputStyle} />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-[10px] uppercase tracking-wider font-semibold mb-1 block" style={{ color: 'var(--brand-text-muted)' }}>Image URL (opt)</label>
-                <input value={v.image_url || ''} onChange={(e) => update(i, { image_url: e.target.value })} placeholder="https://..." className={inputClass} style={inputStyle} />
+                <label className="text-[10px] uppercase tracking-wider font-semibold mb-1 block" style={{ color: 'var(--brand-text-muted)' }}>Image (File/URL)</label>
+                <div className="flex items-center gap-1">
+                  {v.image_file ? (
+                    <span className="text-[10px] truncate flex-1" style={{ color: 'var(--brand-text)' }}>{v.image_file.name}</span>
+                  ) : (
+                    <input value={v.image_url || ''} onChange={(e) => update(i, { image_url: e.target.value })} placeholder="https://..." className={`${inputClass} flex-1`} style={inputStyle} />
+                  )}
+                  <label className="cursor-pointer p-1.5 rounded flex items-center justify-center shrink-0 border" style={{ background: 'var(--brand-bg-alt)', borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }} title="Upload File">
+                    <Plus size={14} />
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        update(i, { image_file: e.target.files[0], image_url: '' });
+                      }
+                    }} />
+                  </label>
+                  {v.image_file && (
+                    <button type="button" onClick={() => update(i, { image_file: undefined })} className="p-1.5 rounded shrink-0" style={{ color: 'var(--brand-terra)' }} title="Remove file">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="sm:col-span-1 flex justify-end">
                 <button type="button" onClick={() => remove(i)} className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(196,112,74,0.12)' }} aria-label="Remove variant">

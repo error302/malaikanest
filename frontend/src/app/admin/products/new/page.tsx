@@ -114,8 +114,24 @@ export default function NewProductPage() {
           price_modifier: v.price_modifier || '0',
           stock: parseInt(v.stock) || 0,
           image_url: v.image_url || null,
+          image_file: v.image_file,
         }));
-      if (clean.length > 0) fd.append('variants', JSON.stringify(clean));
+      if (clean.length > 0) {
+        const hasVariantFiles = clean.some((v) => v.image_file);
+        if (hasVariantFiles) {
+          clean.forEach((v: any, idx: number) => {
+            fd.append(`variants[${idx}][color]`, v.color || '');
+            fd.append(`variants[${idx}][size]`, v.size || '');
+            fd.append(`variants[${idx}][sku]`, v.sku || '');
+            fd.append(`variants[${idx}][price_modifier]`, v.price_modifier || '0');
+            fd.append(`variants[${idx}][stock]`, String(v.stock || 0));
+            if (v.image_url) fd.append(`variants[${idx}][image_url]`, v.image_url);
+            if (v.image_file) fd.append(`variants[${idx}][image]`, v.image_file);
+          });
+        } else {
+          fd.append('variants', JSON.stringify(clean));
+        }
+      }
     }
 
     try {

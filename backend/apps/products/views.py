@@ -12,6 +12,7 @@ from django.db.models import (
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.core.cache import cache
+from django.utils.cache import patch_cache_control
 from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -106,10 +107,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
         cached_data = cache.get(cache_key)
 
         if cached_data is not None:
-            return Response(cached_data)
+            response = Response(cached_data)
+            patch_cache_control(response, max_age=3600, public=True)
+            return response
 
         response = super().list(request, *args, **kwargs)
         cache.set(cache_key, response.data, timeout=3600)  # Cache for 1 hour
+        patch_cache_control(response, max_age=3600, public=True)
         return response
 
     def get_queryset(self):
@@ -183,7 +187,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         DjangoFilterBackend,
         filters.OrderingFilter,
     ]
-    search_fields = ["name", "description", "sku", "brand__name", "category__name"]
+    search_fields = ["@name", "@description", "@sku", "@brand__name", "@category__name"]
     ordering_fields = [
         "price",
         "name",
@@ -202,10 +206,13 @@ class ProductViewSet(viewsets.ModelViewSet):
         cached_data = cache.get(cache_key)
 
         if cached_data is not None:
-            return Response(cached_data)
+            response = Response(cached_data)
+            patch_cache_control(response, max_age=300, public=True)
+            return response
 
         response = super().list(request, *args, **kwargs)
         cache.set(cache_key, response.data, timeout=300)
+        patch_cache_control(response, max_age=300, public=True)
         return response
 
     def get_queryset(self):
@@ -445,10 +452,13 @@ class BannerViewSet(viewsets.ModelViewSet):
         cached_data = cache.get(cache_key)
 
         if cached_data is not None:
-            return Response(cached_data)
+            response = Response(cached_data)
+            patch_cache_control(response, max_age=3600, public=True)
+            return response
 
         response = super().list(request, *args, **kwargs)
         cache.set(cache_key, response.data, timeout=3600)  # Cache for 1 hour
+        patch_cache_control(response, max_age=3600, public=True)
         return response
 
     def get_queryset(self):

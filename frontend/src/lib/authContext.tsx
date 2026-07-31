@@ -136,13 +136,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const access = (res.data as any)?.access || (res.data as any)?.data?.access;
       if (access) setAccessToken(access);
 
+      // Verify auth state FIRST before doing anything else.
+      // This prevents the cart merge request from triggering a token-refresh
+      // failure that would clear the access token (see api.ts interceptor).
+      await checkAuth();
+
+      // Merge guest cart silently after auth is confirmed.
       try {
         await api.post('/api/v1/orders/cart/merge/', {});
       } catch {
         // Ignore merge errors
       }
-
-      await checkAuth();
     },
     [checkAuth]
   );

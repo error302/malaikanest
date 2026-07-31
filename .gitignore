@@ -68,3 +68,4 @@ Thumbs.db
 # Freebuff desktop app state
 .freebuff/
 
+*.tgz

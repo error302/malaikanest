@@ -142,6 +142,7 @@ export default function EditProductPage() {
           price_modifier: v.price_modifier || '0',
           stock: parseInt(v.stock) || 0,
           image_url: v.image_url || null,
+          image_file: v.image_file,
         }));
       payload.variants = clean;
     }
@@ -154,10 +155,12 @@ export default function EditProductPage() {
           galleryChange.primaryId !== null ||
           galleryChange.order.length > 0);
 
-      if (imageFile || hasGallery) {
+      const hasVariantFiles = variantsTouched && payload.variants.some((v: any) => v.image_file);
+
+      if (imageFile || hasGallery || hasVariantFiles) {
         const fd = new FormData();
         Object.entries(payload).forEach(([k, v]) => {
-          if (v !== null && v !== undefined) fd.append(k, String(v));
+          if (k !== 'variants' && v !== null && v !== undefined) fd.append(k, String(v));
         });
         if (imageFile) fd.append('image', imageFile);
         if (galleryChange) {
@@ -172,9 +175,28 @@ export default function EditProductPage() {
             fd.append('image_orders', JSON.stringify(galleryChange.order));
           }
         }
-        if (variantsTouched) fd.append('variants', JSON.stringify(payload.variants));
+        if (variantsTouched) {
+          if (hasVariantFiles) {
+            payload.variants.forEach((v: any, idx: number) => {
+              if (v.id) fd.append(`variants[${idx}][id]`, String(v.id));
+              fd.append(`variants[${idx}][color]`, v.color || '');
+              fd.append(`variants[${idx}][size]`, v.size || '');
+              fd.append(`variants[${idx}][sku]`, v.sku || '');
+              fd.append(`variants[${idx}][price_modifier]`, v.price_modifier || '0');
+              fd.append(`variants[${idx}][stock]`, String(v.stock || 0));
+              if (v.image_url) fd.append(`variants[${idx}][image_url]`, v.image_url);
+              if (v.image_file) fd.append(`variants[${idx}][image]`, v.image_file);
+            });
+          } else {
+            fd.append('variants', JSON.stringify(payload.variants));
+          }
+        }
         await api.put(`/api/v1/products/admin/products/${params.id}/`, fd);
       } else {
+        // Strip image_file from payload before sending JSON
+        if (variantsTouched) {
+          payload.variants = payload.variants.map(({ image_file, ...rest }: any) => rest);
+        }
         await api.put(`/api/v1/products/admin/products/${params.id}/`, payload);
       }
       showToast('Product updated successfully!', 'success');

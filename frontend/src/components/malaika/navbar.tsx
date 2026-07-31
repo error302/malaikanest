@@ -35,6 +35,15 @@ const FALLBACK_COLORS = [
   '#FCE7E1', '#FEF3DC', '#E1EEF8', '#EFE3F8', '#E1F4E8', '#FCE1EE'
 ];
 
+const AI_IMAGES = [
+  '/images/categories/ai-0.jpg',
+  '/images/categories/ai-1.jpg',
+  '/images/categories/ai-2.jpg',
+  '/images/categories/ai-3.jpg',
+  '/images/categories/ai-4.jpg',
+  '/images/categories/ai-5.jpg',
+];
+
 const NAV_LINKS = [
   { nameKey: 'nav.home', href: '/' },
   { nameKey: 'nav.shop', href: '/categories', hasDropdown: true },
@@ -293,8 +302,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   aria-haspopup="menu"
                   aria-expanded={accountMenuOpen}
                   aria-label={`Account menu for ${userDisplayName}`}
-                  className="flex items-center gap-2 pl-1 pr-3 h-11 rounded-full transition-colors hover:bg-[var(--brand-warm)]"
-                  style={{ color: 'var(--brand-brown)' }}
+                  className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-[var(--brand-warm)]"
                 >
                   <span
                     className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm"
@@ -302,13 +310,6 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   >
                     {userInitial}
                   </span>
-                  <span className="hidden lg:inline text-[13px] font-medium max-w-[100px] xl:max-w-[150px] truncate">
-                    {userDisplayName}
-                  </span>
-                  <ChevronDown
-                    size={14}
-                    className={`transition-transform duration-150 ${accountMenuOpen ? 'rotate-180' : ''}`}
-                  />
                 </button>
                 {accountMenuOpen && (
                   <div
@@ -452,10 +453,10 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 >
                   <div
                     className="h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 relative"
-                    style={{ background: cat.image ? undefined : FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
+                    style={{ background: FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
                   >
                     <Image
-                      src={cat.image || 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop&q=80'}
+                      src={AI_IMAGES[idx % AI_IMAGES.length]}
                       alt={cat.name}
                       fill
                       sizes="(max-width: 1024px) 33vw, 16vw"
@@ -767,23 +768,15 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                     >
                       <div 
                         className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden"
-                        style={{ background: cat.image ? undefined : FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
+                        style={{ background: FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
                       >
-                        {cat.image ? (
-                          <Image
-                            src={cat.image}
-                            alt={cat.name}
-                            fill
-                            sizes="40px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <Package
-                            size={20}
-                            strokeWidth={1.5}
-                            style={{ color: 'var(--brand-gold)' }}
-                          />
-                        )}
+                        <Image
+                          src={AI_IMAGES[idx % AI_IMAGES.length]}
+                          alt={cat.name}
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
                       </div>
                       <span
                         className="text-[13px] font-medium truncate"

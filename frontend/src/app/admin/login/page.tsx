@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Lock, Mail, ArrowRight, Shield } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { showToast } from '@/lib/toast';
@@ -52,7 +53,10 @@ export default function AdminLoginPage() {
               </div>
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-2 block" style={{ color: 'rgba(255,255,255,0.6)' }}>Password</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs uppercase tracking-wider font-semibold block" style={{ color: 'rgba(255,255,255,0.6)' }}>Password</label>
+                <Link href="/forgot-password" className="text-xs font-medium hover:underline" style={{ color: 'var(--brand-gold)' }}>Forgot?</Link>
+              </div>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'rgba(255,255,255,0.4)' }} />
                 <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full rounded-xl pl-11 pr-4 py-3 text-sm text-white" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }} />

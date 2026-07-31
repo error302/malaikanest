@@ -14,6 +14,7 @@ interface Category {
   parent?: string | number | null;
   image?: string | null;
   children?: Category[];
+  product_count?: number;
 }
 
 export default function AdminCategoriesPage() {
@@ -97,7 +98,14 @@ export default function AdminCategoriesPage() {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate" style={{ color: 'var(--brand-text)' }}>{cat.name}</div>
+            <div className="text-sm font-medium truncate flex items-center gap-2" style={{ color: 'var(--brand-text)' }}>
+              {cat.name}
+              {cat.product_count !== undefined && (
+                <span className="text-xs font-normal" style={{ color: 'var(--brand-text-muted)' }}>
+                  ({cat.product_count} {cat.product_count === 1 ? 'product' : 'products'})
+                </span>
+              )}
+            </div>
             <div className="text-xs" style={{ color: 'var(--brand-text-muted)' }}>/{cat.full_slug || cat.slug}</div>
           </div>
         </div>

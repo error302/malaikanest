@@ -6,34 +6,17 @@ import { Package, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useCategories } from '@/lib/categoriesContext';
 
-/* ── Pastel gradient palette for cards without uploaded images ── */
-const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
-  clothing: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop&q=80',
-  feeding: 'https://images.unsplash.com/photo-1584839627923-d58f3e829da6?w=500&auto=format&fit=crop&q=80',
-  nursery: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=500&auto=format&fit=crop&q=80',
-  toys: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80',
-  travel: 'https://images.unsplash.com/photo-1591154669695-5f2a8d20c089?w=500&auto=format&fit=crop&q=80',
-  books: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&auto=format&fit=crop&q=80',
-  gifts: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80',
-  thrifted: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=500&auto=format&fit=crop&q=80',
-};
-
-const FALLBACK_PHOTO_ARRAY = [
-  'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1584839627923-d58f3e829da6?w=500&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=500&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1591154669695-5f2a8d20c089?w=500&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500&auto=format&fit=crop&q=80',
+const AI_IMAGES = [
+  '/images/categories/ai-0.jpg',
+  '/images/categories/ai-1.jpg',
+  '/images/categories/ai-2.jpg',
+  '/images/categories/ai-3.jpg',
+  '/images/categories/ai-4.jpg',
+  '/images/categories/ai-5.jpg',
 ];
 
 function getCategoryPhoto(cat: { name: string; image?: string | null }, idx: number): string {
-  if (cat.image) return cat.image;
-  const name = cat.name.toLowerCase();
-  for (const [key, url] of Object.entries(DEFAULT_CATEGORY_IMAGES)) {
-    if (name.includes(key)) return url;
-  }
-  return FALLBACK_PHOTO_ARRAY[idx % FALLBACK_PHOTO_ARRAY.length];
+  return AI_IMAGES[idx % AI_IMAGES.length];
 }
 
 interface CategoryQuickLinksProps {
