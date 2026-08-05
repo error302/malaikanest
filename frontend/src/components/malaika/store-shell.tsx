@@ -34,7 +34,7 @@ export function StoreShell({ branding, children }: StoreShellProps) {
         <AnnouncementBar messages={branding.announcement_messages} />
         <Navbar branding={branding} cartCount={items.length} wishlistCount={wishlistCount} />
         {children}
-        <MobileBottomNav cartCount={items.length} wishlistCount={wishlistCount} />
+        <MobileBottomNav cartCount={items.length} />
         <ScrollToTop />
       </div>
     </CategoriesProvider>

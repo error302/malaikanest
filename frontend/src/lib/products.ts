@@ -65,6 +65,7 @@ export interface ApiProduct {
   stock?: number;
   available_stock?: number;
   has_variants?: boolean;
+  variant_count?: number;
   badge?: string;
   badge_color?: string;
 }

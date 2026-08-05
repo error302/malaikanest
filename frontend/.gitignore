@@ -33,6 +33,10 @@ server.log
 *.tsbuildinfo
 next-env.d.ts
 
+# prisma (local SQLite CMS DB — never commit build/dev databases)
+*.db
+*.db-journal
+
 # claude / sandbox
 .claude
 .z-ai-config

@@ -17,8 +17,25 @@ import {
 import { getSiteSettings, getValueProps, getTestimonials } from '@/lib/settings';
 import { getFeaturedThrifted } from '@/lib/thrifted';
 
+import { Metadata } from 'next';
+
 export const revalidate = 60;
 export const dynamic = 'force-static';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const storeName = settings.branding?.store_name || 'Malaika Nest';
+  
+  return {
+    title: 'Baby Shop in Mombasa | Organic Baby Clothing & Gifts',
+    description: `Looking for a baby shop in Mombasa? ${storeName} offers premium organic baby clothing, accessories & maternity wear. Free local delivery & M-Pesa accepted. Trusted by 5,000+ Kenyan families.`,
+    alternates: { canonical: 'https://malaikanest.com/' },
+    openGraph: {
+      title: `${storeName} — Mombasa's Premium Baby Shop`,
+      description: `Premium organic baby clothing, accessories & maternity wear. Free local delivery in Mombasa & M-Pesa accepted.`,
+    },
+  };
+}
 
 export default async function HomePage() {
   const [featured, bestSellers, newArrivals, banners, settings, valueProps, testimonials, thrifted] = await Promise.all([
@@ -38,7 +55,7 @@ export default async function HomePage() {
     <>
       <CartRecoveryBanner />
       <main id="main" className="flex-1">
-        <Hero banners={banners} content={content} />
+        <Hero banners={banners} />
         <RecentlyViewedSection />
         <ShopByAge content={content} />
         <CategoryQuickLinks content={content} />

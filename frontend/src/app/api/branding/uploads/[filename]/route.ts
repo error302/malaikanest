@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { existsSync, readFile } from 'fs';
+import { existsSync } from 'fs';
+import { readFile } from 'fs/promises';
 import path from 'path';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads', 'branding');

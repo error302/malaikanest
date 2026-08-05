@@ -68,7 +68,7 @@ export default function AdminBrandingPage() {
   const logoFileRef = useRef<HTMLInputElement>(null);
   const faviconFileRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (key: 'logo_url' | 'favicon_url', fileRef: RefObject<HTMLInputElement>) => {
+  const handleUpload = async (key: 'logo_url' | 'favicon_url', fileRef: RefObject<HTMLInputElement | null>) => {
     const input = fileRef.current;
     const file = input?.files?.[0];
     if (!file) return;
@@ -119,7 +119,6 @@ export default function AdminBrandingPage() {
             </div>
             {settings.logo_url && (
               <div className="mt-2 inline-block p-2 rounded-xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={settings.logo_url} alt="Logo preview" className="h-12 w-auto object-contain" />
               </div>
             )}

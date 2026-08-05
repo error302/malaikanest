@@ -179,7 +179,6 @@ export default function ProductGalleryUploader({ initialImages = [], onChange }:
               style={cardStyle(item.is_primary)}
             >
               <div className="w-full h-28 rounded-lg overflow-hidden bg-[var(--brand-bg-alt)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={item.url} alt="" className="w-full h-full object-cover" />
               </div>
 

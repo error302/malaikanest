@@ -79,7 +79,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
               {src ? (
                 <Image
                   src={src}
-                  alt=""
+                  alt={`${alt || 'Product'} thumbnail ${i + 1}`}
                   fill
                   sizes="64px"
                   className="w-full h-full object-cover"

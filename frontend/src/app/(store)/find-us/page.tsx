@@ -4,8 +4,14 @@ import { getSiteSettings } from '@/lib/settings';
 import { getShopPhotos } from '@/lib/shop-photos';
 
 export const metadata: Metadata = {
-  title: 'Find Us',
-  description: 'Visit the Malaika Nest workshop in Mombasa, Kenya. See our location on the map, business hours and contact details.',
+  title: 'Find Us — Baby Shop in Mombasa | Malaika Nest',
+  description: 'Visit Malaika Nest at Tawakal Toto Shop, Mombasa. Open Mon–Fri 9am–6pm & Sat 9am–4pm. Call +254726771321 or shop online with M-Pesa. Free delivery within Mombasa.',
+  alternates: { canonical: 'https://malaikanest.com/find-us' },
+  openGraph: {
+    title: 'Find Malaika Nest — Baby Shop in Mombasa',
+    description: 'Visit us at Tawakal Toto Shop, Mombasa. Mon–Fri 9am–6pm, Sat 9am–4pm. Call +254726771321.',
+    url: 'https://malaikanest.com/find-us',
+  },
 };
 
 export const dynamic = 'force-dynamic';

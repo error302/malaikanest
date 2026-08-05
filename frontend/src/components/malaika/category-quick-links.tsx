@@ -28,9 +28,10 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
   const c = content?.categories || {};
   const { categories: rawCategories, loading } = useCategories();
 
-  const categories = rawCategories.filter(
-    (cat: any) => !cat.parent || cat.children !== undefined || rawCategories.length <= 8
+  const filtered = rawCategories.filter(
+    (cat: any) => !cat.parent || cat.children !== undefined
   );
+  const categories = (filtered.length > 0 ? filtered : rawCategories).slice(0, 8);
 
   if (loading && categories.length === 0) {
     return (
@@ -70,7 +71,16 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
     );
   }
 
-  if (categories.length === 0) return null;
+  const DEFAULT_CATEGORIES = [
+    { id: '1', name: 'Baby Clothing', slug: 'clothing' },
+    { id: '2', name: 'Baby Essentials', slug: 'baby-essentials' },
+    { id: '3', name: 'Nursery', slug: 'nursery' },
+    { id: '4', name: 'Toys & Learning', slug: 'toys' },
+    { id: '5', name: 'Gifts & Bundles', slug: 'gifts' },
+    { id: '6', name: 'Mtumba / Thrifted', slug: 'thrifted' },
+  ];
+
+  const displayCategories = categories.length > 0 ? categories : DEFAULT_CATEGORIES;
 
   return (
     <section
@@ -100,46 +110,44 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {categories.map((cat, idx) => (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
+          {displayCategories.map((cat, idx) => (
             <Link
               key={cat.id}
               href={`/categories?category=${cat.slug}`}
-              className="group relative flex flex-col rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-warm-md hover:-translate-y-1"
-              style={{
-                background: '#FFFFFF',
-                borderColor: 'var(--brand-border)',
-              }}
+              className="group flex flex-col items-center text-center w-full max-w-[130px] transition-all duration-300"
             >
-              <div className="aspect-square flex items-center justify-center transition-transform duration-300 group-hover:scale-105 relative overflow-hidden">
-                <Image
-                  src={getCategoryPhoto(cat, idx)}
-                  alt={cat.name}
-                  fill
-                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-3 sm:p-4">
-                <div
-                  className="text-[13px] sm:text-[14px] font-semibold leading-tight"
-                  style={{ color: 'var(--brand-text)' }}
-                >
-                  {cat.name}
+              {/* Circular Avatar Container with soft gold ring & elevation */}
+              <div
+                className="relative w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-white p-1.5 shadow-[0_8px_20px_rgba(44,24,16,0.06)] border transition-all duration-500 ease-out group-hover:-translate-y-2 group-hover:shadow-[0_16px_32px_rgba(196,144,74,0.2)] group-hover:border-[var(--brand-gold)] flex items-center justify-center"
+                style={{ borderColor: 'var(--brand-border)' }}
+              >
+                <div className="w-full h-full rounded-full overflow-hidden relative bg-[var(--brand-warm)]">
+                  <Image
+                    src={getCategoryPhoto(cat, idx)}
+                    alt={cat.name}
+                    fill
+                    sizes="(max-width: 640px) 80px, (max-width: 1024px) 96px, 112px"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
                 </div>
-                {cat.product_count !== undefined && (
-                  <div
-                    className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium"
-                    style={{ color: 'var(--brand-gold)' }}
-                  >
-                    {(cat.product_count ?? 0) === 1 ? '1 item' : `${cat.product_count ?? 0} items`}
-                    <ChevronRight
-                      size={12}
-                      className="transition-transform group-hover:translate-x-0.5"
-                    />
-                  </div>
-                )}
               </div>
+
+              {/* Category Name & Count */}
+              <h3
+                className="mt-3 text-xs sm:text-sm font-semibold tracking-tight transition-colors duration-300 line-clamp-1 group-hover:text-[var(--brand-gold)]"
+                style={{ color: 'var(--brand-text)' }}
+              >
+                {cat.name}
+              </h3>
+              {cat.product_count !== undefined && (
+                <span
+                  className="mt-1 inline-flex items-center text-[10px] sm:text-[11px] font-medium tracking-wide opacity-80"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                >
+                  {(cat.product_count ?? 0) === 1 ? '1 item' : `${cat.product_count ?? 0} items`}
+                </span>
+              )}
             </Link>
           ))}
         </div>

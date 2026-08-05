@@ -17,8 +17,9 @@ export default function WishlistPage() {
       name: item.name,
       slug: item.slug,
       price: item.price,
-      image: item.image,
-    }, 1);
+      image: item.image ?? undefined,
+      qty: 1,
+    });
     showToast('Added to cart!', 'success');
     remove(item.productId);
   };

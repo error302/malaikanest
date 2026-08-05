@@ -204,24 +204,27 @@ export function Footer({ branding }: FooterProps) {
                     {t('nav.contact')}
                   </h3>
                  <ul className="space-y-1.5">
-                   <li>
-                     <a
-                       href={`mailto:${b?.contact_email || "hello@malaikanest.com"}`}
-                       className="text-[13px] inline-flex items-center gap-2 transition-colors hover:text-[var(--brand-gold)]"
-                       style={{ color: 'var(--brand-text-secondary)' }}
-                     >
-                       <Mail size={13} /> {b?.contact_email || 'hello@malaikanest.com'}
-                     </a>
-                   </li>
-                   <li>
-                     <a
-                       href={`tel:${b?.contact_phone || "+254726771321"}`}
-                       className="text-[13px] inline-flex items-center gap-2 transition-colors hover:text-[var(--brand-gold)]"
-                       style={{ color: 'var(--brand-text-secondary)' }}
-                     >
-                       <Phone size={13} /> {b?.contact_phone || '+254 726 771 321'}
-                     </a>
-                   </li>
+                    <li>
+                      <a
+                        href={`mailto:${b?.contact_email || "hello@malaikanest.com"}`}
+                        data-cfemail="false"
+                        aria-label={`Email Malaika Nest at ${b?.contact_email || 'hello@malaikanest.com'}`}
+                        className="text-[13px] inline-flex items-center gap-2 transition-colors hover:text-[var(--brand-gold)]"
+                        style={{ color: 'var(--brand-text-secondary)' }}
+                      >
+                        <Mail size={13} aria-hidden="true" /> {b?.contact_email || 'hello@malaikanest.com'}
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href={`tel:${b?.contact_phone || "+254726771321"}`}
+                        aria-label={`Call Malaika Nest at ${b?.contact_phone || '+254 726 771 321'}`}
+                        className="text-[13px] inline-flex items-center gap-2 transition-colors hover:text-[var(--brand-gold)]"
+                        style={{ color: 'var(--brand-text-secondary)' }}
+                      >
+                        <Phone size={13} aria-hidden="true" /> {b?.contact_phone || '+254 726 771 321'}
+                      </a>
+                    </li>
                    <li
                      className="text-[13px] inline-flex items-center gap-2"
                      style={{ color: 'var(--brand-text-secondary)' }}

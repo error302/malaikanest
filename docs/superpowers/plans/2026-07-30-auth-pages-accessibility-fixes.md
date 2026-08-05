@@ -1,5 +1,12 @@
 # Auth Pages — Web Interface Guidelines Fixes
 
+> **STATUS: ✅ DONE — 2026-08-05.** All tasks below were already applied in the committed
+> login + register pages. Verified by inspecting `frontend/src/app/(store)/login/page.tsx` and
+> `register/page.tsx`: `id`/`htmlFor` pairs, `name`, `autocomplete`, `spellCheck` (email),
+> `inputMode="numeric"` (phone), `useRef` + focus-on-error, and explicit
+> `transition-[colors,box-shadow,…]` (no `transition-all`) are all present.
+> See the completion note at the bottom of this plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Fix all Web Interface Guidelines violations found during audit of login and register pages.
@@ -255,9 +262,22 @@ Run: `git diff` — confirm only intended changes to the two files. No stray whi
 
 **Plan complete and saved to `docs/superpowers/plans/2026-07-30-auth-pages-accessibility-fixes.md`.**
 
-Two execution options:
+---
 
-1. **Subagent-Driven (recommended)** — I dispatch a fresh subagent per task, review between tasks, fast iteration
-2. **Inline Execution** — Execute tasks in this session with batch execution and checkpoints
+## ✅ Completion note (2026-08-05)
 
-**Which approach?**
+All five tasks were **already implemented** in the committed code — no edits were required.
+Verification (`tsc --noEmit` clean; code inspection of both pages):
+
+- **Task 1 & 3 (ids / labels / autocomplete / name):** `login-email`, `login-password`,
+  `reg-firstName`, `reg-lastName`, `reg-email`, `reg-phone`, `reg-password`, `reg-confirm` all have
+  matching `htmlFor`+`id`, `name`, and spec-correct `autocomplete` (`email`, `current-password`,
+  `given-name`, `family-name`, `tel`, `new-password`).
+- **Email `spellCheck={false}`** and **phone `inputMode="numeric"`** present.
+- **Task 2 & 4 (transitions + focus-on-error):** no `transition-all` remains — all inputs/buttons/
+  links use explicit `transition-[colors,box-shadow,transform]` / `transition-[colors,box-shadow]`.
+  Both pages keep `useRef`s and focus the first errored field on validation + submit failure.
+- **Task 5 (review):** changes reviewed; `tsc --noEmit` reports 0 errors after the 2026-08-05
+  bug-fix pass (see `docs/BUG-FIXES-2026-08-05.md`).
+
+No further action needed on this plan.

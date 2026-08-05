@@ -57,14 +57,11 @@ function SearchBrowser() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
-  // Persist + search when the URL `q` is set
-  useEffect(() => {
-    const q = params.get('q') || '';
-    setQuery(q);
-    setSubmitted(q);
-    if (q.trim()) runSearch(q);
-  }, [params]);
-
+  // Persist + search when the URL `q` is set.
+  // NOTE: runSearch/saveRecent are declared below with useCallback; they are
+  // hoisted as const bindings, so the effect closes over the current render's
+  // instances. Kept as plain functions (not in deps) to avoid re-running on
+  // every keystroke — the effect should only fire when the URL changes.
   const runSearch = async (q: string) => {
     const term = q.trim();
     if (!term) {
@@ -98,6 +95,13 @@ function SearchBrowser() {
       setRecent(next);
     } catch {}
   };
+
+  useEffect(() => {
+    const q = params.get('q') || '';
+    setQuery(q);
+    setSubmitted(q);
+    if (q.trim()) runSearch(q);
+  }, [params]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

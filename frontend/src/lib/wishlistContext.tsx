@@ -13,7 +13,7 @@ import { showToast } from '@/lib/toast';
 
 export type WishlistItem = {
   id: string;
-  productId: number;
+  productId: number | string;
   name: string;
   slug: string;
   price: number;
@@ -27,9 +27,9 @@ type WishlistContextType = {
   items: WishlistItem[];
   count: number;
   add: (item: WishlistItem) => void;
-  remove: (productId: number) => void;
+  remove: (productId: number | string) => void;
   toggle: (item: WishlistItem) => void;
-  contains: (productId: number) => boolean;
+  contains: (productId: number | string) => boolean;
   clear: () => void;
 };
 
@@ -76,13 +76,13 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const remove = useCallback((productId: number) => {
+  const remove = useCallback((productId: number | string) => {
     setItems((current) => {
-      const exists = current.some((entry) => entry.productId === productId);
+      const exists = current.some((entry) => String(entry.productId) === String(productId));
       if (exists) {
         showToast('Removed from wishlist', 'info');
       }
-      return current.filter((entry) => entry.productId !== productId);
+      return current.filter((entry) => String(entry.productId) !== String(productId));
     });
   }, []);
 

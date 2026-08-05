@@ -8,30 +8,31 @@ A full-featured e-commerce platform for baby and children's clothing in Kenya, b
 ## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 15 (App Router, React 18, TypeScript)
-- **Styling**: Tailwind CSS 3.4 + CSS custom properties (brand system)
+- **Framework**: Next.js 16 (App Router, React 19, TypeScript)
+- **Styling**: Tailwind CSS 4 + CSS custom properties (brand system)
+- **UI**: shadcn/ui + Radix primitives
 - **Animations**: Framer Motion
-- **Icons**: Lucide React
-- **State**: React Context + hooks (cart, wishlist, auth, i18n)
-- **HTTP Client**: Axios with interceptors
-- **Analytics**: Cloudflare Analytics (RUM)
+- **Icons**: `lucide-react` (aliased to a Phosphor-backed shim — see `src/lib/icons.tsx`)
+- **State**: React Context + Zustand + TanStack Query (cart, wishlist, auth, i18n, catalog)
+- **HTTP Client**: Axios with interceptors (cache, retry, JWT refresh)
+- **Runtime**: Bun (prod start) · **CMS**: Prisma 6 (SQLite)
 
 ### Backend (API)
 - **Framework**: Django 5.1 + Django REST Framework 3.15
 - **Authentication**: JWT (djangorestframework-simplejwt)
 - **Database**: PostgreSQL 15 (via Docker)
-- **Cache**: Redis 6
-- **Task Queue**: Celery + django-celery-beat
+- **Cache**: Redis 7
+- **Task Queue**: Celery + django-celery-beat + Channels (WebSockets)
 - **Media Storage**: Cloudinary
 - **PDF Generation**: ReportLab
 
 ### Infrastructure & Deployment
-- **Frontend Hosting**: Cloudflare Pages (Next.js standalone)
-- **Backend Hosting**: Cloudflare Workers (containerized Docker)
-- **CDN/DNS**: Cloudflare
-- **Object Storage**: Cloudflare R2
-- **Database**: Cloudflare D1 (SQLite) — Workers builds
-- **Email**: Gmail SMTP
+- **Hosting**: Docker Compose on a single VM (Frontend + Backend + Postgres + Redis + Celery)
+- **Tunnel/CDN/DNS**: Cloudflare Tunnel (hot-standby) + Cloudflare CDN + Analytics
+- **Database**: PostgreSQL 15 (commerce) + SQLite (frontend CMS, persistent volume)
+- **Cache/Queue**: Redis 7 (Celery broker + cache + Channels)
+- **Media Storage**: Cloudinary
+- **Email**: Brevo (smtp-relay.brevo.com)
 
 ## Core Features
 
@@ -228,17 +229,24 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 ## Deployment
 
-### Production (Cloudflare Workers)
+> See `AGENTS.md`, `docs/ARCHITECTURE.md` and `docs/BUG-FIXES-2026-08-05.md` for onboarding and the
+> full production-readiness pass. The active topology is `docker-compose.yml` + `cloudflared/`.
+
+### Production (Docker Compose + Cloudflare Tunnel)
 
 ```bash
-# Build and deploy backend Docker image to Cloudflare Workers
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
+# Build and start the full stack (active topology in docker-compose.yml)
+docker compose up -d --build
+docker compose logs -f backend celery frontend
 
-# Deploy frontend to Cloudflare Pages
-# Push to GitHub main branch — Cloudflare Pages auto-deploys
-git push origin main
+# Apply migrations
+docker compose exec backend python manage.py migrate
+# Push the frontend CMS schema to its persistent SQLite volume
+docker compose exec frontend npx prisma db push
 ```
+
+> Traffic: Cloudflare → cloudflared tunnel → Nginx/Next.js/Django. Two `cloudflared` containers run
+> in hot-standby for instant failover (load-balanced by Cloudflare).
 
 ### Cloudflare Cache Rule (Required)
 Create a Cache Rule in the Cloudflare dashboard to cache static assets:

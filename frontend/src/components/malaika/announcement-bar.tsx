@@ -9,36 +9,38 @@ interface AnnouncementBarProps {
 export function AnnouncementBar({ messages = [] }: AnnouncementBarProps) {
   const [index, setIndex] = useState(0);
 
-  useEffect(() => {
-    if (messages.length <= 1) return;
-    const t = setInterval(() => {
-      setIndex((i) => (i + 1) % messages.length);
-    }, 4500);
-    return () => clearInterval(t);
-  }, [messages.length]);
+  const defaultMessages = [
+    '🚚 <strong>Same-Day Delivery in Mombasa</strong> · 1–3 Days Across Kenya',
+    '💚 <strong>Lipa Na M-Pesa Accepted</strong> · Till 3370347',
+    '✨ Handcrafted Organic Baby Clothing & Premium Essentials',
+    '📲 <strong>Order via WhatsApp:</strong> <a href="https://wa.me/254726771321" target="_blank" rel="noopener noreferrer" class="underline hover:text-amber-100">+254 726 771 321</a>',
+  ];
 
-  if (messages.length === 0) return null;
+  const displayList = messages && messages.length > 0 ? messages : defaultMessages;
+
+  useEffect(() => {
+    if (displayList.length <= 1) return;
+    const t = setInterval(() => {
+      setIndex((i) => (i + 1) % displayList.length);
+    }, 4000);
+    return () => clearInterval(t);
+  }, [displayList.length]);
 
   return (
     <div
-      className="relative z-[60] overflow-hidden text-center text-[11px] sm:text-xs py-2.5 px-4 font-light tracking-wide"
+      className="relative z-[60] overflow-hidden text-center text-[11px] sm:text-xs py-2.5 px-4 font-medium tracking-wide"
       style={{
-        background: 'var(--brand-gold)',
+        background: 'var(--brand-brown-dark)',
         color: '#FFFFFF',
       }}
-      role="banner"
+      role="status"
       aria-live="polite"
     >
       <div
         key={index}
         className="animate-fade-in-up inline-flex items-center gap-2"
       >
-        <span
-          className="inline-block w-1 h-1 rounded-full"
-          style={{ background: 'var(--brand-gold-soft)' }}
-          aria-hidden
-        />
-        <span dangerouslySetInnerHTML={{ __html: messages[index] || messages[0] }} />
+        <span dangerouslySetInnerHTML={{ __html: displayList[index] || displayList[0] }} />
       </div>
     </div>
   );

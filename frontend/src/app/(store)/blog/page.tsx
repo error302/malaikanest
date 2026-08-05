@@ -5,9 +5,14 @@ import { getPublishedPosts, getCategories } from '@/lib/blog';
 import { SITE_URL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
-  title: 'Blog — Baby Care Tips, Parenting & Gift Guides',
-  description: 'Expert advice on baby care, organic clothing, parenting tips, and gift guides from Malaika Nest. Handcrafted with love in Kenya.',
+  title: 'Baby Care Tips & Parenting Blog in Kenya | Malaika Nest',
+  description: 'Expert baby care advice, organic clothing guides, gift ideas and parenting tips from the Malaika Nest team in Mombasa, Kenya. Updated regularly for Kenyan parents.',
   alternates: { canonical: `${SITE_URL}/blog` },
+  openGraph: {
+    title: 'Baby Care Tips & Parenting Blog | Malaika Nest',
+    description: 'Expert baby care advice, organic clothing guides and parenting tips from Mombasa, Kenya.',
+    url: `${SITE_URL}/blog`,
+  },
 };
 
 export const dynamic = 'force-dynamic';

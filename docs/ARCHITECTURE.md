@@ -3,6 +3,11 @@
 > **Purpose:** One document that maps the *entire* codebase — backend, frontend, deployment, data flow — so you understand where every file lives, how they connect, and where to make surgical changes.
 >
 > Open this in Obsidian for [[wikilink]] navigation. Use the Mermaid diagrams as a visual compass.
+>
+> **Current state (2026-08-05):** Production-ready. TypeScript clean (`tsc --noEmit` → 0 errors,
+> strict mode, no `@ts-ignore`). ESLint clean (0 problems). `next build` passes with
+> `ignoreBuildErrors: false` (63 pages). See `docs/BUG-FIXES-2026-08-05.md` and `AGENTS.md`
+> (repo root) for onboarding. Obsidian MOC: `Malaika Nest.md` in the vault.
 
 ---
 

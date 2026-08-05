@@ -2,8 +2,14 @@ import type { Metadata } from 'next';
 import { Heart, Baby, Truck, Shield, Leaf } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'About Us',
-  description: 'Malaika Nest is a Kenyan baby shop handcrafting organic clothing and curating premium essentials for little ones aged 0-12 years.',
+  title: 'About Malaika Nest — Baby Shop in Mombasa, Kenya',
+  description: "Malaika Nest is Mombasa's premium baby store handcrafting organic clothing and curating quality essentials for ages 0–12. Learn our story, mission and why 5,000+ Kenyan families trust us.",
+  alternates: { canonical: 'https://malaikanest.com/about' },
+  openGraph: {
+    title: 'About Malaika Nest — Mombasa Baby Shop',
+    description: "Malaika Nest is Mombasa's premium baby store. Handcrafted organic baby clothing & essentials made with love in Kenya.",
+    url: 'https://malaikanest.com/about',
+  },
 };
 
 export default function AboutPage() {

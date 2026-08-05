@@ -7,6 +7,7 @@ import { Heart, ShoppingBag, Star, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
+import { useWishlist } from '@/lib/wishlistContext';
 import { shouldUseUnoptimizedImage } from '@/lib/media';
 
 export interface Product {
@@ -41,7 +42,8 @@ const PLACEHOLDER_GRADIENTS = [
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { t } = useI18n();
   const { add: addToCart } = useCart();
-  const [wished, setWished] = useState(false);
+  const { contains, toggle: toggleWishlist } = useWishlist();
+  const wished = contains(product.id);
   const [hovered, setHovered] = useState(false);
   const [imageErrored, setImageErrored] = useState(false);
 
@@ -65,7 +67,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       slug: product.slug,
       price: product.price,
       image: product.image,
-    }, 1);
+      qty: 1,
+    });
     showToast(t('product.addedToCart') || 'Added to cart', 'success');
   };
 
@@ -130,7 +133,17 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          setWished((w) => !w);
+          toggleWishlist({
+            id: String(product.id),
+            productId: product.id,
+            name: product.name,
+            slug: product.slug,
+            price: product.price,
+            image: product.image,
+            categoryName: product.category,
+            availableStock: inStock ? 1 : 0,
+            hasVariants: Boolean(product.hasVariants),
+          });
         }}
         aria-label={wished ? t('product.removeWishlist') : t('product.wishlist')}
         aria-pressed={wished}

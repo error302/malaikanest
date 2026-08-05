@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { SITE_URL, SITE_NAME } from '@/lib/site-config';
+import { SITE_URL, SITE_NAME, getApiBaseUrl } from '@/lib/site-config';
 
 const BASE_URL = SITE_URL;
 
@@ -86,7 +86,14 @@ async function enrichWithLiveData(base: string): Promise<string> {
   const safe = async (fn: () => Promise<number>, label: string) => {
     try { extras += `\n- ${label}: ${await fn()}`; } catch { /* ignore */ }
   };
-  await safe(() => db.product.count(),                            'Live products in catalog');
+  await safe(async () => {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/products/?page=1&page_size=1`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('products fetch failed');
+    const data = await res.json();
+    return Number(data?.count ?? data?.data?.count ?? 0);
+  }, 'Live products in catalog');
   await safe(() => db.thriftedProduct.count({ where: { isActive: true } }), 'Active thrifted (mtumba) items');
   await safe(() => db.blogPost.count({ where: { isPublished: true } }),   'Published blog posts');
   return base + '\n' + extras;

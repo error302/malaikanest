@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Heart, ShoppingBasket, Sparkles, Tag } from 'lucide-react';
 import { useState } from 'react';
 import { CONDITION_LABELS, type ThriftedProduct } from '@/lib/thrifted';
+import { useWishlist } from '@/lib/wishlistContext';
 
 const CONDITION_COLORS: Record<string, string> = {
   like_new: 'var(--brand-green-light)',
@@ -12,7 +13,8 @@ const CONDITION_COLORS: Record<string, string> = {
 };
 
 export function ThriftedCard({ product, index = 0 }: { product: ThriftedProduct; index?: number }) {
-  const [wished, setWished] = useState(false);
+  const { contains, toggle: toggleWishlist } = useWishlist();
+  const wished = contains(product.id);
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
@@ -46,7 +48,19 @@ export function ThriftedCard({ product, index = 0 }: { product: ThriftedProduct;
       {/* Wishlist */}
       <button
         type="button"
-        onClick={() => setWished((w) => !w)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleWishlist({
+            id: String(product.id),
+            productId: product.id,
+            name: product.name,
+            slug: product.slug,
+            price: product.price,
+            image: product.image,
+            categoryName: 'Thrifted',
+          });
+        }}
         aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
         aria-pressed={wished}
         className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-warm-sm transition-all hover:scale-110"

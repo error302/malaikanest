@@ -53,7 +53,7 @@ const cacheHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  typescript: { ignoreBuildErrors: true },
+  typescript: { ignoreBuildErrors: false },
   reactStrictMode: false,
   turbopack: {
     root: __dirname,

@@ -133,3 +133,29 @@ export const Flame = wrap(Ph.Flame, 'fill');
 export const XCircle = wrap(Ph.XCircle);
 export const Edit2 = wrap(Ph.PencilSimpleLine);
 export const MessageSquareQuote = wrap(Ph.ChatCircleText);
+
+// ── Additional icons required by shadcn/ui v2 primitives ─────────────────────
+// Newer shadcn/ui (Radix) components import lucide icons with an `Icon` suffix
+// (e.g. `ChevronDownIcon`) and a handful of names that were not in the original
+// map above. Add the missing Phosphor mappings + suffix aliases here so the
+// `lucide-react` → `./src/lib/icons.tsx` alias keeps resolving without editing
+// every `components/ui/*` file.
+export const ChevronUp = wrap(Ph.CaretUp, 'bold');
+export const Circle = wrap(Ph.Circle);
+export const MoreHorizontal = wrap(Ph.DotsThree, 'bold');
+export const GripVertical = wrap(Ph.DotsSixVertical, 'bold');
+export const PanelLeft = wrap(Ph.SquareHalf);
+
+// Suffix aliases (shadcn/ui naming convention)
+export const ChevronDownIcon = ChevronDown;
+export const ChevronLeftIcon = ChevronLeft;
+export const ChevronRightIcon = ChevronRight;
+export const ChevronUpIcon = ChevronUp;
+export const CheckIcon = Check;
+export const XIcon = X;
+export const CircleIcon = Circle;
+export const SearchIcon = Search;
+export const MoreHorizontalIcon = MoreHorizontal;
+export const MinusIcon = Minus;
+export const GripVerticalIcon = GripVertical;
+export const PanelLeftIcon = PanelLeft;

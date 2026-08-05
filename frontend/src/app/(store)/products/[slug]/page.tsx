@@ -228,7 +228,7 @@ export default async function ProductDetailPage({ params }: Props) {
               name: product.name,
               slug: product.slug,
               price,
-              image: imageUrl,
+              image: imageUrl ?? undefined,
               inStock,
               hasVariants: Boolean(product.has_variants),
               variants: product.variants || [],
