@@ -1,5 +1,0 @@
-fix(checkout): send shipping_name (single field) instead of shipping_first_name + shipping_last_name
-
-The backend reads request.data.get("shipping_name") and passes it to
-_split_shipping_name(). The two separate fields were silently ignored,
-so the shipper name was empty on every order.
