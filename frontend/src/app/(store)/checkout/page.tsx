@@ -148,8 +148,7 @@ export default function CheckoutPage() {
       const orderPayload = {
         delivery_region: region,
         is_guest: !isAuthenticated,
-        shipping_first_name: form.firstName,
-        shipping_last_name: form.lastName,
+        shipping_name: `${form.firstName} ${form.lastName}`.trim(),
         shipping_phone: form.phone,
         shipping_address: form.address,
         shipping_city: form.city,
