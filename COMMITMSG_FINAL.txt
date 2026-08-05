@@ -1,0 +1,14 @@
+security: add admin auth guard to /api/admin/* routes + UI/UX improvements
+
+Admin:
+- All 13 /api/admin/* Next.js routes now check for the admin refresh cookie
+  via guardAdminRequest() and return 401 if absent (previously had zero auth).
+- Error messages sanitized to avoid leaking internal paths.
+
+UI/UX:
+- Skip-to-main-content link (first focusable element, root layout).
+- Escape key closes mobile menu, search overlay, account dropdown (navbar).
+- Hero carousel arrows increased (44px mobile / 48px desktop).
+- Product card mobile CTA increased to py-2 (44px touch target).
+- Cart quantity and remove buttons increased from 32px to 40px.
+- Cart item slug links have fallback.

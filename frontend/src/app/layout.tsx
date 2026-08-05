@@ -224,6 +224,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         className={`${cormorant.variable} ${dmSans.variable} antialiased`}
         style={{ backgroundColor: "var(--background)", color: "var(--foreground)" }}
       >
+        {/* Skip to main content — first tab target for keyboard users */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-full focus:text-sm focus:font-semibold focus:outline-none"
+          style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+        >
+          Skip to main content
+        </a>
         <Providers>{children}</Providers>
       </body>
     </html>

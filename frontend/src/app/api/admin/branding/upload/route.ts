@@ -1,7 +1,8 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml']);
@@ -21,6 +22,8 @@ export const dynamic = 'force-dynamic';
  * Body: multipart/form-data with one file field (any name).
  */
 export async function POST(req: NextRequest) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const form = await req.formData();
     const file = form.get('file') ?? form.getAll('files')[0];
@@ -49,6 +52,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: `/api/branding/uploads/${filename}`, filename, bytes: f.size });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Upload failed' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) ?? 'Upload failed' }, { status: 500 });
   }
 }

@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 
-/** PUT /api/admin/blog/[id] — update a post */
+/**
+ * PUT /api/admin/blog/[id] — update a post
+ * DELETE /api/admin/blog/[id] — delete a post
+ */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const { id } = await params;
     const body = await req.json();
@@ -40,7 +46,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 /** DELETE /api/admin/blog/[id] — delete a post */
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const { id } = await params;
     const current = await db.blogPost.findFirst({
@@ -51,6 +59,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Failed to delete post' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) || 'Failed to delete post' }, { status: 500 });
   }
 }

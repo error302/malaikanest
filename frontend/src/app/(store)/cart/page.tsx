@@ -52,7 +52,7 @@ export default function CartPage() {
               className="flex gap-4 p-4 rounded-2xl border"
               style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}
             >
-              <Link href={`/products/${item.slug}`} className="flex-shrink-0">
+              <Link href={`/products/${item.slug || 'categories'}`} className="flex-shrink-0">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden" style={{ background: 'var(--brand-warm)' }}>
                   {item.image ? (
                     <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
@@ -65,7 +65,7 @@ export default function CartPage() {
               </Link>
 
               <div className="flex-1 min-w-0">
-                <Link href={`/products/${item.slug}`} className="block">
+                <Link href={`/products/${item.slug || 'categories'}`} className="block">
                   <h3 className="text-sm font-semibold line-clamp-2" style={{ color: 'var(--brand-text)' }}>{item.name}</h3>
                 </Link>
                 {item.variant_label && (
@@ -81,17 +81,17 @@ export default function CartPage() {
                       type="button"
                       onClick={() => updateQty(item.id, item.qty - 1)}
                       aria-label={t('cart.remove') + ' -'}
-                      className="w-8 h-8 rounded-full border flex items-center justify-center"
+                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
                       <Minus size={14} />
                     </button>
-                    <span className="w-8 text-center text-sm font-medium" style={{ color: 'var(--brand-text)' }}>{item.qty}</span>
+                    <span className="w-10 text-center text-sm font-medium" style={{ color: 'var(--brand-text)' }}>{item.qty}</span>
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty + 1)}
                       aria-label={t('cart.remove') + ' +'}
-                      className="w-8 h-8 rounded-full border flex items-center justify-center"
+                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
                       <Plus size={14} />
@@ -101,7 +101,7 @@ export default function CartPage() {
                     type="button"
                     onClick={() => remove(item.id)}
                     aria-label={t('cart.remove')}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]"
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] active:scale-95"
                     style={{ color: 'var(--brand-terra)' }}
                   >
                     <Trash2 size={16} />

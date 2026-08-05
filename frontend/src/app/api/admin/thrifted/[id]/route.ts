@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 
 /**
  * PUT /api/admin/thrifted/[id] — update a thrifted product
  * DELETE /api/admin/thrifted/[id] — delete a thrifted product
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const { id } = await params;
     const body = await req.json();
@@ -37,7 +40,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const { id } = await params;
     await db.thriftedProduct.delete({ where: { id } });

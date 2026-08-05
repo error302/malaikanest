@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 
 /**
  * GET /api/admin/loyalty — list all loyalty accounts
  */
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const accounts = await db.loyaltyAccount.findMany({
       orderBy: { totalEarned: 'desc' },
@@ -13,6 +16,6 @@ export async function GET() {
     });
     return NextResponse.json({ accounts });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message, accounts: [] }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e), accounts: [] }, { status: 500 });
   }
 }

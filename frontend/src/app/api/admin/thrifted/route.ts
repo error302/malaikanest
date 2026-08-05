@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 
 /**
  * GET /api/admin/thrifted — list ALL thrifted products (including sold/hidden)
  * POST /api/admin/thrifted — create a new thrifted product
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const products = await db.thriftedProduct.findMany({
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json({ products });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message, products: [] }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e), products: [] }, { status: 500 });
   }
 }
 
@@ -21,6 +24,8 @@ function slugify(text: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const body = await req.json();
 

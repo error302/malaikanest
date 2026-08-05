@@ -81,6 +81,19 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const shopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Close mobile menu, search overlay, account dropdown on Escape key
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (mobileOpen) setMobileOpen(false);
+        if (searchOpen) setSearchOpen(false);
+        if (accountMenuOpen) setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [mobileOpen, searchOpen, accountMenuOpen]);
+
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
       if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {

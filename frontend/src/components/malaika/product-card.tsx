@@ -263,7 +263,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             type="button"
             onClick={handleAdd}
             disabled={!inStock}
-            className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 active:scale-95 disabled:opacity-40"
+            className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 active:scale-95 disabled:opacity-40"
             style={{
               background: 'var(--brand-warm)',
               color: 'var(--brand-brown-dark)',

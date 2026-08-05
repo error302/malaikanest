@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 
 /** GET /api/admin/blog — list ALL posts (including drafts) */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const posts = await db.blogPost.findMany({ orderBy: { updatedAt: 'desc' } });
     return NextResponse.json({ posts });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message, posts: [] }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e), posts: [] }, { status: 500 });
   }
 }
 
@@ -17,6 +20,8 @@ function slugify(text: string): string {
 
 /** POST /api/admin/blog — create a new post */
 export async function POST(req: NextRequest) {
+  const guard = guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const body = await req.json();
     let slug = slugify(body.title || 'blog-post');
@@ -40,6 +45,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ post: created });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }
 }
