@@ -1,9 +1,0 @@
-refactor: finish Gemini's interactive category/thrifted filtering — export shared normalizer
-
-Gemini built interactive client-side filtering for categories and thrifted
-pages (mobile filter drawer, desktop sidebar, sort, pagination, loading
-states, touch targets). Two refinements:
-
-- Export `normalizeProduct` from `lib/products.ts` so the categories client
-  can import it instead of duplicating the 14-line normalizer locally.
-- Sanitize error messages in the public `/api/thrifted` route.
