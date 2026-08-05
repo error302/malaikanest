@@ -69,3 +69,4 @@ Thumbs.db
 .freebuff/
 
 *.tgz
+.playwright-mcp/
