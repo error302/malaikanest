@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ShoppingCart, Clock, Mail, RefreshCw } from 'lucide-react';
 import api from '@/lib/api';
 import { showToast } from '@/lib/toast';
@@ -26,7 +26,7 @@ export default function AdminAbandonedCartsPage() {
   const [carts, setCarts] = useState<Cart[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCarts = async () => {
+  const fetchCarts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/api/v1/orders/carts/', { params: { abandoned: true, limit: 50 } });
@@ -37,25 +37,11 @@ export default function AdminAbandonedCartsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await api.get('/api/v1/orders/carts/', { params: { abandoned: true, limit: 50 } });
-        if (cancelled) return;
-        const data = res.data;
-        setCarts(data?.results ?? data?.data?.results ?? []);
-      } catch {
-        if (!cancelled) setCarts([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, []);
+    fetchCarts();
+  }, [fetchCarts]);
 
   const handleSendReminder = async (cart: Cart) => {
     try {

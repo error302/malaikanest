@@ -37,8 +37,8 @@ export const CONDITION_COLORS: Record<string, string> = {
   fair: 'var(--brand-terra)',
 };
 
-// Sample thrifted catalog emptied — admin uploads real mtumba items via Prisma/DB.
-const SAMPLE_THRIFTED: ThriftedProduct[] = [];
+// Sample thrifted catalog has been replaced by admin uploads via Prisma/DB.
+// The fetch functions below degrade gracefully to empty arrays on failure.
 
 const THRIFTED_CACHE_TTL = 60_000;
 const _thriftedCache = new Map<string, { data: unknown; ts: number }>();
@@ -104,10 +104,10 @@ export async function getFeaturedThrifted(limit = 4): Promise<ThriftedProduct[]>
         orderBy: { createdAt: 'desc' },
         take: limit,
       });
-      result = anyRows.length > 0 ? anyRows.map(normalize) : SAMPLE_THRIFTED.slice(0, limit);
+      result = anyRows.length > 0 ? anyRows.map(normalize) : [];
     }
   } catch {
-    result = SAMPLE_THRIFTED.slice(0, limit);
+    result = [];
   }
   _tCacheSet(cacheKey, result);
   return result;
@@ -136,9 +136,9 @@ export async function getThriftedProducts(filters?: {
       where,
       orderBy: { createdAt: 'desc' },
     });
-    result = rows.length > 0 ? rows.map(normalize) : SAMPLE_THRIFTED;
+    result = rows.length > 0 ? rows.map(normalize) : [];
   } catch {
-    result = SAMPLE_THRIFTED;
+    result = [];
   }
   _tCacheSet(cacheKey, result);
   return result;
@@ -152,6 +152,6 @@ export async function getThriftedBySlug(slug: string): Promise<ThriftedProduct |
     if (!row) return null;
     return normalize(row);
   } catch {
-    return SAMPLE_THRIFTED.find((t) => t.slug === slug) || null;
+    return null;
   }
 }

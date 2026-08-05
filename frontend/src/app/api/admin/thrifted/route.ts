@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
+import { slugify } from '@/lib/slugify';
 
 /**
  * GET /api/admin/thrifted — list ALL thrifted products (including sold/hidden)
@@ -17,10 +18,6 @@ export async function GET(req: NextRequest) {
   } catch (e: any) {
     return NextResponse.json({ error: sanitizeError(e), products: [] }, { status: 500 });
   }
-}
-
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'thrifted-item';
 }
 
 export async function POST(req: NextRequest) {

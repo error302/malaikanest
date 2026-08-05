@@ -1,0 +1,12 @@
+refactor: DRY / dead code — shared slugify, formatKES, thrifted fallback, abandon-carts fetch
+
+- Extract duplicate `slugify` functions (blog + thrifted API routes) into
+  shared `lib/slugify.ts`.
+- Add `lib/format.ts` with shared `formatKES`, `formatKESFromString`,
+  `formatDate` utilities; use `formatKES` in product-card (was local).
+- Remove dead `SAMPLE_THRIFTED` empty-array fallback — the Prisma DB
+  is always authoritative; fallbacks on error simply return [].
+- De-duplicate `abandoned-carts/page.tsx` mount effect (inline `load`
+  was identical to `fetchCarts`). Now calls `useCallback(fetchCarts)`.
+- Remove unused import of `invalidateSettingsCache` from files that no
+  longer use it (cleaned during admin-guard pass).

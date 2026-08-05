@@ -9,6 +9,7 @@ import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
 import { useWishlist } from '@/lib/wishlistContext';
 import { shouldUseUnoptimizedImage } from '@/lib/media';
+import { formatKES } from '@/lib/format';
 
 export interface Product {
   id: number;
@@ -24,10 +25,6 @@ export interface Product {
   inStock?: boolean;
   hasVariants?: boolean;
   variantCount?: number;
-}
-
-function formatKES(n: number) {
-  return `KES ${n.toLocaleString('en-KE')}`;
 }
 
 const PLACEHOLDER_GRADIENTS = [

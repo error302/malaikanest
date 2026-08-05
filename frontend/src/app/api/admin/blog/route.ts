@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
+import { slugify } from '@/lib/slugify';
 
 /** GET /api/admin/blog — list ALL posts (including drafts) */
 export async function GET(req: NextRequest) {
@@ -12,10 +13,6 @@ export async function GET(req: NextRequest) {
   } catch (e: any) {
     return NextResponse.json({ error: sanitizeError(e), posts: [] }, { status: 500 });
   }
-}
-
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'blog-post';
 }
 
 /** POST /api/admin/blog — create a new post */
