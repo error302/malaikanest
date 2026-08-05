@@ -5,9 +5,9 @@ import OrderStatus from './OrderStatus';
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string }>;
+  searchParams: Promise<{ order?: string; status?: string; token?: string }>;
 }) {
-  const { order: receiptNumber } = await searchParams;
+  const { order: receiptNumber, token: checkoutToken } = await searchParams;
 
   return (
     <div className="container-shell py-16 sm:py-24 text-center max-w-xl mx-auto">
@@ -31,7 +31,7 @@ export default async function CheckoutSuccessPage({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 text-left">
-        <OrderStatus receiptNumber={receiptNumber} />
+        <OrderStatus receiptNumber={receiptNumber} checkoutToken={checkoutToken} />
         <div className="p-4 rounded-xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
           <Mail size={18} className="mb-2" style={{ color: 'var(--brand-gold)' }} />
           <div className="text-sm font-semibold" style={{ color: 'var(--brand-text)' }}>Confirmation</div>

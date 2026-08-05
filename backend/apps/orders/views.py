@@ -737,7 +737,7 @@ class GuestOrderTrackView(viewsets.ViewSet):
             order = (
                 Order.objects.select_related("user")
                 .prefetch_related("items__product")
-                .filter(checkout_token=checkout_token, user__isnull=True)
+                .filter(checkout_token=checkout_token)
                 .first()
             )
             if not order:

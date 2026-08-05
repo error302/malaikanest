@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Package, Truck, CheckCircle, Clock, MapPin, XCircle, ArrowRight } from 'lucide-react';
+import { Search, Package, Truck, CheckCircle, Clock, MapPin, XCircle, ArrowRight, Mail } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { showToast } from '@/lib/toast';
@@ -49,6 +49,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function TrackOrderPage() {
   const [receipt, setReceipt] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
   const [searched, setSearched] = useState(false);
@@ -56,17 +57,24 @@ export default function TrackOrderPage() {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = receipt.trim();
+    const emailTrimmed = email.trim();
     if (!trimmed) {
       showToast('Please enter a receipt number', 'error');
+      return;
+    }
+    if (!emailTrimmed) {
+      showToast('Please enter the email used on your order', 'error');
       return;
     }
     setLoading(true);
     setSearched(true);
     setOrder(null);
     try {
-      const res = await api.get(`/api/v1/orders/track/?receipt=${encodeURIComponent(trimmed)}`, {
-        headers: { 'X-No-Auth-Redirect': 'true' },
-      });
+      const res = await api.post(
+        '/api/v1/orders/track/',
+        { receipt_number: trimmed, email: emailTrimmed },
+        { headers: { 'X-No-Auth-Redirect': 'true' } }
+      );
       const data = res.data?.data ?? res.data;
       if (data?.id || data?.receipt_number) {
         setOrder(data);
@@ -110,6 +118,19 @@ export default function TrackOrderPage() {
             aria-label="Receipt number"
             pattern="[Mm][Nn]-?[A-Za-z0-9]{4,}"
             title="Enter a receipt number like MN-XXXX1234ABCD"
+          />
+        </div>
+        <div className="relative flex-1">
+          <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--brand-text-muted)' }} />
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@email.com (used on your order)"
+            className="input-warm w-full"
+            style={{ background: '#FFFFFF' }}
+            aria-label="Order email"
           />
         </div>
         <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>

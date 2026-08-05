@@ -12,6 +12,7 @@ import type { DeliveryZone } from '@/lib/delivery';
 import { getPublicSettings } from '@/lib/public-settings';
 import type { PublicSettings } from '@/lib/public-settings';
 import { useI18n } from '@/lib/i18n';
+import { useAuth } from '@/lib/authContext';
 
 const PAYMENT_METHODS = [
   { value: 'mpesa', labelKey: 'checkout.mpesa', Icon: Smartphone, descKey: 'checkout.mpesaDesc' },
@@ -22,16 +23,18 @@ const PAYMENT_METHODS = [
 export default function CheckoutPage() {
   const { t } = useI18n();
   const { items } = useCart();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   const [settings, setSettings] = useState<PublicSettings>({ free_shipping_threshold: '3000', shipping_fee: '300' });
-  const [region, setRegion] = useState('nairobi');
+  const [region, setRegion] = useState('');
   const [payment, setPayment] = useState('mpesa');
   const [submitting, setSubmitting] = useState(false);
   const [paymentPending, setPaymentPending] = useState(false);
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
   const [paymentPollingError, setPaymentPollingError] = useState<string | null>(null);
   const [pendingReceiptNumber, setPendingReceiptNumber] = useState<string | null>(null);
+  const [pendingCheckoutToken, setPendingCheckoutToken] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number; discount_label: string } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -61,7 +64,7 @@ export default function CheckoutPage() {
         if (status.status === 'completed' || status.status === 'paid') {
           setPaymentPending(false);
           showToast('Payment confirmed!', 'success');
-          router.push(`/checkout/success?order=${pendingReceiptNumber}&status=paid`);
+          router.push(`/checkout/success?order=${pendingReceiptNumber}&status=paid&token=${pendingCheckoutToken}`);
           return;
         }
         if (status.status === 'failed') {
@@ -87,7 +90,7 @@ export default function CheckoutPage() {
 
     const timeoutId = setTimeout(poll, POLL_INTERVAL);
     return () => clearTimeout(timeoutId);
-  }, [paymentPending, checkoutRequestId, router, pendingReceiptNumber]);
+  }, [paymentPending, checkoutRequestId, router, pendingReceiptNumber, pendingCheckoutToken]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -126,20 +129,25 @@ export default function CheckoutPage() {
     { slug: 'nairobi', name: 'Nairobi (1-2 Days)', fee: '300', estimated_days: '1-2 Days' },
     { slug: 'upcountry', name: 'Upcountry (2-3 Days)', fee: '500', estimated_days: '2-3 Days' },
   ];
-  const regionObj = zones.find((r) => r.slug === region)!;
+  const regionObj = zones.find((r) => r.slug === region);
   const freeThreshold = Number(settings.free_shipping_threshold) || 3000;
-  const deliveryFee = subtotal >= freeThreshold ? 0 : Number(regionObj?.fee || 0);
+  const deliveryFee = !regionObj ? 0 : subtotal >= freeThreshold ? 0 : Number(regionObj.fee || 0);
   const discountAmount = appliedCoupon?.discount_amount || 0;
   const total = subtotal + deliveryFee - discountAmount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!region) {
+      showToast(t('checkout.chooseDelivery') || 'Please choose a delivery option.', 'error');
+      return;
+    }
     setSubmitting(true);
 
     try {
       // Step 1: Create the order via Django backend
       const orderPayload = {
         delivery_region: region,
+        is_guest: !isAuthenticated,
         shipping_first_name: form.firstName,
         shipping_last_name: form.lastName,
         shipping_phone: form.phone,
@@ -156,6 +164,7 @@ export default function CheckoutPage() {
       const orderData = orderRes.data?.data ?? orderRes.data;
       const orderId = orderData?.id || orderData?.order_id;
       const receiptNumber = orderData?.receipt_number;
+      const checkoutToken = orderData?.checkout_token;
 
       if (!orderId) {
         throw new Error('No order ID returned from server');
@@ -178,6 +187,7 @@ export default function CheckoutPage() {
           setPaymentPending(true);
           setCheckoutRequestId(mpesaData.checkout_request_id);
           setPendingReceiptNumber(receiptNumber);
+          setPendingCheckoutToken(checkoutToken);
           setPaymentPollingError(null);
         } else {
           throw new Error(mpesaData?.message || 'M-Pesa initiation failed');
@@ -199,7 +209,7 @@ export default function CheckoutPage() {
           // which lands the shopper on the success page. We also send the main
           // window there so the order is recorded as placed.
           window.open(pesapalData.redirect_url, '_blank');
-          router.push(`/checkout/success?order=${receiptNumber}`);
+          router.push(`/checkout/success?order=${receiptNumber}&token=${checkoutToken}`);
         } else {
           throw new Error(pesapalData?.detail || 'Pesapal initiation failed');
         }
@@ -210,12 +220,12 @@ export default function CheckoutPage() {
           window.location.href = cardData.payment_url;
         } else {
           showToast('Order placed! We will send payment instructions by email.', 'success');
-          router.push(`/checkout/success?order=${receiptNumber}`);
+          router.push(`/checkout/success?order=${receiptNumber}&token=${checkoutToken}`);
         }
       } else {
         // Cash on delivery or bank transfer
         showToast('Order placed! We will contact you to arrange payment.', 'success');
-        router.push(`/checkout/success?order=${receiptNumber}`);
+        router.push(`/checkout/success?order=${receiptNumber}&token=${checkoutToken}`);
       }
     } catch (err: any) {
       const msg = handleApiError(err, 'Failed to place order. Please try again.');
@@ -277,10 +287,12 @@ export default function CheckoutPage() {
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
+                required
                 className="input-warm w-full !pl-4"
                 style={{ background: 'var(--brand-bg-alt)' }}
                 aria-label={t('checkout.shippingAddress')}
               >
+                <option value="" disabled>{t('checkout.chooseDelivery') || 'Choose delivery option…'}</option>
                 {zones.map((r) => (
                   <option key={r.slug} value={r.slug}>{r.name} — KES {Number(r.fee).toLocaleString('en-KE')}</option>
                 ))}
@@ -396,7 +408,8 @@ export default function CheckoutPage() {
                 <span>{t('cart.subtotal')}</span><span>KES {subtotal.toLocaleString('en-KE')}</span>
               </div>
               <div className="flex justify-between" style={{ color: 'var(--brand-text-secondary)' }}>
-                <span>{t('cart.shipping')}{deliveryFee === 0 ? ` (${t('cart.shippingFree').toLowerCase()} ${t('checkout.over')} KES ${freeThreshold.toLocaleString('en-KE')})` : ''}</span><span>{deliveryFee === 0 ? t('cart.shippingFree') : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
+                <span>{t('cart.shipping')}{region && deliveryFee === 0 ? ` (${t('cart.shippingFree').toLowerCase()} ${t('checkout.over')} KES ${freeThreshold.toLocaleString('en-KE')})` : ''}</span>
+                <span>{!region ? (t('checkout.chooseDelivery') || 'Please choose') : deliveryFee === 0 ? t('cart.shippingFree') : `KES ${deliveryFee.toLocaleString('en-KE')}`}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between" style={{ color: 'var(--brand-green-light)' }}>
