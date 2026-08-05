@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sanitizeError } from '@/lib/admin-guard';
 
 /**
  * GET /api/thrifted — list available thrifted products (public)
@@ -28,6 +29,6 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message, products: [] }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e), products: [] }, { status: 500 });
   }
 }

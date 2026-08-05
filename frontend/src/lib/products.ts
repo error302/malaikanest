@@ -91,7 +91,7 @@ function getApiBaseUrl(): string {
   return 'https://api.malaikanest.com';
 }
 
-function normalizeProduct(p: ApiProduct): Product {
+export function normalizeProduct(p: ApiProduct): Product {
   const price = parseFloat(p.price ?? '0') || 0;
   const originalPrice = p.compare_price
     ? parseFloat(p.compare_price)

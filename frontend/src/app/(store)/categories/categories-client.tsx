@@ -5,9 +5,10 @@ import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { ProductCard, type Product } from '@/components/malaika/product-card';
+import type { Product } from '@/components/malaika/product-card';
+import { ProductCard } from '@/components/malaika/product-card';
 import api from '@/lib/api';
-import { getImageUrl } from '@/lib/media';
+import { normalizeProduct } from '@/lib/products';
 
 const AGE_GROUPS = [
   { label: 'All ages', value: '' },
@@ -22,24 +23,6 @@ const SORT_OPTIONS = [
   { label: 'Price: High to Low', value: '-price' },
   { label: 'Most Popular', value: '-rating' },
 ];
-
-function normalizeProduct(p: any): Product {
-  return {
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    price: parseFloat(p.price ?? '0') || 0,
-    originalPrice: p.compare_price ? parseFloat(p.compare_price) : undefined,
-    image: p.image ? getImageUrl(p.image) : undefined,
-    category: p.category?.name,
-    rating: typeof p.rating === 'number' ? p.rating : undefined,
-    reviewCount: p.review_count,
-    badge: p.badge,
-    inStock: (p.available_stock ?? p.stock ?? 0) > 0,
-    hasVariants: Boolean(p.has_variants),
-    variantCount: typeof p.variant_count === 'number' ? p.variant_count : 0,
-  };
-}
 
 export function CategoriesPageClient() {
   // useSearchParams needs a Suspense boundary in the App Router (Next 14+.
