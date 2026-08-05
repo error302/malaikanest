@@ -254,8 +254,14 @@ Create a Cache Rule in the Cloudflare dashboard to cache static assets:
 - **API cache**: `/api/v1/products/` with 5min TTL
 
 ### Admin Access
-- URL: `/admin/`
-- Credentials: `malaikanest7@gmail.com` / `Dosho10701$`
+- Django admin URL: `https://malaikanest.com/manage-store/`
+- Next.js admin dashboard: `https://malaikanest.com/admin`
+- **Credentials are NOT stored in the repo.** Create/rotate the admin via env-backed commands:
+  - `ADMIN_PASSWORD=… python manage.py fix_admin --email hello@malaikanest.com`
+  - `ADMIN_PASSWORD=… python manage.py create_superuser`
+
+> ⚠️ **Security:** The previous admin password was committed to git history. **Rotate it now.**
+> The management commands above deliberately refuse to run without `ADMIN_PASSWORD`/`--password`.
 
 ## License
 

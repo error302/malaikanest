@@ -118,7 +118,11 @@ python manage.py runserver 0.0.0.0:8081
 
 ## 8. Admin access (rotate if exposed)
 
-Django admin: `malaikanest7@gmail.com` / `Dosho10701$` *(per README — rotate if committed/exposed)*
+Django admin: `https://malaikanest.com/manage-store/` · Next.js dashboard: `https://malaikanest.com/admin`
+
+**No credentials are stored in the repo.** Create/rotate the admin with the env-backed commands
+(`fix_admin` / `create_superuser`) — they refuse to run without `ADMIN_PASSWORD`. The old password
+was committed to git history, so **rotate it** (`ADMIN_PASSWORD=… python manage.py fix_admin`).
 
 ## 9. Quality gates (all green as of 2026-08-05)
 

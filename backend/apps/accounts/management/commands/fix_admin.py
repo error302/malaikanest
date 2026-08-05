@@ -1,6 +1,11 @@
 """
-Management command to fix or create admin user
+Management command to fix or create admin user.
+
+Never hardcode a password. Provide --password or set the ADMIN_PASSWORD env var;
+the command refuses to run without one.
 """
+import os
+
 from django.core.management.base import BaseCommand
 from apps.accounts.models import User
 
@@ -18,13 +23,22 @@ class Command(BaseCommand):
         parser.add_argument(
             '--password',
             type=str,
-            help='Password for the admin user',
-            default='Dosho10701$',
+            help='Password for the admin user (or set ADMIN_PASSWORD env var)',
+            default=None,
         )
 
     def handle(self, *args, **options):
         email = options['email']
-        password = options['password']
+        password = options['password'] or os.environ.get('ADMIN_PASSWORD')
+
+        if not password:
+            self.stdout.write(
+                self.style.ERROR(
+                    "Must provide --password or set the ADMIN_PASSWORD env var. "
+                    "Refusing to hardcode/guess a password."
+                )
+            )
+            raise SystemExit(1)
 
         user, created = User.objects.get_or_create(
             email=email,
