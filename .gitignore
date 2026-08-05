@@ -71,3 +71,6 @@ Thumbs.db
 *.tgz
 .playwright-mcp/
 .playwright-cli/
+
+# Secrets / keys (never commit)
+*.pem
