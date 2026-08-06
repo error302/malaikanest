@@ -1,7 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { clearAccessToken, getAccessToken, setAccessToken } from './authToken';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { getApiBaseUrl } from '@/lib/site-config';
 
 const CACHE_DURATION = {
   PRODUCTS: 5 * 60 * 1000,
@@ -80,51 +79,8 @@ const retryWithBackoff = async <T>(
   }
 };
 
-const normalizeHost = (host: string) => host.replace(/^www\./i, '').toLowerCase();
-const getEffectivePort = (url: URL) => {
-  if (url.port) return url.port;
-  if (url.protocol === 'https:') return '443';
-  if (url.protocol === 'http:') return '80';
-  return '';
-};
-
-const getBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    const origin = window.location.origin;
-    const pageUrl = new URL(origin);
-
-    if (!API_URL) {
-      if (['localhost', '127.0.0.1'].includes(pageUrl.hostname)) {
-        return `${pageUrl.protocol}//${pageUrl.hostname}:8000`;
-      }
-      return '';
-    }
-
-    try {
-      const apiUrl = new URL(API_URL);
-      const apiOrigin = apiUrl.origin;
-      const apiHost = normalizeHost(apiUrl.hostname);
-      const pageHost = normalizeHost(pageUrl.hostname);
-      const apiPort = getEffectivePort(apiUrl);
-      const pagePort = getEffectivePort(pageUrl);
-
-      if (apiHost === pageHost && apiPort === pagePort && apiUrl.protocol === pageUrl.protocol) {
-        return '';
-      }
-
-      if (apiOrigin !== origin) return API_URL;
-    } catch {
-      return '';
-    }
-
-    return '';
-  }
-
-  return API_URL || '';
-};
-
 const api = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
