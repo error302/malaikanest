@@ -5,19 +5,7 @@ import Image from 'next/image';
 import { Package, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useCategories } from '@/lib/categoriesContext';
-
-const AI_IMAGES = [
-  '/images/categories/ai-0.jpg',
-  '/images/categories/ai-1.jpg',
-  '/images/categories/ai-2.jpg',
-  '/images/categories/ai-3.jpg',
-  '/images/categories/ai-4.jpg',
-  '/images/categories/ai-5.jpg',
-];
-
-function getCategoryPhoto(cat: { name: string; image?: string | null }, idx: number): string {
-  return AI_IMAGES[idx % AI_IMAGES.length];
-}
+import { getCategoryImage } from '@/lib/category-images';
 
 interface CategoryQuickLinksProps {
   content?: Record<string, Record<string, string>>;
@@ -111,7 +99,7 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
-          {displayCategories.map((cat, idx) => (
+          {displayCategories.map((cat) => (
             <Link
               key={cat.id}
               href={`/categories?category=${cat.slug}`}
@@ -124,7 +112,7 @@ export function CategoryQuickLinks({ content }: CategoryQuickLinksProps) {
               >
                 <div className="w-full h-full rounded-full overflow-hidden relative bg-[var(--brand-warm)]">
                   <Image
-                    src={getCategoryPhoto(cat, idx)}
+                    src={getCategoryImage(cat)}
                     alt={cat.name}
                     fill
                     sizes="(max-width: 640px) 80px, (max-width: 1024px) 96px, 112px"

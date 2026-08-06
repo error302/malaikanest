@@ -30,18 +30,10 @@ import { showToast } from '@/lib/toast';
 import { useCategories } from '@/lib/categoriesContext';
 import Image from 'next/image';
 import type { Branding } from '@/lib/settings';
+import { getCategoryImage } from '@/lib/category-images';
 
 const FALLBACK_COLORS = [
   '#FCE7E1', '#FEF3DC', '#E1EEF8', '#EFE3F8', '#E1F4E8', '#FCE1EE'
-];
-
-const AI_IMAGES = [
-  '/images/categories/ai-0.jpg',
-  '/images/categories/ai-1.jpg',
-  '/images/categories/ai-2.jpg',
-  '/images/categories/ai-3.jpg',
-  '/images/categories/ai-4.jpg',
-  '/images/categories/ai-5.jpg',
 ];
 
 const NAV_LINKS = [
@@ -469,7 +461,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                     style={{ background: FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
                   >
                     <Image
-                      src={AI_IMAGES[idx % AI_IMAGES.length]}
+                      src={getCategoryImage(cat)}
                       alt={cat.name}
                       fill
                       sizes="(max-width: 1024px) 33vw, 16vw"
@@ -784,7 +776,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                         style={{ background: FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
                       >
                         <Image
-                          src={AI_IMAGES[idx % AI_IMAGES.length]}
+                          src={getCategoryImage(cat)}
                           alt={cat.name}
                           fill
                           sizes="40px"
