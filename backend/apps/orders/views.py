@@ -2,18 +2,21 @@ from rest_framework import viewsets, permissions, status, pagination
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
+import logging
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from apps.accounts.models import User
 from apps.products.models import Inventory, Product, ProductVariant, VariantInventory
-from .models import Cart, CartItem, Order, OrderItem, Coupon, DeliveryZone
+from .models import Cart, CartItem, Order, Coupon, DeliveryZone
 from .serializers import (
     CartSerializer,
     OrderSerializer,
-    CouponSerializer,
     DeliveryZoneSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class OrderPagination(pagination.PageNumberPagination):
@@ -34,19 +37,19 @@ class CartViewSet(viewsets.ViewSet):
     throttle_scope = "cart"
 
     def _get_prefetched_cart(self, cart_id):
-        return Cart.objects.select_related("coupon").prefetch_related(
-            "items__product__category",
-            "items__product__brand",
-            "items__product__tags",
-            "items__variant__inventory",
-        ).get(id=cart_id)
+        return (
+            Cart.objects.select_related("coupon")
+            .prefetch_related(
+                "items__product__category",
+                "items__product__brand",
+                "items__product__tags",
+                "items__variant__inventory",
+            )
+            .get(id=cart_id)
+        )
 
     def _get_locked_inventory(self, product_id):
-        product = (
-            Product.objects.select_for_update()
-            .filter(pk=product_id, is_active=True)
-            .first()
-        )
+        product = Product.objects.select_for_update().filter(pk=product_id, is_active=True).first()
         if not product:
             raise Product.DoesNotExist
 
@@ -131,7 +134,11 @@ class CartViewSet(viewsets.ViewSet):
                 cart = Cart.objects.select_for_update().get(pk=cart.pk)
 
                 ci_query = CartItem.objects.select_for_update().filter(cart=cart)
-                ci = ci_query.filter(variant=variant).first() if variant else ci_query.filter(product_id=product_id, variant__isnull=True).first()
+                ci = (
+                    ci_query.filter(variant=variant).first()
+                    if variant
+                    else ci_query.filter(product_id=product_id, variant__isnull=True).first()
+                )
                 desired_qty = qty if not ci else (ci.quantity + qty)
 
                 if inv.available() < desired_qty:
@@ -143,11 +150,7 @@ class CartViewSet(viewsets.ViewSet):
                 if ci:
                     ci.quantity = desired_qty
                     if not ci.unit_price:
-                        ci.unit_price = (
-                            variant.product.price + variant.price_modifier
-                            if variant
-                            else inv.product.price
-                        )
+                        ci.unit_price = variant.product.price + variant.price_modifier if variant else inv.product.price
                     ci.save(update_fields=["quantity", "unit_price", "updated_at"])
                 else:
                     CartItem.objects.create(
@@ -155,17 +158,18 @@ class CartViewSet(viewsets.ViewSet):
                         product=variant.product if variant else inv.product,
                         variant=variant,
                         quantity=qty,
-                        unit_price=(
-                            variant.product.price + variant.price_modifier
-                            if variant
-                            else inv.product.price
-                        ),
+                        unit_price=(variant.product.price + variant.price_modifier if variant else inv.product.price),
                     )
 
             cart = self._get_prefetched_cart(cart.id)
             serializer = CartSerializer(cart)
             return Response(serializer.data)
-        except (Inventory.DoesNotExist, Product.DoesNotExist, ProductVariant.DoesNotExist, VariantInventory.DoesNotExist):
+        except (
+            Inventory.DoesNotExist,
+            Product.DoesNotExist,
+            ProductVariant.DoesNotExist,
+            VariantInventory.DoesNotExist,
+        ):
             return Response(
                 {"detail": "Product not found or out of stock"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -175,7 +179,10 @@ class CartViewSet(viewsets.ViewSet):
     def apply_coupon(self, request):
         code = (request.data.get("code") or request.data.get("coupon") or "").strip().upper()
         if not code:
-            return Response({"detail": "Coupon code is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Coupon code is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if request.user.is_authenticated:
             cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -186,11 +193,17 @@ class CartViewSet(viewsets.ViewSet):
             cart = Cart.objects.select_for_update().get(pk=cart.pk)
             coupon = Coupon.objects.select_for_update().filter(code=code, is_active=True).first()
             if not coupon:
-                return Response({"detail": "Invalid coupon code"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Invalid coupon code"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             subtotal = cart.subtotal_amount()
             if not coupon.is_valid():
-                return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Coupon is expired or inactive"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             if coupon.min_order_value and subtotal < coupon.min_order_value:
                 return Response(
                     {"detail": f"Minimum order value is KES {coupon.min_order_value}"},
@@ -203,7 +216,10 @@ class CartViewSet(viewsets.ViewSet):
                 return Response(CartSerializer(cart).data)
 
             if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
-                return Response({"detail": "Coupon usage limit reached"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Coupon usage limit reached"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             cart.coupon = coupon
             cart.coupon_applied_at = timezone.now()
@@ -237,10 +253,10 @@ class CartViewSet(viewsets.ViewSet):
         guest_phone = request.data.get("guest_phone")
         coupon_code = request.data.get("coupon")
         delivery_region = request.data.get("delivery_region", "nairobi")
-        
+
         is_gift = request.data.get("is_gift", False)
         gift_message = request.data.get("gift_message", "")
-        
+
         shipping_name = request.data.get("shipping_name", "")
         shipping_phone = request.data.get("shipping_phone", "")
         shipping_address = request.data.get("shipping_address", "")
@@ -253,9 +269,15 @@ class CartViewSet(viewsets.ViewSet):
         if coupon_code:
             coupon = Coupon.objects.filter(code=str(coupon_code).strip().upper(), is_active=True).first()
             if not coupon:
-                return Response({"detail": "Invalid coupon code"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Invalid coupon code"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             if coupon and not coupon.is_valid():
-                return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Coupon is expired or inactive"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         if is_guest and guest_email:
             session_key = request.session.session_key
@@ -266,7 +288,10 @@ class CartViewSet(viewsets.ViewSet):
             # Use coupon stored on the cart if present.
             coupon = coupon or cart.coupon
             if coupon and not coupon.is_valid():
-                return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Coupon is expired or inactive"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Persist delivery region on cart for consistent totals in responses.
             Cart.objects.filter(pk=cart.pk).update(delivery_region=delivery_region)
@@ -299,9 +324,7 @@ class CartViewSet(viewsets.ViewSet):
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = OrderSerializer(order)
-            return Response(
-                {**serializer.data, "is_guest": True, "guest_checkout": True}
-            )
+            return Response({**serializer.data, "is_guest": True, "guest_checkout": True})
 
         if not request.user.is_authenticated:
             return Response(
@@ -312,7 +335,10 @@ class CartViewSet(viewsets.ViewSet):
         cart = get_object_or_404(Cart, user=request.user)
         coupon = coupon or cart.coupon
         if coupon and not coupon.is_valid():
-            return Response({"detail": "Coupon is expired or inactive"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Coupon is expired or inactive"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         Cart.objects.filter(pk=cart.pk).update(delivery_region=delivery_region)
         try:
             order = OrderService.process_checkout(
@@ -343,9 +369,7 @@ class CartViewSet(viewsets.ViewSet):
         else:
             session_key = request.session.session_key
             if not session_key:
-                return Response(
-                    {"detail": "No cart found"}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"detail": "No cart found"}, status=status.HTTP_400_BAD_REQUEST)
             cart = get_object_or_404(Cart, session_key=session_key, user=None)
 
         variant_id = request.data.get("variant_id")
@@ -397,17 +421,25 @@ class CartViewSet(viewsets.ViewSet):
                     session_key = request.session.session_key
                     if not session_key:
                         return Response(
-                            {"detail": "No cart found"}, status=status.HTTP_400_BAD_REQUEST
+                            {"detail": "No cart found"},
+                            status=status.HTTP_400_BAD_REQUEST,
                         )
                     cart = get_object_or_404(
-                        Cart.objects.select_for_update(), session_key=session_key, user=None
+                        Cart.objects.select_for_update(),
+                        session_key=session_key,
+                        user=None,
                     )
 
                 cart_item_query = CartItem.objects.select_for_update().filter(cart=cart)
-                cart_item = cart_item_query.filter(variant=variant).first() if variant else cart_item_query.filter(product_id=product_id, variant__isnull=True).first()
+                cart_item = (
+                    cart_item_query.filter(variant=variant).first()
+                    if variant
+                    else cart_item_query.filter(product_id=product_id, variant__isnull=True).first()
+                )
                 if not cart_item:
                     return Response(
-                        {"detail": "Item not found in cart"}, status=status.HTTP_404_NOT_FOUND
+                        {"detail": "Item not found in cart"},
+                        status=status.HTTP_404_NOT_FOUND,
                     )
 
                 cart_item.quantity = quantity
@@ -422,7 +454,12 @@ class CartViewSet(viewsets.ViewSet):
             cart = self._get_prefetched_cart(cart.id)
             serializer = CartSerializer(cart)
             return Response(serializer.data)
-        except (Inventory.DoesNotExist, Product.DoesNotExist, ProductVariant.DoesNotExist, VariantInventory.DoesNotExist):
+        except (
+            Inventory.DoesNotExist,
+            Product.DoesNotExist,
+            ProductVariant.DoesNotExist,
+            VariantInventory.DoesNotExist,
+        ):
             return Response(
                 {"detail": "Product not found or out of stock"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -449,7 +486,12 @@ class CartViewSet(viewsets.ViewSet):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
-    @action(detail=False, methods=["post"], url_path="merge", permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="merge",
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def merge(self, request):
         """
         BUG-CART-01: Merge guest cart into user cart on login.
@@ -478,50 +520,80 @@ class CartViewSet(viewsets.ViewSet):
         user_cart, _ = Cart.objects.get_or_create(user=request.user)
 
         with transaction.atomic():
-            for item in guest_cart.items.all():
-                if item.variant_id:
-                    defaults = {
-                        "product": item.product,
-                        "quantity": item.quantity,
-                        "unit_price": item.unit_price or (item.product.price + item.variant.price_modifier),
-                    }
-                else:
-                    defaults = {
-                        "quantity": item.quantity,
-                        "unit_price": item.unit_price or item.product.price,
-                    }
+            guest_items = list(guest_cart.items.select_related("product", "variant").all())
 
-                user_item = (
-                    CartItem.objects.select_for_update()
-                    .filter(cart=user_cart, variant=item.variant)
-                    .first()
-                    if item.variant_id
-                    else CartItem.objects.select_for_update()
-                    .filter(cart=user_cart, product=item.product, variant__isnull=True)
-                    .first()
-                )
-                created = user_item is None
-                if created:
-                    user_item = CartItem.objects.create(
-                        cart=user_cart,
-                        product=item.product,
-                        variant=item.variant,
-                        quantity=item.quantity,
-                        unit_price=defaults["unit_price"],
-                    )
-                if not created:
-                    try:
+            if guest_items:
+                # 1. Bulk fetch existing user cart items and lock them
+                existing_user_items = list(CartItem.objects.select_for_update().filter(cart=user_cart))
+                user_item_map = {}
+                for item in existing_user_items:
+                    key = (item.product_id, item.variant_id)
+                    user_item_map[key] = item
+
+                # 2. Bulk fetch inventory without locking (matching previous behavior)
+                product_ids = [item.product_id for item in guest_items if not item.variant_id]
+                variant_ids = [item.variant_id for item in guest_items if item.variant_id]
+
+                inventories = {}
+                if product_ids:
+                    invs = Inventory.objects.filter(product_id__in=product_ids)
+                    inventories = {inv.product_id: inv for inv in invs}
+
+                variant_inventories = {}
+                if variant_ids:
+                    v_invs = VariantInventory.objects.filter(variant_id__in=variant_ids)
+                    variant_inventories = {inv.variant_id: inv for inv in v_invs}
+
+                # 3. Process items in memory
+                items_to_create = []
+                items_to_update = []
+
+                for item in guest_items:
+                    key = (item.product_id, item.variant_id)
+                    user_item = user_item_map.get(key)
+
+                    if item.variant_id:
+                        unit_price = item.unit_price or (item.product.price + item.variant.price_modifier)
+                    else:
+                        unit_price = item.unit_price or item.product.price
+
+                    if user_item:
+                        # Update existing
                         if item.variant_id:
-                            inv = VariantInventory.objects.get(variant=item.variant)
+                            inv = variant_inventories.get(item.variant_id)
                         else:
-                            inv = Inventory.objects.get(product=item.product)
-                        max_qty = inv.available()
-                        user_item.quantity = min(user_item.quantity + item.quantity, max_qty)
-                    except (Inventory.DoesNotExist, VariantInventory.DoesNotExist):
-                        user_item.quantity += item.quantity
-                    if not user_item.unit_price:
-                        user_item.unit_price = defaults["unit_price"]
-                    user_item.save()
+                            inv = inventories.get(item.product_id)
+
+                        if inv:
+                            max_qty = inv.available()
+                            user_item.quantity = min(user_item.quantity + item.quantity, max_qty)
+                        else:
+                            user_item.quantity += item.quantity
+
+                        if not user_item.unit_price:
+                            user_item.unit_price = unit_price
+
+                        items_to_update.append(user_item)
+                    else:
+                        # Create new
+                        new_item = CartItem(
+                            cart=user_cart,
+                            product_id=item.product_id,
+                            variant_id=item.variant_id,
+                            quantity=item.quantity,
+                            unit_price=unit_price,
+                        )
+                        items_to_create.append(new_item)
+                        user_item_map[key] = (
+                            new_item  # add to map in case of duplicates in guest cart (unlikely but safe)
+                        )
+
+                # 4. Bulk save
+                if items_to_create:
+                    CartItem.objects.bulk_create(items_to_create)
+                if items_to_update:
+                    CartItem.objects.bulk_update(items_to_update, ["quantity", "unit_price"])
+
             guest_cart.delete()
 
         cart = self._get_prefetched_cart(user_cart.id)
@@ -542,21 +614,13 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Admin users can see all orders
         if user.is_staff or getattr(user, "role", None) == User.ROLE_ADMIN:
-            qs = (
-                Order.objects.all()
-                .select_related("user")
-                .prefetch_related("items__product")
-            )
+            qs = Order.objects.all().select_related("user").prefetch_related("items__product")
             if status_filter:
                 qs = qs.filter(status=status_filter)
             return qs
 
         # Regular users can only see their own orders
-        qs = (
-            Order.objects.filter(user=user)
-            .select_related("user")
-            .prefetch_related("items__product")
-        )
+        qs = Order.objects.filter(user=user).select_related("user").prefetch_related("items__product")
         if status_filter:
             qs = qs.filter(status=status_filter)
         return qs
@@ -575,9 +639,7 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
             # the guest email leaks via the receipt email, so email alone lets any
             # logged-in user enumerate every guest order matching their address.
             provided_token = (
-                self.request.data.get("checkout_token")
-                or self.request.query_params.get("checkout_token")
-                or ""
+                self.request.data.get("checkout_token") or self.request.query_params.get("checkout_token") or ""
             ).strip()
             if not obj.guest_email or obj.guest_email.lower() != (user.email or "").lower():
                 from rest_framework.exceptions import PermissionDenied
@@ -630,10 +692,10 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Get invoice for an order.
         Returns the invoice PDF or generates one if not exists.
-        
+
         FIXED: Handles both local file storage and Cloudinary URLs.
         """
-        from .invoice import generate_invoice_pdf, get_invoice_pdf_url
+        from .invoice import generate_invoice_pdf
         from django.http import HttpResponse, FileResponse
         import requests
 
@@ -655,14 +717,14 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
             pdf_url = None
             raw_url = None
 
-            if hasattr(invoice.pdf_file, 'url'):
+            if hasattr(invoice.pdf_file, "url"):
                 raw_url = invoice.pdf_file.url
             elif isinstance(invoice.pdf_file, str):
                 raw_url = invoice.pdf_file
 
             # Only fetch remote URLs; relative media paths fall through to local
             # file serving below (and avoid SSRF / internal network access).
-            if raw_url and raw_url.startswith(('http://', 'https://')):
+            if raw_url and raw_url.startswith(("http://", "https://")):
                 pdf_url = raw_url
 
             if pdf_url:
@@ -694,17 +756,17 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
                             {"detail": "Failed to retrieve invoice"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         )
-            
+
             try:
                 invoice.download_count += 1
                 invoice.save(update_fields=["download_count"])
-                
-                if hasattr(invoice.pdf_file, 'open'):
-                    invoice.pdf_file.open('rb')
+
+                if hasattr(invoice.pdf_file, "open"):
+                    invoice.pdf_file.open("rb")
                     return FileResponse(invoice.pdf_file, content_type="application/pdf")
                 else:
                     pdf_path = invoice.pdf_file.path
-                    return FileResponse(open(pdf_path, 'rb'), content_type="application/pdf")
+                    return FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
             except Exception as e:
                 logger.error("Error serving invoice file: %s", e)
                 return Response(
@@ -715,14 +777,10 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         pdf_result, invoice_number = generate_invoice_pdf(order, invoice.invoice_number)
         if pdf_result:
             response = HttpResponse(pdf_result, content_type="application/pdf")
-            response["Content-Disposition"] = (
-                f'attachment; filename="invoice_{invoice_number}.pdf"'
-            )
+            response["Content-Disposition"] = f'attachment; filename="invoice_{invoice_number}.pdf"'
             return response
 
-        return Response(
-            {"detail": "Invoice not available"}, status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({"detail": "Invoice not available"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GuestOrderTrackView(viewsets.ViewSet):
