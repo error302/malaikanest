@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, type RefObject } from 'react';
-import { Save, Upload, Image as ImageIcon, Palette, MessageCircle, Phone, Globe, MapPin, Clock, Plus, X } from 'lucide-react';
+import { Save, Upload, Image as ImageIcon, Palette, MessageCircle, Phone, Globe, MapPin, Clock, Plus, X, Loader2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 
 const LUCIDE_ICONS = ['Baby', 'Heart', 'Star', 'ShoppingCart', 'Sparkles', 'Gift', 'Shield', 'Truck', 'CreditCard', 'Smile'];
@@ -246,7 +246,7 @@ export default function AdminBrandingPage() {
       </div>
 
       <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
-        <Save size={16} /> {saving ? 'Saving…' : 'Save All Changes'}
+          {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {saving ? 'Saving…' : 'Save All Changes'}
       </button>
 
       {/* Location & Map */}
@@ -305,7 +305,7 @@ export default function AdminBrandingPage() {
       </div>
 
       <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
-        <Save size={16} /> {saving ? 'Saving…' : 'Save All Changes'}
+        {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {saving ? 'Saving…' : 'Save All Changes'}
       </button>
     </div>
   );

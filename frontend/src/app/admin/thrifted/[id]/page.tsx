@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Sparkles, Loader2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 
 const CONDITIONS = [
@@ -174,7 +174,7 @@ export default function EditThriftedPage() {
 
         <div className="flex gap-3">
           <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-terra)', color: '#FFFFFF' }}>
-            <Save size={16} /> {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {saving ? 'Saving…' : 'Save Changes'}
           </button>
           <Link href="/admin/thrifted" className="inline-flex items-center rounded-full border px-6 py-3 text-sm font-medium" style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}>
             Cancel
