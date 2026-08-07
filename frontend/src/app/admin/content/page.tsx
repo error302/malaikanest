@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Type, Layers } from 'lucide-react';
+import { Save, Type, Layers, Loader2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 
 interface Block {
@@ -148,7 +148,7 @@ export default function AdminContentPage() {
       </div>
 
       <button type="button" onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
-        <Save size={16} /> {saving ? 'Saving…' : 'Save All Content'}
+        {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {saving ? 'Saving…' : 'Save All Content'}
       </button>
     </div>
   );

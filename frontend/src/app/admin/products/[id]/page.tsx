@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Image as ImageIcon, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Image as ImageIcon, Upload, Loader2 } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
@@ -352,7 +352,7 @@ export default function EditProductPage() {
 
         <div className="flex gap-3">
           <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
-            <Save size={16} /> {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {saving ? 'Saving…' : 'Save Changes'}
           </button>
           <Link href="/admin/products" className="inline-flex items-center rounded-full border px-6 py-3 text-sm font-medium" style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}>
             Cancel
