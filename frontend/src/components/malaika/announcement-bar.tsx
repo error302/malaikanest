@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface AnnouncementBarProps {
   messages?: string[];
@@ -40,7 +41,7 @@ export function AnnouncementBar({ messages = [] }: AnnouncementBarProps) {
         key={index}
         className="animate-fade-in-up inline-flex items-center gap-2"
       >
-        <span dangerouslySetInnerHTML={{ __html: displayList[index] || displayList[0] }} />
+        <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(displayList[index] || displayList[0]) }} />
       </div>
     </div>
   );
