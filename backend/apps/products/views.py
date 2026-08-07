@@ -19,7 +19,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
 from apps.accounts.permissions import IsAdminUser as RoleAwareIsAdminUser
-from apps.core.cache import cache_service  # noqa: F401  (used by _invalidate_products_cache)
+from apps.core.cache import (
+    cache_service,
+)  # noqa: F401  (used by _invalidate_products_cache)
 
 try:
     from django_filters.rest_framework import DjangoFilterBackend
@@ -200,6 +202,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         from urllib.parse import urlencode, parse_qs
+
         params = parse_qs(request.GET.urlencode(), keep_blank_values=True)
         sorted_params = urlencode(sorted(params.items()), doseq=True)
         cache_key = f"products_list_{sorted_params}"
@@ -269,11 +272,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         featured = self.request.query_params.get("featured")
         if featured:
             queryset = queryset.filter(featured=featured.lower() == "true")
-
-        # FIX: Remove public status filter to prevent draft product leakage
-        # status_value = self.request.query_params.get("status")
-        # if status_value:
-        #     queryset = queryset.filter(status=status_value)
 
         slug = self.request.query_params.get("slug")
         if slug:
@@ -410,6 +408,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         product = serializer.validated_data.get("product")
         if not product:
             from apps.products.models import Product
+
             slug = self.request.data.get("product_slug")
             if slug:
                 product = Product.objects.filter(slug=slug).first()
