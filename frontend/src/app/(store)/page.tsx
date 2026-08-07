@@ -3,6 +3,8 @@ import { ShopByAge } from '@/components/malaika/shop-by-age';
 import { CategoryQuickLinks } from '@/components/malaika/category-quick-links';
 import { ProductSection } from '@/components/malaika/product-section';
 import { ValueProps } from '@/components/malaika/value-props';
+import { Suspense } from 'react';
+import nextDynamic from 'next/dynamic';
 import { Testimonials } from '@/components/malaika/testimonials';
 import { Newsletter } from '@/components/malaika/newsletter';
 import { ThriftedSection } from '@/components/malaika/thrifted-section';
@@ -18,6 +20,20 @@ import { getSiteSettings, getValueProps, getTestimonials } from '@/lib/settings'
 import { getFeaturedThrifted } from '@/lib/thrifted';
 
 import { Metadata } from 'next';
+
+// Lazy load non-critical sections below the fold
+const DynamicValueProps = nextDynamic(() => import('@/components/malaika/value-props').then(mod => mod.ValueProps), {
+  ssr: true,
+  loading: () => <div className="h-40 w-full animate-pulse bg-gray-100" />
+});
+const DynamicTestimonials = nextDynamic(() => import('@/components/malaika/testimonials').then(mod => mod.Testimonials), {
+  ssr: true,
+  loading: () => <div className="h-64 w-full animate-pulse bg-gray-100" />
+});
+const DynamicNewsletter = nextDynamic(() => import('@/components/malaika/newsletter').then(mod => mod.Newsletter), {
+  ssr: true,
+  loading: () => <div className="h-64 w-full animate-pulse bg-gray-100" />
+});
 
 export const revalidate = 60;
 export const dynamic = 'force-static';
@@ -69,7 +85,9 @@ export default async function HomePage() {
           columns={4}
           background="white"
         />
-        <ValueProps props={valueProps} />
+        <Suspense fallback={<div className="h-40 w-full animate-pulse bg-gray-100" />}>
+          <DynamicValueProps props={valueProps} />
+        </Suspense>
         <ProductSection
           id="best-sellers"
           label={content.best_sellers?.label || 'Most loved'}
@@ -81,7 +99,9 @@ export default async function HomePage() {
           background="bg-alt"
         />
         <ThriftedSection products={thrifted} />
-        <Testimonials content={content} testimonials={testimonials} />
+        <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100" />}>
+          <DynamicTestimonials content={content} testimonials={testimonials} />
+        </Suspense>
         <ProductSection
           id="new-arrivals"
           label={content.new_arrivals?.label || 'Just landed'}
@@ -92,7 +112,9 @@ export default async function HomePage() {
           columns={4}
           background="white"
         />
-        <Newsletter content={content} />
+        <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100" />}>
+          <DynamicNewsletter content={content} />
+        </Suspense>
       </main>
     </>
   );
