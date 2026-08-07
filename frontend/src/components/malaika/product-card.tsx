@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ShoppingBag, Star, Plus } from 'lucide-react';
@@ -36,7 +36,9 @@ const PLACEHOLDER_GRADIENTS = [
   'linear-gradient(135deg, #FEF3DC 0%, #F8E5B8 100%)',
 ];
 
-export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+// ⚡ Bolt: Wrapped ProductCard in React.memo to prevent unnecessary re-renders in list views
+// Expected impact: Significant reduction in re-renders for large product grids when parent state changes.
+export const ProductCard = React.memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { t } = useI18n();
   const { add: addToCart } = useCart();
   const { contains, toggle: toggleWishlist } = useWishlist();
@@ -301,4 +303,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       </div>
     </article>
   );
-}
+});
+
+
+ProductCard.displayName = 'ProductCard';
