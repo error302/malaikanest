@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- standalone CommonJS build utility */
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
