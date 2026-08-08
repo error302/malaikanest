@@ -1,0 +1,3 @@
+## 2026-08-08 - [Django N+1 on Prefetched Related Managers]
+**Learning:** Calling `.filter(condition).count()` or `.exists()` on related managers evaluates a new database query in Django even if the relationship is already loaded into memory via `prefetch_related`. This causes an unexpected N+1 query problem during serialization.
+**Action:** When calculating conditional counts or booleans on potentially prefetched related objects, check `_prefetched_objects_cache` first and use Python-level `sum()` or `any()` over `.all()` if available, before falling back to database `.count()` or `.exists()`.

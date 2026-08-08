@@ -334,9 +334,15 @@ class ProductSerializer(serializers.ModelSerializer):
         return list(obj.tags.values("id", "name", "slug"))
 
     def get_has_variants(self, obj):
+        # ⚡ Bolt: Check prefetch cache first to prevent N+1 queries during serialization
+        if hasattr(obj, '_prefetched_objects_cache') and 'variants' in obj._prefetched_objects_cache:
+            return sum(1 for v in obj.variants.all() if v.is_active) > 1
         return obj.variants.filter(is_active=True).count() > 1
 
     def get_variant_count(self, obj):
+        # ⚡ Bolt: Check prefetch cache first to prevent N+1 queries during serialization
+        if hasattr(obj, '_prefetched_objects_cache') and 'variants' in obj._prefetched_objects_cache:
+            return sum(1 for v in obj.variants.all() if v.is_active)
         return obj.variants.filter(is_active=True).count()
 
     def get_variants(self, obj):
@@ -442,9 +448,15 @@ class ProductListSerializer(serializers.ModelSerializer):
         return self._primary_gallery_url(obj)
 
     def get_has_variants(self, obj):
+        # ⚡ Bolt: Check prefetch cache first to prevent N+1 queries during serialization
+        if hasattr(obj, '_prefetched_objects_cache') and 'variants' in obj._prefetched_objects_cache:
+            return sum(1 for v in obj.variants.all() if v.is_active) > 1
         return obj.variants.filter(is_active=True).count() > 1
 
     def get_variant_count(self, obj):
+        # ⚡ Bolt: Check prefetch cache first to prevent N+1 queries during serialization
+        if hasattr(obj, '_prefetched_objects_cache') and 'variants' in obj._prefetched_objects_cache:
+            return sum(1 for v in obj.variants.all() if v.is_active)
         return obj.variants.filter(is_active=True).count()
 
 
