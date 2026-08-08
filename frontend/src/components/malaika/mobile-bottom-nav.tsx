@@ -40,9 +40,15 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
             <Link
               key={item.name}
               href={isAccount ? (isAuthenticated ? '/account' : '/login') : item.href}
-              className="flex flex-col items-center justify-center gap-1 flex-1 relative transition-all duration-200"
+              className="flex flex-col items-center justify-center gap-1 flex-1 relative transition-all duration-200 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
               style={{ color: active ? 'var(--brand-gold)' : 'var(--brand-text-muted)' }}
-              aria-label={isAccount && user ? `${item.name} (signed in as ${user.name || user.email})` : item.name}
+              aria-label={
+                isAccount && user
+                  ? `${item.name} (signed in as ${user.name || user.email})`
+                  : item.name === 'Cart' && badgeCount > 0
+                    ? `Cart, ${badgeCount} items`
+                    : item.name
+              }
               aria-current={active ? 'page' : undefined}
             >
               {active && (
