@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronRight, Calendar, Tag, ArrowLeft } from 'lucide-react';
 import { getPostBySlug, getPublishedPosts } from '@/lib/blog';
 import { SITE_URL } from '@/lib/site-config';
+import DOMPurify from 'isomorphic-dompurify';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,7 +132,8 @@ export default async function BlogPostPage({ params }: Props) {
               return <hr key={i} className="my-6" style={{ borderColor: 'var(--brand-border)' }} />;
             }
             if (line.startsWith('*') && line.endsWith('*')) {
-              return <p key={i} className="text-sm italic my-3" style={{ color: 'var(--brand-text-muted)' }} dangerouslySetInnerHTML={{ __html: line.slice(1, -1).replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color: var(--brand-gold); text-decoration: underline;">$1</a>') }} />;
+              const html = line.slice(1, -1).replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color: var(--brand-gold); text-decoration: underline;">$1</a>');
+              return <p key={i} className="text-sm italic my-3" style={{ color: 'var(--brand-text-muted)' }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />;
             }
             if (line.trim() === '') {
               return <div key={i} className="h-3" />;
@@ -140,7 +142,7 @@ export default async function BlogPostPage({ params }: Props) {
             const html = line
               .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color: var(--brand-gold); text-decoration: underline;">$1</a>')
               .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            return <p key={i} className="text-sm leading-relaxed my-2" dangerouslySetInnerHTML={{ __html: html }} />;
+            return <p key={i} className="text-sm leading-relaxed my-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />;
           })}
         </div>
 
