@@ -13,6 +13,7 @@ from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
 
 from .models import SiteSettings, ShopPhoto
 from .serializers import PublicSiteSettingsSerializer, SiteSettingsSerializer, ShopPhotoSerializer
+from apps.accounts.security import get_client_ip
 
 logger = logging.getLogger("apps.core")
 
@@ -214,10 +215,7 @@ class Pm2LogsView(APIView):
     def get(self, request):
         allowed_ips = getattr(settings, 'LOGS_ALLOWED_IPS', [])
         if allowed_ips:
-            client_ip = request.META.get('REMOTE_ADDR')
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if x_forwarded_for:
-                client_ip = x_forwarded_for.split(',')[0].strip()
+            client_ip = get_client_ip(request)
             
             if client_ip not in allowed_ips:
                 logger.warning(
