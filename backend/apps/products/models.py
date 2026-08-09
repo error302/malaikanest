@@ -364,6 +364,8 @@ class Product(BaseModel):
 
     @property
     def has_variants(self):
+        if hasattr(self, "_prefetched_objects_cache") and "variants" in self._prefetched_objects_cache:
+            return any(v.is_active for v in self.variants.all())
         return self.variants.filter(is_active=True).exists()
 
     def _variant_inventory_summary(self):
