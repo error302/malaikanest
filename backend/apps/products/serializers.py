@@ -334,13 +334,23 @@ class ProductSerializer(serializers.ModelSerializer):
         return list(obj.tags.values("id", "name", "slug"))
 
     def get_has_variants(self, obj):
+        if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
+            active_variants = [v for v in obj.variants.all() if v.is_active]
+            return len(active_variants) > 1
         return obj.variants.filter(is_active=True).count() > 1
 
     def get_variant_count(self, obj):
+        if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
+            active_variants = [v for v in obj.variants.all() if v.is_active]
+            return len(active_variants)
         return obj.variants.filter(is_active=True).count()
 
     def get_variants(self, obj):
-        variants = obj.variants.filter(is_active=True).select_related("inventory").order_by("color", "size", "id")
+        if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
+            variants = [v for v in obj.variants.all() if v.is_active]
+            variants.sort(key=lambda x: (x.color or "", x.size or "", x.id))
+        else:
+            variants = obj.variants.filter(is_active=True).select_related("inventory").order_by("color", "size", "id")
         request = self.context.get("request")
         items = []
         for variant in variants:
@@ -442,9 +452,15 @@ class ProductListSerializer(serializers.ModelSerializer):
         return self._primary_gallery_url(obj)
 
     def get_has_variants(self, obj):
+        if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
+            active_variants = [v for v in obj.variants.all() if v.is_active]
+            return len(active_variants) > 1
         return obj.variants.filter(is_active=True).count() > 1
 
     def get_variant_count(self, obj):
+        if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
+            active_variants = [v for v in obj.variants.all() if v.is_active]
+            return len(active_variants)
         return obj.variants.filter(is_active=True).count()
 
 
