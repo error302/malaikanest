@@ -36,13 +36,21 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
           const badgeCount = item.showBadge && item.name === 'Cart' ? cartCount : 0;
           const isAccount = item.name === 'Account';
           const showAvatar = isAccount && isAuthenticated;
+
+          let ariaLabel = item.name;
+          if (isAccount && user) {
+            ariaLabel = `${item.name} (signed in as ${user.name || user.email})`;
+          } else if (item.name === 'Cart' && badgeCount > 0) {
+            ariaLabel = `${item.name} (${badgeCount} item${badgeCount === 1 ? '' : 's'})`;
+          }
+
           return (
             <Link
               key={item.name}
               href={isAccount ? (isAuthenticated ? '/account' : '/login') : item.href}
               className="flex flex-col items-center justify-center gap-1 flex-1 relative transition-all duration-200"
               style={{ color: active ? 'var(--brand-gold)' : 'var(--brand-text-muted)' }}
-              aria-label={isAccount && user ? `${item.name} (signed in as ${user.name || user.email})` : item.name}
+              aria-label={ariaLabel}
               aria-current={active ? 'page' : undefined}
             >
               {active && (
