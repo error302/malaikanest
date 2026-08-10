@@ -43,12 +43,12 @@ class Command(BaseCommand):
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
-                'phone': '+254700000000',  # Placeholder phone
+                'phone_number': '+254700000000',  # Placeholder phone
                 'is_staff': True,
                 'is_superuser': True,
-                'role': 'admin',
+                'role': User.ROLE_ADMIN,
                 'is_active': True,
-                'email_verified': True,
+                'is_email_verified': True,
             }
         )
 
@@ -60,9 +60,9 @@ class Command(BaseCommand):
             # Fix existing user
             user.is_staff = True
             user.is_superuser = True
-            user.role = 'admin'
+            user.role = User.ROLE_ADMIN
             user.is_active = True
-            user.email_verified = True
+            user.is_email_verified = True
             user.set_password(password)
             user.save()
             self.stdout.write(self.style.SUCCESS(f'Fixed admin user: {email}'))
@@ -73,5 +73,5 @@ class Command(BaseCommand):
         self.stdout.write(f'  is_superuser: {user.is_superuser}')
         self.stdout.write(f'  role: {user.role}')
         self.stdout.write(f'  is_active: {user.is_active}')
-        self.stdout.write(f'  email_verified: {user.email_verified}')
+        self.stdout.write(f'  is_email_verified: {user.is_email_verified}')
 

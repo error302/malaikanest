@@ -135,6 +135,8 @@ class AuthService:
 
     @staticmethod
     def is_email_configured():
+        if getattr(settings, "EMAIL_BACKEND", None) == "django.core.mail.backends.console.EmailBackend":
+            return True
         return all([
             getattr(settings, "EMAIL_HOST", None),
             getattr(settings, "EMAIL_HOST_USER", None),
