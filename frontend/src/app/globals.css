@@ -3,6 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Tailwind v4 theme mapping (exposes tokens as Tailwind utilities) ── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -37,116 +38,228 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-paper: var(--paper);
+  --color-paper-alt: var(--paper-alt);
+  --color-paper-card: var(--paper-card);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent2: var(--accent2);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --max-width-shell: 1440px;
+  --max-width-narrow: 860px;
+  --max-width-bleed: 1600px;
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
 }
 
-/* ── Malaika Nest Brand Foundation ────────────────────────────────────── */
+/* ── Editorial Premium Foundation ────────────────────────────────────── */
+/* The new design system uses a high-contrast monochrome foundation with a */
+/* single warm terracotta accent (Kinfolk/Magnolia editorial style).       */
+/* Backward-compatible --brand-* aliases keep existing components working.  */
 :root {
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 
-  /* Warm Organic Palette */
-  --brand-cream: #FDF8F3;
-  --brand-bg: #F8F4EF;
-  --brand-bg-alt: #FAF6F1;
-  --brand-warm: #F5EFE6;
-  --brand-sand: #EDE3D8;
-  --brand-border: #E8E0D5;
-  --brand-border-hover: #D8CFC0;
+  /* Editorial monochrome foundation */
+  --ink: #1A1410;
+  --ink-soft: #3D2B1F;
+  --ink-muted: #6B5544;
+  --ink-faint: #A89888;
 
-  /* Golds — premium accent */
-  --brand-gold: #8B6914;
-  --brand-gold-light: #C9A96E;
-  --brand-gold-soft: #E8D5B5;
-  --brand-gold-dark: #6B5310;
-  --brand-gold-contrast: #5A4410;
+  --paper: #FDF8F3;
+  --paper-alt: #F5EFE6;
+  --paper-card: #FFFFFF;
 
-  /* Browns — primary text & buttons */
-  --brand-brown: #5C4033;
-  --brand-brown-dark: #3D2B1F;
-  --brand-brown-light: #6B5544;
+  --line: #E8E0D5;
+  --line-strong: #D8CFC0;
 
-  /* Terracotta — warm accent for CTAs & highlights */
-  --brand-terra: #C4704A;
-  --brand-terra-light: #D4835E;
-  --brand-terra-soft: #E8A88A;
+  /* Single accent — terracotta */
+  --accent: #B85C38;
+  --accent-dark: #8B4528;
+  --accent-soft: #E8D5C8;
+  --accent2: #B85C38;
 
-  /* Greens — calm trust accent */
-  --brand-green: #1A3A2A;
-  --brand-green-light: #2D5A42;
-  --brand-green-soft: #E8F0EB;
-  --brand-success: #4A7C59;
+  /* Semantic */
+  --success: #4A7C59;
+  --warning: #C4704A;
+  --danger: #9B2C2C;
+  --info: #5C4033;
 
-  /* Text */
-  --brand-text: #2C1810;
-  --brand-text-secondary: #5C4033;
-  --brand-text-muted: #6B5544;
+  /* shadcn semantic tokens (mapped to editorial monochrome) */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-card);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-card);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--paper-alt);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-alt);
+  --muted-foreground: var(--ink-muted);
+  --accent-foreground: var(--paper);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--paper);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
 
-  /* shadcn semantic tokens mapped to brand */
-  --background: #FDF8F3;
-  --foreground: #2C1810;
-  --card: #FFFFFF;
-  --card-foreground: #2C1810;
-  --popover: #FFFFFF;
-  --popover-foreground: #2C1810;
-  --primary: #8B6914;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F5EFE6;
-  --secondary-foreground: #3D2B1F;
-  --muted: #F5EFE6;
-  --muted-foreground: #8A7060;
-  --accent: #E8D5B5;
-  --accent-foreground: #5C4033;
-  --destructive: #B91C1C;
-  --border: #E8E0D5;
-  --input: #E8E0D5;
-  --ring: #8B6914;
-  --chart-1: #8B6914;
-  --chart-2: #C4704A;
-  --chart-3: #2D5A42;
-  --chart-4: #C9A96E;
-  --chart-5: #8A7060;
-  --sidebar: #FAF6F1;
-  --sidebar-foreground: #2C1810;
-  --sidebar-primary: #8B6914;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F5EFE6;
-  --sidebar-accent-foreground: #5C4033;
-  --sidebar-border: #E8E0D5;
-  --sidebar-ring: #8B6914;
+  /* Chart palette — monochrome + accent, for admin charts */
+  --chart-1: var(--ink);
+  --chart-2: var(--ink-soft);
+  --chart-3: var(--ink-muted);
+  --chart-4: var(--accent);
+  --chart-5: var(--accent-soft);
+
+  /* Sidebar (admin) — dark editorial */
+  --sidebar: var(--ink);
+  --sidebar-foreground: var(--paper);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--ink-soft);
+  --sidebar-accent-foreground: var(--paper);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: var(--accent);
 
   /* Typography */
   --font-cormorant: 'Cormorant Garamond', ui-serif, Georgia, serif;
   --font-dm-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
 
-  /* Shadows — soft, premium, warm-tinted */
-  --shadow-warm-sm: 0 2px 8px rgba(44, 24, 16, 0.04);
-  --shadow-warm-md: 0 8px 24px rgba(44, 24, 16, 0.08);
-  --shadow-warm-lg: 0 16px 48px rgba(44, 24, 16, 0.10);
-  --shadow-warm-xl: 0 24px 64px rgba(44, 24, 16, 0.14);
+  /* Shadows — soft, warm */
+  --shadow-sm: 0 1px 2px rgba(26, 20, 16, 0.04);
+  --shadow-md: 0 2px 8px rgba(26, 20, 16, 0.06), 0 1px 2px rgba(26, 20, 16, 0.04);
+  --shadow-lg: 0 8px 24px rgba(26, 20, 16, 0.08), 0 2px 8px rgba(26, 20, 16, 0.04);
+  --shadow-xl: 0 16px 48px rgba(26, 20, 16, 0.10), 0 8px 24px rgba(26, 20, 16, 0.06);
+
+  /* Spacing scale — generous, editorial */
+  --container-max: 1440px;
+  --container-narrow: 860px;
+  --container-bleed: 1600px;
+  --container-padding: clamp(1rem, 4vw, 2.5rem);
+  --space-section-y: clamp(4rem, 8vw, 7rem);
+  --space-section-y-sm: clamp(2.5rem, 5vw, 4rem);
+
+  /* ── Backward-compatible --brand-* aliases ───────────────────────────── */
+  /* These keep existing components working during the transition.           */
+  /* Map old warm palette → new editorial monochrome + accent.               */
+  /* Remove in Phase 8 after all components migrate to new tokens.           */
+  --brand-cream: var(--paper);          /* was #FDF8F3 */
+  --brand-bg: var(--paper);             /* was #F8F4EF */
+  --brand-bg-alt: var(--paper-alt);     /* was #FAF6F1 */
+  --brand-warm: var(--paper-alt);       /* was #F5EFE6 */
+  --brand-sand: var(--line);            /* was #EDE3D8 */
+  --brand-border: var(--line);          /* was #E8E0D5 */
+  --brand-border-hover: var(--line-strong); /* was #D8CFC0 */
+
+  --brand-gold: var(--accent);          /* was #8B6914 — now terracotta */
+  --brand-gold-light: var(--accent);    /* was #C9A96E */
+  --brand-gold-soft: var(--accent-soft); /* was #E8D5B5 */
+  --brand-gold-dark: var(--accent-dark); /* was #6B5310 */
+  --brand-gold-contrast: var(--accent-dark); /* was #5A4410 */
+
+  --brand-brown: var(--ink-soft);       /* was #5C4033 */
+  --brand-brown-dark: var(--ink);       /* was #3D2B1F */
+  --brand-brown-light: var(--ink-muted); /* was #6B5544 */
+
+  --brand-terra: var(--accent);         /* was #C4704A */
+  --brand-terra-light: var(--accent);   /* was #D4835E */
+  --brand-terra-soft: var(--accent-soft); /* was #E8A88A */
+
+  --brand-green: var(--success);        /* was #1A3A2A */
+  --brand-green-light: var(--success); /* was #2D5A42 */
+  --brand-green-soft: var(--accent-soft); /* was #E8F0EB — tint for soft backgrounds */
+  --brand-success: var(--success);      /* was #4A7C59 */
+
+  --brand-text: var(--ink);             /* was #2C1810 */
+  --brand-text-secondary: var(--ink-soft); /* was #5C4033 */
+  --brand-text-muted: var(--ink-muted); /* was #6B5544 */
+
+  /* Legacy shadow aliases */
+  --shadow-warm-sm: var(--shadow-sm);
+  --shadow-warm-md: var(--shadow-md);
+  --shadow-warm-lg: var(--shadow-lg);
+  --shadow-warm-xl: var(--shadow-xl);
 }
 
+/* Dark mode — warm dark, not zinc */
 .dark {
-  --background: #1A1410;
-  --foreground: #FDF8F3;
-  --card: #2C2218;
-  --card-foreground: #FDF8F3;
-  --popover: #2C2218;
-  --popover-foreground: #FDF8F3;
-  --primary: #C9A96E;
-  --primary-foreground: #1A1410;
-  --secondary: #3D2B1F;
-  --secondary-foreground: #FDF8F3;
-  --muted: #3D2B1F;
-  --muted-foreground: #B8A290;
-  --accent: #5C4033;
-  --accent-foreground: #FDF8F3;
+  --ink: #F5EFE6;
+  --ink-soft: #E8E0D5;
+  --ink-muted: #A89888;
+  --ink-faint: #6B5544;
+
+  --paper: #1A1410;
+  --paper-alt: #2A2018;
+  --paper-card: #221A14;
+
+  --line: #3D2B1F;
+  --line-strong: #4A3528;
+
+  --accent: #D4835E;
+  --accent-dark: #E8A88A;
+  --accent-soft: #5C3A28;
+  --accent2: #D4835E;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-card);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-card);
+  --popover-foreground: var(--ink);
+  --primary: var(--paper);
+  --primary-foreground: var(--ink);
+  --secondary: var(--paper-alt);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-alt);
+  --muted-foreground: var(--ink-muted);
+  --accent-foreground: var(--ink);
   --destructive: #EF4444;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #C9A96E;
+  --destructive-foreground: var(--paper);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+
+  /* Re-alias brand tokens for dark */
+  --brand-cream: var(--paper);
+  --brand-bg: var(--paper);
+  --brand-bg-alt: var(--paper-card);
+  --brand-warm: var(--paper-card);
+  --brand-sand: var(--line);
+  --brand-border: var(--line);
+  --brand-border-hover: var(--line-strong);
+  --brand-gold: var(--accent);
+  --brand-gold-light: var(--accent);
+  --brand-gold-soft: var(--accent-soft);
+  --brand-gold-dark: var(--accent-dark);
+  --brand-gold-contrast: var(--accent-dark);
+  --brand-brown: var(--ink-soft);
+  --brand-brown-dark: var(--ink);
+  --brand-brown-light: var(--ink-muted);
+  --brand-terra: var(--accent);
+  --brand-terra-light: var(--accent);
+  --brand-terra-soft: var(--accent-soft);
+  --brand-green: var(--success);
+  --brand-green-light: var(--success);
+  --brand-green-soft: var(--accent-soft);
+  --brand-success: var(--success);
+  --brand-text: var(--ink);
+  --brand-text-secondary: var(--ink-soft);
+  --brand-text-muted: var(--ink-muted);
 }
 
 @layer base {
@@ -182,7 +295,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--brand-gold);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
     border-radius: 2px;
   }
@@ -200,17 +313,57 @@
       scroll-behavior: auto !important;
     }
   }
-}
 
-@layer components {
+  /* ── Typography scale ───────────────────────────────────────────────── */
+  /* Display — Cormorant Garamond, for hero headlines */
+  .display-1 { font-family: var(--font-serif); font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; letter-spacing: -0.02em; font-weight: 500; }
+  .display-2 { font-family: var(--font-serif); font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.1; letter-spacing: -0.015em; font-weight: 500; }
+  .display-3 { font-family: var(--font-serif); font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1.15; letter-spacing: -0.01em; font-weight: 500; }
+
+  /* Headings — DM Sans, for section titles */
+  .h1 { font-family: var(--font-sans); font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -0.02em; font-weight: 600; }
+  .h2 { font-family: var(--font-sans); font-size: clamp(1.25rem, 2.5vw, 1.5rem); line-height: 1.25; letter-spacing: -0.015em; font-weight: 600; }
+  .h3 { font-family: var(--font-sans); font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; font-weight: 600; }
+
+  /* Body */
+  .body-lg { font-family: var(--font-sans); font-size: 1.125rem; line-height: 1.6; font-weight: 400; }
+  .body { font-family: var(--font-sans); font-size: 1rem; line-height: 1.6; font-weight: 400; }
+  .body-sm { font-family: var(--font-sans); font-size: 0.875rem; line-height: 1.55; font-weight: 400; }
+  .body-xs { font-family: var(--font-sans); font-size: 0.75rem; line-height: 1.5; font-weight: 500; letter-spacing: 0.02em; }
+
+  /* Eyebrow / overline — for section labels */
+  .eyebrow { font-family: var(--font-sans); font-size: 0.6875rem; line-height: 1; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; color: var(--accent); }
+
+  /* Price — DM Sans, tabular numbers */
+  .price { font-family: var(--font-sans); font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .price-lg { font-family: var(--font-sans); font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.015em; }
+  .price-xl { font-family: var(--font-serif); font-size: 1.75rem; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  /* Containers */
   .container-shell {
-    @apply mx-auto w-full max-w-[1380px] px-4 sm:px-6 lg:px-10;
+    @apply mx-auto w-full;
+    max-width: var(--container-max);
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
   }
 
   .container-narrow {
-    @apply mx-auto w-full max-w-[1080px] px-4 sm:px-6 lg:px-10;
+    @apply mx-auto w-full;
+    max-width: var(--container-narrow);
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
   }
 
+  .container-bleed {
+    @apply mx-auto w-full;
+    max-width: var(--container-bleed);
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+  }
+}
+
+@layer components {
+  /* ── Legacy utility classes (kept during transition) ──────────────── */
   .heading-display {
     font-family: var(--font-cormorant);
     @apply font-semibold tracking-tight leading-[1.1];
@@ -218,27 +371,28 @@
 
   .section-label {
     @apply inline-flex items-center gap-2.5 text-[11px] uppercase tracking-[0.16em] font-semibold;
-    color: var(--brand-gold);
+    color: var(--accent);
   }
 
   .section-label::before {
     content: '';
     @apply block w-6 h-px;
-    background: var(--brand-gold);
+    background: var(--accent);
   }
 
+  /* Legacy button — kept for backward compat (existing code uses .btn-gold) */
   .btn-gold {
     @apply inline-flex items-center justify-center gap-2 rounded-full font-medium tracking-wide transition-all duration-300;
-    background: var(--brand-gold);
-    color: #FFFFFF;
+    background: var(--accent);
+    color: var(--paper);
     padding: 0.875rem 2rem;
     font-size: 0.875rem;
   }
 
   .btn-gold:hover {
-    background: var(--brand-gold-dark);
+    background: var(--accent-dark);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-warm-md);
+    box-shadow: var(--shadow-md);
   }
 
   .btn-gold:active {
@@ -247,8 +401,8 @@
 
   .btn-outline-warm {
     @apply inline-flex items-center justify-center gap-2 rounded-full font-medium tracking-wide transition-all duration-300;
-    border: 1px solid var(--brand-border);
-    color: var(--brand-brown);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(8px);
     padding: 0.875rem 2rem;
@@ -257,38 +411,159 @@
 
   .btn-outline-warm:hover {
     background: rgba(255, 255, 255, 0.9);
-    border-color: var(--brand-gold);
+    border-color: var(--accent);
   }
 
   .card-soft {
     @apply rounded-2xl border;
-    background: var(--brand-bg-alt);
-    border-color: var(--brand-border);
+    background: var(--paper-alt);
+    border-color: var(--line);
   }
 
   .card-white {
     @apply rounded-2xl border bg-white;
-    border-color: var(--brand-border);
-    box-shadow: var(--shadow-warm-sm);
+    border-color: var(--line);
+    box-shadow: var(--shadow-sm);
   }
 
   .input-warm {
     @apply rounded-full text-sm transition-colors;
-    background: var(--brand-warm);
-    border: 1px solid var(--brand-border);
-    color: var(--brand-text);
+    background: var(--paper-alt);
+    border: 1px solid var(--line);
+    color: var(--ink);
     padding: 0.625rem 1rem 0.625rem 2.75rem;
   }
 
   .input-warm::placeholder {
-    color: var(--brand-text-muted);
+    color: var(--ink-muted);
   }
 
   .input-warm:focus {
     outline: none;
-    border-color: var(--brand-gold);
-    background: #FFFFFF;
+    border-color: var(--accent);
+    background: var(--paper-card);
   }
+
+  /* ── New Editorial Premium component primitives ────────────────────── */
+  /* Buttons — primary is ink, accent is terracotta, ghost is transparent */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)];
+    @apply disabled:opacity-50 disabled:pointer-events-none;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+    padding: 0.75rem 1.5rem;
+    min-height: 44px;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-primary:hover {
+    background: var(--ink-soft);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-accent {
+    background: var(--accent);
+    color: var(--paper);
+  }
+  .btn-accent:hover {
+    background: var(--accent-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+  .btn-outline:hover {
+    background: var(--paper-alt);
+    border-color: var(--ink);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+  }
+  .btn-ghost:hover {
+    background: var(--paper-alt);
+  }
+
+  .btn-sm { padding: 0.5rem 1rem; min-height: 36px; font-size: 0.8125rem; }
+  .btn-lg { padding: 1rem 2rem; min-height: 52px; font-size: 1rem; }
+
+  /* Cards — minimal, let photography shine */
+  .card-editorial {
+    @apply rounded-lg border transition-all duration-300;
+    background: var(--paper-card);
+    border-color: var(--line);
+  }
+  .card-editorial:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  /* Inputs — underline style, more editorial than rounded boxes */
+  .input-editorial {
+    @apply w-full bg-transparent border-0 border-b transition-colors;
+    border-color: var(--line);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    padding: 0.75rem 0;
+    outline: none;
+  }
+  .input-editorial:focus {
+    border-color: var(--ink);
+  }
+  .input-editorial::placeholder {
+    color: var(--ink-faint);
+  }
+
+  /* Eyebrow with rule — for section headers */
+  .eyebrow-rule {
+    @apply inline-flex items-center gap-3;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .eyebrow-rule::before {
+    content: '';
+    @apply block w-8 h-px;
+    background: var(--accent);
+  }
+
+  /* Masonry grid — Pinterest-style */
+  .masonry {
+    column-gap: var(--container-padding);
+    column-count: 2;
+  }
+  @media (min-width: 768px) { .masonry { column-count: 3; } }
+  @media (min-width: 1024px) { .masonry { column-count: 4; } }
+  @media (min-width: 1536px) { .masonry { column-count: 5; } }
+  .masonry > * {
+    break-inside: avoid;
+    margin-bottom: var(--container-padding);
+  }
+
+  /* Aspect ratios */
+  .aspect-portrait { aspect-ratio: 3 / 4; }
+  .aspect-editorial { aspect-ratio: 4 / 5; }
+  .aspect-square { aspect-ratio: 1 / 1; }
+  .aspect-wide { aspect-ratio: 16 / 9; }
+  .aspect-cinema { aspect-ratio: 21 / 9; }
 }
 
 @layer utilities {
@@ -300,7 +575,7 @@
     scrollbar-width: none;
   }
 
-  /* Safe area inset utilities for S22 / notched phones */
+  /* Safe area inset utilities for notched phones */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -309,21 +584,28 @@
   }
 
   .text-gradient-gold {
-    background: linear-gradient(135deg, #8B6914 0%, #C9A96E 50%, #8B6914 100%);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 50%, var(--accent) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .shadow-warm-sm { box-shadow: var(--shadow-warm-sm); }
-  .shadow-warm-md { box-shadow: var(--shadow-warm-md); }
-  .shadow-warm-lg { box-shadow: var(--shadow-warm-lg); }
-  .shadow-warm-xl { box-shadow: var(--shadow-warm-xl); }
+  /* Legacy shadow utility aliases */
+  .shadow-warm-sm { box-shadow: var(--shadow-sm); }
+  .shadow-warm-md { box-shadow: var(--shadow-md); }
+  .shadow-warm-lg { box-shadow: var(--shadow-lg); }
+  .shadow-warm-xl { box-shadow: var(--shadow-xl); }
+
+  /* New shadow utilities */
+  .shadow-sm { box-shadow: var(--shadow-sm); }
+  .shadow-md { box-shadow: var(--shadow-md); }
+  .shadow-lg { box-shadow: var(--shadow-lg); }
+  .shadow-xl { box-shadow: var(--shadow-xl); }
 
   .bg-grain {
     background-image:
-      radial-gradient(circle at 25% 25%, rgba(139, 105, 20, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, rgba(196, 112, 74, 0.03) 0%, transparent 50%);
+      radial-gradient(circle at 25% 25%, rgba(184, 92, 56, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(26, 20, 16, 0.03) 0%, transparent 50%);
   }
 }
 
