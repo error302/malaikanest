@@ -7,6 +7,7 @@ import { AnnouncementBar } from '@/components/malaika/announcement-bar';
 import { Navbar } from '@/components/malaika/navbar';
 import { MobileBottomNav } from '@/components/malaika/mobile-bottom-nav';
 import { ScrollToTop } from '@/components/malaika/scroll-to-top';
+import { CartDrawer } from '@/components/malaika/cart-drawer';
 import { CategoriesProvider } from '@/lib/categoriesContext';
 import type { Branding } from '@/lib/settings';
 
@@ -19,6 +20,9 @@ import type { Branding } from '@/lib/settings';
  * "Element type is invalid" during static prerendering.
  *
  * Children = the page body (main + footer).
+ *
+ * CartDrawer is mounted here (not in the Navbar) because the drawer's open
+ * state is global (Zustand) — any "Quick Add" button anywhere can open it.
  */
 interface StoreShellProps {
   branding: Branding;
@@ -36,6 +40,7 @@ export function StoreShell({ branding, children }: StoreShellProps) {
         {children}
         <MobileBottomNav cartCount={items.length} />
         <ScrollToTop />
+        <CartDrawer />
       </div>
     </CategoriesProvider>
   );
