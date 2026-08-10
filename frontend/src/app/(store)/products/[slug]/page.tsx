@@ -254,7 +254,7 @@ export default async function ProductDetailPage({ params }: Props) {
       {/* Customer Reviews */}
       <ReviewSection productSlug={slug} />
 
-      {/* Related products (AI-powered similarity) */}
+      {/* Related products */}
       <RelatedProducts products={related} />
     </div>
   );

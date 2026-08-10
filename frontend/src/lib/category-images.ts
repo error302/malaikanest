@@ -34,12 +34,12 @@ const SLUG_IMAGES: Record<string, string> = {
 
 /** Last-resort generic images. */
 const GENERIC_IMAGES = [
-  '/images/categories/ai-0.jpg',
-  '/images/categories/ai-1.jpg',
-  '/images/categories/ai-2.jpg',
-  '/images/categories/ai-3.jpg',
-  '/images/categories/ai-4.jpg',
-  '/images/categories/ai-5.jpg',
+  '/images/categories/baby-clothing.jpg',
+  '/images/categories/clothing.jpg',
+  '/images/categories/baby-essentials.jpg',
+  '/images/categories/nursery.jpg',
+  '/images/categories/toys.jpg',
+  '/images/categories/gifts.jpg',
 ];
 
 function hashCode(input: string): number {
