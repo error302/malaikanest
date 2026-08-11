@@ -70,9 +70,26 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            # Prevent SSRF by checking for redirects to internal IPs
+            response = requests.get(image_url, timeout=10, stream=True)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
+                # Basic SSRF prevention for redirect chains
+                final_url = response.url
+                parsed = urlparse(final_url)
+                hostname = parsed.hostname
+
+                # Check for internal/private IPs (basic check)
+                if hostname:
+                    import ipaddress
+                    import socket
+                    try:
+                        ip = socket.gethostbyname(hostname)
+                        ip_obj = ipaddress.ip_address(ip)
+                        if ip_obj.is_private or ip_obj.is_loopback:
+                            return None
+                    except (socket.gaierror, ValueError):
+                        pass
+
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
         except Exception:
@@ -319,9 +336,26 @@ class AdminProductSerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            # Prevent SSRF by checking for redirects to internal IPs
+            response = requests.get(image_url, timeout=10, stream=True)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
+                # Basic SSRF prevention for redirect chains
+                final_url = response.url
+                parsed = urlparse(final_url)
+                hostname = parsed.hostname
+
+                # Check for internal/private IPs (basic check)
+                if hostname:
+                    import ipaddress
+                    import socket
+                    try:
+                        ip = socket.gethostbyname(hostname)
+                        ip_obj = ipaddress.ip_address(ip)
+                        if ip_obj.is_private or ip_obj.is_loopback:
+                            return None
+                    except (socket.gaierror, ValueError):
+                        pass
+
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
