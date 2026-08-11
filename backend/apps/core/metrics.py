@@ -32,3 +32,37 @@ def reset(name):
         cache.delete(f"metric:{name}")
     except Exception:
         pass
+
+
+#
+# Prometheus exposition (Phase 5).
+# Served at /metrics/ via apps.core.metrics_urls. In addition to the
+# process/system metrics from prometheus_client, we expose the Redis-backed
+# counters as gauges so existing RED metrics are scrapeable without changing
+# the incr/get/reset API used across the codebase.
+#
+from prometheus_client import Gauge, generate_latest, CONTENT_TYPE_LATEST
+from django.http import HttpResponse
+
+_redis_gauges = {}
+
+
+def _redis_gauge(name):
+    if name not in _redis_gauges:
+        _redis_gauges[name] = Gauge(
+            f"malaika_metric_{name.replace('-', '_').replace('.', '_')}",
+            f"Redis-backed metric: {name}",
+        )
+    return _redis_gauges[name]
+
+
+def metrics_view(request):
+    """Scrape endpoint for Prometheus. Refreshes Redis-backed gauges, then
+    returns the full exposition (incl. python process + system metrics)."""
+    # Whitelist of meaningful business metrics to export from Redis.
+    for name in ("payments_failed", "payments_success", "payments_stk_initiated"):
+        try:
+            _redis_gauge(name).set(float(get(name)))
+        except Exception:
+            pass
+    return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)

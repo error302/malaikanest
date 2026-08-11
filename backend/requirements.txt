@@ -24,3 +24,10 @@ python-dateutil==2.9.0
 whitenoise==6.9.0
 reportlab==4.4.10
 django-flat-theme==1.1.4
+
+# Phase 5 backend hardening
+drf-spectacular==0.27.2          # OpenAPI schema generation
+prometheus-client==0.21.1        # /metrics/ endpoint
+sentry-sdk==2.13.0               # Error tracking (SENTRY_DSN-gated)
+django-extensions==3.2.3         # shell_plus, runserver_plus (dev)
+django-debug-toolbar==4.4.0      # Query analysis (DEBUG only)
