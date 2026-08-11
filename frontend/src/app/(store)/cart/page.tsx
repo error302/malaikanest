@@ -80,7 +80,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty - 1)}
-                      aria-label={t('cart.remove') + ' -'}
+                      aria-label={t('cart.decreaseQty')}
                       className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
@@ -90,7 +90,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty + 1)}
-                      aria-label={t('cart.remove') + ' +'}
+                      aria-label={t('cart.increaseQty')}
                       className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
