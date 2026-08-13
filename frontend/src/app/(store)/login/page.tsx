@@ -220,6 +220,7 @@ export default function LoginPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-lg transition-[colors,transform] duration-200 hover:bg-[var(--brand-warm)] active:scale-95"
                   style={{ color: 'var(--brand-text-muted)' }}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
                   tabIndex={0}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}

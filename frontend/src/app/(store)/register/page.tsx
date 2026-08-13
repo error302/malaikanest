@@ -361,6 +361,7 @@ export default function RegisterPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-lg transition-[colors,transform] duration-200 hover:bg-[var(--brand-warm)] active:scale-95"
                   style={{ color: 'var(--brand-text-muted)' }}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
                   tabIndex={0}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -415,6 +416,7 @@ export default function RegisterPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-lg transition-[colors,transform] duration-200 hover:bg-[var(--brand-warm)] active:scale-95"
                   style={{ color: 'var(--brand-text-muted)' }}
                   aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                  aria-pressed={showConfirm}
                   tabIndex={0}
                 >
                   {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
