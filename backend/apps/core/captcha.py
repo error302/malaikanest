@@ -1,6 +1,7 @@
 import os
 import requests
 from django.conf import settings
+from apps.accounts.security import get_client_ip
 
 
 class CaptchaError(Exception):
@@ -33,7 +34,7 @@ def require_captcha(request, action: str, enforce: bool = True):
     payload = {
         "secret": getattr(settings, "CAPTCHA_SECRET_KEY"),
         "response": token,
-        "remoteip": request.META.get("HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")),
+        "remoteip": get_client_ip(request),
     }
 
     try:
