@@ -18,7 +18,6 @@ from apps.products.models import (
     sync_product_stock,
 )
 
-
 class AdminCategorySerializer(serializers.ModelSerializer):
     full_slug = serializers.CharField(read_only=True)
     level = serializers.IntegerField(read_only=True)
@@ -94,7 +93,6 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             if downloaded:
                 validated_data["image"] = downloaded
         return super().update(instance, validated_data)
-
 
 class AdminProductSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(required=True, validators=[])
@@ -615,7 +613,6 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 {"detail": "Could not update product due to a database constraint."}
             )
 
-
 class AdminBannerSerializer(serializers.ModelSerializer):
     button_link = serializers.CharField(
         required=False, allow_blank=True, allow_null=True
@@ -714,7 +711,6 @@ class AdminBannerSerializer(serializers.ModelSerializer):
         """
         return super().create(validated_data)
 
-
 class AdminUserSerializer(serializers.ModelSerializer):
     total_orders = serializers.SerializerMethodField()
 
@@ -736,8 +732,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_orders(self, obj):
-        return Order.objects.filter(user=obj).count()
 
+        return getattr(obj, "total_orders_count", obj.order_set.count())
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
@@ -748,7 +744,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ["id", "product_name", "price_at_purchase", "quantity"]
-
 
 class AdminOrderSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source="user.email", read_only=True)
