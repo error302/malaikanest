@@ -337,13 +337,13 @@ class ProductSerializer(serializers.ModelSerializer):
         if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
             active_variants = [v for v in obj.variants.all() if v.is_active]
             return len(active_variants) > 1
-        return obj.variants.filter(is_active=True).count() > 1
+        return getattr(obj, "variants_is_active_count", obj.variants.filter(is_active=True).count()) > 1
 
     def get_variant_count(self, obj):
         if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
             active_variants = [v for v in obj.variants.all() if v.is_active]
             return len(active_variants)
-        return obj.variants.filter(is_active=True).count()
+        return getattr(obj, "variants_is_active_count", obj.variants.filter(is_active=True).count())
 
     def get_variants(self, obj):
         if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
@@ -455,13 +455,13 @@ class ProductListSerializer(serializers.ModelSerializer):
         if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
             active_variants = [v for v in obj.variants.all() if v.is_active]
             return len(active_variants) > 1
-        return obj.variants.filter(is_active=True).count() > 1
+        return getattr(obj, "variants_is_active_count", obj.variants.filter(is_active=True).count()) > 1
 
     def get_variant_count(self, obj):
         if hasattr(obj, "_prefetched_objects_cache") and "variants" in obj._prefetched_objects_cache:
             active_variants = [v for v in obj.variants.all() if v.is_active]
             return len(active_variants)
-        return obj.variants.filter(is_active=True).count()
+        return getattr(obj, "variants_is_active_count", obj.variants.filter(is_active=True).count())
 
 
 class InventorySerializer(serializers.ModelSerializer):
