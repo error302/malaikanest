@@ -69,16 +69,24 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             import requests
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
+            from django.conf import settings
+
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "ALLOWED_IMAGE_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                return None
 
             response = requests.get(image_url, timeout=10)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
         except Exception:
             pass
         return None
-
     def create(self, validated_data):
         image_url = validated_data.pop("image_url", None)
         if image_url:
@@ -318,16 +326,24 @@ class AdminProductSerializer(serializers.ModelSerializer):
             import requests
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
+            from django.conf import settings
+
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "ALLOWED_IMAGE_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                return None
 
             response = requests.get(image_url, timeout=10)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
             return None
         return None
-
     @staticmethod
     def _store_image_url(product, url):
         """Persist an absolute image URL verbatim into the image column.

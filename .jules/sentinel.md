@@ -12,3 +12,7 @@
 **Vulnerability:** User-generated blog content was injected directly into the DOM using `dangerouslySetInnerHTML` in `frontend/src/app/(store)/blog/[slug]/page.tsx` without sanitization, leading to an XSS vulnerability.
 **Learning:** This codebase uses Next.js server-side rendering (SSR). Standard `dompurify` cannot be used as it fails during SSR due to missing browser APIs (like `window`). A specific library, `isomorphic-dompurify`, must be used to ensure sanitization works both on the server and the client.
 **Prevention:** Always wrap variables passed to `dangerouslySetInnerHTML={{ __html: ... }}` with `DOMPurify.sanitize()` from `isomorphic-dompurify`, especially when rendering potentially untrusted user content like blog markdown.
+## $(date +%Y-%m-%d) - Prevent SSRF in image downloads
+**Vulnerability:** Server-Side Request Forgery (SSRF) in `admin_serializers.py` where `requests.get` fetched image URLs provided in user input without validating the domain or protocol. This allowed attackers to perform internal network port scanning or access metadata services (e.g., AWS IMDS).
+**Learning:** `requests.get` is frequently used for downloading remote resources (like images). It natively follows redirects and places no restrictions on schemes (e.g., `http://`, `file://`) or hostnames.
+**Prevention:** Always parse the URL (`urllib.parse.urlparse`), validate that the `scheme` is strictly `https`, and ensure the `hostname` is explicitly in an allowlist array (e.g., from Django settings) before issuing the request.
