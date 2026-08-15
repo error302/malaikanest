@@ -133,11 +133,11 @@ export function ReviewSection({ productSlug }: ReviewSectionProps) {
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <input required placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-              <input required type="email" placeholder="Your email (not published)" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required aria-label="Your name" placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+              <input required aria-label="Your email" type="email" placeholder="Your email (not published)" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
             </div>
-            <input placeholder="Review title (optional)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-            <textarea required placeholder="Share your thoughts on this product…" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={4} className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' }} />
+            <input aria-label="Review title" placeholder="Review title (optional)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+            <textarea required aria-label="Review body" placeholder="Share your thoughts on this product…" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={4} className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' }} />
             <div className="flex gap-2">
               <button type="submit" disabled={submitting} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
                 {submitting ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : 'Submit Review'}
