@@ -72,7 +72,7 @@ jobs:
       - name: Django system check
         run: python manage.py check
       - name: Django tests
-        run: python manage.py test --verbosity=2
+        run: python manage.py test --verbosity=2 --keepdb
 
   docker-build:
     runs-on: ubuntu-latest
