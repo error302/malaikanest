@@ -33,7 +33,7 @@ class PaymentsConcurrencyTests(TransactionTestCase):
 
     def _create_order(self, user, cart, results, idx):
         try:
-            order = create_order_from_cart(user, cart, coupon=None, receipt_number=f'rcpt-{idx}')
+            order = create_order_from_cart(user, cart, coupon=None)
             results[idx] = ('ok', order.id)
         except Exception as e:
             results[idx] = ('err', str(e))
@@ -63,7 +63,7 @@ class PaymentIdempotencyTests(TransactionTestCase):
         CartItem.objects.create(cart=self.cart, product=prod, quantity=2)
 
     def test_payment_verify_idempotent(self):
-        order = create_order_from_cart(self.user, self.cart, coupon=None, receipt_number='r1')
+        order = create_order_from_cart(self.user, self.cart, coupon=None)
         payment = Payment.objects.create(order=order, amount=order.total, status='initiated', mpesa_checkout_request_id='ck1')
 
         def mark_completed():
