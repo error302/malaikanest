@@ -1,5 +1,6 @@
 import csv
 import datetime
+import logging
 
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce, TruncMonth
@@ -10,6 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 from apps.accounts.models import User
 from apps.orders.models import Cart, Invoice, Order, OrderItem
@@ -504,7 +507,8 @@ class AdminCartReminderView(APIView):
             # (including this one). Run async when a broker is available.
             send_abandoned_cart_reminder.delay()
             return Response({"detail": f"Reminder queued (will include {email})"})
-        except Exception:
+        except Exception as exc:
+            logger.warning("Abandoned cart reminder scheduling failed: %s", exc)
             return Response(
                 {"detail": "Reminder scheduling is not available on this environment."},
                 status=status.HTTP_501_NOT_IMPLEMENTED,

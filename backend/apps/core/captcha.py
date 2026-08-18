@@ -1,6 +1,9 @@
+import logging
 import os
 import requests
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class CaptchaError(Exception):
@@ -39,7 +42,8 @@ def require_captcha(request, action: str, enforce: bool = True):
     try:
         response = requests.post(_verify_url(), data=payload, timeout=int(getattr(settings, "CAPTCHA_TIMEOUT_SECONDS", 8)))
         data = response.json()
-    except Exception:
+    except Exception as exc:
+        logger.warning("CAPTCHA verification request failed: %s", exc)
         raise CaptchaError("CAPTCHA verification service unavailable")
 
     if not data.get("success", False):

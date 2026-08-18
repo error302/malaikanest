@@ -1,3 +1,4 @@
+import logging
 import mimetypes
 import os
 
@@ -8,6 +9,8 @@ from apps.core.models import BaseModel
 from django.db.models import Q
 from django.db.models import Sum
 from django.utils.text import slugify
+
+logger = logging.getLogger(__name__)
 
 
 def validate_image_file(image):
@@ -31,6 +34,7 @@ def validate_image_file(image):
             img = Image.open(image)
             img.verify()
         except Exception:
+            logger.debug("Image validation failed: %s", image)
             raise ValidationError("Invalid or corrupted image file")
 
 
@@ -387,6 +391,7 @@ class Product(BaseModel):
         try:
             return self.inventory.available() > 0
         except Exception:
+            logger.debug("in_stock: inventory lookup failed for product %s, falling back to stock", self.pk)
             return self.stock > 0
 
     @property
@@ -397,6 +402,7 @@ class Product(BaseModel):
         try:
             return self.inventory.available()
         except Exception:
+            logger.debug("available_stock: inventory lookup failed for product %s, falling back to stock", self.pk)
             return self.stock
 
     @property
@@ -404,6 +410,7 @@ class Product(BaseModel):
         try:
             return self.inventory.available() <= self.low_stock_threshold
         except Exception:
+            logger.debug("is_low_stock: inventory lookup failed for product %s, falling back to stock", self.pk)
             return self.stock <= self.low_stock_threshold
 
     @property
