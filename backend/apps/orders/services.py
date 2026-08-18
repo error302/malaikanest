@@ -17,7 +17,7 @@ class OrderService:
     def _split_shipping_name(shipping_name, user=None):
         full_name = (shipping_name or "").strip()
         if not full_name and user:
-            full_name = (user.get_full_name() or "").strip()
+            full_name = (user.full_name or "").strip()
 
         if not full_name:
             return "", ""

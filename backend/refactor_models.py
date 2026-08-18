@@ -2,7 +2,7 @@ import os
 import re
 
 APPS_DIR = r"c:\Users\ADMIN\Desktop\PROJECT BABY\malaika nest\backend\apps"
-MODELS_TO_FIX = ['orders', 'products', 'accounts', 'ai']  # Let's fix them all
+MODELS_TO_FIX = ['orders', 'products', 'accounts']  # Let's fix them all
 
 for app in MODELS_TO_FIX:
     file_path = os.path.join(APPS_DIR, app, 'models.py')

@@ -358,6 +358,7 @@ def _cache_get(key):
 
         return cache.get(key)
     except Exception:
+        logger.debug("Pesapal _cache_get failed for key=%s", key)
         return None
 
 
@@ -367,4 +368,4 @@ def _cache_set(key, value, timeout):
 
         cache.set(key, value, timeout=timeout)
     except Exception:
-        pass
+        logger.debug("Pesapal _cache_set failed for key=%s", key)

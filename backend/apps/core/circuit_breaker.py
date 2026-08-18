@@ -4,9 +4,12 @@ Wraps outbound calls to M-Pesa so a slow/down Safaricom endpoint fails fast
 instead of tying up web/Celery worker threads. State is shared via Redis so all
 workers see the same open/closed state.
 """
+import logging
 import time
 
 from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 
 class CircuitOpen(Exception):
@@ -46,7 +49,7 @@ def call_with_breaker(
         try:
             cache.set(key, state, timeout=reset_timeout * 2 + 60)
         except Exception:
-            pass
+            logger.debug("Circuit breaker state persist failed for %s: %s", key, exc)
         raise
     else:
         if state.get("failures", 0):
@@ -56,5 +59,5 @@ def call_with_breaker(
             try:
                 cache.set(key, state, timeout=reset_timeout * 2 + 60)
             except Exception:
-                pass
+                logger.debug("Circuit breaker reset persist failed for %s", key)
         return result

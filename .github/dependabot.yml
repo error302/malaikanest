@@ -1,0 +1,153 @@
+version: 2
+updates:
+  # Python dependencies (backend)
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Africa/Nairobi
+    open-pull-requests-limit: 10
+    reviewers:
+      - error302
+    labels:
+      - dependencies
+      - python
+    commit-message:
+      prefix: "deps"
+      include: scope
+    groups:
+      django:
+        patterns:
+          - "django*"
+        update-types:
+          - minor
+          - patch
+      celery:
+        patterns:
+          - "celery*"
+          - "django-celery*"
+        update-types:
+          - minor
+          - patch
+      drf:
+        patterns:
+          - "djangorestframework*"
+          - "drf-*"
+          - "django-filter"
+        update-types:
+          - minor
+          - patch
+    # Auto-merge minor and patch updates
+    allow:
+      - dependency-type: all
+
+  # JavaScript dependencies (frontend)
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Africa/Nairobi
+    open-pull-requests-limit: 10
+    reviewers:
+      - error302
+    labels:
+      - dependencies
+      - javascript
+    commit-message:
+      prefix: "deps"
+      include: scope
+    groups:
+      radix:
+        patterns:
+          - "@radix-ui/*"
+        update-types:
+          - minor
+          - patch
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - minor
+          - patch
+      next:
+        patterns:
+          - "next"
+          - "eslint-config-next"
+        update-types:
+          - minor
+          - patch
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+        update-types:
+          - minor
+          - patch
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+        update-types:
+          - minor
+          - patch
+    allow:
+      - dependency-type: all
+
+  # Docker images
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Africa/Nairobi
+    open-pull-requests-limit: 5
+    reviewers:
+      - error302
+    labels:
+      - dependencies
+      - docker
+    commit-message:
+      prefix: "deps"
+      include: scope
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Africa/Nairobi
+    open-pull-requests-limit: 5
+    reviewers:
+      - error302
+    labels:
+      - dependencies
+      - docker
+    commit-message:
+      prefix: "deps"
+      include: scope
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Africa/Nairobi
+    open-pull-requests-limit: 5
+    reviewers:
+      - error302
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "deps"
+      include: scope

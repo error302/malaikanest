@@ -193,7 +193,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en-KE" suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/png" href="/logo.png" />
         <link rel="shortcut icon" type="image/png" href="/logo.png" />
@@ -202,6 +202,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="preconnect" href="https://api.malaikanest.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Malaika Nest" />
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>
             <Script
@@ -228,7 +231,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-full focus:text-sm focus:font-semibold focus:outline-none"
-          style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+          style={{ background: 'var(--accent)', color: 'var(--paper)' }}
         >
           Skip to main content
         </a>

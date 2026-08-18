@@ -1,6 +1,10 @@
+import logging
+
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import SiteSettings, ShopPhoto, OutboxEvent
+
+logger = logging.getLogger(__name__)
 
 
 @admin.register(SiteSettings)
@@ -44,6 +48,7 @@ class OutboxEventAdmin(admin.ModelAdmin):
             preview = json.dumps(obj.payload, indent=2)[:500]
             return format_html("<pre>{}</pre>", preview)
         except Exception:
+            logger.debug("payload_preview: JSON serialization failed for event %s", obj.pk)
             return "-"
     payload_preview.short_description = "Payload"
 
@@ -56,7 +61,8 @@ class OutboxEventAdmin(admin.ModelAdmin):
                 event.status = "published"
                 event.save(update_fields=["status"])
                 replayed += 1
-            except Exception:
+            except Exception as exc:
+                logger.error("Event replay failed for event %s: %s", event.pk, exc)
                 event.status = "failed"
                 event.save(update_fields=["status"])
         self.message_user(request, f"Replayed {replayed} event(s).")

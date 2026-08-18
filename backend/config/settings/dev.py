@@ -54,3 +54,22 @@ CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
 CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'true').strip().lower() in {'1', 'true', 'yes', 'on'}
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# Dev-only tooling (Phase 5): debug toolbar + N+1 query-count middleware.
+if "django_extensions" in INSTALLED_APPS:
+    INTERNAL_IPS = ["127.0.0.1", "localhost"]
+
+if "debug_toolbar" not in INSTALLED_APPS:
+    INSTALLED_APPS = list(INSTALLED_APPS) + ["debug_toolbar"]
+
+if "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:
+    MIDDLEWARE = list(MIDDLEWARE) + ["debug_toolbar.middleware.DebugToolbarMiddleware"]
+
+# Debug toolbar trips its E001 check during `manage.py test` (Django flips
+# DEBUG to False under tests). Bypass per django-debug-toolbar's documented hint.
+DEBUG_TOOLBAR_CONFIG = {
+    "IS_RUNNING_TESTS": False,
+}
+
+if "apps.core.middleware.QueryCountMiddleware" not in MIDDLEWARE:
+    MIDDLEWARE = list(MIDDLEWARE) + ["apps.core.middleware.QueryCountMiddleware"]

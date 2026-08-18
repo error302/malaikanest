@@ -1,3 +1,4 @@
+import logging
 from django.db import models, transaction
 from apps.core.models import BaseModel
 from django.conf import settings
@@ -9,6 +10,8 @@ import secrets
 from datetime import datetime
 from django.db.models import F
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 
 def invoice_pdf_storage():
@@ -526,7 +529,7 @@ def get_delivery_fee_for_region(delivery_region: str) -> Decimal:
         if zone is not None:
             return zone
     except Exception:
-        pass
+        logger.debug("DeliveryZone lookup failed for region=%s, using default", delivery_region)
     return Decimal(str(DELIVERY_FEES.get(delivery_region, 0)))
 
 

@@ -66,6 +66,9 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.payments",
     "apps.core",
+    # Phase 5 backend hardening
+    "drf_spectacular",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -174,6 +177,19 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# OpenAPI schema generation (Phase 5) — served at /api/schema/.
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Malaika Nest API",
+    "DESCRIPTION": "E-commerce platform for baby and children's clothing in Kenya.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "CONTACT": {"name": "Malaika Nest", "email": "hello@malaikanest.com"},
+    "LICENSE": {"name": "Proprietary"},
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
 }
 
 SIMPLE_JWT = {
@@ -342,6 +358,8 @@ if _cloud_name and _cloud_key and _cloud_secret:
             "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
         }
     except Exception:
+        import logging as _log
+        _log.warning("Cloudinary storage setup failed, falling back to FileSystemStorage")
         STORAGES = {
             "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
             "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
@@ -376,6 +394,9 @@ LOGGING = {
             "format": "{levelname} {asctime} {module} {message}",
             "style": "{",
         },
+        "json": {
+            "()": "apps.core.logging.JsonFormatter",
+        },
     },
     "handlers": {
         "file": {
@@ -390,6 +411,11 @@ LOGGING = {
             "level": "INFO",
             "class": "logging.StreamHandler",
             "formatter": "simple",
+        },
+        "console_json": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "json",
         },
     },
     "loggers": {
@@ -406,11 +432,20 @@ LOGGING = {
     },
 }
 
+# Structured JSON logging (Phase 5). Enabled when STRUCTURED_LOGGING is set
+# (e.g. "1"/"true"). Keeps existing file logging intact; routes the console
+# handler through apps.core.logging.JsonFormatter so logs are grep/aggregator
+# friendly (JSON lines with request_id, method, path, status, duration_ms).
+if os.getenv("STRUCTURED_LOGGING", "").strip().lower() in {"1", "true", "yes", "on"}:
+    LOGGING["loggers"]["django"]["handlers"] = ["file", "console_json"]
+    LOGGING["loggers"]["apps"]["handlers"] = ["file", "console_json"]
+
 try:
     LOG_DIR = BASE_DIR / "logs"
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
-    pass
+    import logging as _log
+    _log.warning("Could not create logs directory at %s", BASE_DIR / "logs")
 
 
 # ── Read replica (system-design-101: database replication) ─────────────────────
@@ -437,3 +472,20 @@ def configure_read_replica(databases):
         "OPTIONS": {"sslmode": sslmode, "connect_timeout": 10},
     }
     return ["config.db_router.ReplicaRouter"]
+
+
+# ── Sentry error tracking (Phase 5) ───────────────────────────────────────────
+# Opt-in via SENTRY_DSN. No-op (zero import cost) when unset. Only enabled in
+# production deployments that provide a DSN.
+if os.getenv("SENTRY_DSN"):
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN"),
+        integrations=[DjangoIntegration(), CeleryIntegration()],
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+        send_default_pii=False,
+        environment="production" if production_env_requested else "development",
+    )

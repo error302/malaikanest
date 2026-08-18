@@ -1,7 +1,10 @@
+import logging
 from rest_framework import serializers
 from .models import Cart, CartItem, Order, OrderItem, Coupon, DeliveryZone, get_delivery_fee_for_region
 from apps.products.serializers import ProductSerializer
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -63,6 +66,7 @@ class CartSerializer(serializers.ModelSerializer):
             fee = get_delivery_fee_for_region(obj.delivery_region)
             return str(fee.quantize(Decimal("0.01")))
         except Exception:
+            logger.debug("get_delivery_fee failed for region=%s, order=%s", obj.delivery_region, obj.pk)
             return "0.00"
 
     def get_total(self, obj):

@@ -2,6 +2,7 @@
 Redis Caching Layer for E-commerce API
 Caches public product/category data to improve performance.
 """
+import logging
 import os
 import json
 import hashlib
@@ -11,6 +12,8 @@ from functools import wraps
 import redis
 from django.conf import settings
 from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 
 # Cache TTL constants (in seconds)
@@ -27,6 +30,7 @@ def get_redis_client():
     try:
         return redis.from_url(redis_url, decode_responses=True)
     except Exception:
+        logger.debug("Redis connection failed, falling back to Django cache")
         return None
 
 
@@ -92,7 +96,7 @@ class CacheService:
                 if value:
                     return json.loads(value)
             except Exception:
-                pass
+                logger.debug("Redis get failed for key=%s, falling back to Django cache", key)
         
         # Fallback to Django cache
         return cache.get(key)
@@ -106,7 +110,7 @@ class CacheService:
                 self.redis.setex(key, ttl, serialized)
                 return True
             except Exception:
-                pass
+                logger.debug("Redis setex failed for key=%s, falling back to Django cache", key)
         
         # Fallback to Django cache
         cache.set(key, value, ttl)
@@ -118,7 +122,7 @@ class CacheService:
             try:
                 self.redis.delete(key)
             except Exception:
-                pass
+                logger.debug("Redis delete failed for key=%s, falling back to Django cache", key)
         
         cache.delete(key)
         return True
@@ -132,7 +136,7 @@ class CacheService:
                 if keys:
                     count = self.redis.delete(*keys)
             except Exception:
-                pass
+                logger.debug("Redis delete_pattern failed for pattern=%s", pattern)
         return count
 
 

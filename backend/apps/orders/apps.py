@@ -1,4 +1,8 @@
+import logging
+
 from django.apps import AppConfig
+
+logger = logging.getLogger(__name__)
 
 
 class OrdersConfig(AppConfig):
@@ -11,4 +15,4 @@ class OrdersConfig(AppConfig):
         try:
             import apps.orders.signals  # noqa: F401
         except Exception:
-            pass
+            logger.debug("orders signals import skipped")

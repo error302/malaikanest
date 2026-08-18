@@ -192,7 +192,6 @@ class RateLimitMiddleware:
 
 class SecurityHeadersMiddleware:
     """Add security headers to all responses"""
-    
     CSP_DIRECTIVES = {
         'default-src': "'self'",
         'script-src': "'self' 'unsafe-inline' https://js-api.safaricom.co.ke",
@@ -323,4 +322,44 @@ class RequestLoggingMiddleware:
         )
 
         response['X-Request-ID'] = request_id
+        return response
+
+
+from django.db import connection as db_connection
+
+query_logger = logging.getLogger('apps.core.queries')
+
+
+class QueryCountMiddleware:
+    """Log the number of DB queries per request (DEBUG only).
+
+    Catches N+1 regressions early: warns above 50 queries, notes above 20.
+    No-op when DEBUG is off, so production pays zero overhead.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from django.conf import settings
+
+        if not settings.DEBUG:
+            return self.get_response(request)
+
+        response = self.get_response(request)
+        queries = len(db_connection.queries)
+        if queries > 50:
+            query_logger.warning(
+                'High query count: count=%s method=%s path=%s',
+                queries,
+                request.method,
+                request.path,
+            )
+        elif queries > 20:
+            query_logger.info(
+                'Query count: count=%s method=%s path=%s',
+                queries,
+                request.method,
+                request.path,
+            )
         return response

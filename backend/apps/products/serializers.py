@@ -1,7 +1,10 @@
 import json
+import logging
 import uuid
 
 from rest_framework import serializers
+
+logger = logging.getLogger(__name__)
 
 from apps.orders.models import Order
 
@@ -271,6 +274,7 @@ class ProductSerializer(serializers.ModelSerializer):
             parsed = json.loads(value)
             return parsed if isinstance(parsed, list) else []
         except Exception:
+            logger.debug("_parse_json_list failed for value=%s", str(value)[:80])
             return []
 
     def _norm_id(self, value):
@@ -328,6 +332,7 @@ class ProductSerializer(serializers.ModelSerializer):
         try:
             return obj.available_stock > 0
         except Exception:
+            logger.debug("get_is_in_stock: available_stock failed for product %s", getattr(obj, 'pk', '?'))
             return bool(getattr(obj, "stock", 0) > 0)
 
     def get_tags(self, obj):

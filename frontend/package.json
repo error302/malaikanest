@@ -7,6 +7,7 @@
     "build": "next build && node scripts/copy-standalone-assets.mjs && node scripts/copy-public.mjs",
     "start": "NODE_ENV=production bun .next/standalone/server.js",
     "lint": "eslint .",
+    "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -74,7 +75,6 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "z-ai-web-dev-sdk": "^0.0.18",
     "zod": "^4.0.2",
     "zustand": "^5.0.6"
   },
@@ -97,6 +97,7 @@
     "not IE 11"
   ],
   "overrides": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "deepmerge-ts": "^8.0.1"
   }
 }

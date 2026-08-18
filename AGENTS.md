@@ -23,7 +23,7 @@ Currency: **KES**. Payments: **M-Pesa STK** (primary), Pesapal, Card, Cash on De
 ```
 malaikanest/
 ├── backend/          Django 5.1 REST API (Gunicorn) + Celery + Channels
-│   ├── apps/{accounts,core,orders,payments,products,ai}/
+│   ├── apps/{accounts,core,orders,payments,products}/
 │   ├── config/       split settings: base/dev/prod + celery, urls, asgi
 │   └── templates/    emails + admin base
 ├── frontend/         Next.js 16 (App Router) + React 19 + Tailwind v4 + shadcn/ui

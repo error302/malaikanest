@@ -28,6 +28,7 @@ import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/authContext';
 import { showToast } from '@/lib/toast';
 import { useCategories } from '@/lib/categoriesContext';
+import { useCartDrawer } from '@/lib/cartDrawerStore';
 import Image from 'next/image';
 import type { Branding } from '@/lib/settings';
 import { getCategoryImage } from '@/lib/category-images';
@@ -63,6 +64,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
   const { t } = useI18n();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { categories } = useCategories();
+  const openCartDrawer = useCartDrawer((s) => s.openDrawer);
   const [shopOpen, setShopOpen] = useState(false);
   const [ageOpen, setAgeOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -411,6 +413,13 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
 
             <Link
               href="/cart"
+              onClick={(e) => {
+                // Open the slide-over cart drawer instead of navigating away.
+                // The drawer's "View full cart" link still navigates to /cart
+                // for users who want the detailed page.
+                e.preventDefault();
+                openCartDrawer();
+              }}
               className="relative hidden lg:flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
               aria-label={`${t('nav.cart')}${cartCount > 0 ? `, ${cartCount} items` : ''}`}

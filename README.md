@@ -18,7 +18,7 @@ A full-featured e-commerce platform for baby and children's clothing in Kenya, b
 - **Runtime**: Bun (prod start) · **CMS**: Prisma 6 (SQLite)
 
 ### Backend (API)
-- **Framework**: Django 5.1 + Django REST Framework 3.15
+- **Framework**: Django 5.2 + Django REST Framework 3.15
 - **Authentication**: JWT (djangorestframework-simplejwt)
 - **Database**: PostgreSQL 15 (via Docker)
 - **Cache**: Redis 7
@@ -153,6 +153,27 @@ cd frontend
 npm install
 cp .env.example .env.local  # Set NEXT_PUBLIC_API_URL=http://localhost:8081
 npm run dev
+```
+
+## Development Setup
+
+### Pre-commit Hook
+
+A pre-commit hook is included that blocks commits containing bare `except Exception: pass/return` patterns (which silently swallow errors). Install it after cloning:
+
+```bash
+cp scripts/pre-commit-hook.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+The hook scans staged `.py` files in `backend/` and rejects commits with:
+- `except Exception:` followed by `pass`
+- `except Exception: pass` on the same line
+- `except Exception:` followed by `return {}`, `return None`, `return ""`, `return False`
+
+To bypass (e.g. for a genuine no-op like an optional import):
+```bash
+git commit --no-verify -m "..."
 ```
 
 ## API Reference

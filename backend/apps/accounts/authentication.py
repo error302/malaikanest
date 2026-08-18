@@ -89,7 +89,7 @@ class JWTAuthenticationWithRotation(JWTAuthentication):
                 threshold = timedelta(minutes=threshold_minutes)
                 return expiry - timezone.now() < threshold
         except Exception:
-            pass
+            logger.debug("Token expiry check failed")
         return False
     
     def get_user(self, validated_token):
