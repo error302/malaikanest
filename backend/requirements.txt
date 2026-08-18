@@ -7,7 +7,7 @@ gunicorn==23.0.0
 setuptools==83.0.0
 python-dotenv==1.2.2
 django-cors-headers==4.6.0
-requests==2.33.0
+requests==2.34.2
 pytz==2024.2
 Pillow==12.3.0
 cloudinary==1.44.1
