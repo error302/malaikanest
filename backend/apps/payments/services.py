@@ -578,7 +578,7 @@ class PaymentService:
 
                             # Durable side-effect via outbox (restock) instead of
                             # fire-and-forget on_commit enqueue.
-                            publish_event("order", order.id, "order.cancelled", {"order_id": order.id})
+                            publish_event("order", order.id, "order.cancelled", {"order_id": str(order.id)})
                         except Exception as exc:
                             logger.error("Order transition/publish failed (amount mismatch, order=%s): %s", payment.order_id, exc)
                         audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="AMOUNT_MISMATCH", notes=f"Expected {payment.amount}, got {amount}")
@@ -609,7 +609,7 @@ class PaymentService:
                             order.status = "payment_failed"
                             order.save(update_fields=["status", "updated_at"])
 
-                        publish_event("order", order.id, "order.cancelled", {"order_id": order.id})
+                        publish_event("order", order.id, "order.cancelled", {"order_id": str(order.id)})
                     except Exception as exc:
                         logger.error("Order transition/publish failed (phone mismatch, order=%s): %s", payment.order_id, exc)
                     audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="PHONE_MISMATCH")
@@ -649,7 +649,7 @@ class PaymentService:
                 # Durable side-effects via the transactional outbox: the order is
                 # now paid, and the relay task will reduce inventory / invoice /
                 # confirm. Survives a worker crash between commit and enqueue.
-                publish_event("order", order.id, "order.paid", {"order_id": order.id})
+                publish_event("order", order.id, "order.paid", {"order_id": str(order.id)})
                 metrics.incr("payments.completed")
 
                 audit_log(event_type="callback_completed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
@@ -672,7 +672,7 @@ class PaymentService:
 
             metrics.incr("payments.failed")
             try:
-                publish_event("order", payment.order_id, "order.cancelled", {"order_id": payment.order_id})
+                publish_event("order", payment.order_id, "order.cancelled", {"order_id": str(payment.order_id)})
             except Exception as exc:
                 logger.error("Failed to publish order.cancelled event for order %s: %s", payment.order_id, exc)
             audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes=result_desc)

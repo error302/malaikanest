@@ -180,7 +180,7 @@ def verify_mpesa_payment_async(self, payment_id):
             # order — reduce inventory, generate invoice, send confirmation — exactly
             # like the live callback path. Otherwise stock leaks and the customer
             # gets no invoice/email. Emitted via the outbox so it survives crashes.
-            publish_event("order", order.id, "order.paid", {"order_id": order.id})
+            publish_event("order", order.id, "order.paid", {"order_id": str(order.id)})
             metrics.incr("payments.completed")
             return "completed"
 
