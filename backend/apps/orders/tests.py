@@ -73,12 +73,22 @@ class StateMachineTransitionTest(TestCase):
 
     def test_emits_outbox_event_on_paid(self):
         with patch("apps.core.outbox.publish_event") as mock_publish:
-            ok, _ = self.order.transition_to(Order.STATUS_PAID, publish=True)
-            self.assertTrue(ok)
-            mock_publish.assert_called_once()
-            args = mock_publish.call_args
-            self.assertEqual(args[0][0], "order")
-            self.assertEqual(args[0][2], "order.paid")
+            # transaction.on_commit defers callbacks in TestCase (rolled-back
+            # transaction).  Patch it to execute the callback immediately so
+            # the mock assertion can fire.
+            from django.db import transaction as _txn
+            original_on_commit = _txn.on_commit
+
+            def _immediate_on_commit(fn, using=None):
+                fn()
+
+            with patch.object(_txn, "on_commit", side_effect=_immediate_on_commit):
+                ok, _ = self.order.transition_to(Order.STATUS_PAID, publish=True)
+                self.assertTrue(ok)
+                mock_publish.assert_called_once()
+                args = mock_publish.call_args
+                self.assertEqual(args[0][0], "order")
+                self.assertEqual(args[0][2], "order.paid")
 
 
 class OrderServiceCancelTest(TestCase):
@@ -172,11 +182,19 @@ class EventEmissionTest(TestCase):
         user = User.objects.create_user(email="ev@t.com", phone_number="+254712345680", password="x")
         order = Order.objects.create(user=user, total=Decimal("50"), status=Order.STATUS_PAYMENT_FAILED)
         with patch("apps.core.outbox.publish_event") as mock:
-            ok, _ = order.transition_to(Order.STATUS_CANCELLED, publish=True)
-            self.assertTrue(ok)
-            mock.assert_called_once()
-            args = mock.call_args
-            self.assertEqual(args[0][2], "order.cancelled")
+            # transaction.on_commit defers callbacks in TestCase (rolled-back
+            # transaction). Patch it to execute immediately.
+            from django.db import transaction as _txn
+
+            def _immediate_on_commit(fn, using=None):
+                fn()
+
+            with patch.object(_txn, "on_commit", side_effect=_immediate_on_commit):
+                ok, _ = order.transition_to(Order.STATUS_CANCELLED, publish=True)
+                self.assertTrue(ok)
+                mock.assert_called_once()
+                args = mock.call_args
+                self.assertEqual(args[0][2], "order.cancelled")
 
 
 class CartMergePerformanceTest(TestCase):

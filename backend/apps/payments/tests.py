@@ -1,3 +1,4 @@
+import os
 import threading
 from unittest.mock import patch
 
@@ -93,6 +94,12 @@ class PaymentIdempotencyTests(TransactionTestCase):
 
 class MpesaCallbackValidationTests(APITestCase):
     def setUp(self):
+        # Disable strict signature verification so tests can POST callbacks
+        # without providing a Safaricom RSA signature.
+        self._orig_strict = os.environ.get("MPESA_STRICT_SIGNATURE")
+        os.environ["MPESA_STRICT_SIGNATURE"] = "false"
+        self.addCleanup(self._restore_strict_signature)
+
         self.user = User.objects.create_user(
             email='pay-user@example.com',
             phone_number='+254700000004',
@@ -117,6 +124,12 @@ class MpesaCallbackValidationTests(APITestCase):
             mpesa_checkout_request_id='ws_co_123',
             status='initiated',
         )
+
+    def _restore_strict_signature(self):
+        if self._orig_strict is None:
+            os.environ.pop("MPESA_STRICT_SIGNATURE", None)
+        else:
+            os.environ["MPESA_STRICT_SIGNATURE"] = self._orig_strict
 
     def _callback_payload(self, amount='200.00', phone='254700000004', result_code=0):
         return {

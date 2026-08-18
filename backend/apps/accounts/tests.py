@@ -138,5 +138,10 @@ class AuthCookieLoginTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        detail = response.data.get("detail") or response.data.get("message", "")
-        self.assertIn("verify your email", str(detail).lower())
+        # Custom exception handler wraps errors in {status, error: {message, code, details}}
+        error_msg = (
+            response.data.get("detail", "")
+            or response.data.get("message", "")
+            or response.data.get("error", {}).get("message", "")
+        )
+        self.assertIn("verify your email", str(error_msg).lower())
