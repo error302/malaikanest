@@ -312,7 +312,7 @@ class PesapalService:
                     order.transaction_id = confirmation
                 order.paid_at = timezone.now()
                 order.save(update_fields=["status", "payment_method", "transaction_id", "paid_at", "updated_at"])
-            publish_event("order", order.id, "order.paid", {"order_id": order.id})
+            publish_event("order", order.id, "order.paid", {"order_id": str(order.id)})
             metrics.incr("payments.completed")
             audit_log(event_type="ipn_completed", payload=status_resp, payment=payment, source=source)
             PesapalService._fire_post_payment(payment.order_id)
