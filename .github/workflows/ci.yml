@@ -43,6 +43,15 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DB_NAME: malaika_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      SECRET_KEY: ci-test-secret-key-not-for-production
+      REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,22 +62,8 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Django system check
         run: python manage.py check
-        env:
-          DJANGO_SETTINGS_MODULE: config.settings.dev
-          DB_NAME: malaika_db
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_HOST: localhost
-          DB_PORT: "5432"
       - name: Django tests
-        run: python manage.py test
-        env:
-          DJANGO_SETTINGS_MODULE: config.settings.dev
-          DB_NAME: malaika_db
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_HOST: localhost
-          DB_PORT: "5432"
+        run: python manage.py test --verbosity=2
 
   docker-build:
     runs-on: ubuntu-latest
