@@ -358,6 +358,8 @@ if _cloud_name and _cloud_key and _cloud_secret:
             "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
         }
     except Exception:
+        import logging as _log
+        _log.warning("Cloudinary storage setup failed, falling back to FileSystemStorage")
         STORAGES = {
             "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
             "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
@@ -442,7 +444,8 @@ try:
     LOG_DIR = BASE_DIR / "logs"
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
-    pass
+    import logging as _log
+    _log.warning("Could not create logs directory at %s", BASE_DIR / "logs")
 
 
 # ── Read replica (system-design-101: database replication) ─────────────────────

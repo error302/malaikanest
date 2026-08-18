@@ -117,7 +117,7 @@ class EmailService:
                     try:
                         invoice.pdf_file.close()
                     except Exception:
-                        pass
+                        logger.debug("PDF file close failed for %s", filename)
                 if data:
                     message.attach(filename, data, "application/pdf")
                     return

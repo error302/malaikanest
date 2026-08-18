@@ -171,7 +171,7 @@ def download_data_export(request, export_id: str):
                 storage_path = export.archive_file.name
                 export.archive_file.delete(save=False)
             except Exception:
-                pass
+                logger.warning("DataExport %s: could not delete expired file %s", export.id, storage_path)
         export.archive_file = None
         export.archive_size = 0
         export.save(update_fields=["archive_file", "archive_size", "status", "updated_at"])

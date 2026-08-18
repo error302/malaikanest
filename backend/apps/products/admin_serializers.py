@@ -1,8 +1,11 @@
 import json
+import logging
 import uuid
 
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
+
+logger = logging.getLogger(__name__)
 
 from apps.accounts.models import User
 from apps.orders.models import Order, OrderItem
@@ -76,7 +79,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
         except Exception:
-            pass
+            logger.debug("Category image download failed from %s", image_url)
         return None
 
     def create(self, validated_data):
@@ -231,6 +234,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             parsed = json.loads(value)
             return parsed if isinstance(parsed, list) else []
         except Exception:
+            logger.debug("_parse_json_list failed for value=%s", str(value)[:80])
             return []
 
     def _norm_id(self, value):
@@ -325,7 +329,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
-            return None
+            logger.debug("Product image download failed from %s", url)
         return None
 
     @staticmethod

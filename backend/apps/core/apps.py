@@ -1,4 +1,8 @@
+import logging
+
 from django.apps import AppConfig
+
+logger = logging.getLogger(__name__)
 
 
 class CoreConfig(AppConfig):
@@ -17,11 +21,12 @@ class CoreConfig(AppConfig):
             try:
                 import cloudinary_storage.app_settings  # type: ignore  # noqa: F401
             except Exception:
-                pass
+                logger.debug("cloudinary_storage not installed, skipping app_settings import")
 
             import cloudinary  # type: ignore
             cloudinary.config(force_version=False)
         except Exception:
             # Cloudinary is optional in dev, but mandatory in prod. If it's missing
             # here, prod will fail earlier in settings guards.
+            logger.debug("Cloudinary force_version config skipped (not installed)")
             return

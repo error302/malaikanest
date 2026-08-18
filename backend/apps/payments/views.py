@@ -321,7 +321,7 @@ class MpesaCallbackView(APIView):
                 if isinstance(parsed, dict):
                     raw_payload = parsed
         except Exception:
-            pass
+            logger.debug("Raw callback body parse failed, using request.data")
 
         # P0 Security Check: M-Pesa Signature Verification
         from apps.payments.services import verify_mpesa_signature
@@ -527,6 +527,7 @@ def _extract_param(body, key):
     try:
         text = body.decode("utf-8") if isinstance(body, bytes) else str(body)
     except Exception:
+        logger.debug("_extract_param: body decode failed for key=%s", key)
         return ""
     import re
 

@@ -4,7 +4,10 @@ Keeps observability dependency-free: counters live in the same Redis used for
 caching/Celery. Pair with the JSON logging already configured for production to
 get rate/error dashboards and the payments_failure_alert beat task.
 """
+import logging
 from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 
 def incr(name, amount=1, *, timeout=86400 * 7):
@@ -17,7 +20,7 @@ def incr(name, amount=1, *, timeout=86400 * 7):
         try:
             cache.set(key, amount, timeout)
         except Exception:
-            pass
+            logger.debug("metric incr fallback set failed for %s: %s", name, exc)
 
 
 def get(name):
@@ -31,7 +34,7 @@ def reset(name):
     try:
         cache.delete(f"metric:{name}")
     except Exception:
-        pass
+        logger.debug("metric reset failed for %s", name)
 
 
 #
@@ -64,5 +67,5 @@ def metrics_view(request):
         try:
             _redis_gauge(name).set(float(get(name)))
         except Exception:
-            pass
+            logger.debug("metrics_view gauge set failed for %s", name)
     return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)

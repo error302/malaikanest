@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from django.core.cache import cache
@@ -6,6 +7,8 @@ from django.dispatch import receiver
 from django.utils.text import slugify
 
 from .models import Brand, Category, Product, ProductVariant
+
+logger = logging.getLogger(__name__)
 
 
 def _invalidate_catalog_caches():
@@ -18,13 +21,13 @@ def _invalidate_catalog_caches():
         for key in cache.keys("products_list_*"):
             cache.delete(key)
     except Exception:
-        pass
+        logger.debug("Cache invalidation failed for products_list_*: %s")
     # Nested caches keyed on the well-known names.
     for key in ("categories_list", "banners_list_active"):
         try:
             cache.delete(key)
         except Exception:
-            pass
+            logger.debug("Cache invalidation failed for key=%s", key)
 
 
 @receiver(pre_save, sender=Product)

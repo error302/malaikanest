@@ -74,7 +74,7 @@ class IdempotencyMiddleware:
             try:
                 cache.set(cache_key, {"status": response.status_code, "body": body}, IDEMPOTENCY_TTL)
             except Exception:
-                pass
+                logger.debug("Idempotency cache set failed for key=%s", cache_key[:32])
 
         return response
 
