@@ -21,7 +21,7 @@ def _invalidate_catalog_caches():
         for key in cache.keys("products_list_*"):
             cache.delete(key)
     except Exception:
-        logger.debug("Cache invalidation failed for products_list_*: %s")
+        logger.debug("Cache invalidation failed for products_list_*")
     # Nested caches keyed on the well-known names.
     for key in ("categories_list", "banners_list_active"):
         try:

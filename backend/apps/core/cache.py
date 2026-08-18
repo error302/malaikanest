@@ -30,7 +30,7 @@ def get_redis_client():
     try:
         return redis.from_url(redis_url, decode_responses=True)
     except Exception:
-        logger.debug("Redis connection failed, falling back to Django cache: %s")
+        logger.debug("Redis connection failed, falling back to Django cache")
         return None
 
 
