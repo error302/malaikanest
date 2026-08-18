@@ -46,15 +46,15 @@ const NAV_LINKS = [
 ];
 
 const SHOP_BY_AGE = [
-  { label: 'Newborn', slug: 'baby' },
-  { label: '0-3 Months', slug: 'baby' },
-  { label: '3-6 Months', slug: 'baby' },
-  { label: '6-12 Months', slug: 'baby' },
-  { label: '1-2 Years', slug: 'toddler' },
-  { label: '2-4 Years', slug: 'toddler' },
-  { label: '4-6 Years', slug: 'kids' },
-  { label: '6-9 Years', slug: 'kids' },
-  { label: '9-12 Years', slug: 'kids' },
+  { label: 'Newborn', slug: 'baby', image: '/images/ages/newborn.jpg' },
+  { label: '0-3 Months', slug: 'baby', image: '/images/ages/0-3m.jpg' },
+  { label: '3-6 Months', slug: 'baby', image: '/images/ages/3-6m.jpg' },
+  { label: '6-12 Months', slug: 'baby', image: '/images/ages/6-9m.jpg' },
+  { label: '1-2 Years', slug: 'toddler', image: '/images/ages/1-2y.jpg' },
+  { label: '2-4 Years', slug: 'toddler', image: '/images/ages/2-4y.jpg' },
+  { label: '4-6 Years', slug: 'kids', image: '/images/ages/4-6y.jpg' },
+  { label: '6-9 Years', slug: 'kids', image: '/images/ages/6-9y.jpg' },
+  { label: '9-12 Years', slug: 'kids', image: '/images/ages/9-12y.jpg' },
 ];
 
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
@@ -587,13 +587,15 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   }}
                 >
                   <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center transition-colors"
+                    className="w-14 h-14 rounded-full overflow-hidden relative border-2 border-white shadow-warm-sm transition-transform duration-200 group-hover:scale-105"
                     style={{ background: 'var(--brand-warm)' }}
                   >
-                    <Baby
-                      size={26}
-                      strokeWidth={1.5}
-                      style={{ color: 'var(--brand-gold)' }}
+                    <Image
+                      src={age.image}
+                      alt={age.label}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
                     />
                   </div>
                   <span
