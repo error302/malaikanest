@@ -8,6 +8,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
 
 # Install ALL dependencies (dev deps like @tailwindcss/postcss are required for the build)
 RUN npm ci --include=dev --no-audit --no-fund
@@ -21,10 +22,12 @@ ARG NEXT_PUBLIC_API_URL="https://api.malaikanest.com"
 ARG NEXT_PUBLIC_SITE_URL="https://malaikanest.com"
 ARG NEXT_PUBLIC_GA_ID=""
 ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=""
+ARG NEXT_PUBLIC_PAYPAL_CLIENT_ID="BAArxHI5gntEehvqdnyWlhhYwRiWZk2MEI3cOxcmgt2i2vjAFv099u7qi52vrhKX_TSbTsyzyXB0MKHcqg"
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID \
-    NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=$NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=$NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION \
+    NEXT_PUBLIC_PAYPAL_CLIENT_ID=$NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
 # The runtime CMS database lives in a mounted volume at /app/data/cms.db. During
 # the image build we only need a valid DATABASE_URL for `prisma generate` and the
