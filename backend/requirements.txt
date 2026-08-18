@@ -4,7 +4,7 @@ djangorestframework-simplejwt==5.5.1
 django-filter==24.3
 psycopg2-binary==2.9.10
 gunicorn==23.0.0
-setuptools==83.0.0
+setuptools==84.0.0
 python-dotenv==1.2.2
 django-cors-headers==4.6.0
 requests==2.33.0
