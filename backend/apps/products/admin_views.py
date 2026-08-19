@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -113,7 +113,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().annotate(
+            total_orders_count=Count("order")
+        )
         search = self.request.query_params.get("search")
 
         if search:
