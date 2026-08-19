@@ -196,6 +196,7 @@ export default function ProductGalleryUploader({ initialImages = [], onChange }:
                   <button
                     type="button"
                     title="Move up"
+                    aria-label="Move image up"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
                     className="p-1 rounded-md disabled:opacity-30"
@@ -206,6 +207,7 @@ export default function ProductGalleryUploader({ initialImages = [], onChange }:
                   <button
                     type="button"
                     title="Move down"
+                    aria-label="Move image down"
                     onClick={() => move(index, 1)}
                     disabled={index === items.length - 1}
                     className="p-1 rounded-md disabled:opacity-30"
@@ -218,6 +220,7 @@ export default function ProductGalleryUploader({ initialImages = [], onChange }:
                   <button
                     type="button"
                     title={item.is_primary ? 'Primary image' : 'Set as primary'}
+                    aria-label={item.is_primary ? 'Primary image' : 'Set as primary image'}
                     onClick={() => setPrimary(index)}
                     className="p-1 rounded-md"
                     style={{ color: item.is_primary ? 'var(--brand-gold)' : 'var(--brand-text-muted)' }}
@@ -227,6 +230,7 @@ export default function ProductGalleryUploader({ initialImages = [], onChange }:
                   <button
                     type="button"
                     title="Remove"
+                    aria-label="Remove image"
                     onClick={() => removeItem(index)}
                     className="p-1 rounded-md"
                     style={{ color: 'var(--brand-terra)' }}
