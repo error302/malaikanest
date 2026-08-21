@@ -35,6 +35,8 @@ const en: Dict = {
   'nav.shopByAge': 'Shop by Age',
   'nav.featured': 'Featured',
   'nav.allProducts': 'All Products',
+  'nav.chatWithUs': 'Chat with us',
+  'nav.chatOnWhatsapp': 'Chat on WhatsApp',
 
   // Mega menu groups
   'mega.shopByCategory': 'Shop by Category',
@@ -311,6 +313,8 @@ const sw: Dict = {
   'nav.shopByAge': 'Kwa Umri',
   'nav.featured': 'Vipengele',
   'nav.allProducts': 'Bidhaa Zote',
+  'nav.chatWithUs': 'Ongea nasi',
+  'nav.chatOnWhatsapp': 'Ongea kwenye WhatsApp',
 
   // Mega menu groups
   'mega.shopByCategory': 'Duka kwa Jamii',
