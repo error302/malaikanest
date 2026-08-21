@@ -9,3 +9,7 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+
+## 2024-11-25 - [Screen Reader Accessibility for Disclosure Widgets]
+**Learning:** Toggle buttons that reveal popups or menus must include `aria-expanded` and `aria-controls` attributes linked to the target element's ID to be correctly announced as disclosure widgets by screen readers.
+**Action:** When creating toggle buttons for popups, tooltips, or expanding panels, ensure they have `aria-expanded={isExpanded}` and `aria-controls="target-id"`, and verify the target container has a matching `id`.
