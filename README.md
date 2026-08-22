@@ -108,8 +108,7 @@ malaikanest/
 │   │   └── lib/         # API client, contexts, utilities
 │   ├── public/           # Static assets
 │   └── package.json
-├── docker-compose.yml    # Development orchestration
-├── docker-compose.prod.yml  # Production (Cloudflare Workers)
+├── docker-compose.yml    # Production orchestration (Cloudflare Tunnels)
 └── README.md
 ```
 
