@@ -73,9 +73,15 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
+            parsed = urlparse(image_url)
+            allowed_hosts = ["res.cloudinary.com", "cloudinary.com"]
+
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                logger.debug("Category image download failed: invalid or disallowed URL %s", image_url)
+                return None
+
             response = requests.get(image_url, timeout=10)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
         except Exception:
@@ -323,13 +329,19 @@ class AdminProductSerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
+            parsed = urlparse(image_url)
+            allowed_hosts = ["res.cloudinary.com", "cloudinary.com"]
+
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                logger.debug("Product image download failed: invalid or disallowed URL %s", image_url)
+                return None
+
             response = requests.get(image_url, timeout=10)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
-            logger.debug("Product image download failed from %s", url)
+            logger.debug("Product image download failed from %s", image_url)
         return None
 
     @staticmethod
