@@ -30,6 +30,7 @@ except ImportError:
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60, acks_late=True, reject_on_worker_lost=True)
 def verify_mpesa_payment_async(self, payment_id):
+    from apps.orders.models import Order
     from .models import Payment
     from .services import PaymentService, audit_log
 
