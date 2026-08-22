@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -122,6 +122,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 | Q(first_name__icontains=search)
                 | Q(last_name__icontains=search)
             )
+
+        # Optimize N+1 query issue for AdminUserSerializer.get_total_orders
+        queryset = queryset.annotate(annotated_total_orders=Count('order'))
 
         return queryset
 
