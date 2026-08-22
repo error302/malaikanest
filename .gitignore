@@ -32,6 +32,7 @@ node_modules/
 *.log
 .env*
 !.env.example
+backups/
 
 # Internal generated/test pages
 .mn-test/
