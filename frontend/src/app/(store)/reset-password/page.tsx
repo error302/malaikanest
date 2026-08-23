@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Eye, EyeOff, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
+import { useHydrated } from '@/lib/use-hydrated';
 import { showToast } from '@/lib/toast';
 
 function ResetPasswordForm() {
@@ -19,6 +20,7 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const hydrated = useHydrated();
 
   if (!token) {
     return (
@@ -213,7 +215,7 @@ function ResetPasswordForm() {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={!hydrated || loading}
         className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold disabled:opacity-60 transition-all hover:shadow-warm-md"
         style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
       >

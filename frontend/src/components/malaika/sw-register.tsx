@@ -11,7 +11,7 @@ export function ServiceWorkerRegistrar() {
       // Versioned query busts any CDN-cached copy of sw.js (the sweep logic
       // in the file must never be served stale). Bump together with VERSION
       // in public/sw.js.
-      navigator.serviceWorker.register("/sw.js?v=2", { scope: "/" }).catch(() => {
+      navigator.serviceWorker.register("/sw.js?v=3", { scope: "/" }).catch(() => {
         // Registration is a progressive enhancement; never surface errors.
       });
     };

@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/authContext';
 import { showToast } from '@/lib/toast';
 import { useI18n } from '@/lib/i18n';
 import { extractApiError } from '@/lib/api';
+import { useHydrated } from '@/lib/use-hydrated';
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
+  const hydrated = useHydrated();
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -254,7 +256,7 @@ export default function LoginPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={!hydrated || loading}
               className="mt-2 w-full inline-flex items-center justify-center gap-2.5 rounded-xl px-6 py-3.5 text-sm font-semibold transition-[colors,box-shadow,transform] duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-[var(--brand-gold-dark)] hover:enabled:shadow-warm-md hover:enabled:-translate-y-0.5 active:scale-[0.98]"
               style={{
                 background: loading ? 'var(--brand-gold-light)' : 'var(--brand-gold)',

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowRight, CheckCircle } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
+import { useHydrated } from '@/lib/use-hydrated';
 import { showToast } from '@/lib/toast';
 import { useI18n } from '@/lib/i18n';
 
@@ -12,6 +13,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const hydrated = useHydrated();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +104,7 @@ export default function ForgotPasswordPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={!hydrated || loading}
               className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold disabled:opacity-60"
               style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
             >
