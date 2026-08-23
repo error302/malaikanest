@@ -18,18 +18,64 @@ export interface CategoryImageLike {
   image?: string | null;
 }
 
-/** Curated defaults, keyed by category slug. */
+/** Curated defaults, keyed by category slug or keyword. */
 const SLUG_IMAGES: Record<string, string> = {
   'baby-clothing': '/images/categories/baby-clothing.jpg',
   'clothing': '/images/categories/clothing.jpg',
+  'toddler-clothing': '/images/categories/clothing.jpg',
+  'dresses': '/images/categories/clothing.jpg',
+  'hoodies': '/images/categories/clothing.jpg',
+  'jackets': '/images/categories/clothing.jpg',
+  'jeans': '/images/categories/clothing.jpg',
+  'pajamas': '/images/categories/clothing.jpg',
+  'pants': '/images/categories/clothing.jpg',
+  'shorts': '/images/categories/clothing.jpg',
+  'skirts': '/images/categories/clothing.jpg',
+  'sweaters': '/images/categories/clothing.jpg',
+  't-shirts': '/images/categories/clothing.jpg',
+  'school-wear': '/images/categories/clothing.jpg',
+  'sportswear': '/images/categories/clothing.jpg',
+  'boys': '/images/categories/clothing.jpg',
+  'girls': '/images/categories/clothing.jpg',
+  'baby': '/images/categories/baby-clothing.jpg',
+  'toddler': '/images/categories/clothing.jpg',
+  'kids': '/images/categories/clothing.jpg',
   'baby-essentials': '/images/categories/baby-essentials.jpg',
+  'essentials': '/images/categories/baby-essentials.jpg',
+  'feeding': '/images/categories/baby-essentials.jpg',
+  'diapering': '/images/categories/baby-essentials.jpg',
+  'bath-baby-care': '/images/categories/baby-essentials.jpg',
+  'baby-health': '/images/categories/baby-essentials.jpg',
   'nursery': '/images/categories/nursery.jpg',
   'nursery-gear': '/images/categories/nursery-gear.jpg',
+  'gear': '/images/categories/nursery-gear.jpg',
+  'cribs': '/images/categories/nursery.jpg',
+  'bedding': '/images/categories/nursery.jpg',
+  'mattresses': '/images/categories/nursery.jpg',
+  'changing-tables': '/images/categories/nursery.jpg',
+  'nursery-decor': '/images/categories/nursery.jpg',
+  'safety-gates': '/images/categories/nursery-gear.jpg',
   'toys': '/images/categories/toys.jpg',
+  'toys-learning': '/images/categories/toys.jpg',
   'toys-gifts': '/images/categories/toys-gifts.jpg',
+  'activity-toys': '/images/categories/toys.jpg',
+  'bath-toys': '/images/categories/toys.jpg',
+  'educational': '/images/categories/toys.jpg',
+  'soft-toys': '/images/categories/toys.jpg',
+  'teething-toys': '/images/categories/toys.jpg',
   'gifts': '/images/categories/gifts.jpg',
+  'gifts-bundles': '/images/categories/gifts.jpg',
+  'bundles': '/images/categories/gifts.jpg',
+  'baby-gift-sets': '/images/categories/gifts.jpg',
+  'baby-shower-gifts': '/images/categories/gifts.jpg',
+  'newborn-starter-kits': '/images/categories/gifts.jpg',
   'travel': '/images/categories/travel.jpg',
+  'strollers': '/images/categories/travel.jpg',
+  'car-seats': '/images/categories/travel.jpg',
+  'walkers': '/images/categories/travel.jpg',
+  'baby-carriers': '/images/categories/travel.jpg',
   'thrifted': '/images/categories/thrifted.jpg',
+  'mtumba': '/images/categories/thrifted.jpg',
 };
 
 /** Last-resort generic images. */
@@ -59,21 +105,39 @@ export function getCategoryImage(cat: CategoryImageLike | null | undefined): str
     return cat.image;
   }
 
-  // 2. Curated slug mapping (covers the known catalog categories).
-  if (cat.slug && SLUG_IMAGES[cat.slug]) {
-    return SLUG_IMAGES[cat.slug];
+  // 2. Direct slug match.
+  const slug = (cat.slug || '').toLowerCase().trim();
+  if (slug && SLUG_IMAGES[slug]) {
+    return SLUG_IMAGES[slug];
   }
 
-  // 3. Loose name-keyword match against the curated map.
-  const name = (cat.name || '').toLowerCase();
-  if (name) {
-    const hit = Object.entries(SLUG_IMAGES).find(([slug, _img]) =>
-      name.includes(slug.replace(/-/g, ' ')),
-    );
-    if (hit) return hit[1];
+  // 3. Normalized name/slug keyword match.
+  const name = (cat.name || '').toLowerCase().trim();
+  const searchString = `${slug} ${name}`;
+
+  if (searchString.includes('cloth') || searchString.includes('dress') || searchString.includes('romper') || searchString.includes('onesie') || searchString.includes('boy') || searchString.includes('girl')) {
+    return '/images/categories/baby-clothing.jpg';
+  }
+  if (searchString.includes('toy') || searchString.includes('play') || searchString.includes('game') || searchString.includes('puzzle')) {
+    return '/images/categories/toys.jpg';
+  }
+  if (searchString.includes('nursery') || searchString.includes('crib') || searchString.includes('bed') || searchString.includes('decor')) {
+    return '/images/categories/nursery.jpg';
+  }
+  if (searchString.includes('essential') || searchString.includes('feed') || searchString.includes('bib') || searchString.includes('diaper') || searchString.includes('bath') || searchString.includes('care')) {
+    return '/images/categories/baby-essentials.jpg';
+  }
+  if (searchString.includes('gift') || searchString.includes('bundle') || searchString.includes('shower') || searchString.includes('set')) {
+    return '/images/categories/gifts.jpg';
+  }
+  if (searchString.includes('travel') || searchString.includes('stroller') || searchString.includes('carrier') || searchString.includes('seat')) {
+    return '/images/categories/travel.jpg';
+  }
+  if (searchString.includes('thrift') || searchString.includes('mtumba') || searchString.includes('preloved')) {
+    return '/images/categories/thrifted.jpg';
   }
 
-  // 4. Deterministic generic fallback (stable per category).
-  const key = cat.slug || cat.name || 'fallback';
+  // 4. Fallback from generic pool.
+  const key = slug || name || 'fallback';
   return GENERIC_IMAGES[hashCode(key) % GENERIC_IMAGES.length];
 }

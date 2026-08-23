@@ -1,4 +1,4 @@
-const INTERNAL_API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { getApiBaseUrl } from '@/lib/site-config';
 
 export interface ShopPhoto {
   id: string;
@@ -11,7 +11,7 @@ export async function getShopPhotos(): Promise<ShopPhoto[]> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`${INTERNAL_API_URL}/api/v1/core/shop-photos/`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/core/shop-photos/`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: controller.signal,

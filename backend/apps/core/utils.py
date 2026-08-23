@@ -2,6 +2,24 @@ import re
 from django.core.exceptions import ValidationError
 
 
+def get_client_ip(request):
+    """Return the true client IP for rate limiting, lockout and audit decisions.
+
+    Trust model: all production ingress reaches Django through Cloudflare Tunnel.
+    Cloudflare's edge sets/overwrites CF-Connecting-IP on every proxied request,
+    so clients cannot forge it through the proxy; cloudflared forwards it as-is.
+    X-Real-IP and left-most X-Forwarded-For hops are attacker-controlled and must
+    never be trusted. Fallbacks cover local development where no proxy is present.
+    """
+    cf_ip = request.META.get("HTTP_CF_CONNECTING_IP")
+    if cf_ip:
+        return cf_ip.strip()
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[-1].strip()
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+
 def validate_kenyan_phone(phone):
     """
     Validate Kenyan phone number format.

@@ -32,6 +32,7 @@ node_modules/
 *.log
 .env*
 !.env.example
+backups/
 
 # Internal generated/test pages
 .mn-test/
@@ -71,6 +72,7 @@ Thumbs.db
 *.tgz
 .playwright-mcp/
 .playwright-cli/
+.worktrees/
 
 # Secrets / keys (never commit)
 *.pem

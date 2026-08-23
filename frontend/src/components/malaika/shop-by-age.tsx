@@ -7,16 +7,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 const AGES = [
-  { name: 'Newborn', nameKey: 'age.newborn', rangeKey: 'age.newbornRange', group: 'baby', image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=300&auto=format&fit=crop&q=80' },
-  { name: '0–3 Months', nameKey: 'age.0_3', rangeKey: 'age.0_3Range', group: 'baby', image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=300&auto=format&fit=crop&q=80' },
-  { name: '3–6 Months', nameKey: 'age.3_6', rangeKey: 'age.3_6Range', group: 'baby', image: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?w=300&auto=format&fit=crop&q=80' },
-  { name: '6–9 Months', nameKey: 'age.6_9', rangeKey: 'age.6_9Range', group: 'baby', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&auto=format&fit=crop&q=80' },
-  { name: '9–12 Months', nameKey: 'age.9_12', rangeKey: 'age.9_12Range', group: 'baby', image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=300&auto=format&fit=crop&q=80' },
-  { name: '1–2 Years', nameKey: 'age.1_2', rangeKey: 'age.1_2Range', group: 'baby', image: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=300&auto=format&fit=crop&q=80' },
-  { name: '2–4 Years', nameKey: 'age.2_4', rangeKey: 'age.2_4Range', group: 'toddler', image: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=300&auto=format&fit=crop&q=80' },
-  { name: '4–6 Years', nameKey: 'age.4_6', rangeKey: 'age.4_6Range', group: 'toddler', image: 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=300&auto=format&fit=crop&q=80' },
-  { name: '6–9 Years', nameKey: 'age.6_9y', rangeKey: 'age.6_9yRange', group: 'kids', image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=300&auto=format&fit=crop&q=80' },
-  { name: '9–12 Years', nameKey: 'age.9_12y', rangeKey: 'age.9_12yRange', group: 'kids', image: 'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=300&auto=format&fit=crop&q=80' },
+  { name: 'Newborn', nameKey: 'age.newborn', rangeKey: 'age.newbornRange', group: 'baby', image: '/images/ages/newborn.jpg' },
+  { name: '0–3 Months', nameKey: 'age.0_3', rangeKey: 'age.0_3Range', group: 'baby', image: '/images/ages/0-3m.jpg' },
+  { name: '3–6 Months', nameKey: 'age.3_6', rangeKey: 'age.3_6Range', group: 'baby', image: '/images/ages/3-6m.jpg' },
+  { name: '6–9 Months', nameKey: 'age.6_9', rangeKey: 'age.6_9Range', group: 'baby', image: '/images/ages/6-9m.jpg' },
+  { name: '9–12 Months', nameKey: 'age.9_12', rangeKey: 'age.9_12Range', group: 'baby', image: '/images/ages/9-12m.jpg' },
+  { name: '1–2 Years', nameKey: 'age.1_2', rangeKey: 'age.1_2Range', group: 'baby', image: '/images/ages/1-2y.jpg' },
+  { name: '2–4 Years', nameKey: 'age.2_4', rangeKey: 'age.2_4Range', group: 'toddler', image: '/images/ages/2-4y.jpg' },
+  { name: '4–6 Years', nameKey: 'age.4_6', rangeKey: 'age.4_6Range', group: 'toddler', image: '/images/ages/4-6y.jpg' },
+  { name: '6–9 Years', nameKey: 'age.6_9y', rangeKey: 'age.6_9yRange', group: 'kids', image: '/images/ages/6-9y.jpg' },
+  { name: '9–12 Years', nameKey: 'age.9_12y', rangeKey: 'age.9_12yRange', group: 'kids', image: '/images/ages/9-12y.jpg' },
 ];
 
 interface ShopByAgeProps {

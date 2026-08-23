@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.orders.models import Order
+from apps.core.utils import get_client_ip
 from .models import Payment, PaymentAuditLog
 from .gateway import PaymentGatewayFactory
 from .tasks import reconcile_payments_task, verify_mpesa_payment_async, verify_pesapal_payment_async
@@ -304,7 +305,7 @@ class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        client_ip = request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR")
+        client_ip = get_client_ip(request)
 
         is_safaricom = is_valid_mpesa_ip(client_ip)
         if not is_safaricom:

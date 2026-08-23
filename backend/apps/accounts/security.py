@@ -3,24 +3,9 @@ import time
 from django.conf import settings
 from django.core.cache import cache
 
+from apps.core.utils import get_client_ip
+
 logger = logging.getLogger("security")
-
-
-def get_client_ip(request):
-    """Return the client IP, resisting X-Forwarded-For spoofing.
-
-    Prefer X-Real-IP (set by the trusted reverse proxy from $remote_addr). Fall
-    back to the right-most X-Forwarded-For hop — the one appended by the proxy,
-    not the attacker-controlled left-most hop — then REMOTE_ADDR. Configure nginx
-    with `proxy_set_header X-Real-IP $remote_addr;` so this is authoritative.
-    """
-    real_ip = request.META.get("HTTP_X_REAL_IP")
-    if real_ip:
-        return real_ip.strip()
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[-1].strip()
-    return request.META.get("REMOTE_ADDR", "unknown")
 
 
 def _threshold():

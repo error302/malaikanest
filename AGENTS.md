@@ -34,8 +34,11 @@ malaikanest/
 ├── cloudflared/      tunnel config + credentials
 ├── deployment/       bare-metal GCP scripts (alt path)
 ├── docs/             ARCHITECTURE.md, plans, security, mpesa docs
-├── docker-compose.yml        ← ACTIVE production topology
-└── docker-compose.prod.yml   ← alt prod compose
+└── docker-compose.yml        ← ACTIVE production topology
+                               (the old docker-compose.prod.yml and root ad-hoc
+                               deploy scripts were removed 2026-08-23; deploys
+                               go through .github/workflows/deploy.yml, backups
+                               via scripts/ops/backup-compose.sh)
 ```
 
 ## 3. Tech stack (actual versions — trust package.json, not README)

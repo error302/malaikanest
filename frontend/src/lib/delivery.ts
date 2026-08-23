@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from '@/lib/site-config';
+
 export interface DeliveryZone {
   slug: string;
   name: string;
@@ -18,7 +20,7 @@ export async function getDeliveryZones(): Promise<DeliveryZone[]> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`${INTERNAL_API_URL}/api/v1/orders/delivery-zones/`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/orders/delivery-zones/`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: controller.signal,

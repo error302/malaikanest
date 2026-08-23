@@ -37,6 +37,9 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self), browsing-topics=()' },
   { key: 'Content-Security-Policy', value: ContentSecurityPolicy },
+  // Document-level prefetch rules for product/category taps (avoids inline
+  // scripts entirely, so no CSP nonce juggling).
+  { key: 'Speculation-Rules', value: '/speculation-rules.json' },
 ];
 
 const cacheHeaders = [

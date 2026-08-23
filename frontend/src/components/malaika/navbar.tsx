@@ -46,15 +46,15 @@ const NAV_LINKS = [
 ];
 
 const SHOP_BY_AGE = [
-  { label: 'Newborn', slug: 'baby' },
-  { label: '0-3 Months', slug: 'baby' },
-  { label: '3-6 Months', slug: 'baby' },
-  { label: '6-12 Months', slug: 'baby' },
-  { label: '1-2 Years', slug: 'toddler' },
-  { label: '2-4 Years', slug: 'toddler' },
-  { label: '4-6 Years', slug: 'kids' },
-  { label: '6-9 Years', slug: 'kids' },
-  { label: '9-12 Years', slug: 'kids' },
+  { label: 'Newborn', slug: 'baby', image: '/images/ages/newborn.jpg' },
+  { label: '0-3 Months', slug: 'baby', image: '/images/ages/0-3m.jpg' },
+  { label: '3-6 Months', slug: 'baby', image: '/images/ages/3-6m.jpg' },
+  { label: '6-12 Months', slug: 'baby', image: '/images/ages/6-9m.jpg' },
+  { label: '1-2 Years', slug: 'toddler', image: '/images/ages/1-2y.jpg' },
+  { label: '2-4 Years', slug: 'toddler', image: '/images/ages/2-4y.jpg' },
+  { label: '4-6 Years', slug: 'kids', image: '/images/ages/4-6y.jpg' },
+  { label: '6-9 Years', slug: 'kids', image: '/images/ages/6-9y.jpg' },
+  { label: '9-12 Years', slug: 'kids', image: '/images/ages/9-12y.jpg' },
 ];
 
 const SEARCH_SUGGESTIONS = ['Onesies', 'Feeding Set', 'Stroller', 'Baby Monitor', 'Gift Set'];
@@ -67,6 +67,10 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
   const openCartDrawer = useCartDrawer((s) => s.openDrawer);
   const [shopOpen, setShopOpen] = useState(false);
   const [ageOpen, setAgeOpen] = useState(false);
+  // Mega-menu panels mount their content only after first open so their
+  // category/tile images never download on pages where the menus are untouched.
+  const [shopTouched, setShopTouched] = useState(false);
+  const [ageTouched, setAgeTouched] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,11 +86,13 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
         if (mobileOpen) setMobileOpen(false);
         if (searchOpen) setSearchOpen(false);
         if (accountMenuOpen) setAccountMenuOpen(false);
+        if (shopOpen) setShopOpen(false);
+        if (ageOpen) setAgeOpen(false);
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [mobileOpen, searchOpen, accountMenuOpen]);
+  }, [mobileOpen, searchOpen, accountMenuOpen, shopOpen, ageOpen]);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -131,6 +137,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
 
   const openShop = () => {
     if (shopTimer.current) clearTimeout(shopTimer.current);
+    setShopTouched(true);
     setShopOpen(true);
     setAgeOpen(false);
   };
@@ -139,6 +146,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
   };
   const openAge = () => {
     if (shopTimer.current) clearTimeout(shopTimer.current);
+    setAgeTouched(true);
     setAgeOpen(true);
     setShopOpen(false);
   };
@@ -199,6 +207,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                     style={{ color: 'var(--brand-brown)' }}
                     aria-expanded={shopOpen}
                     aria-haspopup="true"
+                    onClick={() => (shopOpen ? closeShop() : openShop())}
+                    onFocus={openShop}
                   >
                     {t(link.nameKey)}
                     <ChevronDown
@@ -230,6 +240,8 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                 style={{ color: 'var(--brand-brown)' }}
                 aria-expanded={ageOpen}
                 aria-haspopup="true"
+                onClick={() => (ageOpen ? closeAge() : openAge())}
+                onFocus={openAge}
               >
                 {t('nav.shopByAge')}
                 <ChevronDown
@@ -452,6 +464,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
             boxShadow: 'var(--shadow-warm-lg)',
           }}
         >
+          {shopTouched && (
           <div className="container-shell py-8">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {categories.slice(0, 6).map((cat, idx) => (
@@ -540,6 +553,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               </Link>
             </div>
           </div>
+          )}
         </div>
 
         {/* ── Shop by Age Mega Menu ── */}
@@ -557,6 +571,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
             boxShadow: 'var(--shadow-warm-lg)',
           }}
         >
+          {ageTouched && (
           <div className="container-shell py-8">
             <div className="flex items-center justify-between mb-5">
               <h3
@@ -587,13 +602,15 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   }}
                 >
                   <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center transition-colors"
+                    className="w-14 h-14 rounded-full overflow-hidden relative border-2 border-white shadow-warm-sm transition-transform duration-200 group-hover:scale-105"
                     style={{ background: 'var(--brand-warm)' }}
                   >
-                    <Baby
-                      size={26}
-                      strokeWidth={1.5}
-                      style={{ color: 'var(--brand-gold)' }}
+                    <Image
+                      src={age.image}
+                      alt={age.label}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
                     />
                   </div>
                   <span
@@ -606,6 +623,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               ))}
             </div>
           </div>
+          )}
         </div>
       </header>
 
@@ -747,7 +765,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
                   {SHOP_BY_AGE.slice(0, 6).map((age) => (
                     <Link
                       key={age.label}
-                      href={`/categories?age_group=${age.slug}`}
+                  href={`/categories?age=${age.slug}`}
                       onClick={() => setMobileOpen(false)}
                       className="px-4 py-2 rounded-full border text-[13px] transition-all"
                       style={{

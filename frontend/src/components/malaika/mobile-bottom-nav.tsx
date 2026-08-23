@@ -8,7 +8,7 @@ import { Home, ShoppingBag, Search, ShoppingCart, User } from 'lucide-react';
 const NAV_ITEMS = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Shop', href: '/categories', icon: ShoppingBag },
-  { name: 'Search', href: '/categories', icon: Search },
+  { name: 'Search', href: '/search', icon: Search },
   { name: 'Cart', href: '/cart', icon: ShoppingCart, showBadge: true },
   { name: 'Account', href: '/account', icon: User },
 ];

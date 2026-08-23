@@ -1,3 +1,4 @@
+import os
 from urllib.parse import urlparse
 
 
@@ -113,19 +114,47 @@ def validate_production_env(env):
     if "*" in {host.strip() for host in allowed_hosts_raw.split(",") if host.strip()}:
         errors.append("ALLOWED_HOSTS must not contain '*'.")
 
-    # M-Pesa can be intentionally unconfigured pre-launch; enforce strict validation only when all credentials are present.
+    # M-Pesa is payment-critical: production must never run in mock mode (which
+    # auto-completes payments with no money movement) or on placeholder
+    # credentials, and callbacks must be cryptographically signature-verified.
     mpesa_consumer_key = env.get("MPESA_CONSUMER_KEY", "")
     mpesa_consumer_secret = env.get("MPESA_CONSUMER_SECRET", "")
     mpesa_passkey = env.get("MPESA_PASSKEY", "")
     callback_url = env.get("MPESA_CALLBACK_URL", "")
-    mpesa_values = [mpesa_consumer_key, mpesa_consumer_secret, mpesa_passkey, callback_url]
-    mpesa_fully_configured = all(mpesa_values) and not any(looks_placeholder(v) for v in mpesa_values)
-
-    if mpesa_fully_configured:
+    mpesa_shortcode = env.get("MPESA_SHORTCODE", "") or env.get("MPESA_BUSINESS_SHORT_CODE", "")
+    mpesa_values = [mpesa_consumer_key, mpesa_consumer_secret, mpesa_passkey, callback_url, mpesa_shortcode]
+    if any(not v or looks_placeholder(v) for v in mpesa_values):
+        errors.append(
+            "M-Pesa credentials are missing or placeholder values. Refusing to serve "
+            "production: set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_PASSKEY, "
+            "MPESA_SHORTCODE and MPESA_CALLBACK_URL to real values."
+        )
+    else:
         if not callback_url.startswith("https://"):
             errors.append("MPESA_CALLBACK_URL must use https in production.")
         if is_localhost_url(callback_url):
             errors.append("MPESA_CALLBACK_URL must not point to localhost or local network addresses.")
+
+    if to_bool(env.get("MPESA_MOCK_MODE", "")):
+        errors.append(
+            "MPESA_MOCK_MODE must be disabled in production: mock mode marks orders "
+            "paid without any real M-Pesa transaction."
+        )
+
+    if not to_bool(env.get("MPESA_STRICT_SIGNATURE", "")):
+        errors.append(
+            "MPESA_STRICT_SIGNATURE must be enabled in production so M-Pesa callbacks "
+            "are verified against Safaricom's public key instead of trusted by IP address."
+        )
+    else:
+        public_key_path = str(env.get("MPESA_PUBLIC_KEY_PATH", "") or "").strip()
+        if not public_key_path:
+            errors.append(
+                "MPESA_PUBLIC_KEY_PATH must point to the Safaricom public certificate "
+                "when MPESA_STRICT_SIGNATURE is enabled."
+            )
+        elif not os.path.isfile(public_key_path):
+            errors.append(f"MPESA_PUBLIC_KEY_PATH does not point to a readable file: {public_key_path}")
 
     frontend_url = env.get("FRONTEND_URL", "")
     if frontend_url and (not frontend_url.startswith("https://") or is_localhost_url(frontend_url)):

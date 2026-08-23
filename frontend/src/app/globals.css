@@ -647,3 +647,13 @@
 .animate-pulse-soft {
   animation: pulse-soft 2.5s ease-in-out infinite;
 }
+
+/* iOS Safari auto-zooms the viewport when focusing inputs with font-size
+   < 16px, causing a jarring layout jump on every tap. Enforce 16px on mobile. */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
