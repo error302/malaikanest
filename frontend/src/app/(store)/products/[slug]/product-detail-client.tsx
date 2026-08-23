@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { ShoppingBasket, Heart, Check, Share2, Minus, Plus } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
+import { useCartDrawer } from '@/lib/cartDrawerStore';
 import { useWishlist } from '@/lib/wishlistContext';
 import { showToast } from '@/lib/toast';
 import { trackRecentlyViewed } from '@/lib/recently-viewed';
@@ -179,6 +180,7 @@ export function ProductDetailClient({ product }: DetailProps) {
     });
     setAdding(false);
     setAdded(true);
+    useCartDrawer.getState().openDrawer();
     setTimeout(() => setAdded(false), 2000);
   };
 

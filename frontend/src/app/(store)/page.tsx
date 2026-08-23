@@ -35,8 +35,11 @@ const DynamicNewsletter = nextDynamic(() => import('@/components/malaika/newslet
   loading: () => <div className="h-64 w-full animate-pulse bg-gray-100" />
 });
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR: serve cached HTML at the edge and regenerate in the background.
+// Product fetchers keep their own short-lived caches, so 60s staleness is the
+// freshness floor — this is the single biggest mobile LCP/TTFB lever (see
+// docs/perf-baseline.md).
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -85,36 +88,51 @@ export default async function HomePage() {
           columns={4}
           background="white"
         />
-        <Suspense fallback={<div className="h-40 w-full animate-pulse bg-gray-100" />}>
-          <DynamicValueProps props={valueProps} />
-        </Suspense>
-        <ProductSection
-          id="best-sellers"
-          label={content.best_sellers?.label || 'Most loved'}
-          title={content.best_sellers?.title || 'Best Sellers'}
-          viewAllHref="/best-sellers"
-          viewAllLabel={content.best_sellers?.view_all || 'See More'}
-          products={bestSellers}
-          columns={4}
-          background="bg-alt"
-        />
-        <ThriftedSection products={thrifted} />
-        <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100" />}>
-          <DynamicTestimonials content={content} testimonials={testimonials} />
-        </Suspense>
-        <ProductSection
-          id="new-arrivals"
-          label={content.new_arrivals?.label || 'Just landed'}
-          title={content.new_arrivals?.title || 'New Arrivals'}
-          viewAllHref="/categories"
-          viewAllLabel={content.new_arrivals?.view_all || 'Shop New'}
-          products={newArrivals}
-          columns={4}
-          background="white"
-        />
-        <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100" />}>
-          <DynamicNewsletter content={content} />
-        </Suspense>
+        {/* Below-fold sections skip rendering until scrolled near — free
+            main-thread savings on low-end Androids. Intrinsic sizes keep
+            scrollbars stable. */}
+        <div className="[content-visibility:auto] [contain-intrinsic-size:auto_220px]">
+          <Suspense fallback={<div className="h-40 w-full animate-pulse bg-gray-100" />}>
+            <DynamicValueProps props={valueProps} />
+          </Suspense>
+        </div>
+        <div className="[content-visibility:auto] [contain-intrinsic-size:auto_760px]">
+          <ProductSection
+            id="best-sellers"
+            label={content.best_sellers?.label || 'Most loved'}
+            title={content.best_sellers?.title || 'Best Sellers'}
+            viewAllHref="/best-sellers"
+            viewAllLabel={content.best_sellers?.view_all || 'See More'}
+            products={bestSellers}
+            columns={4}
+            background="bg-alt"
+          />
+        </div>
+        <div className="[content-visibility:auto] [contain-intrinsic-size:auto_620px]">
+          <ThriftedSection products={thrifted} />
+        </div>
+        <div className="[content-visibility:auto] [contain-intrinsic-size:auto_420px]">
+          <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100" />}>
+            <DynamicTestimonials content={content} testimonials={testimonials} />
+          </Suspense>
+        </div>
+        <div className="[content-visibility:auto] [contain-intrinsic-size:auto_760px]">
+          <ProductSection
+            id="new-arrivals"
+            label={content.new_arrivals?.label || 'Just landed'}
+            title={content.new_arrivals?.title || 'New Arrivals'}
+            viewAllHref="/categories"
+            viewAllLabel={content.new_arrivals?.view_all || 'Shop New'}
+            products={newArrivals}
+            columns={4}
+            background="white"
+          />
+        </div>
+        <div className="[content-visibility:auto] [contain-intrinsic-size:auto_340px]">
+          <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100" />}>
+            <DynamicNewsletter content={content} />
+          </Suspense>
+        </div>
       </main>
     </>
   );
