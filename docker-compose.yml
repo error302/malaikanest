@@ -243,10 +243,6 @@ services:
       MPESA_STRICT_SIGNATURE: ${MPESA_STRICT_SIGNATURE:-false}
       MPESA_PUBLIC_KEY_PATH: ${MPESA_PUBLIC_KEY_PATH:-}
       MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED: ${MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED:-false}
-      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
-      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
-      PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
-      KES_USD_EXCHANGE_RATE: ${KES_USD_EXCHANGE_RATE:-}
       PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
       PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
       PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
@@ -254,11 +250,9 @@ services:
       PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
       PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-http://localhost:8000/api/v1/payments/pesapal/callback/}
       PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-http://localhost:8000/api/v1/payments/pesapal/ipn/}
-      # PayPal (live wallet checkout) — backend verifies/captures server-side.
       PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
       PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
       PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
-      # KES -> USD conversion rate for PayPal (PayPal cannot settle in KES).
       KES_USD_EXCHANGE_RATE: ${KES_USD_EXCHANGE_RATE:-}
     depends_on:
       backend:
