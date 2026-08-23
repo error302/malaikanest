@@ -40,6 +40,16 @@ const securityHeaders = [
 
 const cacheHeaders = [
   {
+    // The service worker must revalidate on every navigation — a stale sw.js
+    // at the CDN edge keeps old caches alive and breaks returning visitors
+    // after every deploy.
+    source: '/sw.js',
+    headers: [
+      { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+      { key: 'CDN-Cache-Control', value: 'no-cache' },
+    ],
+  },
+  {
     source: '/_next/static/:path*',
     headers: [
       { key: 'Cache-Control', value: 'public, max-age=31536500, immutable' },
