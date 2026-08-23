@@ -38,16 +38,27 @@ jobs:
             docker compose up -d --remove-orphans
             docker image prune -f
 
-      - name: Verify health through the tunnel
+            # Authoritative health gate: hit the backend directly on its host
+            # binding (same Host-header trick as the compose healthcheck).
+            for i in $(seq 1 30); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' \
+                -H 'Host: api.malaikanest.com' -H 'X-Forwarded-Proto: https' \
+                http://127.0.0.1:8081/api/health/ || true)
+              if [ "$code" = "200" ]; then
+                echo "Backend healthy (attempt $i)"
+                break
+              fi
+              echo "Attempt $i: HTTP $code — retrying in 10s"
+              [ "$i" = "30" ] && { echo "Backend never became healthy."; exit 1; }
+              sleep 10
+            done
+
+      - name: Advisory external check (informational only)
+        if: always()
         run: |
-          for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' https://api.malaikanest.com/api/health/ || true)
-            if [ "$code" = "200" ]; then
-              echo "Backend healthy (attempt $i)"
-              exit 0
-            fi
-            echo "Attempt $i: HTTP $code — retrying in 10s"
-            sleep 10
-          done
-          echo "Health check failed 5 minutes after deploy."
-          exit 1
+          # Cloudflare bot protection may challenge datacenter IPs (GitHub
+          # runners), so a non-200 here is NOT necessarily an outage — the
+          # authoritative gate above runs on the VM itself.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -A 'Mozilla/5.0 (deploy-check)' \
+            https://api.malaikanest.com/api/health/ || true)
+          echo "External probe status: $code (advisory)"
