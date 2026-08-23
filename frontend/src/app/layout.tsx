@@ -10,14 +10,14 @@ import { SITE_URL } from "@/lib/site-config";
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["600"],
   display: "swap",
 });
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -202,7 +202,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
         <link rel="preconnect" href="https://api.malaikanest.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Malaika Nest" />

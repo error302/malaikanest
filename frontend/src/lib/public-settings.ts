@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from '@/lib/site-config';
+
 export interface PublicSettings {
   free_shipping_threshold: string;
   shipping_fee: string;
@@ -8,8 +10,6 @@ const FALLBACK: PublicSettings = {
   shipping_fee: '300',
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
 let cache: { data: PublicSettings; ts: number } | null = null;
 const TTL = 120_000;
 
@@ -18,7 +18,7 @@ export async function getPublicSettings(): Promise<PublicSettings> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`${API_URL}/api/v1/core/settings/public/`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/core/settings/public/`, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
     });

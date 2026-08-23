@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Server-side data fetchers for the Malaika Nest storefront.
  * These call the Django backend at /api/v1/products/* with graceful fallbacks
  * to sample data when the API is unreachable (e.g. sandbox/dev preview).
@@ -8,6 +8,7 @@
  * page request.
  */
 import { getImageUrl } from '@/lib/media';
+import { getApiBaseUrl } from '@/lib/site-config';
 import type { Product } from '@/components/malaika/product-card';
 import {
   FEATURED_PRODUCTS,
@@ -70,26 +71,6 @@ export interface ApiProduct {
   badge_color?: string;
 }
 
-function getApiBaseUrl(): string {
-  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL;
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    const url = process.env.NEXT_PUBLIC_API_URL;
-    if (url.includes('localhost') || url.includes('127.0.0.1')) return url;
-  }
-  if (
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ) {
-    return 'http://localhost:8000';
-  }
-  if (
-    typeof process !== 'undefined' &&
-    process.env.NODE_ENV === 'development'
-  ) {
-    return 'http://localhost:8000';
-  }
-  return 'https://api.malaikanest.com';
-}
 
 export function normalizeProduct(p: ApiProduct): Product {
   const price = parseFloat(p.price ?? '0') || 0;
