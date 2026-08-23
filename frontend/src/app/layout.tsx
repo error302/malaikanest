@@ -3,6 +3,7 @@ import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Providers } from "@/components/malaika/providers";
+import { ServiceWorkerRegistrar } from "@/components/malaika/sw-register";
 import { getSiteSettings } from "@/lib/settings";
 import { SITE_URL } from "@/lib/site-config";
 
@@ -236,6 +237,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           Skip to main content
         </a>
         <Providers>{children}</Providers>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
