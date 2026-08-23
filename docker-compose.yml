@@ -67,6 +67,8 @@ services:
       MPESA_SHORTCODE: ${MPESA_SHORTCODE:-174379}
       MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-http://localhost:8000/api/v1/payments/mpesa/callback/}
       MPESA_STRICT_SIGNATURE: ${MPESA_STRICT_SIGNATURE:-false}
+      MPESA_PUBLIC_KEY_PATH: ${MPESA_PUBLIC_KEY_PATH:-}
+      MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED: ${MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED:-false}
       PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
       PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
       PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
@@ -74,6 +76,12 @@ services:
       PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
       PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-http://localhost:8000/api/v1/payments/pesapal/callback/}
       PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-http://localhost:8000/api/v1/payments/pesapal/ipn/}
+      # PayPal (live wallet checkout) — backend verifies/captures server-side.
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+      PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
+      # KES -> USD conversion rate for PayPal (PayPal cannot settle in KES).
+      KES_USD_EXCHANGE_RATE: ${KES_USD_EXCHANGE_RATE:-}
       # Email (SMTP via Brevo — outbound transactional mail)
       EMAIL_HOST: ${EMAIL_HOST:-smtp-relay.brevo.com}
       EMAIL_PORT: ${EMAIL_PORT:-587}
@@ -94,6 +102,7 @@ services:
       # NOTE: backend WORKDIR is /code, not /app — the original compose had a typo.
       - ./backend/media:/code/media
       - ./backend/staticfiles:/code/staticfiles
+      - ./backend/certs:/code/certs:ro
     command:
       - sh
       - -c
@@ -148,6 +157,8 @@ services:
       MPESA_SHORTCODE: ${MPESA_SHORTCODE:-174379}
       MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-http://localhost:8000/api/v1/payments/mpesa/callback/}
       MPESA_STRICT_SIGNATURE: ${MPESA_STRICT_SIGNATURE:-false}
+      MPESA_PUBLIC_KEY_PATH: ${MPESA_PUBLIC_KEY_PATH:-}
+      MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED: ${MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED:-false}
       PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
       PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
       PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
@@ -155,6 +166,12 @@ services:
       PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
       PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-http://localhost:8000/api/v1/payments/pesapal/callback/}
       PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-http://localhost:8000/api/v1/payments/pesapal/ipn/}
+      # PayPal (live wallet checkout) — backend verifies/captures server-side.
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+      PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
+      # KES -> USD conversion rate for PayPal (PayPal cannot settle in KES).
+      KES_USD_EXCHANGE_RATE: ${KES_USD_EXCHANGE_RATE:-}
       EMAIL_HOST: ${EMAIL_HOST:-smtp-relay.brevo.com}
       EMAIL_PORT: ${EMAIL_PORT:-587}
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-b2ad26001@smtp-brevo.com}
@@ -168,6 +185,7 @@ services:
     volumes:
       - ./backend/media:/code/media
       - ./backend/staticfiles:/code/staticfiles
+      - ./backend/certs:/code/certs:ro
     command:
       - sh
       - -c
@@ -214,6 +232,21 @@ services:
       # EMAIL_HOST_PASSWORD intentionally NOT set here so the value from backend/.env is used
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Malaika Nest <hello@malaikanest.com>}
+      # Celery runs the M-Pesa reconcile/verify tasks — needs the same payment
+      # config as the web process.
+      MPESA_ENV: ${MPESA_ENV:-sandbox}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-local-placeholder}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-local-placeholder}
+      MPESA_PASSKEY: ${MPESA_PASSKEY:-local-placeholder}
+      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-174379}
+      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-http://localhost:8000/api/v1/payments/mpesa/callback/}
+      MPESA_STRICT_SIGNATURE: ${MPESA_STRICT_SIGNATURE:-false}
+      MPESA_PUBLIC_KEY_PATH: ${MPESA_PUBLIC_KEY_PATH:-}
+      MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED: ${MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED:-false}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+      PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
+      KES_USD_EXCHANGE_RATE: ${KES_USD_EXCHANGE_RATE:-}
       PESAPAL_CONSUMER_KEY: ${PESAPAL_CONSUMER_KEY:-}
       PESAPAL_CONSUMER_SECRET: ${PESAPAL_CONSUMER_SECRET:-}
       PESAPAL_ENV: ${PESAPAL_ENV:-sandbox}
@@ -221,6 +254,12 @@ services:
       PESAPAL_IPN_ID: ${PESAPAL_IPN_ID:-}
       PESAPAL_CALLBACK_URL: ${PESAPAL_CALLBACK_URL:-http://localhost:8000/api/v1/payments/pesapal/callback/}
       PESAPAL_IPN_URL: ${PESAPAL_IPN_URL:-http://localhost:8000/api/v1/payments/pesapal/ipn/}
+      # PayPal (live wallet checkout) — backend verifies/captures server-side.
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+      PAYPAL_MODE: ${PAYPAL_MODE:-sandbox}
+      # KES -> USD conversion rate for PayPal (PayPal cannot settle in KES).
+      KES_USD_EXCHANGE_RATE: ${KES_USD_EXCHANGE_RATE:-}
     depends_on:
       backend:
         condition: service_started
@@ -229,6 +268,7 @@ services:
     volumes:
       - ./backend/media:/code/media
       - ./backend/staticfiles:/code/staticfiles
+      - ./backend/certs:/code/certs:ro
     command: celery -A config worker -l info --concurrency=2
 
   celery_beat:
@@ -257,6 +297,7 @@ services:
     volumes:
       - ./backend/media:/code/media
       - ./backend/staticfiles:/code/staticfiles
+      - ./backend/certs:/code/certs:ro
     command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
   frontend:
@@ -271,6 +312,7 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://malaikanest.com}
         NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:-}
+        NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${NEXT_PUBLIC_PAYPAL_CLIENT_ID:-}
     restart: unless-stopped
     ports:
       # Host port 3000 is occupied by another stack (metardu-app); use 3090.

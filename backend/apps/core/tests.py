@@ -95,6 +95,20 @@ class ProductionEnvGuardrailTests(SimpleTestCase):
         with self.assertRaises(RuntimeError):
             validate_production_env(env)
 
+    def test_allows_strict_signature_off_only_with_explicit_risk_acceptance(self):
+        env = self._base_production_env()
+        env.pop("MPESA_STRICT_SIGNATURE")
+        env["MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED"] = "true"
+        validate_production_env(env)
+
+    def test_risk_acceptance_does_not_bypass_mock_mode_block(self):
+        env = self._base_production_env()
+        env.pop("MPESA_STRICT_SIGNATURE")
+        env["MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED"] = "true"
+        env["MPESA_MOCK_MODE"] = "true"
+        with self.assertRaises(RuntimeError):
+            validate_production_env(env)
+
     def test_rejects_unreadable_public_key_path_when_strict_signature_enabled(self):
         env = self._base_production_env()
         env["MPESA_PUBLIC_KEY_PATH"] = "/nonexistent/safaricom-public-key.pem"
