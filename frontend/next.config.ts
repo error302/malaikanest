@@ -5,16 +5,12 @@ import path from "path";
 // whole site uses the richer icon set without editing each import site.
 const iconShimTs = path.resolve(__dirname, "src/lib/icons.tsx");
 
-// CSP uses a per-request nonce. `middleware.ts` replaces `${NONCE} ` with the
-// actual base64 nonce value for every request, then sets the CSP header on the
-// response. The literal `${NONCE}` here is a placeholder that middleware fills in.
-// Until middleware runs, this default CSP (with 'unsafe-inline' fallback for
-// style-src) is what gets applied by Next's headers() — middleware overrides.
-const NONCE_PLACEHOLDER = "${NONCE}";
-
+// CSP: explicit host allowlist with 'unsafe-inline' for script-src — required
+// because ISR/prerendered HTML is cached and cannot carry per-request nonces.
+// middleware.ts applies this same policy to all document routes.
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'nonce-${NONCE_PLACEHOLDER}' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://static.cloudflareinsights.com;
+  script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://static.cloudflareinsights.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' data: blob: https: http://localhost http://127.0.0.1;
   font-src 'self' data: https://fonts.gstatic.com;

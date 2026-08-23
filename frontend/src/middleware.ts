@@ -12,7 +12,12 @@ import { NextRequest, NextResponse } from "next/server";
 const buildCsp = (nonce: string): string =>
   [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://static.cloudflareinsights.com`,
+    // Nonce-based CSP is incompatible with cached HTML (ISR/prerendered pages
+    // bake one nonce while the header mints another per request — scripts get
+    // blocked en masse). 'unsafe-inline' + an explicit host allowlist keeps
+    // third-party script sources locked down while working across all caching
+    // modes. Do not re-add 'strict-dynamic' or nonces without removing ISR.
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https: http://localhost http://127.0.0.1",
     "font-src 'self' data: https://fonts.gstatic.com",
@@ -29,7 +34,8 @@ const buildCsp = (nonce: string): string =>
     .join("; ");
 
 export function middleware(request: NextRequest) {
-  // Generate nonce. crypto.randomUUID is available on the Edge runtime.
+  // The nonce parameter is retained for future nonce-based hardening but is
+  // not used by the current script-src directive (see buildCsp above).
   const nonce = btoa(crypto.randomUUID()).replace(/=/g, "");
   const csp = buildCsp(nonce);
 
