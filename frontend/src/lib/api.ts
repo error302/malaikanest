@@ -19,13 +19,14 @@ const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
   '/api/v1/accounts/token/refresh/',
   '/api/v1/accounts/register/',
   '/api/v1/accounts/admin/login/',
-  '/api/v1/accounts/profile/',
-  '/api/v1/orders/cart/merge/',
   '/api/accounts/token/',
   '/api/accounts/token/refresh/',
   '/api/accounts/register/',
   '/api/accounts/admin/login/',
-  '/api/accounts/profile/',
+  // NOTE: /accounts/profile/ is deliberately NOT listed — a 401 on profile
+  // (e.g. the account page firing before the bootstrap refresh lands) must
+  // go through the single-flight refresh + replay, otherwise users get
+  // bounced to /login right after a successful login.
 ];
 
 const CACHEABLE_ENDPOINTS = [

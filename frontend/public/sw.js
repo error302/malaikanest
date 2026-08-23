@@ -8,7 +8,7 @@
  *   - Auth/cart/checkout/account/admin/api navigations -> NETWORK ONLY (never cached)
  *   - Cross-origin requests (Cloudinary, analytics)  -> untouched
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `mn-static-${VERSION}`;
 const PAGES_CACHE = `mn-pages-${VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -33,12 +33,16 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      const keep = new Set([STATIC_CACHE, PAGES_CACHE]);
+      // Sweep EVERYTHING on activation: HTML pages must never survive a
+      // deploy (stale pages reference old _rsc payloads and chunks, which
+      // renders broken/empty views), and static assets re-cache on demand
+      // anyway (their HTTP headers are immutable, so the browser cache
+      // absorbs the cost). This makes every deploy self-healing for
+      // returning visitors, including stale installs from older versions.
       const names = await caches.keys();
       await Promise.all(
-        names.filter((name) => name.startsWith("mn-") && !keep.has(name)).map((name) => caches.delete(name))
+        names.filter((name) => name.startsWith("mn-")).map((name) => caches.delete(name))
       );
-      // Refresh the offline page so it reflects the current deployment.
       const cache = await caches.open(STATIC_CACHE);
       await cache.add(OFFLINE_URL).catch(() => {});
       await self.clients.claim();
