@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -107,7 +107,7 @@ class AdminBannerViewSet(viewsets.ModelViewSet):
 
 
 class AdminUserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().order_by("-date_joined")
+    queryset = User.objects.annotate(annotated_order_count=Count('order', distinct=True)).order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
     pagination_class = None
