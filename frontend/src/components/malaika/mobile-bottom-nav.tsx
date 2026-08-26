@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
+import { useI18n } from '@/lib/i18n';
 import { Home, ShoppingBag, Search, ShoppingCart, User } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
 export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
+  const { t } = useI18n();
   const userInitial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
 
   return (
@@ -37,11 +39,11 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
           const isAccount = item.name === 'Account';
           const showAvatar = isAccount && isAuthenticated;
 
-          let ariaLabel = item.name;
+          let ariaLabel = t(`nav.${item.name.toLowerCase()}`);
           if (isAccount && user) {
-            ariaLabel = `${item.name} (signed in as ${user.name || user.email})`;
+            ariaLabel = `${ariaLabel} (${t('nav.signedInAs')} ${user.name || user.email})`;
           } else if (item.name === 'Cart' && badgeCount > 0) {
-            ariaLabel = `${item.name} (${badgeCount} item${badgeCount === 1 ? '' : 's'})`;
+            ariaLabel = `${ariaLabel} (${badgeCount} ${badgeCount === 1 ? t('cart.item') : t('cart.items')})`;
           }
 
           return (
@@ -92,7 +94,7 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{item.name}</span>
+              <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{t(`nav.${item.name.toLowerCase()}`)}</span>
             </Link>
           );
         })}
