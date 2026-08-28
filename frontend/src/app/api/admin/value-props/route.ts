@@ -11,8 +11,14 @@ export async function GET(req: NextRequest) {
   const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
-    const props = await db.valueProp.findMany({ orderBy: [{ position: 'asc' }] });
-    return NextResponse.json({ valueProps: props });
+    const url = new URL(req.url);
+    const take = Math.min(Math.max(parseInt(url.searchParams.get('take') || '50', 10) || 50, 1), 200);
+    const skip = Math.max(parseInt(url.searchParams.get('skip') || '0', 10) || 0, 0);
+    const [props, total] = await Promise.all([
+      db.valueProp.findMany({ orderBy: [{ position: 'asc' }], take, skip }),
+      db.valueProp.count(),
+    ]);
+    return NextResponse.json({ valueProps: props, total, hasMore: skip + take < total });
   } catch (e: any) {
     return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }

@@ -11,10 +11,14 @@ export async function GET(req: NextRequest) {
   const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
-    const products = await db.thriftedProduct.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-    return NextResponse.json({ products });
+    const url = new URL(req.url);
+    const take = Math.min(Math.max(parseInt(url.searchParams.get('take') || '50', 10) || 50, 1), 200);
+    const skip = Math.max(parseInt(url.searchParams.get('skip') || '0', 10) || 0, 0);
+    const [products, total] = await Promise.all([
+      db.thriftedProduct.findMany({ orderBy: { createdAt: 'desc' }, take, skip }),
+      db.thriftedProduct.count(),
+    ]);
+    return NextResponse.json({ products, total, hasMore: skip + take < total });
   } catch (e: any) {
     return NextResponse.json({ error: sanitizeError(e), products: [] }, { status: 500 });
   }
