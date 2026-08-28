@@ -29,13 +29,11 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=$NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION \
     NEXT_PUBLIC_PAYPAL_CLIENT_ID=$NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
-# The runtime CMS database lives in a mounted volume at /app/data/cms.db. During
-# the image build we only need a valid DATABASE_URL for `prisma generate` and the
-# Next.js build; no real DB is touched at build time.
-ENV DATABASE_URL="file:/app/data/cms.db"
-
-# Preserve any pre-configured CMS content as a seed used on first boot only.
-RUN if [ -f prisma/dev.db ]; then cp prisma/dev.db prisma/seed.db; fi
+# The CMS database is PostgreSQL (`malaika_cms` on the compose `db` service).
+# At image build time no real DB is touched — `prisma generate` and the Next.js
+# build only need a syntactically valid postgresql:// DATABASE_URL to exist.
+# The postgresql provider also selects the right query engine for the runtime.
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
 
 # Generate the Prisma client and build the optimized production bundle at image
 # build time so container startup is fast. `npm run build` is preferred over

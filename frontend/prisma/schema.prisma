@@ -1,10 +1,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Malaika Nest — Active Prisma Schema (SQLite)
+// Malaika Nest — Active Prisma Schema (PostgreSQL)
 //
 // This schema manages the Next.js-side content management system (CMS):
-// site branding, homepage content blocks, and testimonials. The storefront
-// reads from these tables with hardcoded fallback defaults, so the site
-// works even before the admin configures anything.
+// site branding, homepage content blocks, testimonials, value props, thrifted
+// products, blog posts, and loyalty accounts. It runs on the same PostgreSQL
+// server as Django but in its own `malaika_cms` database to keep table names
+// cleanly separated from the Django commerce schema.
 //
 // The full Django backend schema (products, orders, payments, etc.) is
 // documented in `schema-django-reference.prisma` — those tables live in
@@ -17,7 +18,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

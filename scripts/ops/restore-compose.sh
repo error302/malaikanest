@@ -3,11 +3,12 @@
 #
 # Restores artifacts produced by backup-compose.sh:
 #   ./restore-compose.sh --db   backups/compose/pg-YYYYMMDD-HHMMSS.dump
-#   ./restore-compose.sh --cms  backups/compose/cms-YYYYMMDD-HHMMSS.tar.gz
+#   ./restore-compose.sh --cms  backups/compose/cms-YYYYMMDD-HHMMSS.dump
 #
-# Postgres restore uses pg_restore --clean --if-exists inside the db container
-# (credentials read from the container's own env). CMS restore extracts the
-# tarball into the frontend_cms_data volume; restart the frontend service after.
+# Both restores use pg_restore --clean --if-exists inside the db container
+# (credentials read from the container's own env): --db targets the commerce
+# database ($POSTGRES_DB), --cms targets the `malaika_cms` CMS database.
+# Restart the frontend service after a CMS restore.
 #
 # DESTRUCTIVE: replaces current data. Prompts unless --yes is passed.
 set -euo pipefail
@@ -58,7 +59,7 @@ echo "About to restore:"
 echo "  mode : $MODE"
 echo "  file : $FILE ($(du -h "$FILE" | cut -f1))"
 [ "$MODE" = "db" ] && echo "  into : running PostgreSQL container 'db' (--clean will DROP existing objects)"
-[ "$MODE" = "cms" ] && echo "  into : frontend_cms_data volume (frontend service should be stopped)"
+[ "$MODE" = "cms" ] && echo "  into : malaika_cms database on container 'db' (--clean will DROP existing objects)"
 echo
 
 if [ "$ASSUME_YES" -ne 1 ]; then
@@ -74,15 +75,7 @@ case "$MODE" in
     ;;
   cms)
     $COMPOSE stop frontend || true
-    VOLUME="$(docker volume ls --format '{{.Name}}' | grep -E '(^|[_-])frontend_cms_data$' | head -n1 || true)"
-    if [ -z "$VOLUME" ]; then
-      echo "ERROR: could not resolve frontend_cms_data volume name"
-      exit 1
-    fi
-    echo "Restoring into volume: $VOLUME"
-    docker run --rm -i \
-      -v "${VOLUME}:/data" \
-      alpine sh -c "rm -f /data/cms.db /data/cms.db-wal /data/cms.db-shm && tar xzf - -C /data" < "$FILE"
+    $COMPOSE exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d malaika_cms --clean --if-exists --no-owner' < "$FILE"
     $COMPOSE start frontend || true
     echo "CMS restore complete. Frontend restarted."
     ;;

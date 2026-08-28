@@ -13,6 +13,29 @@ services:
       interval: 5s
       retries: 5
 
+  # One-shot: the CMS (Prisma) uses its own database inside the same Postgres
+  # server. Created idempotently on every `docker compose up` so both fresh
+  # VMs and already-initialized postgres_data volumes end up with the DB.
+  cms-db-init:
+    image: postgres:15
+    restart: "no"
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-kenya}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      PGDATABASE: postgres
+    command:
+      - /bin/sh
+      - -c
+      - |
+        until psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'malaika_cms'" | grep -q 1; do
+          psql -c "CREATE DATABASE malaika_cms" >/dev/null 2>&1 && break || sleep 2
+        done
+        echo "[cms-db-init] malaika_cms ready"
+    depends_on:
+      db:
+        condition: service_healthy
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -321,14 +344,15 @@ services:
       NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
       NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:-}
       # The Next.js CMS (branding, content blocks, testimonials, thrifted, blog,
-      # loyalty) is stored in SQLite on a persistent named volume so admin edits
-      # survive container rebuilds/redeploys.
-      DATABASE_URL: file:/app/data/cms.db
-    volumes:
-      - frontend_cms_data:/app/data
+      # loyalty) is stored in its own `malaika_cms` PostgreSQL database on the
+      # shared db service (created idempotently by the cms-db-init one-shot
+      # service), so admin edits survive container rebuilds/redeploys.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kenya}:${POSTGRES_PASSWORD:-kenya_password}@db:5432/malaika_cms?schema=public
     depends_on:
       backend:
         condition: service_healthy
+      cms-db-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
@@ -367,4 +391,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  frontend_cms_data:

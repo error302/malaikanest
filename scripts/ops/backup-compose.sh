@@ -2,8 +2,8 @@
 # Malaika Nest — Docker Compose native backup
 #
 # Backs up, from the ACTIVE docker-compose.yml topology:
-#   1. PostgreSQL  -> custom-format dump via `docker compose exec db pg_dump`
-#   2. CMS SQLite  -> tar snapshot of the frontend_cms_data volume (cms.db/-wal/-shm)
+#   1. Commerce PostgreSQL -> custom-format dump via `docker compose exec db pg_dump`
+#   2. CMS PostgreSQL (malaika_cms) -> custom-format dump from the same db service
 #
 # Credentials are read INSIDE the db container from its own POSTGRES_* env,
 # so this script needs no secrets on the host.
@@ -35,7 +35,7 @@ cd "$(dirname "$0")/../.." || exit 1
 mkdir -p "$BACKUP_DIR"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 DB_FILE="$BACKUP_DIR/pg-$TIMESTAMP.dump"
-CMS_FILE="$BACKUP_DIR/cms-$TIMESTAMP.tar.gz"
+CMS_FILE="$BACKUP_DIR/cms-$TIMESTAMP.dump"
 FAILED=0
 
 trap 'notify "Malaika Nest compose backup FAILED at $TIMESTAMP"; log "Backup FAILED"' ERR
@@ -53,32 +53,25 @@ else
   log "Postgres dump OK: $DB_FILE ($(du -h "$DB_FILE" | cut -f1))"
 fi
 
-# --- 2. CMS SQLite volume ----------------------------------------------------
-if ! $COMPOSE config --volumes 2>/dev/null | grep -q '^frontend_cms_data$'; then
-  log "WARN: frontend_cms_data volume not found in compose config; skipping CMS snapshot"
-  CMS_VOLUME=""
+# --- 2. CMS PostgreSQL (malaika_cms) ------------------------------------------
+# The Next.js CMS lives in its own `malaika_cms` database on the same db
+# service. Dump it with pg_dump in the same run as the commerce DB.
+CMS_FILE="$BACKUP_DIR/cms-$TIMESTAMP.dump"
+if ! $COMPOSE exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -Fc malaika_cms' > "$CMS_FILE"; then
+  log "ERROR: CMS pg_dump failed"
+  rm -f "$CMS_FILE"
+  FAILED=1
+elif [ ! -s "$CMS_FILE" ] || [ "$(wc -c < "$CMS_FILE")" -lt "$MIN_DUMP_BYTES" ]; then
+  log "ERROR: CMS dump file suspiciously small (< ${MIN_DUMP_BYTES} bytes)"
+  rm -f "$CMS_FILE"
+  FAILED=1
 else
-  CMS_VOLUME="frontend_cms_data"
-fi
-
-if [ -n "${CMS_VOLUME:-}" ]; then
-  FULL_VOLUME="$(docker volume ls --format '{{.Name}}' | grep -E '(^|[_-])frontend_cms_data$' | head -n1 || true)"
-  [ -z "$FULL_VOLUME" ] && FULL_VOLUME="$CMS_VOLUME"
-  log "Snapshotting volume: $FULL_VOLUME"
-  if docker run --rm \
-       -v "${FULL_VOLUME}:/data:ro" \
-       -v "${BACKUP_DIR}:/backup" \
-       alpine sh -c "tar czf /backup/$(basename "$CMS_FILE") -C /data cms.db cms.db-wal cms.db-shm 2>/dev/null || tar czf /backup/$(basename "$CMS_FILE") -C /data cms.db"; then
-    sha256sum "$CMS_FILE" > "$CMS_FILE.sha256"
-    log "CMS snapshot OK: $CMS_FILE ($(du -h "$CMS_FILE" | cut -f1))"
-  else
-    log "ERROR: CMS SQLite snapshot failed"
-    FAILED=1
-  fi
+  sha256sum "$CMS_FILE" > "$CMS_FILE.sha256"
+  log "CMS dump OK: $CMS_FILE ($(du -h "$CMS_FILE" | cut -f1))"
 fi
 
 # --- 3. Retention ------------------------------------------------------------
-find "$BACKUP_DIR" -type f \( -name 'pg-*.dump*' -o -name 'cms-*.tar.gz*' \) \
+find "$BACKUP_DIR" -type f \( -name 'pg-*.dump*' -o -name 'cms-*.dump*' \) \
   -mtime +"$RETENTION_DAYS" -delete
 log "Retention applied: keeping last $RETENTION_DAYS days in $BACKUP_DIR"
 
