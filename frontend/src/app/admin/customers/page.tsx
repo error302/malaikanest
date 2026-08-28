@@ -17,16 +17,24 @@ interface Customer {
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
+  const [total, setTotal] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      setLoading(true);
       try {
-        const res = await api.get('/api/v1/accounts/users/', { params: { search, limit: 50 } });
+        const res = await api.get('/api/v1/products/admin/users/', { params: { search, limit: 50 } });
         if (cancelled) return;
         const data = res.data;
-        setCustomers(data?.results ?? data?.data?.results ?? []);
+        const envelope = data?.data ?? data;
+        const results = Array.isArray(envelope) ? envelope : envelope?.results ?? [];
+        setCustomers(Array.isArray(results) ? results : []);
+        setTotal(typeof envelope?.count === 'number' ? envelope.count : results.length);
+        setHasMore(typeof envelope?.next === 'string' && !!envelope.next);
       } catch {
         if (!cancelled) setCustomers([]);
       } finally {
@@ -37,6 +45,26 @@ export default function AdminCustomersPage() {
     return () => { cancelled = true; };
   }, [search]);
 
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const res = await api.get('/api/v1/products/admin/users/', {
+        params: { search, limit: 50, offset: customers.length },
+      });
+      const data = res.data;
+      const envelope = data?.data ?? data;
+      const results = Array.isArray(envelope) ? envelope : envelope?.results ?? [];
+      const arr = Array.isArray(results) ? results : [];
+      setCustomers((prev) => [...prev, ...arr]);
+      if (typeof envelope?.count === 'number') setTotal(envelope.count);
+      setHasMore(envelope?.count > customers.length + arr.length);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -45,6 +73,7 @@ export default function AdminCustomersPage() {
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--brand-text-muted)' }}>
           {customers.length} registered customer{customers.length === 1 ? '' : 's'}
+          {total != null && total > customers.length ? ` (${customers.length} of ${total})` : ''}
         </p>
       </div>
 
@@ -89,6 +118,19 @@ export default function AdminCustomersPage() {
           ))
         )}
       </div>
+{hasMore && !loading && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-medium disabled:opacity-60"
+            style={{ borderColor: 'var(--brand-border)', background: '#FFFFFF', color: 'var(--brand-brown)' }}
+          >
+            {loadingMore ? 'Loading…' : `Load more (${(total ?? 0) - customers.length} remaining)`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

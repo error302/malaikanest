@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ShoppingCart, Clock, Mail, RefreshCw } from 'lucide-react';
-import api from '@/lib/api';
+import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 
 interface CartItem {
@@ -29,7 +29,7 @@ export default function AdminAbandonedCartsPage() {
   const fetchCarts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/v1/orders/carts/', { params: { abandoned: true, limit: 50 } });
+      const res = await api.get('/api/v1/orders/admin/carts/', { params: { abandoned: true, limit: 50 } });
       const data = res.data;
       setCarts(data?.results ?? data?.data?.results ?? []);
     } catch {
@@ -45,10 +45,11 @@ export default function AdminAbandonedCartsPage() {
 
   const handleSendReminder = async (cart: Cart) => {
     try {
-      await api.post('/api/v1/orders/cart/remind/', { cart_id: cart.id });
-      showToast('Reminder sent!', 'success');
-    } catch {
-      showToast('Backend reminder endpoint not configured yet', 'error');
+      await api.post('/api/v1/orders/admin/carts/remind/', { cart_id: cart.id });
+      showToast('Reminder queued!', 'success');
+    } catch (err: any) {
+            const detail = handleApiError(err, 'Could not queue the reminder email');
+      showToast(detail, 'error');
     }
   };
 

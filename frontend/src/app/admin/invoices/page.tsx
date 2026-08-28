@@ -4,21 +4,46 @@ import { useEffect, useState } from 'react';
 import { FileText, Download } from 'lucide-react';
 import api from '@/lib/api';
 
+interface InvoiceOrder {
+  id: number;
+  order_number?: string;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  total?: string;
+  status?: string;
+}
+
 interface Invoice {
   id: number;
   invoice_number: string;
-  order: number;
-  pdf_url?: string;
-  created_at: string;
+  order: InvoiceOrder | number;
+  pdf_file?: string | null;
+  generated_at?: string | null;
+  created_at?: string;
   download_count?: number;
+  payment_status?: string;
+  invoice_status?: string;
 }
+
+const orderNumber = (inv: Invoice): string => {
+  if (typeof inv.order === 'number') return String(inv.order);
+  return inv.order?.order_number || `#${inv.order?.id ?? inv.order}`;
+};
+
+const orderCustomer = (inv: Invoice): string => {
+  if (typeof inv.order === 'number' || !inv.order) return '';
+  return [inv.order.customer_name, inv.order.customer_email]
+    .filter(Boolean)
+    .join(' · ');
+};
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/api/v1/orders/invoices/')
+    api
+      .get('/api/v1/orders/admin/invoices/', { params: { page_size: 50 } })
       .then((res) => {
         const data = res.data;
         setInvoices(data?.results ?? data?.data?.results ?? []);
@@ -56,18 +81,24 @@ export default function AdminInvoicesPage() {
                   <th className="text-left p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Date</th>
                   <th className="text-left p-4 font-semibold hidden sm:table-cell" style={{ color: 'var(--brand-text)' }}>Downloads</th>
                   <th className="text-right p-4 font-semibold" style={{ color: 'var(--brand-text)' }}>Action</th>
+                  <th className="text-left p-4 font-semibold hidden md:table-cell" style={{ color: 'var(--brand-text)' }}>Customer</th>
                 </tr>
               </thead>
               <tbody>
                 {invoices.map((inv) => (
                   <tr key={inv.id} style={{ borderTop: '1px solid var(--brand-border)' }}>
                     <td className="p-4 font-medium" style={{ color: 'var(--brand-text)' }}>{inv.invoice_number}</td>
-                    <td className="p-4" style={{ color: 'var(--brand-text-secondary)' }}>#{inv.order}</td>
-                    <td className="p-4" style={{ color: 'var(--brand-text-secondary)' }}>{new Date(inv.created_at).toLocaleDateString('en-KE')}</td>
+                    <td className="p-4" style={{ color: 'var(--brand-text-secondary)' }}>#{orderNumber(inv)}</td>
+                    <td className="p-4 hidden md:table-cell" style={{ color: 'var(--brand-text-secondary)' }}>
+                      {orderCustomer(inv) || <span style={{ color: 'var(--brand-text-muted)' }}>—</span>}
+                    </td>
+                    <td className="p-4" style={{ color: 'var(--brand-text-secondary)' }}>
+                      {new Date(inv.generated_at || inv.created_at || Date.now()).toLocaleDateString('en-KE')}
+                    </td>
                     <td className="p-4 hidden sm:table-cell" style={{ color: 'var(--brand-text-muted)' }}>{inv.download_count ?? 0}</td>
                     <td className="p-4 text-right">
-                      {inv.pdf_url ? (
-                        <a href={inv.pdf_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--brand-gold)' }}>
+                      {inv.pdf_file ? (
+                        <a href={inv.pdf_file} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--brand-gold)' }}>
                           <Download size={12} /> PDF
                         </a>
                       ) : (

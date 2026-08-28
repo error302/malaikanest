@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Mail, ArrowRight, Shield } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
+import { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
 
 export default function AdminLoginPage() {
@@ -22,7 +23,7 @@ export default function AdminLoginPage() {
       showToast('Welcome, admin', 'success');
       router.push('/admin');
     } catch (err: any) {
-      showToast(err?.response?.data?.detail || 'Invalid credentials or missing admin privileges', 'error');
+            showToast(handleApiError(err, 'Invalid credentials or missing admin privileges'), 'error');
     } finally {
       setLoading(false);
     }
