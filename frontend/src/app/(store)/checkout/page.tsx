@@ -15,11 +15,8 @@ import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/authContext';
 
 const PAYMENT_METHODS = [
-  { value: 'mpesa', labelKey: 'checkout.mpesa', Icon: Smartphone, descKey: 'checkout.mpesaDesc' },
   { value: 'till', labelKey: 'checkout.till', Icon: Smartphone, descKey: 'checkout.tillDesc' },
   { value: 'paypal', labelKey: 'checkout.paypal', Icon: Wallet, descKey: 'checkout.paypalDesc' },
-  { value: 'pesapal', labelKey: 'checkout.pesapal', Icon: Wallet, descKey: 'checkout.pesapalDesc' },
-  { value: 'card', labelKey: 'checkout.card', Icon: CreditCard, descKey: 'checkout.cardDesc' },
 ];
 
 export default function CheckoutPage() {
@@ -30,7 +27,7 @@ export default function CheckoutPage() {
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   const [settings, setSettings] = useState<PublicSettings>({ free_shipping_threshold: '3000', shipping_fee: '300' });
   const [region, setRegion] = useState('');
-  const [payment, setPayment] = useState('mpesa');
+  const [payment, setPayment] = useState('till');
   const [submitting, setSubmitting] = useState(false);
   const [paymentPending, setPaymentPending] = useState(false);
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
