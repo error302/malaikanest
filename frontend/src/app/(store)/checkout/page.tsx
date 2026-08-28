@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/authContext';
 
 const PAYMENT_METHODS = [
   { value: 'mpesa', labelKey: 'checkout.mpesa', Icon: Smartphone, descKey: 'checkout.mpesaDesc' },
+  { value: 'till', labelKey: 'checkout.till', Icon: Smartphone, descKey: 'checkout.tillDesc' },
   { value: 'paypal', labelKey: 'checkout.paypal', Icon: Wallet, descKey: 'checkout.paypalDesc' },
   { value: 'pesapal', labelKey: 'checkout.pesapal', Icon: Wallet, descKey: 'checkout.pesapalDesc' },
   { value: 'card', labelKey: 'checkout.card', Icon: CreditCard, descKey: 'checkout.cardDesc' },
@@ -36,6 +37,7 @@ export default function CheckoutPage() {
   const [paymentPollingError, setPaymentPollingError] = useState<string | null>(null);
   const [pendingReceiptNumber, setPendingReceiptNumber] = useState<string | null>(null);
   const [pendingCheckoutToken, setPendingCheckoutToken] = useState<string | null>(null);
+  const [tillCode, setTillCode] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number; discount_label: string } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -142,11 +144,15 @@ export default function CheckoutPage() {
       showToast(t('checkout.chooseDelivery') || 'Please choose a delivery option.', 'error');
       return;
     }
+    if (payment === 'till' && !/^[A-Z0-9]{10}$/.test(tillCode.trim().toUpperCase())) {
+      showToast('Enter a valid 10-character M-Pesa transaction code.', 'error');
+      return;
+    }
     setSubmitting(true);
 
     try {
       // Step 1: Create the order via Django backend
-      const orderPayload = {
+      const orderPayload: Record<string, any> = {
         delivery_region: region,
         is_guest: !isAuthenticated,
         shipping_name: `${form.firstName} ${form.lastName}`.trim(),
@@ -158,6 +164,7 @@ export default function CheckoutPage() {
         guest_phone: form.phone,
         payment_method: payment,
         coupon_code: appliedCoupon?.code || undefined,
+        ...(payment === 'till' ? { mpesa_receipt_number: tillCode.trim().toUpperCase(), till_code: tillCode.trim().toUpperCase() } : {}),
       };
 
       const orderRes = await api.post('/api/v1/orders/cart/checkout/', orderPayload);
@@ -230,6 +237,9 @@ export default function CheckoutPage() {
         } else {
           throw new Error(paypalData?.detail || 'PayPal initiation failed');
         }
+      } else if (payment === 'till') {
+        showToast('Order placed! We will verify your M-Pesa code (Till 3370347) and confirm shortly.', 'success');
+        router.push(`/checkout/success?order=${receiptNumber}&token=${checkoutToken}`);
       } else if (payment === 'card') {
         // Card payment — redirect to payment gateway if URL provided
         const cardData = orderData;
@@ -363,6 +373,31 @@ export default function CheckoutPage() {
                       </div>
                       <p className="text-[11px] mt-1" style={{ color: 'var(--brand-text-muted)' }}>
                         Enter your phone number above. You will receive an instant STK push prompt on your phone to complete payment.
+                      </p>
+                    </div>
+                  )}
+                  {payment === 'till' && value === 'till' && (
+                    <div className="mt-2.5 p-3 rounded-xl border text-xs space-y-2" style={{ background: 'var(--brand-bg-alt)', borderColor: 'var(--brand-border)' }}>
+                      <div className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--brand-gold)' }}>Manual Till Payment — Ready Now</div>
+                      <ol className="list-decimal list-inside space-y-0.5" style={{ color: 'var(--brand-text-secondary)' }}>
+                        <li>Go to M-Pesa → Lipa na M-Pesa → Buy Goods and Services</li>
+                        <li>Enter Till <span className="font-mono font-bold" style={{ color: 'var(--brand-text)' }}>3370347</span> (Malaika Nest)</li>
+                        <li>Enter Amount: <span className="font-mono" style={{ color: 'var(--brand-text)' }}>KES {Math.round(items.reduce((s, i) => s + i.price * i.qty, 0) + (region ? Number(deliveryZones.find(z => z.slug === region)?.fee || 0) : 0)).toLocaleString('en-KE')}</span></li>
+                        <li>Enter PIN &amp; Send</li>
+                        <li>Paste the 10-char M-Pesa code below (e.g. SHK...)</li>
+                      </ol>
+                      <input
+                        placeholder="M-Pesa Transaction Code (10 chars)"
+                        value={tillCode}
+                        onChange={(e) => setTillCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+                        maxLength={10}
+                        className="input-warm w-full !pl-4 font-mono text-sm tracking-wider"
+                        style={{ background: '#FFFFFF' }}
+                        required={payment === 'till'}
+                        pattern="^[A-Z0-9]{10}$"
+                      />
+                      <p className="text-[11px]" style={{ color: 'var(--brand-text-muted)' }}>
+                        Order will be created as <em>Pending Verification</em>. You’ll verify the SMS code in Admin → Orders → Verify &amp; Mark Paid.
                       </p>
                     </div>
                   )}

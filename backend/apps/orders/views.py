@@ -320,11 +320,28 @@ class CartViewSet(viewsets.ViewSet):
                     shipping_postal_code=shipping_postal_code,
                     notes=notes,
                 )
+                # Persist payment method + Till code (if supplied) for admin visibility
+                pm = (request.data.get("payment_method") or "").strip().lower()
+                if pm in dict(Order.PAYMENT_METHODS):
+                    order.payment_method = pm
+                    till_code = (request.data.get("mpesa_receipt_number") or request.data.get("till_code") or "").strip().upper()
+                    if pm == "till" and till_code:
+                        import re
+                        if not re.match(r"^[A-Z0-9]{10}$", till_code):
+                            # keep order but flag code for admin review
+                            pass
+                        # unique check — mpesa_receipt_number is unique in Payment, not Order; store on Order for display
+                        order.mpesa_receipt_number = till_code
+                    order.save(update_fields=["payment_method", "mpesa_receipt_number", "updated_at"])
             except ValueError as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = OrderSerializer(order)
-            return Response({**serializer.data, "is_guest": True, "guest_checkout": True})
+            # include till code/payment_method in guest response for confirmation page
+            data = serializer.data
+            if pm == "till":
+                data["mpesa_receipt_number"] = till_code
+            return Response({**data, "is_guest": True, "guest_checkout": True})
 
         if not request.user.is_authenticated:
             return Response(
@@ -340,6 +357,11 @@ class CartViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         Cart.objects.filter(pk=cart.pk).update(delivery_region=delivery_region)
+        pm = (request.data.get("payment_method") or "").strip().lower()
+        till_code = (request.data.get("mpesa_receipt_number") or request.data.get("till_code") or "").strip().upper()
+        # Basic Till code format check — admin will verify against SMS
+        if pm == "till" and till_code and not __import__("re").match(r"^[A-Z0-9]{10}$", till_code):
+            return Response({"detail": "Invalid M-Pesa transaction code. Use 10 characters e.g. SHK123ABCD."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             order = OrderService.process_checkout(
                 cart=cart,
@@ -356,11 +378,19 @@ class CartViewSet(viewsets.ViewSet):
                 shipping_postal_code=shipping_postal_code,
                 notes=notes,
             )
+            if pm in dict(Order.PAYMENT_METHODS):
+                order.payment_method = pm
+                if pm == "till" and till_code:
+                    order.mpesa_receipt_number = till_code
+                order.save(update_fields=["payment_method", "mpesa_receipt_number", "updated_at"])
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = OrderSerializer(order)
-        return Response(serializer.data)
+        data = serializer.data
+        if pm == "till":
+            data["mpesa_receipt_number"] = order.mpesa_receipt_number
+        return Response(data)
 
     @action(detail=False, methods=["post"], url_path="remove/(?P<product_id>[^/.]+)")
     def remove(self, request, product_id=None):

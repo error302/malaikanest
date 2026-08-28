@@ -292,6 +292,9 @@ class Order(BaseModel):
     
     PAYMENT_METHODS = [
         ('mpesa', 'M-Pesa'),
+        ('till', 'Lipa na M-Pesa - Till'),
+        ('paypal', 'PayPal'),
+        ('pesapal', 'Pesapal'),
         ('card', 'Credit/Debit Card'),
         ('bank', 'Bank Transfer'),
         ('cash', 'Cash on Delivery'),
