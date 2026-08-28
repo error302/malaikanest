@@ -8,7 +8,7 @@ import { slugify } from '@/lib/slugify';
  * POST /api/admin/thrifted — create a new thrifted product
  */
 export async function GET(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const products = await db.thriftedProduct.findMany({
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const body = await req.json();

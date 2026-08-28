@@ -392,6 +392,53 @@ class AdminCookieTokenObtainPairView(CookieTokenObtainPairView):
         return super().post(request, *args, **kwargs)
 
 
+class AdminSessionCheckView(APIView):
+    """POST /api/v1/accounts/admin/session-check/
+
+    Used by the frontend's Next.js route handlers (/api/admin/*) as a
+    server-to-server gate. Reads the JWT refresh cookie, validates it
+    (signature, active user, token version) and answers whether the account
+    is an admin. Never issues tokens and accepts nothing else but the cookie.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        refresh_value = request.COOKIES.get(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"))
+        if not refresh_value:
+            return Response({"detail": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            from rest_framework_simplejwt.exceptions import TokenError
+
+            refresh = RefreshToken(refresh_value)
+            user_id = refresh.get("user_id")
+            user = User.objects.filter(id=user_id).first()
+            if not user or not user.is_active:
+                return Response({"detail": "Invalid session"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            token_version = refresh.get("token_version", 1)
+            if user.token_version != token_version:
+                return Response({"detail": "Token has been revoked"}, status=status.HTTP_401_UNAUTHORIZED)
+
+            is_admin = bool(
+                getattr(user, "is_staff", False)
+                or getattr(user, "role", "") == User.ROLE_ADMIN
+                or getattr(user, "is_superuser", False)
+            )
+            if not is_admin:
+                log_auth_event(
+                    "admin_session_check_denied",
+                    email=getattr(user, "email", ""),
+                    ip=get_client_ip(request),
+                )
+                return Response({"detail": "Admin access required", "is_admin": False}, status=status.HTTP_403_FORBIDDEN)
+
+            return Response({"is_admin": True, "email": user.email})
+        except TokenError:
+            return Response({"detail": "Invalid or expired token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def admin_session_view(request):

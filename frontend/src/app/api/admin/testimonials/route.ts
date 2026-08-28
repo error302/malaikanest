@@ -8,7 +8,7 @@ import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
  * POST /api/admin/testimonials — create a testimonial
  */
 export async function GET(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const testimonials = await db.testimonial.findMany({ orderBy: [{ position: 'asc' }, { createdAt: 'desc' }] });
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const body = await req.json();

@@ -8,7 +8,7 @@ import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
  * DELETE /api/admin/testimonials/[id] — delete a testimonial
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const { id } = await params;

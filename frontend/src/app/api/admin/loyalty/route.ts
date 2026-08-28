@@ -7,7 +7,7 @@ import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
  */
 
 export async function GET(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const accounts = await db.loyaltyAccount.findMany({

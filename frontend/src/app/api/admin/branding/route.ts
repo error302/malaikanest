@@ -8,7 +8,7 @@ import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
  * PUT /api/admin/branding — upsert branding settings { key: value, ... }
  */
 export async function GET(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const rows = await db.siteSetting.findMany();
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const body = await req.json();

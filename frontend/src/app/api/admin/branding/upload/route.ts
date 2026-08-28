@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * Body: multipart/form-data with one file field (any name).
  */
 export async function POST(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const form = await req.formData();

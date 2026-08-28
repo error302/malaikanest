@@ -8,7 +8,7 @@ import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
  * POST /api/admin/value-props — create a value prop
  */
 export async function GET(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const props = await db.valueProp.findMany({ orderBy: [{ position: 'asc' }] });
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const body = await req.json();

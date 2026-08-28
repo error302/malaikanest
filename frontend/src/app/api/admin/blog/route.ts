@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 import { slugify } from '@/lib/slugify';
 
-/** GET /api/admin/blog — list ALL posts (including drafts) */
+/** GET /api/admin/blog â€” list ALL posts (including drafts) */
 export async function GET(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const posts = await db.blogPost.findMany({ orderBy: { updatedAt: 'desc' } });
@@ -15,9 +15,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** POST /api/admin/blog — create a new post */
+/** POST /api/admin/blog â€” create a new post */
 export async function POST(req: NextRequest) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const body = await req.json();

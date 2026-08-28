@@ -23,7 +23,7 @@ function calculateTier(totalEarned: number): string {
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ email: string }> }) {
-  const guard = guardAdminRequest(req);
+  const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
     const { email: rawEmail } = await params;

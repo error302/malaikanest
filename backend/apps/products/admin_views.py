@@ -6,9 +6,22 @@ from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
 from apps.accounts.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+
+
+class AdminLimitOffsetPagination(LimitOffsetPagination):
+    """Bounded pagination for heavy admin list endpoints.
+
+    Defaults to 50 rows with a hard cap of 200 so a huge catalog / user base /
+    order table never returns an unbounded payload. Consumers read `.results`
+    and `count` (the admin pages already handle that envelope shape).
+    """
+
+    default_limit = 50
+    max_limit = 200
 
 from apps.accounts.models import User
 from apps.orders.models import CartItem, OrderItem, Order
@@ -31,7 +44,7 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AdminProductSerializer
     permission_classes = [IsAdminUser]
-    pagination_class = None
+    pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -110,7 +123,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
-    pagination_class = None
+    pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -184,7 +197,7 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AdminOrderSerializer
     permission_classes = [IsAdminUser]
-    pagination_class = None
+    pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()
