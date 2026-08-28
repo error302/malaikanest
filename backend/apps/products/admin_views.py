@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -123,7 +123,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 | Q(last_name__icontains=search)
             )
 
-        return queryset
+        return queryset.annotate(annotated_order_count=Count('order'))
 
     @action(detail=True, methods=["patch"])
     def promote_to_admin(self, request, pk=None):
