@@ -16,8 +16,9 @@ import { useAuth } from '@/lib/authContext';
 
 const PAYMENT_METHODS = [
   { value: 'mpesa', labelKey: 'checkout.mpesa', Icon: Smartphone, descKey: 'checkout.mpesaDesc' },
-  { value: 'card', labelKey: 'checkout.card', Icon: CreditCard, descKey: 'checkout.cardDesc' },
+  { value: 'paypal', labelKey: 'checkout.paypal', Icon: Wallet, descKey: 'checkout.paypalDesc' },
   { value: 'pesapal', labelKey: 'checkout.pesapal', Icon: Wallet, descKey: 'checkout.pesapalDesc' },
+  { value: 'card', labelKey: 'checkout.card', Icon: CreditCard, descKey: 'checkout.cardDesc' },
 ];
 
 export default function CheckoutPage() {
@@ -211,6 +212,23 @@ export default function CheckoutPage() {
           router.push(`/checkout/success?order=${receiptNumber}&token=${checkoutToken}`);
         } else {
           throw new Error(pesapalData?.detail || 'Pesapal initiation failed');
+        }
+      } else if (payment === 'paypal') {
+        // Initiate PayPal order and redirect to PayPal checkout
+        const paypalRes = await api.post('/api/v1/payments/paypal/initiate/', {
+          order_id: orderId,
+        });
+        const paypalData = paypalRes.data?.data ?? paypalRes.data;
+        if (paypalData?.approval_url || paypalData?.redirect_url || paypalData?.paypal_order_id) {
+          const url = paypalData.approval_url || paypalData.redirect_url;
+          if (url) {
+            window.location.href = url;
+          } else {
+            showToast('PayPal order created. Follow the PayPal prompt to complete payment.', 'success');
+            router.push(`/checkout/success?order=${receiptNumber}&token=${checkoutToken}`);
+          }
+        } else {
+          throw new Error(paypalData?.detail || 'PayPal initiation failed');
         }
       } else if (payment === 'card') {
         // Card payment — redirect to payment gateway if URL provided

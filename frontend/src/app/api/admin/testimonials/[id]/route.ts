@@ -33,13 +33,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const guard = await guardAdminRequest(req);
+  if (guard) return guard;
   try {
     const { id } = await params;
     await db.testimonial.delete({ where: { id } });
     invalidateSettingsCache();
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) ?? 'Delete failed' }, { status: 500 });
   }
 }

@@ -255,10 +255,10 @@ def cancel_stale_pending_orders():
                             product_id=item.product_id,
                             reserved__gte=item.quantity,
                         ).update(reserved=F('reserved') - item.quantity)
-                    if order.coupon_id:
-                        Coupon.objects.filter(pk=order.coupon_id, used_count__gt=0).update(
-                            used_count=F('used_count') - 1
-                        )
+                if order.coupon_id:
+                    Coupon.objects.filter(pk=order.coupon_id, used_count__gt=0).update(
+                        used_count=F('used_count') - 1
+                    )
                 cancelled_count += 1
         else:
             logger.error(f"Failed to cancel stale order {order.id}: {error_msg}")

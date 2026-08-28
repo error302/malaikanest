@@ -109,9 +109,14 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'user', 'subtotal', 'delivery_fee', 'tax_amount', 'discount_amount',
             'total', 'status', 'items', 'created_at',
-            'receipt_number', 'checkout_token', 'delivery_region', 'is_gift', 'gift_message',
+            'receipt_number', 'delivery_region', 'is_gift', 'gift_message',
             'guest_email', 'mpesa_receipt_number',
         )
+        # checkout_token is only returned by the create/checkout response (services.py)
+        # via a dedicated serializer — never on list/detail to avoid leaking guest secrets.
+        extra_kwargs = {
+            'guest_email': {'write_only': True},
+        }
 
 
 class CouponSerializer(serializers.ModelSerializer):

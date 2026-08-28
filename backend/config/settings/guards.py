@@ -63,7 +63,12 @@ def validate_production_env(env):
     errors = []
 
     env_name = str(env.get("ENVIRONMENT", "development")).strip().lower()
-    is_production = env_name in {"production", "prod", "live"} or to_bool(env.get("DJANGO_PRODUCTION", "False"))
+    django_env = str(env.get("DJANGO_ENV", "")).strip().lower()
+    is_production = (
+        env_name in {"production", "prod", "live"}
+        or django_env in {"production", "prod", "live"}
+        or to_bool(env.get("DJANGO_PRODUCTION", "False"))
+    )
     if not is_production:
         return
 
@@ -140,6 +145,22 @@ def validate_production_env(env):
             "MPESA_MOCK_MODE must be disabled in production: mock mode marks orders "
             "paid without any real M-Pesa transaction."
         )
+
+    if to_bool(env.get("PESAPAL_MOCK_MODE", "")):
+        errors.append(
+            "PESAPAL_MOCK_MODE must be disabled in production: mock mode marks orders "
+            "paid without any real Pesapal transaction."
+        )
+
+    # Trivial DB password that ships as docker-compose default
+    db_pwd = env.get("POSTGRES_PASSWORD", "") or env.get("DB_PASSWORD", "")
+    if db_pwd and db_pwd.strip().lower() in {"kenya_password", "password", "postgres", "changeme"}:
+        errors.append("POSTGRES_PASSWORD is still the default placeholder. Set a strong password.")
+
+    # paypal live secrets must not be placeholders in prod
+    paypal_secret = env.get("PAYPAL_CLIENT_SECRET", "")
+    if paypal_secret and looks_placeholder(paypal_secret):
+        errors.append("PAYPAL_CLIENT_SECRET appears to be a placeholder.")
 
     # Callback signature verification is mandatory in production. The only
     # exception is an explicit, operator-signed risk acceptance for launching

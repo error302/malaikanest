@@ -22,9 +22,8 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      // In production, this would PATCH /api/v1/core/settings/
-      await new Promise((r) => setTimeout(r, 800));
-      showToast('Settings saved', 'success');
+      showToast('Settings are managed via Django admin (/manage-store/) and .env — this page is a preview only.', 'info');
+      await new Promise((r) => setTimeout(r, 400));
     } catch {
       showToast('Failed to save settings', 'error');
     } finally {

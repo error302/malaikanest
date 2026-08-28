@@ -5,7 +5,7 @@ import path from 'path';
 import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml']);
+const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
 
 // Persist uploads under the mounted CMS volume (/app/data) so they survive
 // container rebuilds. Served back via /api/branding/uploads/[filename].
@@ -32,7 +32,11 @@ export async function POST(req: NextRequest) {
     }
     const f = file as File;
     if (!ALLOWED.has(f.type)) {
-      return NextResponse.json({ error: `Unsupported file type ${f.type}. Use PNG, JPEG, WebP or SVG.` }, { status: 400 });
+      return NextResponse.json({ error: `Unsupported file type ${f.type}. Use PNG, JPEG or WebP.` }, { status: 400 });
+    }
+    // Block SVG entirely — even sanitized, it can carry stored XSS via <script>/<foreignObject>.
+    if (f.type === 'image/svg+xml' || f.name.toLowerCase().endsWith('.svg')) {
+      return NextResponse.json({ error: 'SVG uploads are not allowed.' }, { status: 400 });
     }
     if (f.size > MAX_BYTES) {
       return NextResponse.json({ error: `File too large (${(f.size / 1024 / 1024).toFixed(1)} MB). Max 5 MB.` }, { status: 400 });

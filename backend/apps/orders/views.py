@@ -530,18 +530,18 @@ class CartViewSet(viewsets.ViewSet):
                     key = (item.product_id, item.variant_id)
                     user_item_map[key] = item
 
-                # 2. Bulk fetch inventory without locking (matching previous behavior)
+                # 2. Bulk fetch inventory with locking to prevent oversell races
                 product_ids = [item.product_id for item in guest_items if not item.variant_id]
                 variant_ids = [item.variant_id for item in guest_items if item.variant_id]
 
                 inventories = {}
                 if product_ids:
-                    invs = Inventory.objects.filter(product_id__in=product_ids)
+                    invs = Inventory.objects.select_for_update().filter(product_id__in=product_ids)
                     inventories = {inv.product_id: inv for inv in invs}
 
                 variant_inventories = {}
                 if variant_ids:
-                    v_invs = VariantInventory.objects.filter(variant_id__in=variant_ids)
+                    v_invs = VariantInventory.objects.select_for_update().filter(variant_id__in=variant_ids)
                     variant_inventories = {inv.variant_id: inv for inv in v_invs}
 
                 # 3. Process items in memory
@@ -802,19 +802,17 @@ class GuestOrderTrackView(viewsets.ViewSet):
                 return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
             return Response(OrderSerializer(order).data)
 
+        # checkout_token is the only secret that proves ownership of a guest order
+        # without an authenticated session. receipt_number+email alone is not
+        # sufficient (email leaks via order confirmation). Require token.
         if receipt_number and email:
-            order = (
-                Order.objects.select_related("user")
-                .prefetch_related("items__product")
-                .filter(receipt_number=receipt_number, user__email=email)
-                .first()
+            return Response(
+                {"detail": "Use checkout_token to track guest orders. Receipt+email is deprecated."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            if not order:
-                return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-            return Response(OrderSerializer(order).data)
 
         return Response(
-            {"detail": "Please provide either checkout_token or receipt_number + email"},
+            {"detail": "Please provide checkout_token"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

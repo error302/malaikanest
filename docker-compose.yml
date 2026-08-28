@@ -68,15 +68,15 @@ services:
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
-      DEBUG: ${DEBUG:-True}
-      SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
-      SIMPLE_JWT_SECRET: ${SIMPLE_JWT_SECRET:-django-insecure-jwt-dev-secret-key-change-in-prod-32-char-min-aaaa}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,frontend,malaikanest.com,www.malaikanest.com,api.malaikanest.com}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://backend:3000}
-      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      DEBUG: ${DEBUG:-False}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      SIMPLE_JWT_SECRET: ${SIMPLE_JWT_SECRET:?SIMPLE_JWT_SECRET must be set}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-malaikanest.com,www.malaikanest.com,api.malaikanest.com,localhost,127.0.0.1,backend,frontend}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://malaikanest.com,https://www.malaikanest.com,https://api.malaikanest.com}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://malaikanest.com,https://www.malaikanest.com,https://api.malaikanest.com}
       DB_NAME: ${POSTGRES_DB:-kenya_ecom}
       DB_USER: ${POSTGRES_USER:-kenya}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       DB_HOST: db
       DB_PORT: 5432
       DB_SSLMODE: ${DB_SSLMODE:-disable}
@@ -88,7 +88,7 @@ services:
       MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-local-placeholder}
       MPESA_PASSKEY: ${MPESA_PASSKEY:-local-placeholder}
       MPESA_SHORTCODE: ${MPESA_SHORTCODE:-174379}
-      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-http://localhost:8000/api/v1/payments/mpesa/callback/}
+      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-https://api.malaikanest.com/api/v1/payments/mpesa/callback/}
       MPESA_STRICT_SIGNATURE: ${MPESA_STRICT_SIGNATURE:-false}
       MPESA_PUBLIC_KEY_PATH: ${MPESA_PUBLIC_KEY_PATH:-}
       MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED: ${MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED:-false}
@@ -158,7 +158,7 @@ services:
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
-      DEBUG: ${DEBUG:-True}
+      DEBUG: ${DEBUG:-False}
       SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
       SIMPLE_JWT_SECRET: ${SIMPLE_JWT_SECRET:-django-insecure-jwt-dev-secret-key-change-in-prod-32-char-min-aaaa}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,backend_replica,frontend,malaikanest.com,www.malaikanest.com,api.malaikanest.com}
@@ -233,7 +233,7 @@ services:
       - backend/.env
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
-      DEBUG: ${DEBUG:-True}
+      DEBUG: ${DEBUG:-False}
       SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,frontend}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
@@ -297,7 +297,7 @@ services:
       - backend/.env
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
-      DEBUG: ${DEBUG:-True}
+      DEBUG: ${DEBUG:-False}
       SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
       DB_NAME: ${POSTGRES_DB:-kenya_ecom}
       DB_USER: ${POSTGRES_USER:-kenya}

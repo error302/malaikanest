@@ -85,7 +85,7 @@ export default function AdminBannersPage() {
             Manage the hero carousel slides
           </p>
         </div>
-        <button type="button" className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
+        <button type="button" onClick={() => showToast('Create banners in Django admin at /manage-store/ → Banners, or POST /api/v1/products/admin/banners/', 'info')} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
           <Plus size={16} /> Add Banner
         </button>
       </div>
