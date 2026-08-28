@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowRight, CheckCircle } from 'lucide-react';
+import { Logo } from '@/components/malaika/logo';
 import api, { handleApiError } from '@/lib/api';
 import { useHydrated } from '@/lib/use-hydrated';
 import { showToast } from '@/lib/toast';
@@ -34,7 +35,10 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-[calc(100vh-12rem)] flex items-center justify-center py-10 sm:py-16">
       <div className="container-shell w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Link href="/" className="inline-block mb-3 transition-transform hover:scale-105" aria-label="Malaika Nest Home">
+            <Logo />
+          </Link>
           <h1
             className="font-serif text-3xl sm:text-4xl font-semibold mb-2"
             style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}

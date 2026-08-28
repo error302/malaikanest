@@ -169,119 +169,123 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
         role="banner"
       >
         <nav
-          className="container-shell flex items-center h-[64px] sm:h-[72px] gap-1.5 sm:gap-3 lg:gap-5 overflow-hidden"
+          className="container-shell flex items-center justify-between h-[64px] sm:h-[72px] gap-2 sm:gap-4"
           aria-label="Main navigation"
         >
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden w-10 h-10 min-w-10 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)] flex-shrink-0"
-            style={{ color: 'var(--brand-brown)' }}
-            aria-label="Open menu"
-          >
-            <Menu size={22} strokeWidth={1.75} />
-          </button>
+          {/* Left & Center section */}
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-5 xl:gap-6 min-w-0 flex-1">
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden w-10 h-10 min-w-10 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)] flex-shrink-0"
+              style={{ color: 'var(--brand-brown)' }}
+              aria-label="Open menu"
+            >
+              <Menu size={22} strokeWidth={1.75} />
+            </button>
 
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex-shrink-0 mr-2 lg:mr-4 select-none"
-            aria-label="Malaika Nest home"
-          >
-            <Logo logoUrl={branding?.logo_url} storeName={branding?.store_name} tagline={branding?.tagline} />
-          </Link>
+            {/* Logo */}
+            <Link
+              href="/"
+              className="flex-shrink-0 mr-1 lg:mr-2 select-none"
+              aria-label="Malaika Nest home"
+            >
+              <Logo logoUrl={branding?.logo_url} storeName={branding?.store_name} tagline={branding?.tagline} />
+            </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-2.5 xl:gap-5 flex-shrink-0">
-            {NAV_LINKS.map((link) =>
-              link.hasDropdown ? (
-                <div
-                  key={link.nameKey}
-                  onMouseEnter={openShop}
-                  onMouseLeave={closeShop}
-                  className="relative"
-                >
-                  <button
-                    className="inline-flex items-center gap-1 text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors"
+            {/* Desktop nav */}
+            <div className="hidden lg:flex items-center gap-2.5 xl:gap-4.5 flex-shrink-0">
+              {NAV_LINKS.map((link) =>
+                link.hasDropdown ? (
+                  <div
+                    key={link.nameKey}
+                    onMouseEnter={openShop}
+                    onMouseLeave={closeShop}
+                    className="relative"
+                  >
+                    <button
+                      className="inline-flex items-center gap-1 text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors"
+                      style={{ color: 'var(--brand-brown)' }}
+                      aria-expanded={shopOpen}
+                      aria-haspopup="true"
+                      onClick={() => (shopOpen ? closeShop() : openShop())}
+                      onFocus={openShop}
+                    >
+                      {t(link.nameKey)}
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    key={link.nameKey}
+                    href={link.href}
+                    className="text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
                     style={{ color: 'var(--brand-brown)' }}
-                    aria-expanded={shopOpen}
-                    aria-haspopup="true"
-                    onClick={() => (shopOpen ? closeShop() : openShop())}
-                    onFocus={openShop}
                   >
                     {t(link.nameKey)}
-                    <ChevronDown
-                      size={14}
-                      className={`transition-transform duration-200 ${shopOpen ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  key={link.nameKey}
-                  href={link.href}
-                  className="text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors hover:text-[var(--brand-gold)]"
-                  style={{ color: 'var(--brand-brown)' }}
-                >
-                  {t(link.nameKey)}
-                </Link>
-              )
-            )}
+                  </Link>
+                )
+              )}
 
-            {/* Shop by Age dropdown */}
-            <div
-              onMouseEnter={openAge}
-              onMouseLeave={closeAge}
-              className="relative"
-            >
-              <button
-                className="inline-flex items-center gap-1 text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors"
-                style={{ color: 'var(--brand-brown)' }}
-                aria-expanded={ageOpen}
-                aria-haspopup="true"
-                onClick={() => (ageOpen ? closeAge() : openAge())}
-                onFocus={openAge}
+              {/* Shop by Age dropdown */}
+              <div
+                onMouseEnter={openAge}
+                onMouseLeave={closeAge}
+                className="relative"
               >
-                {t('nav.shopByAge')}
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform duration-200 ${ageOpen ? 'rotate-180' : ''}`}
+                <button
+                  className="inline-flex items-center gap-1 text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors"
+                  style={{ color: 'var(--brand-brown)' }}
+                  aria-expanded={ageOpen}
+                  aria-haspopup="true"
+                  onClick={() => (ageOpen ? closeAge() : openAge())}
+                  onFocus={openAge}
+                >
+                  {t('nav.shopByAge')}
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${ageOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop search */}
+            <div className="hidden xl:flex items-center min-w-[140px] max-w-[220px] 2xl:max-w-[260px] flex-1">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchQuery.trim()) {
+                    router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
+                  }
+                }}
+                className="relative w-full"
+                role="search"
+              >
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: 'var(--brand-text-muted)' }}
+                  aria-hidden="true"
                 />
-              </button>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('nav.search') + '…'}
+                  className="input-warm w-full text-xs py-2 pl-9 pr-3"
+                  aria-label={t('nav.search')}
+                />
+              </form>
             </div>
           </div>
 
-          {/* Desktop search */}
-          <div className="hidden xl:flex items-center flex-shrink-0 w-[160px] xl:w-[220px] 2xl:w-[260px]">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (searchQuery.trim()) {
-                  router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
-                }
-              }}
-              className="relative w-full"
-              role="search"
-            >
-              <Search
-                size={15}
-                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ color: 'var(--brand-text-muted)' }}
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('nav.search') + '…'}
-                className="input-warm w-full text-xs py-2 pl-9 pr-3"
-                aria-label={t('nav.search')}
-              />
-            </form>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto">
+          {/* Right Action Icons — Fixed non-shifting anchor */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0 ml-2">
             {/* Search trigger icon for medium screens / tablet */}
             <button
               type="button"

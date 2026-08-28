@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Mail, ArrowRight, Shield } from 'lucide-react';
+import { Logo } from '@/components/malaika/logo';
 import { useAuth } from '@/lib/authContext';
 import { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
@@ -32,10 +33,10 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--brand-brown-dark)' }}>
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--brand-gold)' }}>
-            <Shield size={28} className="text-white" />
-          </div>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Link href="/" className="inline-block mb-4 transition-transform hover:scale-105" aria-label="Malaika Nest Home">
+            <Logo className="[&_span]:!text-white" />
+          </Link>
           <h1 className="font-serif text-3xl font-semibold text-white mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>
             Admin Access
           </h1>

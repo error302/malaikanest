@@ -109,7 +109,7 @@ export function Hero({ banners = [] }: HeroProps) {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-[#3D2B1F] h-[450px] sm:h-[550px] lg:min-h-[800px]"
+      className="relative w-full overflow-hidden bg-[#3D2B1F] h-[360px] sm:h-[420px] lg:h-[480px] xl:h-[500px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
@@ -145,7 +145,7 @@ export function Hero({ banners = [] }: HeroProps) {
         aria-hidden
         style={{
           background:
-            'linear-gradient(105deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 35%, rgba(0,0,0,0) 60%)',
+            'linear-gradient(105deg, rgba(0,0,0,0.50) 0%, rgba(0,0,0,0.22) 40%, rgba(0,0,0,0) 70%)',
         }}
       />
 
@@ -157,43 +157,44 @@ export function Hero({ banners = [] }: HeroProps) {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex items-end sm:items-center h-[450px] sm:h-[550px] lg:min-h-[800px]">
-        <div className="container-shell w-full py-10 sm:py-16">
-          <div key={current} className="max-w-xl animate-fade-in-up">
+      <div className="relative z-10 flex items-center h-[360px] sm:h-[420px] lg:h-[480px] xl:h-[500px]">
+        <div className="container-shell w-full py-6 sm:py-8 lg:py-10">
+          <div key={current} className="max-w-lg animate-fade-in-up">
             <span
-              className="section-label mb-4 sm:mb-6"
-              style={{ color: 'rgba(255,255,255,0.85)' }}
+              className="inline-block text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] mb-2 sm:mb-3"
+              style={{ color: 'var(--brand-gold-soft, #C9A96E)' }}
             >
-              Malaika Nest
+              Malaika Nest · Mombasa
             </span>
             <h1
-              className="font-serif font-semibold leading-[1.08] mb-4"
+              className="font-serif font-semibold leading-[1.1] mb-2 sm:mb-3"
               style={{
                 color: '#FFFFFF',
                 fontFamily: 'var(--font-cormorant)',
-                fontSize: 'clamp(2rem, 6.5vw, 4rem)',
+                fontSize: 'clamp(1.75rem, 4.5vw, 3rem)',
                 textWrap: 'balance',
               }}
             >
               {headline}
             </h1>
             <p
-              className="text-[13px] sm:text-[15px] leading-relaxed mb-8 max-w-lg"
+              className="text-xs sm:text-[14px] leading-relaxed mb-5 sm:mb-6 max-w-md line-clamp-2 sm:line-clamp-3"
               style={{ color: 'rgba(255,255,255,0.92)' }}
             >
               {sub}
             </p>
             <Link
               href={s.ctaHref}
-              className="inline-flex items-center gap-2 rounded-full font-medium text-[13px] sm:text-sm uppercase tracking-[0.12em] px-7 py-3.5 transition-all duration-300 hover:bg-white hover:text-[var(--brand-brown)] hover:border-white"
+              className="inline-flex items-center gap-2 rounded-full font-medium text-xs sm:text-[13px] uppercase tracking-[0.12em] px-6 py-2.5 sm:px-7 sm:py-3 transition-all duration-300 hover:bg-white hover:text-[var(--brand-brown)] hover:border-white shadow-warm-sm"
               style={{
-                background: 'transparent',
+                background: 'rgba(255,255,255,0.12)',
                 color: '#FFFFFF',
                 border: '1px solid rgba(255,255,255,0.7)',
+                backdropFilter: 'blur(4px)',
               }}
             >
               {cta}
-              <ChevronRight size={15} strokeWidth={2} />
+              <ChevronRight size={14} strokeWidth={2} />
             </Link>
           </div>
         </div>

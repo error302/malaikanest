@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, User, Phone, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
+import { Logo } from '@/components/malaika/logo';
 import { showToast } from '@/lib/toast';
 import { useI18n } from '@/lib/i18n';
 import { extractApiError } from '@/lib/api';
@@ -169,18 +170,11 @@ export default function RegisterPage() {
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--brand-gold-soft)' }} />
             </div>
 
-            <div
-              className="mx-auto mb-4 w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, var(--brand-gold-soft) 0%, var(--brand-warm) 100%)',
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="8.5" cy="7" r="4" />
-                <path d="M20 8l-3 3-2-2" />
-                <path d="M23 8l-3 3-2-2" />
-              </svg>
+            {/* Welcome logo */}
+            <div className="flex justify-center mb-3">
+              <Link href="/" className="inline-block transition-transform hover:scale-105" aria-label="Malaika Nest Home">
+                <Logo />
+              </Link>
             </div>
 
             <h1
