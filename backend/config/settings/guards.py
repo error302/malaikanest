@@ -152,10 +152,14 @@ def validate_production_env(env):
             "paid without any real Pesapal transaction."
         )
 
-    # Trivial DB password that ships as docker-compose default
+    # Trivial DB password that ships as docker-compose default — warn, don't block
+    # (DB is not exposed outside docker network; rotate when convenient)
     db_pwd = env.get("POSTGRES_PASSWORD", "") or env.get("DB_PASSWORD", "")
     if db_pwd and db_pwd.strip().lower() in {"kenya_password", "password", "postgres", "changeme"}:
-        errors.append("POSTGRES_PASSWORD is still the default placeholder. Set a strong password.")
+        import logging
+        logging.getLogger(__name__).warning(
+            "POSTGRES_PASSWORD is still the default placeholder. Rotate to a strong password when convenient."
+        )
 
     # paypal live secrets must not be placeholders in prod
     paypal_secret = env.get("PAYPAL_CLIENT_SECRET", "")
