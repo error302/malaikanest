@@ -8,6 +8,8 @@ const iconShimTs = path.resolve(__dirname, "src/lib/icons.tsx");
 // CSP: explicit host allowlist with 'unsafe-inline' for script-src — required
 // because ISR/prerendered HTML is cached and cannot carry per-request nonces.
 // middleware.ts applies this same policy to all document routes.
+// In development the browser calls the Django API directly on :8000, so the
+// dev origins are added to connect-src (production uses api.malaikanest.com).
 const ContentSecurityPolicy = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://static.cloudflareinsights.com;
@@ -15,7 +17,7 @@ const ContentSecurityPolicy = `
   img-src 'self' data: blob: https: http://localhost http://127.0.0.1;
   font-src 'self' data: https://fonts.gstatic.com;
   frame-src 'self' https://www.google.com https://www.youtube.com;
-  connect-src 'self' https://malaikanest.com https://api.malaikanest.com https://www.malaikanest.com https://res.cloudinary.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com https://static.cloudflareinsights.com;
+  connect-src 'self' https://malaikanest.com https://api.malaikanest.com https://www.malaikanest.com https://res.cloudinary.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com https://static.cloudflareinsights.com${process.env.NODE_ENV === "development" ? " http://localhost:8000 http://127.0.0.1:8000" : ""};
   media-src 'self' https:;
   object-src 'none';
   base-uri 'self';

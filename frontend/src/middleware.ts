@@ -9,6 +9,13 @@ import { NextRequest, NextResponse } from "next/server";
 // We also set X-Frame-Options, HSTS, etc. here so they cover all routes —
 // including routes that match the matcher but not the headers() config.
 
+// In development the browser calls the Django API directly on :8000 — allow it
+// in connect-src (production uses https://api.malaikanest.com, already listed).
+const devConnectSrc =
+  process.env.NODE_ENV === "development"
+    ? " http://localhost:8000 http://127.0.0.1:8000"
+    : "";
+
 const buildCsp = (nonce: string): string =>
   [
     "default-src 'self'",
@@ -22,7 +29,7 @@ const buildCsp = (nonce: string): string =>
     "img-src 'self' data: blob: https: http://localhost http://127.0.0.1",
     "font-src 'self' data: https://fonts.gstatic.com",
     "frame-src 'self' https://www.google.com https://www.youtube.com",
-    "connect-src 'self' https://malaikanest.com https://api.malaikanest.com https://www.malaikanest.com https://res.cloudinary.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com https://static.cloudflareinsights.com",
+    `connect-src 'self' https://malaikanest.com https://api.malaikanest.com https://www.malaikanest.com https://res.cloudinary.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com https://static.cloudflareinsights.com${devConnectSrc}`,
     "media-src 'self' https:",
     "object-src 'none'",
     "base-uri 'self'",
