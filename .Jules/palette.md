@@ -9,3 +9,6 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+## 2026-08-30 - Translated ARIA labels for mobile bottom navigation
+**Learning:** Found that `item.name` mapping for navigation arrays required `t()` wrapper around the values so that mobile screen readers could parse correctly translated navigation aria labels.
+**Action:** When mapping arrays in navigation structures (like mobile-bottom-nav), ensure any derived aria-labels and strings output using array items are passed to the `useI18n` translation function `t()`.
