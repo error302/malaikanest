@@ -7,6 +7,8 @@ from rest_framework import serializers
 
 logger = logging.getLogger(__name__)
 
+from django.conf import settings
+
 from apps.accounts.models import User
 from apps.orders.models import Order, OrderItem
 from apps.products.models import (
@@ -73,13 +75,23 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                logger.warning("SSRF blocked: Attempted to fetch category image from unauthorized URL: %s", image_url)
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
-        except Exception:
-            logger.debug("Category image download failed from %s", image_url)
+        except Exception as e:
+            logger.debug("Category image download failed from %s: %s", image_url, e)
         return None
 
     def create(self, validated_data):
@@ -323,13 +335,23 @@ class AdminProductSerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                logger.warning("SSRF blocked: Attempted to fetch product image from unauthorized URL: %s", image_url)
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
-        except Exception:
-            logger.debug("Product image download failed from %s", url)
+        except Exception as e:
+            logger.debug("Product image download failed from %s: %s", image_url, e)
         return None
 
     @staticmethod
