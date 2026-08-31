@@ -6,7 +6,7 @@ psycopg2-binary==2.9.10
 gunicorn==23.0.0
 setuptools==83.0.0
 python-dotenv==1.2.2
-django-cors-headers==4.6.0
+django-cors-headers==4.9.0
 requests==2.33.0
 pytz==2024.2
 Pillow==12.3.0
