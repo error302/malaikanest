@@ -80,8 +80,9 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty - 1)}
-                      aria-label={t('cart.remove') + ' -'}
-                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
+                      disabled={loading}
+                      aria-label={item.qty === 1 ? t('cart.remove') + ' ' + item.name : t('cart.decrease', { name: item.name })}
+                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:pointer-events-none"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
                       <Minus size={14} />
@@ -90,8 +91,9 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty + 1)}
-                      aria-label={t('cart.remove') + ' +'}
-                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
+                      disabled={loading}
+                      aria-label={t('cart.increase', { name: item.name })}
+                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:pointer-events-none"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
                       <Plus size={14} />
@@ -100,8 +102,9 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() => remove(item.id)}
-                    aria-label={t('cart.remove')}
-                    className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] active:scale-95"
+                    disabled={loading}
+                    aria-label={t('cart.remove') + ' ' + item.name}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
                     style={{ color: 'var(--brand-terra)' }}
                   >
                     <Trash2 size={16} />
@@ -120,7 +123,8 @@ export default function CartPage() {
           <button
             type="button"
             onClick={clear}
-            className="text-xs underline mt-2"
+            disabled={loading}
+            className="text-xs underline mt-2 disabled:opacity-50 disabled:pointer-events-none"
             style={{ color: 'var(--brand-text-muted)' }}
           >
             {t('cart.clear')}
