@@ -72,14 +72,25 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             import requests
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
+            from django.conf import settings
 
-            response = requests.get(image_url, timeout=10)
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+
+            if not (parsed.scheme == "https" and parsed.hostname and parsed.hostname.lower() in allowed_hosts):
+                logger.debug("Category image download blocked for %s: SSRF protection", image_url)
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
-        except Exception:
-            logger.debug("Category image download failed from %s", image_url)
+        except Exception as e:
+            logger.debug("Category image download failed from %s: %s", image_url, e)
         return None
 
     def create(self, validated_data):
@@ -322,14 +333,25 @@ class AdminProductSerializer(serializers.ModelSerializer):
             import requests
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
+            from django.conf import settings
 
-            response = requests.get(image_url, timeout=10)
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+
+            if not (parsed.scheme == "https" and parsed.hostname and parsed.hostname.lower() in allowed_hosts):
+                logger.debug("Product image download blocked for %s: SSRF protection", image_url)
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
-        except Exception:
-            logger.debug("Product image download failed from %s", url)
+        except Exception as e:
+            logger.debug("Product image download failed from %s: %s", image_url, e)
         return None
 
     @staticmethod
