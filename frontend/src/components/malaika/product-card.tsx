@@ -84,7 +84,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
       {/* Image — sharp corners, no border, no shadow, portrait aspect */}
       <Link
         href={`/products/${product.slug}`}
-        className="relative block w-full overflow-hidden aspect-[3/4]"
+        className="relative block w-full overflow-hidden aspect-[3/4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
         style={{ background: gradient }}
         aria-label={`View ${product.name}`}
       >
@@ -146,7 +146,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
         }}
         aria-label={wished ? t('product.removeWishlist') : t('product.wishlist')}
         aria-pressed={wished}
-        className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
+        className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] ${
           hovered || wished ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
         } sm:opacity-0 sm:group-hover:opacity-100 sm:group-hover:scale-100`}
         style={{
@@ -203,7 +203,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
 
         <Link
           href={`/products/${product.slug}`}
-          className="group/link"
+          className="group/link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] rounded-sm"
           aria-label={`View ${product.name.charAt(0).toUpperCase() + product.name.slice(1)}`}
         >
           <h3
@@ -262,7 +262,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
             type="button"
             onClick={handleAdd}
             disabled={!inStock}
-            className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 active:scale-95 disabled:opacity-40"
+            className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 active:scale-95 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
             style={{
               background: 'var(--brand-warm)',
               color: 'var(--brand-brown-dark)',
@@ -283,7 +283,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
             type="button"
             onClick={handleAdd}
             disabled={!inStock}
-            className={`hidden sm:inline-flex items-center justify-center gap-1.5 w-full py-2.5 mt-1 text-[12px] font-medium uppercase tracking-[0.1em] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`hidden sm:inline-flex items-center justify-center gap-1.5 w-full py-2.5 mt-1 text-[12px] font-medium uppercase tracking-[0.1em] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:opacity-100 focus-visible:translate-y-0 ${
               hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'
             }`}
             style={{

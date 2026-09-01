@@ -70,7 +70,7 @@ export function ShopByAge({ content }: ShopByAgeProps) {
               type="button"
               onClick={() => scroll('left')}
               aria-label="Scroll left"
-              className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]"
+              className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
               style={{
                 borderColor: 'var(--brand-border)',
                 color: 'var(--brand-brown)',
@@ -82,7 +82,7 @@ export function ShopByAge({ content }: ShopByAgeProps) {
               type="button"
               onClick={() => scroll('right')}
               aria-label="Scroll right"
-              className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]"
+              className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
               style={{
                 borderColor: 'var(--brand-border)',
                 color: 'var(--brand-brown)',
@@ -103,7 +103,7 @@ export function ShopByAge({ content }: ShopByAgeProps) {
             <Link
               key={age.nameKey}
               href={`/categories?age=${age.group}`}
-              className="group flex flex-col items-center justify-center text-center gap-2.5 p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-warm-md min-w-[120px] sm:min-w-[140px]"
+              className="group flex flex-col items-center justify-center text-center gap-2.5 p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-warm-md min-w-[120px] sm:min-w-[140px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
               style={{
                 background: '#FFFFFF',
                 borderColor: 'var(--brand-border)',
