@@ -231,7 +231,14 @@ class ProductSerializer(serializers.ModelSerializer):
         return f"https://malaikanest.com{url}"
 
     def _primary_gallery_url(self, obj):
-        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        if hasattr(obj, "_prefetched_objects_cache") and "images" in obj._prefetched_objects_cache:
+            images = obj.images.all()
+            gallery = next((img for img in images if img.is_primary), None)
+            if not gallery and images:
+                gallery = images[0]
+        else:
+            gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+
         if gallery and gallery.image:
             return self._image_url(gallery.image)
         return None
@@ -446,7 +453,14 @@ class ProductListSerializer(serializers.ModelSerializer):
         return f"https://malaikanest.com{url}"
 
     def _primary_gallery_url(self, obj):
-        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        if hasattr(obj, "_prefetched_objects_cache") and "images" in obj._prefetched_objects_cache:
+            images = obj.images.all()
+            gallery = next((img for img in images if img.is_primary), None)
+            if not gallery and images:
+                gallery = images[0]
+        else:
+            gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+
         if gallery and gallery.image:
             return self._image_url(gallery.image)
         return None
