@@ -37,11 +37,11 @@ export default function ContactPage() {
         <h2 className="font-serif text-xl font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Send us a message</h2>
         <div className="space-y-3">
           <div className="grid sm:grid-cols-2 gap-3">
-            <input required placeholder="Your name" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-            <input required type="email" placeholder="Email" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+            <input required aria-label="Your name" placeholder="Your name" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+            <input required type="email" aria-label="Email" placeholder="Email" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
           </div>
-          <input placeholder="Subject (optional)" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
-          <textarea required placeholder="Your message" rows={5} className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' }} />
+          <input aria-label="Subject (optional)" placeholder="Subject (optional)" className="input-warm w-full !pl-4" style={{ background: 'var(--brand-bg-alt)' }} />
+          <textarea required aria-label="Your message" placeholder="Your message" rows={5} className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' }} />
           <button type="submit" className="w-full rounded-full px-6 py-3.5 text-sm font-semibold" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
             Send Message
           </button>
