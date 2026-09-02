@@ -43,6 +43,11 @@ ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost").split(",") if h.strip()
 ]
 
+# Hosts allowed for remote image downloads to prevent SSRF
+IMAGE_URL_ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv("IMAGE_URL_ALLOWED_HOSTS", "res.cloudinary.com").split(",") if h.strip()
+]
+
 INSTALLED_APPS = [
     "flat",
     "django.contrib.admin",
