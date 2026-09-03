@@ -9,3 +9,6 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+## 2024-03-03 - Form Input Focus Rings
+**Learning:** Textareas used standard `focus:outline-none` but lacked explicit visible focus rings (like `ring-2`), leading to poor keyboard navigation visibility on form fields.
+**Action:** When creating textareas, ensure to add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` for better keyboard accessibility visibility across the codebase.
