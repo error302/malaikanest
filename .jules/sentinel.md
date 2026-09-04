@@ -12,3 +12,8 @@
 **Vulnerability:** User-generated blog content was injected directly into the DOM using `dangerouslySetInnerHTML` in `frontend/src/app/(store)/blog/[slug]/page.tsx` without sanitization, leading to an XSS vulnerability.
 **Learning:** This codebase uses Next.js server-side rendering (SSR). Standard `dompurify` cannot be used as it fails during SSR due to missing browser APIs (like `window`). A specific library, `isomorphic-dompurify`, must be used to ensure sanitization works both on the server and the client.
 **Prevention:** Always wrap variables passed to `dangerouslySetInnerHTML={{ __html: ... }}` with `DOMPurify.sanitize()` from `isomorphic-dompurify`, especially when rendering potentially untrusted user content like blog markdown.
+
+## 2024-05-18 - SSRF via Open Redirects in Admin Image Downloads
+**Vulnerability:** In `apps.products.admin_serializers`, when downloading image URLs (e.g. for categories and products) from an external source, `requests.get` lacked validation for the host and schema, and did not disable redirects. An attacker could potentially supply an arbitrary URL, or an allowed one that redirected to an internal network address (e.g., `169.254.169.254` or internal services), thereby bypassing restrictions and achieving SSRF.
+**Learning:** Similarly to PDF invoices, image downloads in admin endpoints also need strict validation. Just checking if an image is provided is not sufficient.
+**Prevention:** Verify the URL scheme is `https`, ensure the hostname belongs to a whitelist (e.g., `IMAGE_URL_ALLOWED_HOSTS`), and pass `allow_redirects=False` to `requests.get` to prevent the open redirect bypass.
