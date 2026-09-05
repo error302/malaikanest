@@ -9,3 +9,6 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+## 2024-11-20 - [Accessibility] Dynamic Badge Announcements on Desktop Cart and Wishlist
+**Learning:** Hardcoded text and numbers (e.g. `Wishlist, 1 items`) for dynamic badges within interactive navigation elements do not translate properly and can be grammatically incorrect or culturally inappropriate.
+**Action:** When adding badge states to `aria-label` attributes, always use the robust internationalization (i18n) setup instead of template literals with English defaults (e.g., use `t('cart.item')`), and conditionally handle singular/plural to present polished accessibility text.
