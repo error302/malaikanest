@@ -304,7 +304,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               href="/wishlist"
               className="relative hidden lg:flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
-              aria-label={`Wishlist${wishlistCount > 0 ? `, ${wishlistCount} items` : ''}`}
+              aria-label={wishlistCount > 0 ? `${t('nav.wishlist')} (${wishlistCount} ${wishlistCount === 1 ? t('cart.item').toLowerCase() : t('cart.items').toLowerCase()})` : t('nav.wishlist')}
             >
               <Heart size={19} strokeWidth={1.75} />
               {wishlistCount > 0 && (
@@ -438,7 +438,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
               }}
               className="relative hidden lg:flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
               style={{ color: 'var(--brand-brown)' }}
-              aria-label={`${t('nav.cart')}${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+              aria-label={cartCount > 0 ? `${t('nav.cart')} (${cartCount} ${cartCount === 1 ? t('cart.item').toLowerCase() : t('cart.items').toLowerCase()})` : t('nav.cart')}
             >
               <ShoppingCart size={19} strokeWidth={1.75} />
               {cartCount > 0 && (
