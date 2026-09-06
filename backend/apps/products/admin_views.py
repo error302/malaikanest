@@ -126,7 +126,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        from django.db.models import Count
+        # ⚡ Bolt: Annotate total orders to prevent N+1 queries in the serializer
+        queryset = super().get_queryset().annotate(annotated_total_orders=Count('order', distinct=True))
         search = self.request.query_params.get("search")
 
         if search:
