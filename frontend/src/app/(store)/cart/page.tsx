@@ -80,7 +80,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty - 1)}
-                      aria-label={t('cart.remove') + ' -'}
+                      aria-label={t('cart.decreaseQty', { item: item.name })}
                       className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
@@ -90,7 +90,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty + 1)}
-                      aria-label={t('cart.remove') + ' +'}
+                      aria-label={t('cart.increaseQty', { item: item.name })}
                       className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
@@ -100,7 +100,7 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() => remove(item.id)}
-                    aria-label={t('cart.remove')}
+                    aria-label={t('cart.removeItem', { item: item.name })}
                     className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] active:scale-95"
                     style={{ color: 'var(--brand-terra)' }}
                   >
