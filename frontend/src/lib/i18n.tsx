@@ -194,6 +194,10 @@ const en: Dict = {
   'cart.total': 'Total',
   'cart.checkout': 'Proceed to Checkout',
   'cart.remove': 'Remove',
+  'cart.decreaseQty': 'Decrease quantity of {item}',
+  'cart.increaseQty': 'Increase quantity of {item}',
+  'cart.removeItem': 'Remove {item} from cart',
+
   'cart.qty': 'Qty',
   'cart.item': 'Item',
   'cart.items': 'Items',
@@ -474,6 +478,10 @@ const sw: Dict = {
   'cart.total': 'Jumla',
   'cart.checkout': 'Nenda kulipa',
   'cart.remove': 'Ondoa',
+  'cart.decreaseQty': 'Punguza idadi ya {item}',
+  'cart.increaseQty': 'Ongeza idadi ya {item}',
+  'cart.removeItem': 'Ondoa {item} kwenye rakibu',
+
   'cart.qty': 'Idadi',
   'cart.item': 'Bidhaa',
   'cart.items': 'Bidhaa',
