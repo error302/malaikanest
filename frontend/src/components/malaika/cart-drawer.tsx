@@ -9,6 +9,7 @@ import { useCart } from '@/lib/cartContext';
 import { useCartDrawer } from '@/lib/cartDrawerStore';
 import { formatKES } from '@/lib/format';
 import { slideOver } from '@/lib/motion';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Slide-over cart drawer. Mounted once at the storefront shell level.
@@ -20,6 +21,7 @@ import { slideOver } from '@/lib/motion';
  * data lives in cartContext; this component is purely a presentation layer.
  */
 export function CartDrawer() {
+  const { t } = useI18n();
   const open = useCartDrawer((s) => s.open);
   const closeDrawer = useCartDrawer((s) => s.closeDrawer);
   const { items, updateQty, remove, loading } = useCart();
@@ -137,7 +139,7 @@ export function CartDrawer() {
                               onClick={() => updateQty(item.id, Math.max(1, item.qty - 1))}
                               disabled={loading}
                               className="w-7 h-7 flex items-center justify-center hover:bg-paper-alt rounded-l-full transition-colors disabled:opacity-50"
-                              aria-label={`Decrease quantity of ${item.name}`}
+                              aria-label={t('cart.decrease', { name: item.name })}
                             >
                               <Minus size={12} strokeWidth={2} className="text-ink" />
                             </button>
@@ -151,7 +153,7 @@ export function CartDrawer() {
                               onClick={() => updateQty(item.id, item.qty + 1)}
                               disabled={loading}
                               className="w-7 h-7 flex items-center justify-center hover:bg-paper-alt rounded-r-full transition-colors disabled:opacity-50"
-                              aria-label={`Increase quantity of ${item.name}`}
+                              aria-label={t('cart.increase', { name: item.name })}
                             >
                               <Plus size={12} strokeWidth={2} className="text-ink" />
                             </button>
@@ -160,6 +162,7 @@ export function CartDrawer() {
                             onClick={() => remove(item.id)}
                             disabled={loading}
                             className="text-xs text-ink-muted hover:text-danger transition-colors ml-2 disabled:opacity-50"
+                            aria-label={t('cart.removeTarget', { name: item.name })}
                           >
                             Remove
                           </button>

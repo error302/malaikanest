@@ -9,3 +9,7 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+
+## 2024-11-20 - [Accessibility] Specific ARIA labels for identical action buttons in lists
+**Learning:** For lists containing identical action buttons (e.g., 'Remove', '+' or '-' items in a cart), screen reader users need context about *what* item is being acted upon.
+**Action:** Ensure each button has a specific `aria-label` detailing the target item (e.g., `Remove ${item.name} from cart`) using the i18n system for screen reader accessibility, rather than a generic "Remove" label.
