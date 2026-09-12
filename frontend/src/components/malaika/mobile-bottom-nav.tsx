@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
+import { useCartDrawer } from '@/lib/cartDrawerStore';
 import { Home, ShoppingBag, Search, ShoppingCart, User } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -17,6 +18,7 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
   const userInitial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
+  const openCartDrawer = useCartDrawer((s) => s.openDrawer);
 
   return (
     <nav
@@ -52,6 +54,12 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
               style={{ color: active ? 'var(--brand-gold)' : 'var(--brand-text-muted)' }}
               aria-label={ariaLabel}
               aria-current={active ? 'page' : undefined}
+              onClick={(e) => {
+                if (item.name === 'Cart') {
+                  e.preventDefault();
+                  openCartDrawer();
+                }
+              }}
             >
               {active && (
                 <span
@@ -100,4 +108,3 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
     </nav>
   );
 }
-

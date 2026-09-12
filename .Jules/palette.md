@@ -9,3 +9,6 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+## 2024-05-19 - Consistent Mobile Cart Navigation
+**Learning:** Inconsistent navigation patterns between desktop and mobile break user expectations. Desktop cart opened as a slide-over drawer, while the mobile bottom nav cart icon forced a full page navigation, breaking the flow and adding friction.
+**Action:** Always ensure critical interactions (like opening a cart) behave consistently across breakpoints. I intercepted the Next.js `Link` navigation on mobile to trigger the global cart drawer state instead.
