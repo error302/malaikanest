@@ -73,11 +73,18 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
-            if response.status_code == 200:
-                parsed = urlparse(image_url)
-                filename = parsed.path.split("/")[-1] or "category_image.jpg"
-                return ContentFile(response.content, name=filename)
+            parsed = urlparse(image_url)
+            from django.conf import settings
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+            if parsed.scheme == "https" and parsed.hostname and parsed.hostname.lower() in allowed_hosts:
+                response = requests.get(image_url, timeout=10, allow_redirects=False)
+                if response.status_code == 200:
+                    filename = parsed.path.split("/")[-1] or "category_image.jpg"
+                    return ContentFile(response.content, name=filename)
         except Exception:
             logger.debug("Category image download failed from %s", image_url)
         return None
@@ -323,11 +330,18 @@ class AdminProductSerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
-            if response.status_code == 200:
-                parsed = urlparse(image_url)
-                filename = parsed.path.split("/")[-1] or default_name
-                return ContentFile(response.content, name=filename)
+            parsed = urlparse(image_url)
+            from django.conf import settings
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+            if parsed.scheme == "https" and parsed.hostname and parsed.hostname.lower() in allowed_hosts:
+                response = requests.get(image_url, timeout=10, allow_redirects=False)
+                if response.status_code == 200:
+                    filename = parsed.path.split("/")[-1] or default_name
+                    return ContentFile(response.content, name=filename)
         except Exception:
             logger.debug("Product image download failed from %s", url)
         return None
