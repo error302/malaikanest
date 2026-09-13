@@ -290,6 +290,14 @@ class Product(BaseModel):
     slug = models.SlugField(max_length=300, unique=True)
     sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
     description = models.TextField(blank=True)
+    fabric = models.TextField(
+        blank=True,
+        help_text="Fabric / material and care instructions shown on the product page",
+    )
+    whats_included = models.TextField(
+        blank=True,
+        help_text="What's included in the package (e.g. 'Pack of 3 onesies')",
+    )
     category = models.ForeignKey(
         Category, related_name="products", on_delete=models.PROTECT
     )

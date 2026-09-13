@@ -1,0 +1,282 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}Shopping Bag · Malaika Nest{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+  <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mb-6 sm:mb-8">
+    Shopping Bag
+    {% if items %}
+      <span class="text-lg font-sans font-normal text-stone-500">({{ items|length }} item{{ items|length|pluralize }})</span>
+    {% endif %}
+  </h1>
+
+  {% if not items %}
+    <!-- Empty Cart State -->
+    <div class="max-w-lg mx-auto py-16 text-center">
+      <div class="w-20 h-20 rounded-full bg-amber-50 text-[#8B6914] flex items-center justify-center mx-auto mb-6">
+        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+        </svg>
+      </div>
+      <h2 class="font-serif text-2xl font-bold text-[#2C1810] mb-3">Your Bag is Empty</h2>
+      <p class="text-stone-600 text-sm mb-8 leading-relaxed">
+        Explore our curated collection of soft baby rompers, toddler outfits, and essentials made with care.
+      </p>
+      <a href="{% url 'storefront:product_list' %}" class="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-[#2C1810] hover:bg-black text-[#F4EBE1] text-sm font-semibold tracking-wide transition-all shadow-sm">
+        Start Shopping
+      </a>
+    </div>
+  {% else %}
+    <!-- Free Shipping Progress Indicator -->
+    <div class="mb-8 p-4 rounded-2xl bg-white border border-[#EADBCE] shadow-sm">
+      {% if free_shipping_qualified %}
+        <div class="flex items-center gap-2 text-xs sm:text-sm font-semibold text-emerald-800">
+          <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span>You've unlocked <strong>FREE Delivery</strong> across Kenya!</span>
+        </div>
+      {% else %}
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-stone-700 font-medium">Add <strong>KES {{ free_shipping_remaining|floatformat:0 }}</strong> more for <strong>FREE Delivery</strong> across Kenya</span>
+            <span class="text-stone-500 font-semibold">Goal: KES 2,000</span>
+          </div>
+          <div class="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
+            <div class="bg-[#8B6914] h-2 rounded-full transition-all" style="width: {% widthratio subtotal free_shipping_threshold 100 %}%;"></div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Main Grid: Items + Summary -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Cart Items List (Col 8) -->
+      <div class="lg:col-span-8 bg-white rounded-3xl border border-[#EADBCE] overflow-hidden shadow-sm">
+        <ul class="divide-y divide-[#EADBCE]">
+          {% for item in items %}
+            <li class="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center justify-between">
+              
+              <!-- Item Image + Meta -->
+              <div class="flex items-center gap-4 flex-1 min-w-0">
+                <div class="w-20 h-20 rounded-2xl bg-stone-50 border border-[#EADBCE] overflow-hidden flex-shrink-0 relative">
+                  {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                  {% else %}
+                    <div class="w-full h-full flex items-center justify-center font-serif text-xl font-bold text-[#EADBCE]">MN</div>
+                  {% endif %}
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <a href="{% url 'storefront:product_detail' item.product.slug %}" class="font-serif text-base sm:text-lg font-bold text-[#2C1810] hover:text-[#8B6914] transition-colors line-clamp-1">
+                    {{ item.product.name }}
+                  </a>
+                  
+                  <div class="text-xs text-stone-500 mt-1 flex flex-wrap gap-2 items-center">
+                    {% if item.variant %}
+                      {% if item.variant.size %}
+                        <span class="px-2 py-0.5 rounded bg-stone-100 font-medium text-stone-700">Size: {{ item.variant.size }}</span>
+                      {% endif %}
+                      {% if item.variant.color %}
+                        <span class="px-2 py-0.5 rounded bg-stone-100 font-medium text-stone-700">Color: {{ item.variant.get_color_display|default:item.variant.color }}</span>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+
+                  <div class="text-sm font-bold text-[#2C1810] mt-2 sm:hidden">
+                    KES {{ item.unit_price|floatformat:0 }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item Controls: Quantity + Price + Remove -->
+              <div class="flex items-center justify-between w-full sm:w-auto gap-6">
+                <!-- Quantity form -->
+                <form action="{% url 'storefront:cart_update' %}" method="post" class="flex items-center border border-[#EADBCE] rounded-xl overflow-hidden bg-[#FAF7F2]">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ item.pk }}">
+                  <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}" class="px-2.5 py-1.5 text-stone-600 hover:bg-stone-200 transition-colors font-bold text-sm" aria-label="Decrease quantity">-</button>
+                  <span class="px-3 py-1.5 text-xs sm:text-sm font-bold text-[#2C1810] min-w-[28px] text-center">{{ item.quantity }}</span>
+                  <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}" class="px-2.5 py-1.5 text-stone-600 hover:bg-stone-200 transition-colors font-bold text-sm" aria-label="Increase quantity">+</button>
+                </form>
+
+                <!-- Line Total -->
+                <div class="text-right hidden sm:block min-w-[100px]">
+                  <div class="text-base font-bold text-[#2C1810]">
+                    KES {{ item.unit_price|floatformat:0 }}
+                  </div>
+                  {% if item.quantity > 1 %}
+                    <div class="text-[11px] text-stone-500">
+                      KES {{ item.unit_price|floatformat:0 }} each
+                    </div>
+                  {% endif %}
+                </div>
+
+                <!-- Remove button -->
+                <form action="{% url 'storefront:cart_remove' %}" method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ item.pk }}">
+                  <button type="submit" class="p-2 text-stone-400 hover:text-red-600 transition-colors" title="Remove item" aria-label="Remove item">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </form>
+              </div>
+
+            </li>
+          {% endfor %}
+        </ul>
+
+        <!-- Bottom Cart Actions -->
+        <div class="p-4 sm:p-6 bg-[#FAF7F2] border-t border-[#EADBCE] flex flex-wrap items-center justify-between gap-4">
+          <a href="{% url 'storefront:product_list' %}" class="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#8B6914] hover:underline">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Continue Shopping
+          </a>
+        </div>
+      </div>
+
+      <!-- Order Summary Card (Col 4) -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-6">
+          <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-4">
+            Order Summary
+          </h2>
+
+          <!-- Subtotal -->
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-stone-600">Subtotal</span>
+            <span class="font-semibold text-[#2C1810]">KES {{ subtotal|floatformat:0 }}</span>
+          </div>
+
+          <!-- Delivery Region Selector -->
+          <div class="space-y-2 pt-2 border-t border-[#EADBCE]">
+            <label for="delivery_region_select" class="text-xs font-bold uppercase tracking-wider text-stone-600 block">
+              Delivery Destination:
+            </label>
+            <form action="{% url 'storefront:cart_region' %}" method="post" id="regionForm">
+              {% csrf_token %}
+              <select 
+                name="delivery_region" 
+                id="delivery_region_select" 
+                onchange="document.getElementById('regionForm').submit()"
+                class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+              >
+                <option value="mombasa" {% if cart.delivery_region == 'mombasa' %}selected{% endif %}>
+                  Mombasa (Same Day) — {% if free_shipping_qualified %}FREE{% else %}KES 200{% endif %}
+                </option>
+                <option value="nairobi" {% if cart.delivery_region == 'nairobi' %}selected{% endif %}>
+                  Nairobi (1–2 Days) — {% if free_shipping_qualified %}FREE{% else %}KES 300{% endif %}
+                </option>
+                <option value="upcountry" {% if cart.delivery_region == 'upcountry' %}selected{% endif %}>
+                  Upcountry Kenya (2–3 Days) — {% if free_shipping_qualified %}FREE{% else %}KES 500{% endif %}
+                </option>
+              </select>
+            </form>
+            
+            <div class="flex items-center justify-between text-sm pt-1">
+              <span class="text-stone-600">Estimated Delivery</span>
+              <span class="font-semibold text-[#2C1810]">
+                {% if free_shipping_qualified or delivery_fee == 0 %}
+                  <span class="text-emerald-700 font-bold">FREE</span>
+                {% else %}
+                  KES {{ delivery_fee|floatformat:0 }}
+                {% endif %}
+              </span>
+            </div>
+          </div>
+
+          <!-- Coupon Code Section -->
+          <div class="pt-2 border-t border-[#EADBCE] space-y-3">
+            <label class="text-xs font-bold uppercase tracking-wider text-stone-600 block">
+              Promo / Gift Coupon:
+            </label>
+            {% if cart.coupon %}
+              <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-emerald-800">{{ cart.coupon.code }}</span>
+                  <span class="text-emerald-700 font-medium">(-KES {{ discount|floatformat:0 }})</span>
+                </div>
+                <form action="{% url 'storefront:cart_remove_coupon' %}" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="text-stone-400 hover:text-red-600 font-bold text-xs" title="Remove coupon" aria-label="Remove coupon">&times;</button>
+                </form>
+              </div>
+            {% else %}
+              <form action="{% url 'storefront:cart_apply_coupon' %}" method="post" class="flex gap-2">
+                {% csrf_token %}
+                <input 
+                  type="text" 
+                  name="code" 
+                  placeholder="Enter coupon code" 
+                  class="flex-1 bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3 py-2 text-xs uppercase focus:outline-none focus:border-[#8B6914]"
+                >
+                <button type="submit" class="px-4 py-2 rounded-xl bg-[#2C1810] text-[#F4EBE1] text-xs font-semibold hover:bg-black transition-colors">
+                  Apply
+                </button>
+              </form>
+            {% endif %}
+
+            {% if discount > 0 %}
+              <div class="flex items-center justify-between text-sm text-emerald-700 font-medium">
+                <span>Discount Applied</span>
+                <span>-KES {{ discount|floatformat:0 }}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Grand Total -->
+          <div class="pt-4 border-t-2 border-[#EADBCE] flex items-baseline justify-between">
+            <span class="font-serif text-lg font-bold text-[#2C1810]">Total</span>
+            <div class="text-right">
+              <span class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810]">
+                KES {{ total|floatformat:0 }}
+              </span>
+              <p class="text-[10px] text-stone-500">VAT inclusive where applicable</p>
+            </div>
+          </div>
+
+          <!-- Checkout CTA -->
+          <div class="pt-2">
+            <a 
+              href="{% url 'storefront:checkout' %}" 
+              class="w-full block py-4 px-6 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-center text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all"
+            >
+              Proceed to Checkout
+            </a>
+          </div>
+
+          <!-- Trust Badges -->
+          <div class="pt-4 border-t border-[#EADBCE] space-y-2 text-center text-xs text-stone-500">
+            <p class="font-semibold text-stone-700">Fast &amp; Safe Payments in Kenya</p>
+            <div class="flex items-center justify-center gap-2 text-[10px] font-bold text-stone-600">
+              <span class="px-2 py-1 bg-stone-100 rounded border border-stone-200">M-PESA STK</span>
+              <span class="px-2 py-1 bg-stone-100 rounded border border-stone-200">PAYPAL</span>
+              <span class="px-2 py-1 bg-stone-100 rounded border border-stone-200">BUY GOODS</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Help Card -->
+        <div class="bg-white rounded-3xl border border-[#EADBCE] p-5 text-center shadow-sm">
+          <p class="text-xs text-stone-600 mb-3">
+            Prefer to order directly via WhatsApp or need help with sizing?
+          </p>
+          <a 
+            href="{{ whatsapp_url }}" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-colors"
+          >
+            <span>Chat with Us on WhatsApp</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

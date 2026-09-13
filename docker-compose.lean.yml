@@ -1,0 +1,93 @@
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-kenya_ecom}
+      POSTGRES_USER: ${DB_USER:-kenya}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-kenya} -d $${POSTGRES_DB:-kenya_ecom}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-prod}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.prod}
+      DEBUG: ${DEBUG:-False}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      SIMPLE_JWT_SECRET: ${SIMPLE_JWT_SECRET:-${SECRET_KEY}}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-malaikanest.com,www.malaikanest.com,api.malaikanest.com,localhost,127.0.0.1,web}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://malaikanest.com,https://www.malaikanest.com,https://api.malaikanest.com}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://malaikanest.com,https://www.malaikanest.com,https://api.malaikanest.com}
+      DB_NAME: ${DB_NAME:-kenya_ecom}
+      DB_USER: ${DB_USER:-kenya}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      MPESA_ENV: ${MPESA_ENV:-live}
+      MPESA_TILL_NUMBER: ${MPESA_TILL_NUMBER:-3370347}
+      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-3104615}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      MPESA_PASSKEY: ${MPESA_PASSKEY:-}
+      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-https://api.malaikanest.com/api/v1/payments/mpesa/callback/}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-hello@malaikanest.com}
+      SERVER_EMAIL: ${SERVER_EMAIL:-alerts@malaikanest.com}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/config/settings/prod.py:/code/config/settings/prod.py:ro
+      - django_static:/app/staticfiles
+      - django_media:/app/media
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; req = urllib.request.Request('http://127.0.0.1:8000/api/health/', headers={'Host': 'api.malaikanest.com', 'X-Forwarded-Proto': 'https'}); urllib.request.urlopen(req, timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    # Keep the tunnel credential private (mode 0600) while running the
+    # container as the host account that owns it.
+    user: "1000:1003"
+    restart: unless-stopped
+    command: tunnel run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+volumes:
+  postgres_data:
+  django_static:
+  django_media:

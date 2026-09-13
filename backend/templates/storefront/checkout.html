@@ -1,0 +1,332 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}Secure Checkout · Malaika Nest{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+  <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mb-2">Checkout</h1>
+  <p class="text-xs sm:text-sm text-stone-500 mb-8">Enter your delivery details and choose your preferred Kenyan payment method.</p>
+
+  <form action="{% url 'storefront:checkout' %}" method="post" id="checkoutForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    {% csrf_token %}
+
+    <!-- Checkout Form (Col 7) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- 1. Customer & Contact Details -->
+      <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-4">
+        <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-[#8B6914] text-white text-xs flex items-center justify-center font-sans">1</span>
+          Customer & Contact Details
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="shipping_name" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+              Full Name <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              name="shipping_name" 
+              id="shipping_name" 
+              required
+              autocomplete="name"
+              placeholder="e.g. Amina Mohamed" 
+              value="{{ user.full_name|default:'' }}"
+              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+            >
+          </div>
+
+          <div>
+            <label for="shipping_phone" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+              Phone Number <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="tel" 
+              name="shipping_phone" 
+              id="shipping_phone" 
+              required
+              autocomplete="tel"
+              placeholder="07XX XXX XXX or +254..." 
+              value="{{ user.phone_number|default:'' }}"
+              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label for="guest_email" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+            Email Address {% if not user.is_authenticated %}<span class="text-red-500">*</span>{% endif %}
+          </label>
+          <input 
+            type="email" 
+            name="guest_email" 
+            id="guest_email" 
+            {% if not user.is_authenticated %}required{% endif %}
+            autocomplete="email"
+            placeholder="For order receipt and tracking updates" 
+            value="{{ user.email|default:'' }}"
+            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+          >
+        </div>
+      </div>
+
+      <!-- 2. Delivery Address -->
+      <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-4">
+        <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-[#8B6914] text-white text-xs flex items-center justify-center font-sans">2</span>
+          Delivery Address
+        </h2>
+
+        <div>
+          <label for="delivery_region" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+            Delivery Region <span class="text-red-500">*</span>
+          </label>
+          <select 
+            name="delivery_region" 
+            id="delivery_region" 
+            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+          >
+            <option value="mombasa" {% if default_region == 'mombasa' %}selected{% endif %}>Mombasa (Same Day Dispatch)</option>
+            <option value="nairobi" {% if default_region == 'nairobi' %}selected{% endif %}>Nairobi (1–2 Business Days)</option>
+            <option value="upcountry" {% if default_region == 'upcountry' %}selected{% endif %}>Upcountry / Other Kenya (2–3 Days)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="shipping_address" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+            Delivery Address / Estate / Apartment <span class="text-red-500">*</span>
+          </label>
+          <textarea 
+            name="shipping_address" 
+            id="shipping_address" 
+            rows="2" 
+            required
+            autocomplete="street-address"
+            placeholder="e.g. Nyali Links Rd, Palm Heights Apt 4B, or Westlands, Mpaka Rd"
+            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="shipping_city" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+              City / Town
+            </label>
+            <input 
+              type="text" 
+              name="shipping_city" 
+              id="shipping_city" 
+              autocomplete="address-level2"
+              placeholder="e.g. Mombasa, Nairobi, Nakuru" 
+              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+            >
+          </div>
+          <div>
+            <label for="shipping_county" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+              County
+            </label>
+            <input 
+              type="text" 
+              name="shipping_county" 
+              id="shipping_county" 
+              autocomplete="address-level1"
+              placeholder="e.g. Mombasa, Nairobi, Kiambu" 
+              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label for="notes" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+            Delivery Notes (Optional)
+          </label>
+          <input 
+            type="text" 
+            name="notes" 
+            id="notes" 
+            placeholder="Special delivery instructions or gate codes" 
+            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+          >
+        </div>
+
+        <!-- Gift Order Toggle -->
+        <div class="pt-2 border-t border-[#EADBCE]">
+          <label class="flex items-center gap-2 cursor-pointer text-xs sm:text-sm font-medium text-stone-700">
+            <input type="checkbox" name="is_gift" id="is_gift" onchange="document.getElementById('giftMessageContainer').classList.toggle('hidden', !this.checked)" class="rounded text-[#8B6914] focus:ring-[#8B6914]">
+            <span>This is a baby gift (include personalized handwritten note)</span>
+          </label>
+          <div id="giftMessageContainer" class="hidden mt-3">
+            <textarea 
+              name="gift_message" 
+              rows="2" 
+              placeholder="Write your loving message for the new parents or baby..." 
+              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Payment Method -->
+      <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-4">
+        <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-[#8B6914] text-white text-xs flex items-center justify-center font-sans">3</span>
+          Payment Method
+        </h2>
+
+        <div class="space-y-3">
+          <!-- Option 1: M-Pesa STK Push -->
+          <label class="block border border-[#EADBCE] rounded-2xl p-4 cursor-pointer hover:border-[#8B6914] transition-colors has-[:checked]:border-[#8B6914] has-[:checked]:bg-amber-50/40">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="payment_method" value="mpesa" checked onchange="document.getElementById('mpesaPhoneInput').classList.remove('hidden')" class="text-[#8B6914] focus:ring-[#8B6914]">
+                <div>
+                  <div class="text-sm font-bold text-[#2C1810] flex items-center gap-2">
+                    <span>M-Pesa STK Push</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">Instant PIN Prompt</span>
+                  </div>
+                  <p class="text-xs text-stone-500 mt-0.5">We will send an instant payment prompt directly to your Safaricom phone.</p>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-emerald-700">M-PESA</span>
+            </div>
+
+            <div id="mpesaPhoneInput" class="mt-3 pt-3 border-t border-amber-200/60 pl-6">
+              <label for="mpesa_phone" class="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
+                M-Pesa Phone Number for PIN Prompt:
+              </label>
+              <input 
+                type="tel" 
+                name="mpesa_phone" 
+                id="mpesa_phone" 
+                autocomplete="tel"
+                placeholder="07XX XXX XXX or 01XX XXX XXX" 
+                class="w-full sm:w-72 bg-white border border-[#EADBCE] rounded-xl px-3 py-1.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+              >
+              <p class="text-[11px] text-stone-500 mt-1">Leave empty to use your contact phone number entered above.</p>
+            </div>
+          </label>
+
+          <!-- Option 2: Buy Goods Till -->
+          <label class="block border border-[#EADBCE] rounded-2xl p-4 cursor-pointer hover:border-[#8B6914] transition-colors has-[:checked]:border-[#8B6914] has-[:checked]:bg-amber-50/40">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="payment_method" value="till" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" class="text-[#8B6914] focus:ring-[#8B6914]">
+                <div>
+                  <div class="text-sm font-bold text-[#2C1810]">
+                    Lipa na M-Pesa — Buy Goods Till <strong class="text-[#8B6914]">{{ till_number }}</strong>
+                  </div>
+                  <p class="text-xs text-stone-500 mt-0.5">Pay manually via Safaricom Sim Toolkit or M-Pesa App.</p>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-amber-700">TILL</span>
+            </div>
+          </label>
+
+          <!-- Option 3: PayPal -->
+          <label class="block border border-[#EADBCE] rounded-2xl p-4 cursor-pointer hover:border-[#8B6914] transition-colors has-[:checked]:border-[#8B6914] has-[:checked]:bg-amber-50/40">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="payment_method" value="paypal" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" class="text-[#8B6914] focus:ring-[#8B6914]">
+                <div>
+                  <div class="text-sm font-bold text-[#2C1810]">PayPal / International Cards</div>
+                  <p class="text-xs text-stone-500 mt-0.5">Pay safely using your PayPal wallet or credit card.</p>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-blue-700">PAYPAL</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Order Summary Recap (Col 5) -->
+    <div class="lg:col-span-5 space-y-6">
+      <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-6">
+        <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3">
+          Your Order
+        </h2>
+
+        <!-- Items Mini List -->
+        <ul class="divide-y divide-[#EADBCE] max-h-72 overflow-y-auto pr-1">
+          {% for item in items %}
+            <li class="py-3 flex items-center justify-between gap-3 text-xs sm:text-sm">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-12 h-12 rounded-xl bg-stone-50 border border-[#EADBCE] overflow-hidden flex-shrink-0">
+                  {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                  {% else %}
+                    <div class="w-full h-full flex items-center justify-center font-serif text-xs font-bold text-[#EADBCE]">MN</div>
+                  {% endif %}
+                </div>
+                <div class="min-w-0">
+                  <p class="font-medium text-[#2C1810] truncate">{{ item.product.name }}</p>
+                  <p class="text-stone-500 text-[11px]">
+                    Qty: {{ item.quantity }}
+                    {% if item.variant %} · {{ item.variant.size }}{% endif %}
+                  </p>
+                </div>
+              </div>
+              <span class="font-semibold text-[#2C1810] flex-shrink-0">
+                KES {{ item.unit_price|floatformat:0 }}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <!-- Price Breakdown -->
+        <div class="space-y-2 pt-3 border-t border-[#EADBCE] text-sm">
+          <div class="flex justify-between text-stone-600">
+            <span>Subtotal</span>
+            <span class="font-medium text-[#2C1810]">KES {{ subtotal|floatformat:0 }}</span>
+          </div>
+          
+          <div class="flex justify-between text-stone-600">
+            <span>Estimated Delivery</span>
+            <span class="font-medium text-[#2C1810]">
+              {% if free_shipping_qualified or delivery_fee == 0 %}
+                <span class="text-emerald-700 font-bold">FREE</span>
+              {% else %}
+                KES {{ delivery_fee|floatformat:0 }}
+              {% endif %}
+            </span>
+          </div>
+
+          {% if discount > 0 %}
+            <div class="flex justify-between text-emerald-700 font-medium">
+              <span>Coupon Discount</span>
+              <span>-KES {{ discount|floatformat:0 }}</span>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Grand Total -->
+        <div class="pt-4 border-t-2 border-[#EADBCE] flex items-baseline justify-between">
+          <span class="font-serif text-lg font-bold text-[#2C1810]">Total Due</span>
+          <div class="text-right">
+            <span class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810]">
+              KES {{ total|floatformat:0 }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="w-full py-4 px-6 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-center text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all"
+        >
+          Place Order & Pay
+        </button>
+
+        <!-- Trust Note -->
+        <div class="text-center text-[11px] text-stone-500 space-y-1">
+          <p>256-Bit Encrypted Secure Checkout</p>
+          <p>Questions? Call / WhatsApp: <strong class="text-stone-700">+254 726 771 321</strong></p>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

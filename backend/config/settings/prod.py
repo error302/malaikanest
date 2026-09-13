@@ -18,36 +18,27 @@ if _vps_ip:
 
 ALLOWED_HOSTS = sorted(set(_env_hosts or _default_hosts) | {"127.0.0.1", "localhost"})
 
-# Redis cache configuration for high scalability
-REDIS_URL = os.getenv(
-    "REDIS_URL", os.getenv("REDIS_TLS_URL", "redis://127.0.0.1:6379/0")
-)
-
-# Use Django's built-in Redis cache backend
+# Local-memory cache configuration for lean single-process deployment
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-        "KEY_PREFIX": "malaika",
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "malaika_default",
         "TIMEOUT": 300,
     },
     "banners": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "malaika_banners",
         "TIMEOUT": 3600,
-        "KEY_PREFIX": "malaika_banners",
     },
     "categories": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "malaika_categories",
         "TIMEOUT": 3600,
-        "KEY_PREFIX": "malaika_categories",
     },
     "products": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "malaika_products",
         "TIMEOUT": 300,
-        "KEY_PREFIX": "malaika_products",
     },
 }
 
@@ -172,9 +163,14 @@ else:
 
 enforce_postgresql_only(DATABASES, context="prod")
 
-DATABASE_ROUTERS = configure_read_replica(DATABASES)
+DATABASE_ROUTERS = []
 
 SECURE_SSL_REDIRECT = True
+SECURE_REDIRECT_EXEMPT = [
+    r"^api/health/?$",
+    r"^api/ready/?$",
+    r"^health/?$",
+]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SIMPLE_JWT["AUTH_COOKIE_SECURE"] = True

@@ -1,0 +1,245 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Malaika Nest · Premium Baby & Children's Clothing Kenya{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Boutique baby and children's clothing, nursery gear, and newborn essentials delivered across Kenya with M-Pesa and PayPal.{% endblock %}">
+  
+  <!-- Tailwind CSS & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --brand-brown-dark: #2C1810;
+      --brand-brown: #3D2B1F;
+      --brand-gold: #8B6914;
+      --brand-gold-soft: #C9A96E;
+      --brand-terra: #C96E4B;
+      --brand-warm: #F4EBE1;
+      --brand-bg: #FAF7F2;
+      --brand-border: #EADBCE;
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--brand-bg);
+      color: var(--brand-brown-dark);
+    }
+    .font-serif {
+      font-family: var(--font-serif);
+    }
+    .bg-brand-brown-dark { background-color: var(--brand-brown-dark); }
+    .bg-brand-brown { background-color: var(--brand-brown); }
+    .bg-brand-gold { background-color: var(--brand-gold); }
+    .bg-brand-warm { background-color: var(--brand-warm); }
+    .text-brand-gold { color: var(--brand-gold); }
+    .text-brand-terra { color: var(--brand-terra); }
+    .border-brand { border-color: var(--brand-border); }
+  </style>
+    <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
+  <link rel="icon" type="image/png" href="{% static 'img/favicon-32x32.png' %}" sizes="32x32">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
+
+  <!-- Skip Link -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-full focus:bg-[#2C1810] focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">Skip to main content</a>
+
+  <!-- Top Announcement Bar -->
+  <div class="bg-[#2C1810] text-[#F4EBE1] text-[11px] sm:text-xs py-2 px-4 text-center font-medium tracking-wide">
+    Free delivery across Kenya for orders over KES 2,000 · Mombasa Same-Day Delivery · Lipa na M-Pesa & PayPal
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-[#EADBCE] shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <a href="{% url 'storefront:home' %}" class="flex items-center gap-2.5 flex-shrink-0 group" aria-label="Malaika Nest — Home">
+        <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-[#EADBCE] shadow-sm overflow-hidden flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
+          <img src="{% static 'img/logo-mark.png' %}" alt="Malaika Nest logo" width="48" height="28" fetchpriority="high" class="w-full h-full object-contain p-0.5">
+        </span>
+        <span class="flex flex-col">
+          <span class="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#2C1810] leading-tight">Malaika Nest</span>
+          <span class="text-[9px] uppercase tracking-[0.2em] text-[#8B6914] font-semibold">Baby & Children</span>
+        </span>
+      </a>
+
+      <!-- Desktop Search -->
+      <div class="hidden md:flex flex-1 max-w-md mx-4">
+        <form action="{% url 'storefront:product_list' %}" method="get" class="relative w-full" role="search">
+          <label for="desktop-search" class="sr-only">Search products</label>
+          <input 
+            type="search" 
+            name="q" 
+            id="desktop-search"
+            value="{{ search_query|default:'' }}"
+            placeholder="Search rompers, dresses, essentials..." 
+            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-full py-2 pl-4 pr-10 text-xs sm:text-sm focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914] transition-all"
+          >
+          <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#8B6914]" aria-label="Search">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- Navigation & Cart -->
+      <div class="flex items-center gap-3 sm:gap-5">
+        <nav class="hidden lg:flex items-center gap-6 text-xs sm:text-sm font-medium text-[#3D2B1F]">
+          <a href="{% url 'storefront:home' %}" class="hover:text-[#8B6914] transition-colors">Home</a>
+          <a href="{% url 'storefront:product_list' %}" class="hover:text-[#8B6914] transition-colors">Shop All</a>
+          {% for cat in nav_categories|slice:":4" %}
+            <a href="{% url 'storefront:category_detail' category_slug=cat.slug %}" class="hover:text-[#8B6914] transition-colors">{{ cat.name }}</a>
+          {% endfor %}
+        </nav>
+
+        <!-- Cart Icon -->
+        <a href="{% url 'storefront:cart' %}" class="relative p-2 rounded-full hover:bg-[#FAF7F2] text-[#2C1810] transition-colors flex items-center gap-1.5" aria-label="Shopping Cart, {{ cart_count|default:'0' }} items">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+          <span class="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full text-[11px] font-bold bg-[#C96E4B] text-white">
+            {{ cart_count|default:"0" }}
+          </span>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Mobile Search Row -->
+    <div class="md:hidden px-4 pb-3">
+      <form action="{% url 'storefront:product_list' %}" method="get" class="relative w-full" role="search">
+        <label for="mobile-search" class="sr-only">Search products</label>
+        <input 
+          type="search" 
+          name="q" 
+          id="mobile-search"
+          value="{{ search_query|default:'' }}"
+          placeholder="Search products..." 
+          class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-full py-1.5 pl-4 pr-10 text-xs focus:outline-none focus:border-[#8B6914]"
+        >
+        <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#8B6914]" aria-label="Search">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Flash Messages -->
+  {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4" role="status" aria-live="polite">
+      {% for message in messages %}
+        <div class="p-3.5 rounded-xl text-sm font-medium mb-2 {% if message.tags == 'error' %}bg-rose-50 text-rose-800 border border-rose-200{% elif message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Main Content -->
+  <main id="main-content" class="flex-1" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Floating WhatsApp Action (desktop only — mobile uses the bottom bar) -->
+  <a 
+    href="{{ whatsapp_url }}" 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    class="hidden md:flex fixed bottom-6 right-6 z-50 items-center gap-2 bg-[#25D366] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-medium text-xs sm:text-sm"
+    aria-label="Chat on WhatsApp"
+  >
+    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.101.005.242-.039.378.29.144.348.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.392-12.416c-5.518 0-10 4.482-10 10 0 1.911.536 3.696 1.464 5.222l-1.554 5.679 5.867-1.539c1.47.808 3.16 1.267 4.954 1.267 5.518 0 10-4.482 10-10 0-5.518-4.482-10-10-10z"/>
+    </svg>
+    <span>Order on WhatsApp</span>
+  </a>
+
+  <!-- Footer -->
+  <footer class="bg-[#2C1810] text-[#FAF7F2] border-t border-[#3D2B1F] mt-16 pt-12 pb-28 md:pb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div class="md:col-span-2">
+          <div class="flex items-center gap-2.5 mb-3">
+            <span class="w-14 h-14 rounded-xl bg-white overflow-hidden flex items-center justify-center flex-shrink-0">
+              <img src="{% static 'img/logo-mark.png' %}" alt="Malaika Nest logo" width="56" height="32" loading="lazy" class="w-full h-full object-contain p-0.5">
+            </span>
+            <span class="font-serif text-2xl font-bold tracking-tight text-white">Malaika Nest</span>
+          </div>
+          <p class="text-sm text-gray-300 max-w-sm leading-relaxed mb-4">
+            Curated baby and children's clothing, soft cotton essentials, nursery gear, and gifts. Chosen with love, delivered with care across Kenya.
+          </p>
+          <div class="text-xs text-[#C9A96E] space-y-1">
+            <p>Mombasa, Kenya · Same Day Delivery Available</p>
+            <p>WhatsApp &amp; Calls: +254 726 771 321</p>
+            <p>Email: hello@malaikanest.com</p>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-serif text-base font-semibold text-white mb-3 tracking-wide">Quick Links</h4>
+          <ul class="space-y-2 text-xs text-gray-300">
+            <li><a href="{% url 'storefront:home' %}" class="hover:text-amber-300 transition-colors">Home</a></li>
+            <li><a href="{% url 'storefront:product_list' %}" class="hover:text-amber-300 transition-colors">All Products</a></li>
+            <li><a href="/cart/" class="hover:text-amber-300 transition-colors">Shopping Cart</a></li>
+            <li><a href="{% url 'storefront:delivery_returns' %}" class="hover:text-amber-300 transition-colors">Delivery &amp; Returns</a></li>
+            <li><a href="{% url 'storefront:contact' %}" class="hover:text-amber-300 transition-colors">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-serif text-base font-semibold text-white mb-3 tracking-wide">Safe Kenyan Payments</h4>
+          <p class="text-xs text-gray-300 leading-relaxed mb-3">
+            Instant STK Push to your phone, Buy Goods Till <strong class="text-white">3370347</strong>, and secure PayPal.
+          </p>
+          <div class="flex flex-wrap gap-2 text-[10px] font-semibold text-white">
+            <span class="px-2 py-1 bg-emerald-900/60 rounded border border-emerald-600">M-PESA</span>
+            <span class="px-2 py-1 bg-blue-900/60 rounded border border-blue-600">PAYPAL</span>
+            <span class="px-2 py-1 bg-amber-900/60 rounded border border-amber-600">BUY GOODS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-[#3D2B1F] pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-2">
+        <p>© 2026 Malaika Nest. All rights reserved.</p>
+        <p>Built for Kenyan mothers, fathers, and families.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-t border-[#EADBCE] shadow-[0_-2px_10px_rgba(44,24,16,0.06)]" style="padding-bottom: env(safe-area-inset-bottom);" aria-label="Mobile navigation">
+    <div class="grid grid-cols-4 h-16">
+      <a href="{% url 'storefront:product_list' %}" class="flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-[#3D2B1F] hover:text-[#8B6914] transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+        <span>Shop</span>
+      </a>
+      <a href="{% url 'storefront:category_list' %}" class="flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-[#3D2B1F] hover:text-[#8B6914] transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"></path></svg>
+        <span>Categories</span>
+      </a>
+      <a href="{% url 'storefront:cart' %}" class="relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-[#3D2B1F] hover:text-[#8B6914] transition-colors">
+        <span class="relative">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+          <span class="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[16px] h-4 px-0.5 rounded-full text-[9px] font-bold bg-[#C96E4B] text-white">{{ cart_count|default:"0" }}</span>
+        </span>
+        <span>Cart</span>
+      </a>
+      <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 transition-colors">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.101.005.242-.039.378.29.144.348.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.392-12.416c-5.518 0-10 4.482-10 10 0 1.911.536 3.696 1.464 5.222l-1.554 5.679 5.867-1.539c1.47.808 3.16 1.267 4.954 1.267 5.518 0 10-4.482 10-10 0-5.518-4.482-10-10-10z"/>
+        </svg>
+        <span>WhatsApp</span>
+      </a>
+    </div>
+  </nav>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

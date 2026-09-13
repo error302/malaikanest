@@ -1,0 +1,247 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}Order {{ order.receipt_number }} Status · Malaika Nest{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+  
+  <!-- Header Card -->
+  <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 sm:p-8 shadow-sm mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EADBCE] pb-6">
+      <div>
+        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Order Confirmation</span>
+        <h1 class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810] mt-1">
+          Order #{{ order.receipt_number }}
+        </h1>
+        <p class="text-xs text-stone-500 mt-1">
+          Placed on {{ order.created_at|date:"F j, Y, g:i a" }}
+        </p>
+      </div>
+
+      <div id="statusBadgeContainer" role="status" aria-live="polite">
+        {% if is_paid %}
+          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            PAID · {{ order.get_status_display|upper }}
+          </span>
+        {% elif order.status == 'cancelled' %}
+          <span class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300">
+            CANCELLED
+          </span>
+        {% else %}
+          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+            PAYMENT PENDING
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Live STK Push Waiting Box (Visible when STK is active & not yet paid) -->
+    <div id="stkWaitingBox" role="status" aria-live="polite" class="{% if not show_stk_modal or is_paid %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-amber-50 border border-amber-200">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="font-serif text-lg font-bold text-amber-900">M-Pesa PIN Prompt Sent</h3>
+          <p class="text-xs sm:text-sm text-amber-800 mt-1">
+            Please check your phone screen. An M-Pesa prompt has been sent to enter your PIN for <strong>KES {{ order.total|floatformat:0 }}</strong>.
+          </p>
+          <p class="text-xs text-amber-700 mt-2">
+            This page will automatically update once your payment is confirmed.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Confirmed Banner (Shows when paid) -->
+    <div id="paidBanner" role="status" aria-live="polite" class="{% if not is_paid %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-emerald-50 border border-emerald-200">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-serif text-lg font-bold text-emerald-900">Payment Received Successfully!</h3>
+          <p class="text-xs sm:text-sm text-emerald-800 mt-1">
+            Thank you! Your order is being packed for dispatch.
+            {% if order.mpesa_receipt_number %}
+              <br><span class="font-mono text-xs font-bold text-emerald-900">M-Pesa Receipt: {{ order.mpesa_receipt_number }}</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual Till Instructions (Shown if payment is pending) -->
+    <div id="tillInstructionsBox" class="{% if is_paid %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE] space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-serif text-lg font-bold text-[#2C1810] flex items-center gap-2">
+          Pay via Buy Goods Till
+        </h3>
+        <span class="text-xs font-bold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full">
+          Till Number: {{ till_number }}
+        </span>
+      </div>
+
+      <p class="text-xs sm:text-sm text-stone-600">
+        If the prompt did not appear on your phone, you can pay manually using Safaricom M-Pesa:
+      </p>
+
+      <ol class="list-decimal list-inside text-xs sm:text-sm text-stone-700 space-y-1.5 pl-1 font-medium">
+        <li>Open Safaricom M-Pesa menu or M-Pesa App</li>
+        <li>Select <strong>Lipa na M-Pesa</strong> &rarr; <strong>Buy Goods and Services</strong></li>
+        <li>Enter Till Number: <strong class="text-[#8B6914] text-base">{{ till_number }}</strong> (Malaika Nest)</li>
+        <li>Enter Amount: <strong class="text-[#2C1810]">KES {{ order.total|floatformat:0 }}</strong></li>
+        <li>Enter your M-Pesa PIN and confirm</li>
+      </ol>
+
+      <div class="pt-2 flex flex-col sm:flex-row gap-3 items-center">
+        <a 
+          href="{{ whatsapp_order_link }}" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="w-full sm:w-auto px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold text-center transition-colors flex items-center justify-center gap-2"
+        >
+          <span>Confirm Payment via WhatsApp</span>
+        </a>
+        <button 
+          type="button" 
+          onclick="window.location.reload()" 
+          class="w-full sm:w-auto px-6 py-2.5 rounded-full border border-[#EADBCE] text-stone-700 hover:bg-stone-50 text-xs font-semibold text-center transition-colors"
+        >
+          Refresh Status
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Order Breakdown Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    
+    <!-- Items Ordered -->
+    <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-4">
+      <h2 class="font-serif text-lg font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3">
+        Items Ordered
+      </h2>
+
+      <ul class="divide-y divide-[#EADBCE]">
+        {% for item in items %}
+          <li class="py-3 flex items-center justify-between text-xs sm:text-sm gap-3">
+            <div>
+              <p class="font-medium text-[#2C1810]">{{ item.product.name }}</p>
+              <p class="text-stone-500 text-[11px]">
+                Qty: {{ item.quantity }} · KES {{ item.price|floatformat:0 }}
+                {% if item.variant_details %} · {{ item.variant_details.size_label|default:item.variant_details.size }}{% endif %}
+              </p>
+            </div>
+            <span class="font-semibold text-[#2C1810]">
+              KES {{ item.total_price|floatformat:0 }}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <div class="pt-3 border-t border-[#EADBCE] space-y-1.5 text-xs sm:text-sm">
+        <div class="flex justify-between text-stone-600">
+          <span>Subtotal</span>
+          <span>KES {{ order.subtotal|floatformat:0 }}</span>
+        </div>
+        <div class="flex justify-between text-stone-600">
+          <span>Delivery ({{ order.get_delivery_region_display }})</span>
+          <span>{% if order.delivery_fee == 0 %}FREE{% else %}KES {{ order.delivery_fee|floatformat:0 }}{% endif %}</span>
+        </div>
+        {% if order.discount_amount > 0 %}
+          <div class="flex justify-between text-emerald-700 font-medium">
+            <span>Discount</span>
+            <span>-KES {{ order.discount_amount|floatformat:0 }}</span>
+          </div>
+        {% endif %}
+        <div class="pt-2 border-t border-[#EADBCE] flex justify-between font-serif text-base font-bold text-[#2C1810]">
+          <span>Total</span>
+          <span>KES {{ order.total|floatformat:0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery & Contact Info -->
+    <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-4">
+      <h2 class="font-serif text-lg font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3">
+        Delivery Details
+      </h2>
+
+      <div class="text-xs sm:text-sm space-y-3 text-stone-700">
+        <div>
+          <span class="text-stone-400 block text-[11px] uppercase tracking-wider font-bold">Recipient:</span>
+          <p class="font-medium">{{ order.shipping_first_name }} {{ order.shipping_last_name|default:'' }}</p>
+        </div>
+
+        <div>
+          <span class="text-stone-400 block text-[11px] uppercase tracking-wider font-bold">Phone:</span>
+          <p class="font-medium">{{ order.shipping_phone }}</p>
+        </div>
+
+        <div>
+          <span class="text-stone-400 block text-[11px] uppercase tracking-wider font-bold">Destination:</span>
+          <p class="font-medium">{{ order.shipping_address }}</p>
+          <p class="text-stone-500">{{ order.shipping_city }}, {{ order.get_delivery_region_display }}</p>
+        </div>
+
+        {% if order.is_gift and order.gift_message %}
+          <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+            <span class="text-amber-800 font-bold block mb-1">Gift Message:</span>
+            <p class="text-amber-900 italic">"{{ order.gift_message }}"</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pt-4 border-t border-[#EADBCE] space-y-2">
+        <a 
+          href="{% url 'storefront:product_list' %}" 
+          class="w-full block py-3 rounded-full border border-[#EADBCE] text-stone-700 text-center text-xs font-semibold hover:bg-stone-50 transition-colors"
+        >
+          Continue Shopping
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Polling Script for Live Payment Status -->
+{% if not is_paid %}
+<script>
+  (function() {
+    const pollUrl = "{% url 'storefront:order_status_poll' order.receipt_number %}?token={{ checkout_token }}";
+    let pollInterval = setInterval(checkStatus, 3000);
+
+    function checkStatus() {
+      fetch(pollUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data.is_paid) {
+            clearInterval(pollInterval);
+            document.getElementById('stkWaitingBox').classList.add('hidden');
+            document.getElementById('tillInstructionsBox').classList.add('hidden');
+            document.getElementById('paidBanner').classList.remove('hidden');
+            document.getElementById('statusBadgeContainer').innerHTML = `
+              <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                PAID · ${data.status_display.toUpperCase()}
+              </span>
+            `;
+          }
+        })
+        .catch(err => console.log('Poll check error:', err));
+    }
+  })();
+</script>
+{% endif %}
+{% endblock %}

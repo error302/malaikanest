@@ -1,0 +1,163 @@
+{% extends "storefront/base.html" %}
+{% load static %}
+
+{% block title %}Malaika Nest · Premium Baby & Children's Clothing Kenya{% endblock %}
+
+{% block content %}
+  <!-- Hero Section -->
+  <section class="relative bg-[#3D2B1F] text-white overflow-hidden">
+    <div class="absolute inset-0">
+      <img src="{% static 'img/hero.jpg' %}" alt="Baby playing with toys on a soft quilt" width="1920" height="1280" fetchpriority="high" class="w-full h-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-r from-[#2C1810]/95 via-[#2C1810]/80 to-[#2C1810]/40"></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-20 sm:py-28">
+      <div class="max-w-2xl">
+        <span class="inline-block text-xs uppercase tracking-[0.25em] text-[#C9A96E] font-semibold mb-3">Malaika Nest · Mombasa, Kenya</span>
+        <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-4 text-white">
+          Baby essentials delivered in <span class="italic font-normal text-[#C9A96E]">Mombasa &amp; across Kenya.</span>
+        </h1>
+        <p class="text-sm sm:text-base text-gray-200 leading-relaxed mb-8 max-w-lg">
+          Soft cotton rompers, nursery essentials, and newborn gifts — same-day dispatch in Mombasa, 1–3 days countrywide, with instant M-Pesa checkout.
+        </p>
+        <div class="flex flex-wrap items-center gap-3.5">
+          <a href="{% url 'storefront:product_list' %}" class="px-7 py-3 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-xs sm:text-sm font-semibold tracking-wider uppercase transition-all shadow-md">
+            Shop New Arrivals
+          </a>
+          <a href="#categories" class="px-6 py-3 rounded-full border border-white/60 hover:bg-white/10 text-white text-xs sm:text-sm font-semibold tracking-wider uppercase transition-all">
+            Shop by Category
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Badges Bar -->
+  <section class="bg-white border-b border-[#EADBCE] py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="p-2">
+          <p class="text-xs sm:text-sm font-bold text-[#2C1810]">Fast Delivery</p>
+          <p class="text-[11px] text-gray-500">Mombasa Same-Day · Nairobi 1-2 Days</p>
+        </div>
+        <div class="p-2">
+          <p class="text-xs sm:text-sm font-bold text-[#2C1810]">Lipa na M-Pesa</p>
+          <p class="text-[11px] text-gray-500">Instant STK Prompt or Buy Goods 3370347</p>
+        </div>
+        <div class="p-2">
+          <p class="text-xs sm:text-sm font-bold text-[#2C1810]">Skin-Friendly Fabrics</p>
+          <p class="text-[11px] text-gray-500">Soft, breathable cottons — checked before dispatch</p>
+        </div>
+        <div class="p-2">
+          <p class="text-xs sm:text-sm font-bold text-[#2C1810]">Direct Support</p>
+          <p class="text-[11px] text-gray-500">WhatsApp assistance anytime</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Shop by Category Section -->
+  <section id="categories" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Curated Selections</span>
+        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810] mt-1">Shop by Category</h2>
+      </div>
+      <a href="{% url 'storefront:product_list' %}" class="text-xs sm:text-sm font-semibold text-[#8B6914] hover:underline">View All →</a>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      {% for cat in categories %}
+        <a href="{% url 'storefront:category_detail' category_slug=cat.slug %}" class="group bg-white rounded-2xl p-4 border border-[#EADBCE] hover:border-[#8B6914] hover:shadow-md transition-all text-center flex flex-col items-center">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#FAF7F2] border border-[#EADBCE] flex items-center justify-center font-serif text-xl font-bold text-[#8B6914] group-hover:bg-[#8B6914] group-hover:text-white transition-colors mb-3">
+            {{ cat.name|slice:":1" }}
+          </div>
+          <span class="text-xs sm:text-sm font-semibold text-[#2C1810] group-hover:text-[#8B6914] transition-colors leading-tight">
+            {{ cat.name }}
+          </span>
+        </a>
+      {% empty %}
+        <div class="col-span-full text-center py-6 text-sm text-gray-500">Categories loading...</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Shop by Age Section -->
+  <section class="bg-white border-y border-[#EADBCE] py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-lg mx-auto mb-8">
+        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Every Stage of Growth</span>
+        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810] mt-1">Shop by Age</h2>
+      </div>
+
+      <div class="flex items-center justify-center flex-wrap gap-2.5 sm:gap-3">
+        {% for age in age_groups %}
+          <a href="{% url 'storefront:product_list' %}?age={{ age.slug }}" class="px-4 py-2 rounded-full bg-[#FAF7F2] hover:bg-[#8B6914] text-[#2C1810] hover:text-white border border-[#EADBCE] text-xs font-semibold transition-all">
+            {{ age.label }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products Section -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Boutique Quality</span>
+        <h2 class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810] mt-1">Featured Essentials</h2>
+      </div>
+      <a href="{% url 'storefront:product_list' %}" class="text-xs sm:text-sm font-semibold text-[#8B6914] hover:underline">All Products →</a>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+      {% for product in featured_products %}
+        <div class="bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-lg transition-all flex flex-col group">
+          <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="block relative aspect-square bg-[#FAF7F2] overflow-hidden">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            {% elif product.images.first %}
+              <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            {% else %}
+              <div class="w-full h-full flex items-center justify-center font-serif text-3xl font-bold text-[#EADBCE]">MN</div>
+            {% endif %}
+
+            {% if product.stock <= 0 %}
+              <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-800 text-white">Out of stock</span>
+            {% elif product.stock <= 3 %}
+              <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C96E4B] text-white">Low stock</span>
+            {% endif %}
+          </a>
+
+          <div class="p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <p class="text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">{{ product.category.name }}</p>
+              <h3 class="font-medium text-xs sm:text-sm text-[#2C1810] line-clamp-2 mb-2 group-hover:text-[#8B6914] transition-colors">
+                <a href="{% url 'storefront:product_detail' slug=product.slug %}">{{ product.name }}</a>
+              </h3>
+            </div>
+            <div>
+              <div class="flex items-center justify-between pt-2 border-t border-[#FAF7F2]">
+                <div>
+                  <span class="text-xs sm:text-sm font-bold text-[#2C1810]">KES {{ product.price|floatformat:"0" }}</span>
+                  {% if product.compare_price %}
+                    <span class="text-[10px] text-gray-400 line-through ml-1">KES {{ product.compare_price|floatformat:"0" }}</span>
+                  {% endif %}
+                </div>
+                <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="text-[11px] font-semibold text-[#8B6914] hover:text-[#A37B18]">
+                  View →
+                </a>
+              </div>
+              <p class="text-[10px] text-gray-400 mt-1.5">Mombasa same-day · Free delivery over KES 2,000</p>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-span-full bg-white rounded-2xl p-12 text-center border border-[#EADBCE]">
+          <p class="font-serif text-xl font-bold text-[#2C1810] mb-2">New arrivals are being added</p>
+          <p class="text-xs sm:text-sm text-gray-500 mb-6 max-w-md mx-auto leading-relaxed">We're stocking the shelves right now. Chat with us on WhatsApp for today's available stock — we'll happily send photos, sizes, and prices.</p>
+          <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all">Chat on WhatsApp</a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

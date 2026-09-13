@@ -1,0 +1,35 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}Contact Us · Malaika Nest{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+  <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mb-2">Contact Us</h1>
+  <p class="text-sm text-gray-500 mb-10">We reply fastest on WhatsApp — but calls and email work too.</p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+    <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-sm transition-all">
+      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-2">WhatsApp</p>
+      <p class="text-sm font-semibold text-[#2C1810]">+254 726 771 321</p>
+      <p class="text-[11px] text-gray-500 mt-1">Fastest replies · 8am–8pm daily</p>
+    </a>
+    <a href="tel:+254726771321" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-sm transition-all">
+      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-2">Call</p>
+      <p class="text-sm font-semibold text-[#2C1810]">+254 726 771 321</p>
+      <p class="text-[11px] text-gray-500 mt-1">Order questions &amp; sizing help</p>
+    </a>
+    <a href="mailto:hello@malaikanest.com" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-sm transition-all">
+      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-2">Email</p>
+      <p class="text-sm font-semibold text-[#2C1810]">hello@malaikanest.com</p>
+      <p class="text-[11px] text-gray-500 mt-1">Bulk &amp; gift enquiries</p>
+    </a>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-[#EADBCE] p-6 sm:p-8">
+    <h2 class="font-serif text-xl font-bold text-[#2C1810] mb-3">Visit or Collect</h2>
+    <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+      Malaika Nest is based in <strong>Mombasa, Kenya</strong>. Same-day and next-day delivery is available across Mombasa island and county; free pickup by arrangement is possible — just message us on WhatsApp before you order and we'll set it up.
+    </p>
+  </div>
+</div>
+{% endblock %}

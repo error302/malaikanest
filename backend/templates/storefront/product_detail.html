@@ -1,0 +1,305 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}{{ product.name }} — Malaika Nest{% endblock %}
+{% block meta_description %}{{ product.description|striptags|truncatewords:25 }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+
+  <!-- Breadcrumbs -->
+  <div class="text-xs text-gray-500 mb-6 flex items-center gap-1.5">
+    <a href="{% url 'storefront:home' %}" class="hover:text-[#8B6914]">Home</a>
+    <span>/</span>
+    <a href="{% url 'storefront:product_list' %}" class="hover:text-[#8B6914]">Products</a>
+    <span>/</span>
+    <a href="{% url 'storefront:category_detail' category_slug=product.category.slug %}" class="hover:text-[#8B6914]">{{ product.category.name }}</a>
+    <span>/</span>
+    <span class="text-[#2C1810] font-medium truncate max-w-xs">{{ product.name }}</span>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+    
+    <!-- Image Gallery -->
+    <div class="space-y-4">
+      <div class="aspect-square bg-white rounded-3xl overflow-hidden border border-[#EADBCE] shadow-sm relative">
+        {% if product.image %}
+          <img id="mainProductImage" src="{{ product.image.url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
+        {% elif product.images.first %}
+          <img id="mainProductImage" src="{{ product.images.first.image.url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center font-serif text-5xl font-bold text-[#EADBCE]">MN</div>
+        {% endif %}
+
+        {% if product.stock <= 0 %}
+          <div class="absolute top-4 right-4 bg-gray-900/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur">
+            Out of Stock
+          </div>
+        {% elif product.is_low_stock %}
+          <div class="absolute top-4 right-4 bg-[#C96E4B] text-white text-xs font-bold px-3 py-1 rounded-full">
+            Only {{ product.stock }} left
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Thumbnails -->
+      {% if product.images.all|length > 1 %}
+        <div class="flex gap-2 overflow-x-auto pb-2">
+          {% if product.image %}
+            <button 
+              type="button" 
+              onclick="document.getElementById('mainProductImage').src='{{ product.image.url }}'" 
+              class="w-16 h-16 rounded-xl overflow-hidden border-2 border-[#8B6914] flex-shrink-0 bg-white"
+            >
+              <img src="{{ product.image.url }}" class="w-full h-full object-cover">
+            </button>
+          {% endif %}
+          {% for img in product.images.all %}
+            <button 
+              type="button" 
+              onclick="document.getElementById('mainProductImage').src='{{ img.image.url }}'" 
+              class="w-16 h-16 rounded-xl overflow-hidden border border-[#EADBCE] hover:border-[#8B6914] flex-shrink-0 bg-white"
+              aria-label="View image {{ forloop.counter }}"
+            >
+              <img src="{{ img.image.url }}" alt="{{ product.name }} — view {{ forloop.counter }}" width="64" height="64" loading="lazy" class="w-full h-full object-cover">
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Product Info & Actions -->
+    <div class="flex flex-col justify-between">
+      <div>
+        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">{{ product.category.name }}</span>
+        <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mt-1 mb-3">
+          {{ product.name }}
+        </h1>
+
+        <!-- Age / Size / Fit Chips -->
+        {% if product.age_range or product.size_label or product.age_group or product.gender != 'unisex' %}
+          <div class="flex flex-wrap gap-2 mb-4">
+            {% if product.age_range %}
+              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">Ages {{ product.age_range }}</span>
+            {% endif %}
+            {% if product.size_label %}
+              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">Size {{ product.get_size_label_display }}</span>
+            {% endif %}
+            {% if product.age_group %}
+              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">{{ product.get_age_group_display }}</span>
+            {% endif %}
+            {% if product.gender and product.gender != 'unisex' %}
+              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">{{ product.get_gender_display }}</span>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <!-- Price Display -->
+        <div class="flex items-baseline gap-3 mb-6">
+          <span class="text-2xl sm:text-3xl font-bold text-[#2C1810]">
+            KES {{ product.price|floatformat:"0" }}
+          </span>
+          {% if product.compare_price %}
+            <span class="text-sm sm:text-base text-gray-400 line-through">
+              KES {{ product.compare_price|floatformat:"0" }}
+            </span>
+            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              Save {{ product.discount_percentage }}%
+            </span>
+          {% endif %}
+        </div>
+
+        <!-- Add to Cart Form -->
+        <form action="/cart/add/" method="post" class="space-y-6">
+          {% csrf_token %}
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+
+          <!-- Variant Selector (if any) -->
+          {% if variants.exists %}
+            <div class="space-y-2">
+              <label for="variant_id" class="text-xs font-bold uppercase tracking-wider text-[#2C1810]">
+                Select Option / Size:
+              </label>
+              <select 
+                name="variant_id" 
+                id="variant_id" 
+                class="w-full bg-white border border-[#EADBCE] rounded-xl px-4 py-3 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+              >
+                {% for v in variants %}
+                  <option value="{{ v.id }}">
+                    {{ v.size|default:"Standard" }}{% if v.color %} · {{ v.color }}{% endif %}
+                    {% if v.price_override %} (KES {{ v.price_override|floatformat:"0" }}){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endif %}
+
+          <!-- Quantity Selector -->
+          <div class="flex items-center gap-4">
+            <div class="w-32">
+              <label for="quantity" class="text-xs font-bold uppercase tracking-wider text-[#2C1810] block mb-2">Quantity:</label>
+              <div class="flex items-center border border-[#EADBCE] rounded-xl bg-white overflow-hidden">
+                <button 
+                  type="button" 
+                  onclick="let q = document.getElementById('qtyInput'); if(q.value > 1) q.value--;"
+                  class="px-3 py-2 text-gray-500 hover:bg-[#FAF7F2] font-bold"
+                >-</button>
+                <input 
+                  type="number" 
+                  id="qtyInput" 
+                  name="quantity" 
+                  value="1" 
+                  min="1" 
+                  max="{{ product.stock|default:'10' }}" 
+                  class="w-full text-center text-sm font-semibold focus:outline-none border-none"
+                >
+                <button 
+                  type="button" 
+                  onclick="let q = document.getElementById('qtyInput'); q.value++;"
+                  class="px-3 py-2 text-gray-500 hover:bg-[#FAF7F2] font-bold"
+                >+</button>
+              </div>
+            </div>
+
+            <!-- Stock status indicator -->
+            <div class="pt-6">
+              {% if product.stock > 0 %}
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span> In Stock · Ready to Dispatch
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-200">
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span> Out of Stock
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Add to Cart CTA -->
+          <div class="pt-2 flex flex-col sm:flex-row gap-3">
+            <button 
+              type="submit" 
+              {% if product.stock <= 0 %}disabled{% endif %}
+              class="flex-1 py-4 px-8 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              </svg>
+              <span>Add to Cart</span>
+            </button>
+
+            <a 
+              href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="py-4 px-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all"
+            >
+              <span>Order via WhatsApp</span>
+            </a>
+          </div>
+        </form>
+
+        <!-- Size Guide -->
+        <details class="mt-6 bg-white border border-[#EADBCE] rounded-2xl overflow-hidden">
+          <summary class="px-4 py-3 cursor-pointer text-xs font-bold uppercase tracking-wider text-[#2C1810] flex items-center justify-between select-none">
+            Size Guide
+            <span class="text-[10px] font-medium text-gray-400 normal-case tracking-normal">Tap to open</span>
+          </summary>
+          <div class="px-4 pb-4 overflow-x-auto">
+            <table class="w-full text-[11px] sm:text-xs text-left border-collapse">
+              <thead>
+                <tr class="bg-[#FAF7F2] text-[#2C1810]">
+                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Size</th>
+                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Age</th>
+                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Height</th>
+                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Weight</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-600">
+                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">Newborn</td><td class="py-1.5 px-2 border border-[#EADBCE]">0–1 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">up to 56 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">up to 5 kg</td></tr>
+                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">0–3M</td><td class="py-1.5 px-2 border border-[#EADBCE]">0–3 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">56–62 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">5–6 kg</td></tr>
+                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">3–6M</td><td class="py-1.5 px-2 border border-[#EADBCE]">3–6 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">62–68 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">6–8 kg</td></tr>
+                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">6–12M</td><td class="py-1.5 px-2 border border-[#EADBCE]">6–12 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">68–80 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">8–10 kg</td></tr>
+                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">1–2Y</td><td class="py-1.5 px-2 border border-[#EADBCE]">1–2 yrs</td><td class="py-1.5 px-2 border border-[#EADBCE]">80–92 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">10–13 kg</td></tr>
+                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">2–3Y</td><td class="py-1.5 px-2 border border-[#EADBCE]">2–3 yrs</td><td class="py-1.5 px-2 border border-[#EADBCE]">92–98 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">13–14 kg</td></tr>
+                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">3–5Y</td><td class="py-1.5 px-2 border border-[#EADBCE]">3–5 yrs</td><td class="py-1.5 px-2 border border-[#EADBCE]">98–116 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">14–20 kg</td></tr>
+              </tbody>
+            </table>
+            <p class="text-[10px] text-gray-400 mt-2">Measurements are approximate. If your child is between sizes, we recommend sizing up.</p>
+          </div>
+        </details>
+
+        <!-- Description -->
+        {% if product.description %}
+          <div class="mt-6 pt-6 border-t border-[#EADBCE]">
+            <h3 class="font-serif text-lg font-bold text-[#2C1810] mb-2">Product Details</h3>
+            <div class="text-xs sm:text-sm text-gray-600 leading-relaxed space-y-2">
+              {{ product.description|linebreaks }}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- What's Included -->
+        {% if product.whats_included %}
+          <div class="mt-6">
+            <h3 class="font-serif text-lg font-bold text-[#2C1810] mb-2">What's Included</h3>
+            <div class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              {{ product.whats_included|linebreaks }}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Fabric & Care -->
+        {% if product.fabric %}
+          <div class="mt-6">
+            <h3 class="font-serif text-lg font-bold text-[#2C1810] mb-2">Fabric & Care</h3>
+            <div class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              {{ product.fabric|linebreaks }}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Kenya Delivery, Returns & Payment -->
+        <div class="mt-8 p-4 rounded-2xl bg-white border border-[#EADBCE] text-xs text-[#2C1810] space-y-2">
+          <p class="font-bold">Kenya Delivery &amp; Returns:</p>
+          <ul class="space-y-1 text-gray-600">
+            <li>• <strong>Mombasa:</strong> Same-day or next-day — KES {{ mombasa_fee|floatformat:"0" }}</li>
+            <li>• <strong>Nairobi:</strong> 1–2 business days — KES {{ nairobi_fee|floatformat:"0" }}</li>
+            <li>• <strong>Upcountry:</strong> 2–3 business days — KES {{ upcountry_fee|floatformat:"0" }}</li>
+            <li>• <strong>Free delivery</strong> on all orders over KES {{ free_shipping_threshold|floatformat:"0" }}</li>
+            <li>• <strong>Returns:</strong> Unused items in original condition within 7 days — message us on WhatsApp to arrange.</li>
+            <li>• <strong>M-Pesa STK Prompt:</strong> Enter your phone at checkout for an instant PIN prompt.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Products -->
+  {% if related_products.exists %}
+    <div class="mt-16 pt-12 border-t border-[#EADBCE]">
+      <h2 class="font-serif text-2xl font-bold text-[#2C1810] mb-6">You May Also Like</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+        {% for rel in related_products %}
+          <div class="bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-md transition-all flex flex-col">
+            <a href="{% url 'storefront:product_detail' slug=rel.slug %}" class="aspect-square bg-[#FAF7F2] block overflow-hidden">
+              {% if rel.image %}
+                <img src="{{ rel.image.url }}" alt="{{ rel.name }}" class="w-full h-full object-cover">
+              {% else %}
+                <div class="w-full h-full flex items-center justify-center font-serif text-2xl font-bold text-[#EADBCE]">MN</div>
+              {% endif %}
+            </a>
+            <div class="p-3">
+              <h4 class="font-medium text-xs text-[#2C1810] truncate">
+                <a href="{% url 'storefront:product_detail' slug=rel.slug %}">{{ rel.name }}</a>
+              </h4>
+              <p class="text-xs font-bold text-[#8B6914] mt-1">KES {{ rel.price|floatformat:"0" }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -3,9 +3,9 @@ credentials-file: /etc/cloudflared/7051dd66-78ee-42c5-9d20-22e89e2e6c6f.json
 
 ingress:
   - hostname: api.malaikanest.com
-    service: http://backend:8000
+    service: http://web:8000
   - hostname: www.malaikanest.com
-    service: http://frontend:3000
+    service: http://web:8000
   - hostname: malaikanest.com
-    service: http://frontend:3000
+    service: http://web:8000
   - service: http_status:404

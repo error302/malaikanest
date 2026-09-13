@@ -35,7 +35,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('price', 'discount_price', 'stock', 'low_stock_threshold')
         }),
         ('Details', {
-            'fields': ('description', 'gender', 'age_range', 'weight')
+            'fields': ('description', 'fabric', 'whats_included', 'gender', 'age_group', 'age_range', 'size_label', 'weight')
         }),
         ('Images', {
             'fields': ('image',)

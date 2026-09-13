@@ -1,0 +1,25 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}Server Error · 500 · Malaika Nest{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 py-20 sm:py-32 text-center">
+  <div class="w-16 h-16 rounded-full bg-red-50 text-red-700 flex items-center justify-center mx-auto mb-6">
+    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  </div>
+  <h1 class="font-serif text-3xl sm:text-4xl text-[#2C1810] font-bold mb-4">Something Went Wrong</h1>
+  <p class="text-stone-600 text-sm sm:text-base mb-8 max-w-md mx-auto">
+    We're experiencing a temporary server error. Please try refreshing or return to the homepage.
+  </p>
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+    <a href="{% url 'storefront:home' %}" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#2C1810] text-[#F4EBE1] text-sm font-semibold hover:bg-black transition-colors">
+      Return to Home
+    </a>
+    <a href="https://wa.me/254700000000" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-6 py-3 rounded-xl border border-[#EADBCE] text-[#2C1810] text-sm font-medium hover:bg-stone-50 transition-colors">
+      Contact Support
+    </a>
+  </div>
+</section>
+{% endblock %}

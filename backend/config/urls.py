@@ -43,6 +43,9 @@ urlpatterns = [
 
     # Admin
     path(f'{admin_prefix}/', admin.site.urls),
+
+    # Storefront (Server-rendered Django Monolith)
+    path('', include('apps.storefront.urls', namespace='storefront')),
 ]
 
 
