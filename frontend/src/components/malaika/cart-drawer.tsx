@@ -159,6 +159,7 @@ export function CartDrawer() {
                           <button
                             onClick={() => remove(item.id)}
                             disabled={loading}
+                            aria-label={`Remove ${item.name} from cart`}
                             className="text-xs text-ink-muted hover:text-danger transition-colors ml-2 disabled:opacity-50"
                           >
                             Remove
