@@ -158,15 +158,18 @@ class AuthService:
         except User.DoesNotExist:
             return True
 
-        token = get_random_string(64)
+        # 6-digit OTP code. The same code works via the email link or typed
+        # into the reset form, so customers can reset from any device.
+        import secrets
+        token = f"{secrets.randbelow(1000000):06d}"
         user.password_reset_token = token
-        user.password_reset_expires = timezone.now() + timezone.timedelta(hours=24)
+        user.password_reset_expires = timezone.now() + timezone.timedelta(minutes=15)
         user.save()
 
         reset_url = _build_frontend_url("reset-password", token=token)
 
         from apps.core.email_service import EmailService
-        ok, msg = EmailService.send_password_reset(email, reset_url)
+        ok, msg = EmailService.send_password_reset(email, reset_url, code=token)
         if not ok:
             logger.error("Failed to send password reset email: %s", msg)
             raise RuntimeError("Failed to send reset email. Please try again later.")

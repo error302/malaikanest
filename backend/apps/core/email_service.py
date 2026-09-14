@@ -247,9 +247,18 @@ class EmailService:
         return cls.send(VERIFICATION, [email], subject, cls.TEMPLATE_MAP[VERIFICATION][0], context)
 
     @classmethod
-    def send_password_reset(cls, email: str, reset_url: str) -> tuple[bool, str]:
+    def send_password_reset(cls, email: str, reset_url: str, code: str = "") -> tuple[bool, str]:
         subject = cls._format_subject(cls.TEMPLATE_MAP[PASSWORD_RESET][1])
-        text = f"Click here to reset your password: {reset_url}\n\nThis link expires in 24 hours."
+        code_line = f"\nYour verification code: {code}\n\nEnter this code on the reset page, " \
+            f"or simply click the link below.\n" if code else ""
+        text = (
+            f"Hello,\n\nWe received a request to reset your Malaika Nest password."
+            f"{code_line}\nReset link: {reset_url}\n\n"
+            f"This code and link expire in 15 minutes.\n"
+            f"If you did not request this, you can safely ignore this email — "
+            f"your password will not change.\n\n"
+            f"— Malaika Nest"
+        )
         return cls.send(PASSWORD_RESET, [email], subject, text_body=text)
 
     @classmethod

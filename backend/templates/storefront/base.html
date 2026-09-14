@@ -63,7 +63,7 @@
       <!-- Brand Logo -->
       <a href="{% url 'storefront:home' %}" class="flex items-center gap-2.5 flex-shrink-0 group" aria-label="Malaika Nest — Home">
         <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white border border-[#EADBCE] shadow-sm overflow-hidden flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
-          <img src="{% static 'img/logo-mark.png' %}" alt="Malaika Nest logo" width="48" height="28" fetchpriority="high" class="w-full h-full object-contain p-0.5">
+          <img src="{% if site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'img/logo-mark.png' %}{% endif %}" alt="Malaika Nest logo" width="48" height="28" fetchpriority="high" class="w-full h-full object-contain p-0.5">
         </span>
         <span class="flex flex-col">
           <span class="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#2C1810] leading-tight">Malaika Nest</span>
@@ -168,7 +168,7 @@
         <div class="md:col-span-2">
           <div class="flex items-center gap-2.5 mb-3">
             <span class="w-14 h-14 rounded-xl bg-white overflow-hidden flex items-center justify-center flex-shrink-0">
-              <img src="{% static 'img/logo-mark.png' %}" alt="Malaika Nest logo" width="56" height="32" loading="lazy" class="w-full h-full object-contain p-0.5">
+              <img src="{% if site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'img/logo-mark.png' %}{% endif %}" alt="Malaika Nest logo" width="56" height="32" loading="lazy" class="w-full h-full object-contain p-0.5">
             </span>
             <span class="font-serif text-2xl font-bold tracking-tight text-white">Malaika Nest</span>
           </div>
