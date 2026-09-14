@@ -8,10 +8,7 @@
   
   <!-- Tailwind CSS & Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <style>
     :root {
       --brand-brown-dark: #2C1810;
@@ -22,16 +19,25 @@
       --brand-warm: #F4EBE1;
       --brand-bg: #FAF7F2;
       --brand-border: #EADBCE;
-      --font-serif: 'Cormorant Garamond', Georgia, serif;
-      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      /* iOS-style system stack: SF Pro on Apple devices, Segoe UI on Windows,
+         Roboto on Android — no webfont download, instant render. */
+      --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-serif: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
     body {
       font-family: var(--font-sans);
       background-color: var(--brand-bg);
       color: var(--brand-brown-dark);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      letter-spacing: -0.011em;
     }
+    /* Former display-serif hooks now resolve to the system stack so every
+       heading keeps its size/weight hierarchy with an iOS-native feel. */
     .font-serif {
       font-family: var(--font-serif);
+      letter-spacing: -0.022em;
     }
     .bg-brand-brown-dark { background-color: var(--brand-brown-dark); }
     .bg-brand-brown { background-color: var(--brand-brown); }
