@@ -77,6 +77,10 @@ class ProductListView(View):
                 Q(age_group=age_param) | Q(age_range__icontains=age_param) | Q(size_label=age_param)
             )
 
+        condition_param = request.GET.get("condition")
+        if condition_param in ("new", "mtumba"):
+            queryset = queryset.filter(condition=condition_param)
+
         query = request.GET.get("q", "").strip()
         if query:
             queryset = queryset.filter(
@@ -108,6 +112,7 @@ class ProductListView(View):
             "search_query": query,
             "selected_age": age_param,
             "selected_sort": sort,
+            "selected_condition": condition_param,
             "total_count": paginator.count,
         }
         return render(request, "storefront/product_list.html", context)

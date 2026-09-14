@@ -84,6 +84,11 @@
             {% if product.size_label %}
               <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">Size {{ product.get_size_label_display }}</span>
             {% endif %}
+            {% if product.condition == 'mtumba' %}
+              <span class="text-[11px] font-semibold text-[#C9A96E] bg-[#2C1810] px-2.5 py-1 rounded-full">Mtumba · Pre-Loved</span>
+            {% else %}
+              <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Brand New</span>
+            {% endif %}
             {% if product.age_group %}
               <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">{{ product.get_age_group_display }}</span>
             {% endif %}
