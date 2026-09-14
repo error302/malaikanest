@@ -8,7 +8,7 @@ from decimal import Decimal
 from apps.orders.models import get_delivery_fee_for_region
 from apps.products.models import Banner, Category, Product
 
-FREE_SHIPPING_THRESHOLD = Decimal("2000.00")
+FREE_SHIPPING_THRESHOLD = Decimal("10000.00")
 
 
 class HomeView(View):

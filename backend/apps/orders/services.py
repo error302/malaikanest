@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 
@@ -145,7 +148,15 @@ class OrderService:
                     raise ValueError("Coupon usage limit reached")
                 Coupon.objects.filter(pk=coupon.pk).update(used_count=F("used_count") + 1)
                 discount_amount = coupon.calculate_discount(subtotal)
-            delivery_fee = get_delivery_fee_for_region(delivery_region)
+            # Free delivery across Kenya for orders at/above the storefront
+            # threshold — keep this in sync with apps.storefront.views_cart.
+            free_shipping_threshold = Decimal(
+                str(getattr(settings, "FREE_SHIPPING_THRESHOLD", "10000.00"))
+            )
+            if subtotal >= free_shipping_threshold > 0:
+                delivery_fee = Decimal("0.00")
+            else:
+                delivery_fee = get_delivery_fee_for_region(delivery_region)
             total = max(subtotal - discount_amount, 0) + delivery_fee
 
             from .models import Order, OrderItem

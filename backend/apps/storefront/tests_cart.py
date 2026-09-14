@@ -167,11 +167,11 @@ class StorefrontCartTests(TestCase):
         self.assertContains(response, "-KES 200")
 
     def test_free_shipping_at_threshold(self):
-        """Cart subtotal >= 2000 qualifies for free delivery across Kenya."""
-        # Add 2 blankets = 2400 >= 2000
+        """Cart subtotal >= 10000 qualifies for free delivery across Kenya."""
+        # Add 10 blankets = 12000 >= 10000
         response = self.client.post(
             reverse("storefront:cart_add"),
-            {"product_id": str(self.product.id), "quantity": 2},
+            {"product_id": str(self.product.id), "quantity": 10},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)

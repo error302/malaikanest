@@ -37,18 +37,18 @@ class StorefrontCheckoutTests(TestCase):
 
     def test_checkout_renders_cart_items_and_totals(self):
         """Visiting /checkout/ with items renders the checkout form and order summary."""
-        self._add_product_to_cart(quantity=1)
+        self._add_product_to_cart(quantity=8)
         response = self.client.get(reverse("storefront:checkout"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Cashmere Baby Blanket")
         self.assertContains(response, "2500")
-        self.assertContains(response, "FREE")  # 2500 >= 2000 free delivery
+        self.assertContains(response, "FREE")  # 20000 >= 10000 free delivery
         self.assertContains(response, "M-Pesa STK Push")
         self.assertContains(response, "3370347")  # Till number
 
     def test_guest_checkout_places_order_and_reserves_stock(self):
         """Submitting the checkout form reserves stock, clears cart, and creates order."""
-        self._add_product_to_cart(quantity=2)
+        self._add_product_to_cart(quantity=4)
 
         post_data = {
             "shipping_name": "Amina Mohamed",
@@ -74,14 +74,14 @@ class StorefrontCheckoutTests(TestCase):
         self.assertEqual(order.shipping_last_name, "Mohamed")
         self.assertEqual(order.shipping_phone, "0712345678")
         self.assertEqual(order.delivery_region, "mombasa")
-        self.assertEqual(order.total, Decimal("5000.00"))  # 2 * 2500, free shipping
+        self.assertEqual(order.total, Decimal("10000.00"))  # 4 * 2500, free shipping
         self.assertTrue(order.is_gift)
         self.assertEqual(order.gift_message, "Welcome to the world, baby!")
 
         # Inventory reserved
         self.product.inventory.refresh_from_db()
-        self.assertEqual(self.product.inventory.reserved, 2)
-        self.assertEqual(self.product.inventory.available(), 6)
+        self.assertEqual(self.product.inventory.reserved, 4)
+        self.assertEqual(self.product.inventory.available(), 4)
 
         # Cart cleared
         cart = Cart.objects.filter(session_key=self.client.session.session_key).first()

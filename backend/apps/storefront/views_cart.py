@@ -13,7 +13,7 @@ from apps.products.models import Inventory, Product, ProductVariant, VariantInve
 
 logger = logging.getLogger(__name__)
 
-FREE_SHIPPING_THRESHOLD = Decimal("2000.00")
+FREE_SHIPPING_THRESHOLD = Decimal("10000.00")
 
 
 def get_or_create_cart(request) -> Cart:
