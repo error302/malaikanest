@@ -67,28 +67,9 @@
   </div>
 
   <!-- Products Grid -->
-  <!-- Condition Filter: New / Mtumba -->
-  <div class="flex items-center gap-2 pb-4 mb-6 text-xs">
-    <span class="text-gray-500 font-medium mr-1">Condition:</span>
-    <a href="{% url 'storefront:product_list' %}{% if selected_category %}?category={{ selected_category.slug }}{% endif %}"
-       class="px-3.5 py-1.5 rounded-full border whitespace-nowrap font-medium transition-colors {% if not selected_condition %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">
-      All
-    </a>
-    <a href="{% url 'storefront:product_list' %}?condition=new{% if selected_category %}&category={{ selected_category.slug }}{% endif %}"
-       class="px-3.5 py-1.5 rounded-full border whitespace-nowrap font-medium transition-colors {% if selected_condition == 'new' %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">
-      Brand New
-    </a>
-    <a href="{% url 'storefront:product_list' %}?condition=mtumba{% if selected_category %}&category={{ selected_category.slug }}{% endif %}"
-       class="px-3.5 py-1.5 rounded-full border whitespace-nowrap font-medium transition-colors {% if selected_condition == 'mtumba' %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">
-      Mtumba (Pre-Loved)
-    </a>
-  </div>
-
-  <!-- Condition Filter (New / Pre-Loved Mtumba) -->
   {% if selected_condition == 'mtumba' %}
   <div class="mb-6 pb-6 border-b border-[#EADBCE]">
     <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Pre-Loved Collection</span>
-    <h1 class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810] mt-1">Mtumba — Gently Pre-Loved</h1>
     <p class="text-xs sm:text-sm text-gray-600 mt-2 max-w-2xl leading-relaxed">
       Carefully selected second-hand children's clothing, inspected and cleaned before listing. Same quality standards, gentler prices. Every piece is one-of-one — when it's gone, it's gone.
     </p>
@@ -117,9 +98,6 @@
             <div class="w-full h-full flex items-center justify-center font-serif text-3xl font-bold text-[#EADBCE]">MN</div>
           {% endif %}
 
-          {% if product.condition == 'mtumba' %}
-            <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#2C1810] text-[#C9A96E]">Mtumba</span>
-          {% endif %}
           {% if product.condition == 'mtumba' %}
             <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8B6914] text-white">Pre-Loved</span>
           {% endif %}
