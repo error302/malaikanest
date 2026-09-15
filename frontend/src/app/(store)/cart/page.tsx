@@ -80,8 +80,8 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty - 1)}
-                      aria-label={t('cart.remove') + ' -'}
-                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
+                      aria-label={t('cart.decreaseQty', { item: item.name })}
+                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
                       <Minus size={14} />
@@ -90,8 +90,8 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, item.qty + 1)}
-                      aria-label={t('cart.remove') + ' +'}
-                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
+                      aria-label={t('cart.increaseQty', { item: item.name })}
+                      className="w-10 h-10 rounded-full border flex items-center justify-center active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                       style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
                     >
                       <Plus size={14} />
@@ -100,8 +100,8 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() => remove(item.id)}
-                    aria-label={t('cart.remove')}
-                    className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] active:scale-95"
+                    aria-label={t('cart.removeItem', { item: item.name })}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                     style={{ color: 'var(--brand-terra)' }}
                   >
                     <Trash2 size={16} />
