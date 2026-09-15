@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def storefront_context(request):
     """Global context for Malaika Nest storefront templates."""
-    categories = Category.objects.filter(parent__isnull=True).order_by("name")[:10]
+    categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review").order_by("name")[:10]
 
     # Active hero banner (editable from the admin dashboard: Banners section)
     active_banner = None

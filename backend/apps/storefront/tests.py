@@ -1,11 +1,12 @@
 from decimal import Decimal
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.products.models import Category, Product, ProductVariant, Inventory
 
 
+@override_settings(SECURE_SSL_REDIRECT=False, ALLOWED_HOSTS=['testserver'])
 class StorefrontCatalogueViewsTests(TestCase):
     def setUp(self):
         self.category = Category.objects.create(
@@ -79,7 +80,7 @@ class StorefrontCatalogueViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Organic Cotton Romper")
         self.assertContains(response, "1800")
-        self.assertContains(response, "green")
+        self.assertContains(response, "Green")
         self.assertContains(response, "0-3m")
 
     def test_product_detail_returns_404_for_missing_or_inactive(self):

@@ -10,11 +10,46 @@ import uuid
 logger = logging.getLogger(__name__)
 
 
+def category_labels():
+    """Load the whole small taxonomy once, not once per choice/ancestor."""
+    rows = {row['id']: row for row in Category.objects.values('id', 'name', 'parent_id')}
+    labels = {}
+    for key, row in rows.items():
+        names, seen = [], set()
+        while row and row['id'] not in seen:
+            seen.add(row['id'])
+            names.append(row['name'])
+            row = rows.get(row['parent_id'])
+        labels[key] = ' › '.join(reversed(names))
+    return labels
+
+
+class CategoryPathFilter(admin.RelatedFieldListFilter):
+    def __init__(self, field, request, params, model, model_admin, field_path):
+        super().__init__(field, request, params, model, model_admin, field_path)
+        labels = category_labels()
+        self.lookup_choices = [
+            (key, labels.get(key, label)) for key, label in self.lookup_choices
+        ]
+
+    def field_choices(self, field, request, model_admin):
+        return sorted(field.get_choices(include_blank=False), key=lambda item: str(item[1]).casefold())
+
+
+class CategoryChoicesMixin:
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.remote_field.model is Category and field is not None:
+            labels = category_labels()
+            field.label_from_instance = lambda obj: labels.get(obj.pk, obj.name)
+        return field
+
+
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(CategoryChoicesMixin, admin.ModelAdmin):
     list_display = ('image_preview', 'name', 'slug', 'group', 'is_top_level')
     search_fields = ('name', 'slug', 'group')
-    list_filter = ('group', 'parent')
+    list_filter = ('group', ('parent', CategoryPathFilter))
     prepopulated_fields = {'slug': ('name',)}
 
     def image_preview(self, obj):
@@ -59,14 +94,23 @@ class ProductVariantInline(admin.TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'brand', 'price', 'discount_price', 'stock', 'is_active', 'featured')
-    list_filter = ('is_active', 'featured', 'status', 'gender', 'category', 'brand')
+class ProductAdmin(CategoryChoicesMixin, admin.ModelAdmin):
+    list_display = ('photo_preview', 'name', 'category', 'price', 'stock', 'status', 'is_active', 'featured')
+    list_display_links = ('name',)
+    list_per_page = 24
+    list_filter = ('is_active', 'featured', 'status', 'gender', ('category', CategoryPathFilter), 'brand')
     search_fields = ('name', 'sku', 'description')
     list_editable = ('is_active', 'featured')
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ('created_at', 'updated_at')
     inlines = (ProductImageInline, ProductVariantInline)
+
+    @admin.display(description='Photo')
+    def photo_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" alt="" width="52" height="64" loading="lazy" style="object-fit:contain;border-radius:6px" />', obj.image.url)
+        return '—'
+
     fieldsets = (
         ('Basic Info', {
             'fields': ('name', 'slug', 'sku', 'category', 'brand')
@@ -75,7 +119,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('price', 'discount_price', 'stock', 'low_stock_threshold')
         }),
         ('Details', {
-            'fields': ('description', 'fabric', 'whats_included', 'gender', 'age_group', 'age_range', 'size_label', 'weight', 'condition')
+            'fields': ('description', 'fabric', 'whats_included', 'gender', 'age_group', 'age_range', 'size_label', 'size_guide', 'weight', 'condition')
         }),
         ('Images', {
             'fields': ('image',)

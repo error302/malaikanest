@@ -20,15 +20,17 @@
     </div>
 
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-      <div>
+      <div class="nest-catalog-heading">
         <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810]">
-          {% if selected_condition == "mtumba" %}Mtumba — Pre-Loved Collection{% elif selected_condition == "new" %}Brand New{% elif selected_category %}{{ selected_category.name }}{% elif search_query %}Search: "{{ search_query }}"{% else %}All Collections{% endif %}
+          {% if selected_condition == "mtumba" %}Mtumba — Pre-Loved Collection{% elif selected_condition == "new" %}Brand New{% elif selected_category %}{{ selected_category.name }}{% elif search_query %}Search: "{{ search_query }}"{% else %}Find their next favourite{% endif %}
         </h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1">Showing {{ total_count }} item{{ total_count|pluralize }}</p>
       </div>
 
       <!-- Sorting -->
       <form method="get" class="flex items-center gap-2">
+        {% if selected_size %}<input type="hidden" name="size" value="{{ selected_size }}">{% endif %}
+        {% if selected_condition %}<input type="hidden" name="condition" value="{{ selected_condition }}">{% endif %}
         {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
         {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
         {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
@@ -47,6 +49,24 @@
       </form>
     </div>
   </div>
+
+  <form method="get" class="nest-size-filter">
+    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+    {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
+    {% if selected_condition %}<input type="hidden" name="condition" value="{{ selected_condition }}">{% endif %}
+    {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+    <input type="hidden" name="sort" value="{{ selected_sort }}">
+    <fieldset>
+      <legend>Shop by size</legend>
+      <div class="nest-size-options">
+        <button class="nest-size-option" name="size" value="" aria-pressed="{% if not selected_size %}true{% else %}false{% endif %}">All sizes</button>
+        {% for value, label in size_choices %}
+        <button class="nest-size-option" name="size" value="{{ value }}" aria-pressed="{% if selected_size == value %}true{% else %}false{% endif %}">{{ label }}</button>
+        {% endfor %}
+      </div>
+      <p class="nest-card-sizes">Choose a size to see items with stock available. Check each item's measurements for the best fit.</p>
+    </fieldset>
+  </form>
 
   <!-- Category Pills Filter Bar -->
   <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-[#EADBCE] text-xs">
@@ -76,6 +96,7 @@
   </div>
   {% endif %}
   <form method="get" class="flex items-center gap-2 pb-4 mb-2 text-xs" id="condition-filter">
+    {% if selected_size %}<input type="hidden" name="size" value="{{ selected_size }}">{% endif %}
     {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
     {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
     {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
@@ -88,7 +109,7 @@
 
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
     {% for product in products %}
-      <div class="bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-lg transition-all flex flex-col group">
+      <div class="nest-product-card bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-lg transition-all flex flex-col group">
         <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="block relative aspect-square bg-[#FAF7F2] overflow-hidden">
           {% if product.image %}
             <img src="{{ product.image.url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -102,9 +123,9 @@
             <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8B6914] text-white">Pre-Loved</span>
           {% endif %}
 
-          {% if product.stock <= 0 %}
+          {% if product.shop_stock <= 0 %}
             <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-800 text-white">Out of stock</span>
-          {% elif product.stock <= 3 %}
+          {% elif product.shop_stock <= 3 %}
             <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C96E4B] text-white">Low stock</span>
           {% endif %}
         </a>
@@ -115,6 +136,7 @@
             <h3 class="font-medium text-xs sm:text-sm text-[#2C1810] line-clamp-2 mb-2 group-hover:text-[#8B6914] transition-colors">
               <a href="{% url 'storefront:product_detail' slug=product.slug %}">{{ product.name }}</a>
             </h3>
+            <p class="nest-card-sizes">{% if product.shop_sizes %}Available sizes: {{ product.shop_sizes|join:", " }}{% elif product.shop_stock > 0 %}Ask us about sizing{% else %}Currently out of stock{% endif %}</p>
           </div>
           <div>
             <div class="flex items-center justify-between pt-2 border-t border-[#FAF7F2]">
@@ -133,7 +155,7 @@
         </div>
       </div>
     {% empty %}
-      {% if search_query or selected_category or selected_age %}
+      {% if search_query or selected_category or selected_age or selected_size %}
         <div class="col-span-full bg-white rounded-2xl p-12 text-center border border-[#EADBCE]">
           <p class="font-serif text-xl text-gray-700 font-semibold mb-2">No products match your search</p>
           <p class="text-xs text-gray-500 mb-6">Try searching with a different term or browse our categories.</p>
@@ -153,11 +175,11 @@
   {% if products.has_other_pages %}
     <div class="mt-12 flex justify-center items-center gap-2">
       {% if products.has_previous %}
-        <a href="?page={{ products.previous_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3.5 py-2 rounded-lg bg-white border border-[#EADBCE] text-xs font-semibold hover:border-[#8B6914]">← Previous</a>
+        <a href="?page={{ products.previous_page_number }}&{{ pagination_query }}" class="px-3.5 py-2 rounded-lg bg-white border border-[#EADBCE] text-xs font-semibold hover:border-[#8B6914]">← Previous</a>
       {% endif %}
       <span class="text-xs text-gray-500 px-3">Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
       {% if products.has_next %}
-        <a href="?page={{ products.next_page_number }}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3.5 py-2 rounded-lg bg-white border border-[#EADBCE] text-xs font-semibold hover:border-[#8B6914]">Next →</a>
+        <a href="?page={{ products.next_page_number }}&{{ pagination_query }}" class="px-3.5 py-2 rounded-lg bg-white border border-[#EADBCE] text-xs font-semibold hover:border-[#8B6914]">Next →</a>
       {% endif %}
     </div>
   {% endif %}

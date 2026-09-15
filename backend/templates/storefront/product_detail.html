@@ -4,7 +4,7 @@
 {% block meta_description %}{{ product.description|striptags|truncatewords:25 }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+<div class="nest-product-detail max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
   <!-- Breadcrumbs -->
   <div class="text-xs text-gray-500 mb-6 flex items-center gap-1.5">
@@ -30,13 +30,13 @@
           <div class="w-full h-full flex items-center justify-center font-serif text-5xl font-bold text-[#EADBCE]">MN</div>
         {% endif %}
 
-        {% if product.stock <= 0 %}
+        {% if product.shop_stock <= 0 %}
           <div class="absolute top-4 right-4 bg-gray-900/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur">
             Out of Stock
           </div>
         {% elif product.is_low_stock %}
           <div class="absolute top-4 right-4 bg-[#C96E4B] text-white text-xs font-bold px-3 py-1 rounded-full">
-            Only {{ product.stock }} left
+            Only {{ product.shop_stock }} left
           </div>
         {% endif %}
       </div>
@@ -113,36 +113,44 @@
           {% endif %}
         </div>
 
+        <details class="nest-fit" id="size-guide" {% if product.size_guide %}open{% endif %}>
+          <summary>Measurements &amp; fit</summary>
+          <div class="nest-fit-content">
+            {% if product.size_guide %}
+              {{ product.size_guide|linebreaks }}
+            {% else %}
+              <p>Measurements for this item haven't been added yet. Ask us for the chest, waist and length measurements in cm before choosing a size.</p>
+              <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="underline">Ask about measurements on WhatsApp</a>
+            {% endif %}
+            <p class="mt-3">Size labels vary between brands. Compare garment measurements with a similar item that fits your child, and check whether the measurement is a flat width or full circumference.</p>
+          </div>
+        </details>
+
         <!-- Add to Cart Form -->
         <form action="/cart/add/" method="post" class="space-y-6">
           {% csrf_token %}
           <input type="hidden" name="product_id" value="{{ product.id }}">
 
-          <!-- Variant Selector (if any) -->
-          {% if variants.exists %}
-            <div class="space-y-2">
-              <label for="variant_id" class="text-xs font-bold uppercase tracking-wider text-[#2C1810]">
-                Select Option / Size:
+          {% if variants %}
+          <fieldset>
+            <legend class="text-sm font-bold mb-3">Choose size &amp; colour</legend>
+            <div class="nest-size-options">
+              {% for v in variants %}
+              <label class="nest-variant">
+                <input type="radio" name="variant_id" value="{{ v.id }}" required {% if v.shop_stock <= 0 %}disabled{% endif %}>
+                <span class="nest-size-option">{{ v.get_size_display|default:"Standard" }}{% if v.color %} · {{ v.get_color_display }}{% endif %}{% if v.price_modifier %} · KES {{ v.shop_price|floatformat:"0" }}{% endif %}{% if v.shop_stock <= 0 %} · Sold out{% endif %}</span>
               </label>
-              <select 
-                name="variant_id" 
-                id="variant_id" 
-                class="w-full bg-white border border-[#EADBCE] rounded-xl px-4 py-3 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
-              >
-                {% for v in variants %}
-                  <option value="{{ v.id }}">
-                    {{ v.size|default:"Standard" }}{% if v.color %} · {{ v.color }}{% endif %}
-                    {% if v.price_override %} (KES {{ v.price_override|floatformat:"0" }}){% endif %}
-                  </option>
-                {% endfor %}
-              </select>
+              {% endfor %}
             </div>
+          </fieldset>
+          {% elif product.size_label %}
+          <p class="text-sm font-semibold">Size: {{ product.get_size_label_display }}</p>
           {% endif %}
 
           <!-- Quantity Selector -->
           <div class="flex items-center gap-4">
             <div class="w-32">
-              <label for="quantity" class="text-xs font-bold uppercase tracking-wider text-[#2C1810] block mb-2">Quantity:</label>
+              <label for="qtyInput" class="text-xs font-bold uppercase tracking-wider text-[#2C1810] block mb-2">Quantity:</label>
               <div class="flex items-center border border-[#EADBCE] rounded-xl bg-white overflow-hidden">
                 <button 
                   type="button" 
@@ -155,7 +163,7 @@
                   name="quantity" 
                   value="1" 
                   min="1" 
-                  max="{{ product.stock|default:'10' }}" 
+                  max="{{ product.shop_stock }}"
                   class="w-full text-center text-sm font-semibold focus:outline-none border-none"
                 >
                 <button 
@@ -168,7 +176,7 @@
 
             <!-- Stock status indicator -->
             <div class="pt-6">
-              {% if product.stock > 0 %}
+              {% if product.shop_stock > 0 %}
                 <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
                   <span class="w-2 h-2 rounded-full bg-emerald-500"></span> In Stock · Ready to Dispatch
                 </span>
@@ -184,7 +192,7 @@
           <div class="pt-2 flex flex-col sm:flex-row gap-3">
             <button 
               type="submit" 
-              {% if product.stock <= 0 %}disabled{% endif %}
+              {% if product.shop_stock <= 0 %}disabled{% endif %}
               class="flex-1 py-4 px-8 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,36 +211,6 @@
             </a>
           </div>
         </form>
-
-        <!-- Size Guide -->
-        <details class="mt-6 bg-white border border-[#EADBCE] rounded-2xl overflow-hidden">
-          <summary class="px-4 py-3 cursor-pointer text-xs font-bold uppercase tracking-wider text-[#2C1810] flex items-center justify-between select-none">
-            Size Guide
-            <span class="text-[10px] font-medium text-gray-400 normal-case tracking-normal">Tap to open</span>
-          </summary>
-          <div class="px-4 pb-4 overflow-x-auto">
-            <table class="w-full text-[11px] sm:text-xs text-left border-collapse">
-              <thead>
-                <tr class="bg-[#FAF7F2] text-[#2C1810]">
-                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Size</th>
-                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Age</th>
-                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Height</th>
-                  <th class="py-2 px-2 font-bold border border-[#EADBCE]">Weight</th>
-                </tr>
-              </thead>
-              <tbody class="text-gray-600">
-                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">Newborn</td><td class="py-1.5 px-2 border border-[#EADBCE]">0–1 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">up to 56 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">up to 5 kg</td></tr>
-                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">0–3M</td><td class="py-1.5 px-2 border border-[#EADBCE]">0–3 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">56–62 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">5–6 kg</td></tr>
-                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">3–6M</td><td class="py-1.5 px-2 border border-[#EADBCE]">3–6 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">62–68 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">6–8 kg</td></tr>
-                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">6–12M</td><td class="py-1.5 px-2 border border-[#EADBCE]">6–12 m</td><td class="py-1.5 px-2 border border-[#EADBCE]">68–80 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">8–10 kg</td></tr>
-                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">1–2Y</td><td class="py-1.5 px-2 border border-[#EADBCE]">1–2 yrs</td><td class="py-1.5 px-2 border border-[#EADBCE]">80–92 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">10–13 kg</td></tr>
-                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">2–3Y</td><td class="py-1.5 px-2 border border-[#EADBCE]">2–3 yrs</td><td class="py-1.5 px-2 border border-[#EADBCE]">92–98 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">13–14 kg</td></tr>
-                <tr><td class="py-1.5 px-2 border border-[#EADBCE]">3–5Y</td><td class="py-1.5 px-2 border border-[#EADBCE]">3–5 yrs</td><td class="py-1.5 px-2 border border-[#EADBCE]">98–116 cm</td><td class="py-1.5 px-2 border border-[#EADBCE]">14–20 kg</td></tr>
-              </tbody>
-            </table>
-            <p class="text-[10px] text-gray-400 mt-2">Measurements are approximate. If your child is between sizes, we recommend sizing up.</p>
-          </div>
-        </details>
 
         <!-- Description -->
         {% if product.description %}

@@ -1,0 +1,15 @@
+{% extends "admin/index.html" %}
+{% block content %}
+<section class="nest-welcome" aria-labelledby="nest-welcome-title">
+  <h2 id="nest-welcome-title">A little care. A growing business.</h2>
+  <p>Manage your shop from here. Start with your products, check incoming orders, and keep your stock up to date.</p>
+  <div class="nest-actions">
+    {% if perms.products.add_product %}<a href="{% url 'admin:products_product_add' %}">+ Add product</a>{% endif %}
+    {% if perms.products.view_product %}<a href="{% url 'admin:products_product_changelist' %}?is_active__exact=0">Review unpublished products</a>{% endif %}
+    {% if perms.orders.view_order %}<a href="{% url 'admin:orders_order_changelist' %}">View orders</a>{% endif %}
+    {% if perms.products.view_banner %}<a href="{% url 'admin:products_banner_changelist' %}">Homepage photos</a>{% endif %}
+  </div>
+  <p>Photo imports are unpublished with zero stock. Confirm the price, sizes, condition and quantity before making an item active.</p>
+</section>
+{{ block.super }}
+{% endblock %}

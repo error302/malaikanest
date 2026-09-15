@@ -321,6 +321,17 @@ class Product(BaseModel):
         max_digits=6, decimal_places=2, null=True, blank=True, help_text="Weight in kg"
     )
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default="unisex")
+    CONDITION_CHOICES = [
+        ("new", "Brand New"),
+        ("mtumba", "Mtumba (Pre-Loved)"),
+    ]
+    condition = models.CharField(
+        max_length=12,
+        choices=CONDITION_CHOICES,
+        default="new",
+        db_index=True,
+        help_text="Mtumba items are quality-checked second-hand clothes, sold as-is.",
+    )
     age_group = models.CharField(max_length=20, blank=True, choices=AGE_GROUP_CHOICES)
     age_range = models.CharField(
         max_length=50,
@@ -329,6 +340,10 @@ class Product(BaseModel):
         help_text="Recommended age range for browsing filters",
     )
     size_label = models.CharField(max_length=20, blank=True, choices=SIZE_CHOICES)
+    size_guide = models.TextField(
+        blank=True,
+        help_text='Actual measurements for this item, by size, in cm. State whether these are body measurements or garment measurements (e.g. chest circumference, length, waist). Leave blank until verified; do not use a different brand’s chart.',
+    )
     featured = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     seo_title = models.CharField(max_length=70, blank=True)

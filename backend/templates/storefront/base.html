@@ -50,6 +50,7 @@
     <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
   <link rel="icon" type="image/png" href="{% static 'img/favicon-32x32.png' %}" sizes="32x32">
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  {% include "storefront/blue_theme.html" %}
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
@@ -100,7 +101,7 @@
         <nav class="hidden lg:flex items-center gap-6 text-xs sm:text-sm font-medium text-[#3D2B1F]">
           <a href="{% url 'storefront:home' %}" class="hover:text-[#8B6914] transition-colors">Home</a>
           <a href="{% url 'storefront:product_list' %}" class="hover:text-[#8B6914] transition-colors">Shop All</a>
-          {% for cat in nav_categories|slice:":4" %}
+          {% for cat in nav_categories|slice:":2" %}
             <a href="{% url 'storefront:category_detail' category_slug=cat.slug %}" class="hover:text-[#8B6914] transition-colors">{{ cat.name }}</a>
           {% endfor %}
         </nav>

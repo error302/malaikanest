@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from apps.orders.models import get_delivery_fee_for_region
 from apps.products.models import Banner, Category, Product
+from .sizing import filter_size, prepare_product, shopping_queryset
 
 FREE_SHIPPING_THRESHOLD = Decimal("10000.00")
 
@@ -14,7 +15,7 @@ FREE_SHIPPING_THRESHOLD = Decimal("10000.00")
 class HomeView(View):
     def get(self, request):
         banners = Banner.objects.filter(is_active=True).order_by("position")[:5]
-        categories = Category.objects.filter(parent__isnull=True).order_by("name")
+        categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review").order_by("name")
         featured_products = (
             Product.objects.filter(is_active=True, featured=True)
             .prefetch_related("images")
@@ -90,6 +91,10 @@ class ProductListView(View):
             )
 
         sort = request.GET.get("sort", "-created_at")
+        size_param = request.GET.get('size', '').strip()
+        if size_param:
+            queryset = filter_size(queryset, size_param)
+        queryset = shopping_queryset(queryset)
         if sort == "price_asc":
             queryset = queryset.order_by("price")
         elif sort == "price_desc":
@@ -102,8 +107,12 @@ class ProductListView(View):
         paginator = Paginator(queryset, 16)
         page_number = request.GET.get("page", 1)
         page_obj = paginator.get_page(page_number)
+        for product in page_obj:
+            prepare_product(product)
+        pagination_params = request.GET.copy()
+        pagination_params.pop('page', None)
 
-        categories = Category.objects.filter(parent__isnull=True).order_by("name")
+        categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review").order_by("name")
 
         context = {
             "products": page_obj,
@@ -114,6 +123,9 @@ class ProductListView(View):
             "selected_sort": sort,
             "selected_condition": condition_param,
             "total_count": paginator.count,
+            "selected_size": size_param,
+            "size_choices": Product.SIZE_CHOICES,
+            "pagination_query": pagination_params.urlencode(),
         }
         return render(request, "storefront/product_list.html", context)
 
@@ -121,12 +133,13 @@ class ProductListView(View):
 class ProductDetailView(View):
     def get(self, request, slug):
         product = get_object_or_404(
-            Product.objects.prefetch_related("variants", "images").select_related("category"),
+            shopping_queryset(Product.objects.prefetch_related("images").select_related("category")),
             slug=slug,
             is_active=True,
         )
 
-        variants = product.variants.all()
+        prepare_product(product)
+        variants = product.shop_variants
         related_products = (
             Product.objects.filter(category=product.category, is_active=True)
             .exclude(pk=product.pk)

@@ -1,0 +1,9 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}{{ title }} | Malaika Nest{% endblock %}
+{% block branding %}
+<div class="nest-brand">
+  <img src="{% static 'img/apple-touch-icon.png' %}" width="44" height="44" alt="">
+  <div><a href="{% url 'admin:index' %}">Malaika Nest</a><span>YOUR STORE, BEAUTIFULLY ORGANISED</span></div>
+</div>
+{% endblock %}
