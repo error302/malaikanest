@@ -27,6 +27,8 @@ json
 
 # Existing
 node_modules/
+backend/static/adminapp/assets/
+backend/static/adminapp/index.html
 .next/
 .vercel/
 *.log

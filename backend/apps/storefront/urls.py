@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views, views_cart, views_checkout
+from .admin_spa import AdminDashboardView
 
 app_name = "storefront"
 
@@ -29,4 +30,7 @@ urlpatterns = [
     # Static pages
     path("delivery-returns/", views.StaticPageView.as_view(template_name="storefront/delivery_returns.html"), name="delivery_returns"),
     path("contact/", views.StaticPageView.as_view(template_name="storefront/contact.html"), name="contact"),
+
+    # Static TS admin dashboard (serves backend/static/adminapp/index.html)
+    path("manage/dashboard/", AdminDashboardView.as_view(), name="admin-dashboard"),
 ]

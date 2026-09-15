@@ -1,8 +1,10 @@
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from apps.core.healthcheck import health_check, readiness_check
+from apps.storefront.admin_spa import AdminDashboardView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -40,6 +42,12 @@ urlpatterns = [
 
     # Prometheus metrics (Phase 5)
     path('metrics/', include('apps.core.metrics_urls')),
+
+    # Static TS admin dashboard — mounted both at its own path and inside the
+    # admin prefix (before the catch-all) so classic-admin logins that are
+    # redirected with ?next= land on a real route.
+    path(f'{admin_prefix}/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard-prefixed'),
+    path('manage/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
 
     # Admin
     path(f'{admin_prefix}/', admin.site.urls),
