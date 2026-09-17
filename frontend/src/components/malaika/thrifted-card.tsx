@@ -63,7 +63,7 @@ export function ThriftedCard({ product, index = 0 }: { product: ThriftedProduct;
         }}
         aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
         aria-pressed={wished}
-        className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-warm-sm transition-all hover:scale-110"
+        className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-warm-sm transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
         style={{ background: 'rgba(255,255,255,0.95)' }}
       >
         <Heart
@@ -143,7 +143,7 @@ export function ThriftedCard({ product, index = 0 }: { product: ThriftedProduct;
         <button
           type="button"
           disabled={!product.isAvailable}
-          className="mt-3 min-h-[44px] w-full inline-flex items-center justify-center gap-2 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-50"
+          className="mt-3 min-h-[44px] w-full inline-flex items-center justify-center gap-2 rounded-full font-semibold text-[13px] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
           style={{ background: 'var(--brand-terra)', color: '#FFFFFF' }}
           aria-label={`Add ${product.name} to cart`}
         >
