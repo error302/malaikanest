@@ -9,3 +9,7 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+
+## 2026-08-08 - [Keyboard Navigation] Focus States for Hover-Only Interactive Elements
+**Learning:** Interactive elements that are visually hidden until hover (e.g. wishlist buttons or specific add-to-cart overlays) remain invisible to keyboard users who tab to them unless explicitly handled. Standard focus styles are not sufficient if the element relies on parent hover state for opacity or transform changes.
+**Action:** Always add `focus-visible:opacity-100` and reset any hover-based transforms (e.g., `focus-visible:scale-100` or `focus-visible:translate-y-0`) in addition to a standard focus ring when styling interactive elements that are usually hidden behind a hover interaction.
