@@ -122,6 +122,7 @@ export default function CartPage() {
             onClick={clear}
             className="text-xs underline mt-2"
             style={{ color: 'var(--brand-text-muted)' }}
+            aria-label={`${t('cart.clear')} items`}
           >
             {t('cart.clear')}
           </button>
