@@ -49,7 +49,7 @@ export default function WishlistPage() {
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
           My Wishlist ({items.length})
         </h1>
-        <button type="button" onClick={clear} className="text-xs underline" style={{ color: 'var(--brand-text-muted)' }}>
+        <button type="button" onClick={clear} className="text-xs underline" style={{ color: 'var(--brand-text-muted)' }} aria-label="Clear all items from wishlist">
           Clear all
         </button>
       </div>
