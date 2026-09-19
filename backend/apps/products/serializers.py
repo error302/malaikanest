@@ -89,7 +89,14 @@ class CategorySerializer(serializers.ModelSerializer):
         return None
 
     def get_children(self, obj):
-        children = obj.children.all().order_by("name")
+        # ⚡ Bolt: Optimize N+1 query.
+        # Calling .order_by() on a related manager bypasses the prefetch cache.
+        # Check if objects are prefetched and sort in Python memory if available.
+        if hasattr(obj, "_prefetched_objects_cache") and "children" in obj._prefetched_objects_cache:
+            children = list(obj.children.all())
+            children.sort(key=lambda x: x.name)
+        else:
+            children = obj.children.all().order_by("name")
         return (
             CategorySerializer(children, many=True, context=self.context).data
             if children
