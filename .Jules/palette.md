@@ -9,3 +9,7 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+
+## 2024-11-20 - [Accessibility] Desktop Add to Cart Button Visibility to Screen Readers
+**Learning:** If an interactive element is only visible on hover using `opacity-0` and `pointer-events-none`, it might still receive keyboard focus but remain invisible to the user.
+**Action:** When an interactive element is only visible on hover, ensure its focus-visible styles explicitly make it visible (e.g., using `focus-visible:opacity-100 focus-visible:translate-y-0`) and restore pointer events (`focus-visible:pointer-events-auto`) so it can be clicked when focused.
