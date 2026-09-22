@@ -89,7 +89,7 @@ class CategorySerializer(serializers.ModelSerializer):
         return None
 
     def get_children(self, obj):
-        children = obj.children.all().order_by("name")
+        children = sorted(obj.children.all(), key=lambda x: x.name)
         return (
             CategorySerializer(children, many=True, context=self.context).data
             if children
@@ -231,7 +231,8 @@ class ProductSerializer(serializers.ModelSerializer):
         return f"https://malaikanest.com{url}"
 
     def _primary_gallery_url(self, obj):
-        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        images = obj.images.all()
+        gallery = next((img for img in images if img.is_primary), next(iter(images), None))
         if gallery and gallery.image:
             return self._image_url(gallery.image)
         return None
@@ -446,7 +447,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         return f"https://malaikanest.com{url}"
 
     def _primary_gallery_url(self, obj):
-        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        images = obj.images.all()
+        gallery = next((img for img in images if img.is_primary), next(iter(images), None))
         if gallery and gallery.image:
             return self._image_url(gallery.image)
         return None

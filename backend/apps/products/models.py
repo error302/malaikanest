@@ -373,6 +373,12 @@ class Product(BaseModel):
         return self.variants.filter(is_active=True).exists()
 
     def _variant_inventory_summary(self):
+        if hasattr(self, "_prefetched_objects_cache") and "variants" in self._prefetched_objects_cache:
+            variants = [v for v in self.variants.all() if v.is_active]
+            total_quantity = sum(getattr(getattr(v, "inventory", None), "quantity", 0) for v in variants)
+            total_reserved = sum(getattr(getattr(v, "inventory", None), "reserved", 0) for v in variants)
+            return total_quantity, total_reserved
+
         summary = VariantInventory.objects.filter(
             variant__product=self,
             variant__is_active=True,
