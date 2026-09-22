@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, ShoppingBag, Star, Plus } from 'lucide-react';
@@ -41,6 +42,7 @@ const PLACEHOLDER_GRADIENTS = [
 export const ProductCard = React.memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { t } = useI18n();
   const { add: addToCart } = useCart();
+  const router = useRouter();
   const { contains, toggle: toggleWishlist } = useWishlist();
   const wished = contains(product.id);
   const [hovered, setHovered] = useState(false);
@@ -57,7 +59,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
     e?.stopPropagation?.();
     if (!inStock) return;
     if ((product.variantCount ?? 0) > 1) {
-      window.location.href = `/products/${product.slug}`;
+      router.push(`/products/${product.slug}`);
       return;
     }
     addToCart({

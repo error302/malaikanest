@@ -281,7 +281,7 @@ class CartMergePerformanceTest(TestCase):
         # Clear any initial setup queries
 
         with self.assertNumQueries(
-            181
+            171
         ):  # optimized queries # It runs exactly 150 queries right now (verified in test execution log is around 130-150 depending on exact product count loop setup, actually the captured queries say 129 but we can update it in a minute) # Replace with exact number after running once
             response = self.client.post(url, {"session_key": self.session_key}, format="json")
 
