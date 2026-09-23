@@ -1,3 +1,4 @@
+from django.db.models import Count
 import io
 
 from django.db.models import Q
@@ -120,7 +121,7 @@ class AdminBannerViewSet(viewsets.ModelViewSet):
 
 
 class AdminUserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().order_by("-date_joined")
+    queryset = User.objects.annotate(total_orders_count=Count("order", distinct=True)).order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
     pagination_class = AdminLimitOffsetPagination
