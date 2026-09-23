@@ -1,0 +1,3 @@
+## 2024-05-19 - Product Card Focus Visibility
+**Learning:** Hidden interactive elements (like the "Add to cart" slide-up bar and "Wishlist" button on Product Cards) that rely on `opacity-0` transitioning to `opacity-100` on hover become inaccessible via keyboard navigation because their focused state remains visually hidden.
+**Action:** When an interactive element is only visible on hover, always pair the hover styles with explicit `focus-visible` styles to ensure it becomes visible and has a distinct focus ring (e.g., using `focus-visible:opacity-100 focus-visible:translate-y-0 focus-visible:ring-2`).
