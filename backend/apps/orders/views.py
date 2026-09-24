@@ -780,12 +780,23 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
                                 f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
                             )
                             return response
+                        else:
+                            return Response(
+                                {"detail": "Failed to retrieve invoice from remote storage"},
+                                status=status.HTTP_502_BAD_GATEWAY,
+                            )
                     except requests.RequestException as e:
                         logger.error("Error fetching invoice from URL: %s", e)
                         return Response(
                             {"detail": "Failed to retrieve invoice"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         )
+                else:
+                    logger.debug("Invoice download blocked by SSRF protection for %s", pdf_url)
+                    return Response(
+                        {"detail": "Invalid invoice URL configuration"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
             try:
                 invoice.download_count += 1

@@ -107,6 +107,7 @@ class PesapalService:
                 json=payload,
                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
                 timeout=30,
+                allow_redirects=False,
             ),
         )
         if resp.status_code != 200:
@@ -245,6 +246,7 @@ class PesapalService:
                 params={"orderTrackingId": order_tracking_id},
                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
                 timeout=30,
+                allow_redirects=False,
             ),
         )
         if resp.status_code != 200:
@@ -263,6 +265,7 @@ class PesapalService:
                 json=payload,
                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
                 timeout=30,
+                allow_redirects=False,
             ),
         )
         return resp.json() if resp.content else {}
