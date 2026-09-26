@@ -1,0 +1,3 @@
+## 2024-03-21 - Added aria-label to Remove button in CartDrawer
+**Learning:** For lists containing identical action buttons (e.g., 'Remove' items in a cart), ensure each button has a specific `aria-label` detailing the target item (e.g., `Remove ${item.name} from cart`) for screen reader accessibility. When modifying frontend text or ARIA labels, always use the internationalization system (e.g., `t('key')` from `frontend/src/lib/i18n.tsx`) rather than hardcoding English strings.
+**Action:** Use `aria-label={`${t('cart.remove')} ${item.name} from cart`}` on the remove button inside `CartDrawer`.
