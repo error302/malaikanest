@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { X, ShoppingBag, ArrowRight, Plus, Minus } from 'lucide-react';
 import { useEffect } from 'react';
 import { useCart } from '@/lib/cartContext';
+import { useI18n } from '@/lib/i18n';
 import { useCartDrawer } from '@/lib/cartDrawerStore';
 import { formatKES } from '@/lib/format';
 import { slideOver } from '@/lib/motion';
@@ -20,6 +21,7 @@ import { slideOver } from '@/lib/motion';
  * data lives in cartContext; this component is purely a presentation layer.
  */
 export function CartDrawer() {
+  const { t } = useI18n();
   const open = useCartDrawer((s) => s.open);
   const closeDrawer = useCartDrawer((s) => s.closeDrawer);
   const { items, updateQty, remove, loading } = useCart();
@@ -160,8 +162,9 @@ export function CartDrawer() {
                             onClick={() => remove(item.id)}
                             disabled={loading}
                             className="text-xs text-ink-muted hover:text-danger transition-colors ml-2 disabled:opacity-50"
+                            aria-label={`${t('cart.remove')} ${item.name}`}
                           >
-                            Remove
+                            {t('cart.remove')}
                           </button>
                         </div>
                       </div>
