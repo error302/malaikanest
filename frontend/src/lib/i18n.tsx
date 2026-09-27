@@ -204,6 +204,9 @@ const en: Dict = {
   'cart.applied': 'Coupon applied!',
   'cart.invalidCoupon': 'Invalid coupon code',
   'cart.addMore': 'Add KES {amount} more for free delivery',
+  'cart.decreaseQty': 'Decrease quantity of {name}',
+  'cart.increaseQty': 'Increase quantity of {name}',
+  'cart.removeItem': 'Remove {name} from cart',
 
   // Checkout
   'checkout.title': 'Checkout',
@@ -484,6 +487,9 @@ const sw: Dict = {
   'cart.applied': 'Punguzo limewekwa!',
   'cart.invalidCoupon': 'Msimbo wa punguzo si sahihi',
   'cart.addMore': 'Ongeza KES {amount} zaidi kwa usafirishaji bure',
+  'cart.decreaseQty': 'Punguza idadi ya {name}',
+  'cart.increaseQty': 'Ongeza idadi ya {name}',
+  'cart.removeItem': 'Ondoa {name} kwenye rakibu',
 
   // Checkout
   'checkout.title': 'Malipo',
