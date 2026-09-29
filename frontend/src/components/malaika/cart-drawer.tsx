@@ -83,7 +83,7 @@ export function CartDrawer() {
               </div>
               <button
                 onClick={closeDrawer}
-                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-paper-alt transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-paper-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                 aria-label="Close cart"
               >
                 <X size={18} strokeWidth={1.75} className="text-ink" />
@@ -136,7 +136,7 @@ export function CartDrawer() {
                             <button
                               onClick={() => updateQty(item.id, Math.max(1, item.qty - 1))}
                               disabled={loading}
-                              className="w-7 h-7 flex items-center justify-center hover:bg-paper-alt rounded-l-full transition-colors disabled:opacity-50"
+                              className="w-7 h-7 flex items-center justify-center hover:bg-paper-alt rounded-l-full transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                               aria-label={`Decrease quantity of ${item.name}`}
                             >
                               <Minus size={12} strokeWidth={2} className="text-ink" />
@@ -150,7 +150,7 @@ export function CartDrawer() {
                             <button
                               onClick={() => updateQty(item.id, item.qty + 1)}
                               disabled={loading}
-                              className="w-7 h-7 flex items-center justify-center hover:bg-paper-alt rounded-r-full transition-colors disabled:opacity-50"
+                              className="w-7 h-7 flex items-center justify-center hover:bg-paper-alt rounded-r-full transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                               aria-label={`Increase quantity of ${item.name}`}
                             >
                               <Plus size={12} strokeWidth={2} className="text-ink" />
@@ -159,7 +159,8 @@ export function CartDrawer() {
                           <button
                             onClick={() => remove(item.id)}
                             disabled={loading}
-                            className="text-xs text-ink-muted hover:text-danger transition-colors ml-2 disabled:opacity-50"
+                            className="text-xs text-ink-muted hover:text-danger transition-colors ml-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] rounded-sm px-1"
+                            aria-label={`Remove ${item.name} from cart`}
                           >
                             Remove
                           </button>
@@ -184,7 +185,7 @@ export function CartDrawer() {
                 <Link
                   href="/checkout"
                   onClick={closeDrawer}
-                  className="btn btn-primary w-full justify-center"
+                  className="btn btn-primary w-full justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                 >
                   Checkout
                   <ArrowRight size={16} strokeWidth={1.75} />
@@ -192,7 +193,7 @@ export function CartDrawer() {
                 <Link
                   href="/cart"
                   onClick={closeDrawer}
-                  className="btn btn-ghost w-full justify-center text-sm"
+                  className="btn btn-ghost w-full justify-center text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                 >
                   View full cart
                 </Link>
