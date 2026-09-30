@@ -1,0 +1,5 @@
+🚨 Severity: CRITICAL
+💡 Vulnerability: Server-Side Request Forgery (SSRF) was possible via the `_download_image` functions in the admin products and categories serializers. The endpoints fetched user-provided image URLs without validating the scheme or hostname, and followed redirects by default, allowing arbitrary internal/external requests.
+🎯 Impact: An attacker with admin access (or a compromised admin account) could force the server to make unauthorized requests to internal infrastructure (e.g., cloud metadata APIs) or port scan the internal network, bypassing firewall protections.
+🔧 Fix: Added validation to ensure the URL scheme is `https` and the hostname matches the explicit `IMAGE_URL_ALLOWED_HOSTS` list from settings. Furthermore, `allow_redirects=False` was added to `requests.get` to prevent bypasses via open redirects.
+✅ Verification: Review the code changes. Verified by running the Django test suite for the products app (`python manage.py test apps.products`), ensuring 6/6 tests pass.
