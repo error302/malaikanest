@@ -1,0 +1,3 @@
+## 2024-10-24 - Item-specific ARIA labels in cart
+**Learning:** Generic aria-labels like "Remove" on lists of identical actions (like a cart) are confusing for screen reader users because they don't provide context on *which* item is being affected. Additionally, string concatenation (e.g., `t('cart.remove') + ' -'`) for ARIA labels creates a disjointed reading experience.
+**Action:** Always provide item-specific contextual descriptions (e.g., "Decrease quantity of {item.name}") using the translation engine's interpolation feature `t('key', { variable: value })` instead of basic concatenation or generic labels. Ensure all new keys are added to all localization dictionaries.
