@@ -49,7 +49,7 @@ export default function WishlistPage() {
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
           My Wishlist ({items.length})
         </h1>
-        <button type="button" onClick={clear} className="text-xs underline" style={{ color: 'var(--brand-text-muted)' }}>
+        <button type="button" onClick={clear} aria-label="Clear all items from wishlist" className="text-xs underline" style={{ color: 'var(--brand-text-muted)' }}>
           Clear all
         </button>
       </div>
@@ -71,7 +71,7 @@ export default function WishlistPage() {
                   e.preventDefault();
                   remove(item.productId);
                 }}
-                aria-label="Remove from wishlist"
+                aria-label={`Remove ${item.name} from wishlist`}
                 className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center"
                 style={{ background: 'rgba(255,255,255,0.95)', color: 'var(--brand-terra)' }}
               >
