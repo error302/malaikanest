@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -127,6 +127,8 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # ⚡ Bolt: Optimize N+1 query. Annotate total orders to reduce DB queries from O(N) to O(1)
+        queryset = queryset.annotate(annotated_total_orders=Count('order', distinct=True))
         search = self.request.query_params.get("search")
 
         if search:
