@@ -6,10 +6,12 @@ import { useWishlist } from '@/lib/wishlistContext';
 import { getImageUrl } from '@/lib/media';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
+import { useI18n } from '@/lib/i18n';
 
 export default function WishlistPage() {
   const { items, remove, clear } = useWishlist();
   const { add: addToCart } = useCart();
+  const { t } = useI18n();
 
   const handleAddToCart = async (item: typeof items[0]) => {
     addToCart({
@@ -71,7 +73,7 @@ export default function WishlistPage() {
                   e.preventDefault();
                   remove(item.productId);
                 }}
-                aria-label="Remove from wishlist"
+                aria-label={t('product.removeWishlistItem', { name: item.name })}
                 className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center"
                 style={{ background: 'rgba(255,255,255,0.95)', color: 'var(--brand-terra)' }}
               >
