@@ -297,7 +297,7 @@ class PaymentService:
             lambda: requests.get(
                 PaymentService._mpesa_token_url(),
                 auth=(consumer_key, consumer_secret),
-                timeout=30,
+                timeout=30, allow_redirects=False,
             ),
         )
         if token_resp.status_code != 200:
