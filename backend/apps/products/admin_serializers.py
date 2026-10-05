@@ -72,10 +72,17 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             import requests
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
+            from django.conf import settings
 
-            response = requests.get(image_url, timeout=10)
+            parsed = urlparse(image_url)
+            if parsed.scheme != "https":
+                return None
+            allowed_hosts = getattr(settings, "IMAGE_URL_ALLOWED_HOSTS", ["res.cloudinary.com", "cloudinary.com"])
+            if parsed.hostname not in allowed_hosts:
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
         except Exception:
@@ -322,14 +329,21 @@ class AdminProductSerializer(serializers.ModelSerializer):
             import requests
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
+            from django.conf import settings
 
-            response = requests.get(image_url, timeout=10)
+            parsed = urlparse(image_url)
+            if parsed.scheme != "https":
+                return None
+            allowed_hosts = getattr(settings, "IMAGE_URL_ALLOWED_HOSTS", ["res.cloudinary.com", "cloudinary.com"])
+            if parsed.hostname not in allowed_hosts:
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
-            logger.debug("Product image download failed from %s", url)
+            logger.debug("Product image download failed from %s", image_url)
         return None
 
     @staticmethod
