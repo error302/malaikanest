@@ -373,6 +373,19 @@ class Product(BaseModel):
         return self.variants.filter(is_active=True).exists()
 
     def _variant_inventory_summary(self):
+        if hasattr(self, "_prefetched_objects_cache") and "variants" in self._prefetched_objects_cache:
+            total_quantity = 0
+            total_reserved = 0
+            for variant in self.variants.all():
+                if variant.is_active:
+                    try:
+                        inventory = variant.inventory
+                        total_quantity += inventory.quantity
+                        total_reserved += inventory.reserved
+                    except Exception:
+                        pass
+            return total_quantity, total_reserved
+
         summary = VariantInventory.objects.filter(
             variant__product=self,
             variant__is_active=True,
@@ -388,6 +401,19 @@ class Product(BaseModel):
     def in_stock(self):
         if self.has_variants:
             return self.available_stock > 0
+
+        # Check if inventory was cached (select_related caches differently than prefetch_related)
+        if hasattr(self, "_state") and "inventory" in self._state.fields_cache:
+            inventory = self._state.fields_cache.get("inventory")
+            if inventory:
+                return inventory.available() > 0
+
+        # Check if inventory was prefetched (it's a OneToOne reverse relation)
+        if hasattr(self, "_prefetched_objects_cache") and "inventory" in self._prefetched_objects_cache:
+            inventory = self._prefetched_objects_cache["inventory"]
+            if inventory:
+                return inventory.available() > 0
+
         try:
             return self.inventory.available() > 0
         except Exception:
@@ -399,6 +425,19 @@ class Product(BaseModel):
         if self.has_variants:
             total_quantity, total_reserved = self._variant_inventory_summary()
             return max(total_quantity - total_reserved, 0)
+
+        # Check if inventory was cached (select_related)
+        if hasattr(self, "_state") and "inventory" in self._state.fields_cache:
+            inventory = self._state.fields_cache.get("inventory")
+            if inventory:
+                return inventory.available()
+
+        # Check if inventory was prefetched
+        if hasattr(self, "_prefetched_objects_cache") and "inventory" in self._prefetched_objects_cache:
+            inventory = self._prefetched_objects_cache["inventory"]
+            if inventory:
+                return inventory.available()
+
         try:
             return self.inventory.available()
         except Exception:
@@ -407,6 +446,12 @@ class Product(BaseModel):
 
     @property
     def is_low_stock(self):
+        # Check if inventory was prefetched
+        if hasattr(self, "_prefetched_objects_cache") and "inventory" in self._prefetched_objects_cache:
+            inventory = self._prefetched_objects_cache["inventory"]
+            if inventory:
+                return inventory.available() <= self.low_stock_threshold
+
         try:
             return self.inventory.available() <= self.low_stock_threshold
         except Exception:

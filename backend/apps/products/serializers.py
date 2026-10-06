@@ -89,7 +89,11 @@ class CategorySerializer(serializers.ModelSerializer):
         return None
 
     def get_children(self, obj):
-        children = obj.children.all().order_by("name")
+        if hasattr(obj, "_prefetched_objects_cache") and "children" in obj._prefetched_objects_cache:
+            children = obj.children.all()
+            children = sorted(children, key=lambda c: c.name)
+        else:
+            children = obj.children.all().order_by("name")
         return (
             CategorySerializer(children, many=True, context=self.context).data
             if children
@@ -97,6 +101,8 @@ class CategorySerializer(serializers.ModelSerializer):
         )
 
     def get_product_count(self, obj):
+        if hasattr(obj, "annotated_product_count"):
+            return obj.annotated_product_count
         descendant_ids = obj.descendant_ids(include_self=True)
         return Product.objects.filter(
             category_id__in=descendant_ids, is_active=True
@@ -231,7 +237,13 @@ class ProductSerializer(serializers.ModelSerializer):
         return f"https://malaikanest.com{url}"
 
     def _primary_gallery_url(self, obj):
-        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        if hasattr(obj, "_prefetched_objects_cache") and "images" in obj._prefetched_objects_cache:
+            images = obj.images.all()
+            primary = next((img for img in images if img.is_primary), None)
+            gallery = primary or next(iter(images), None)
+        else:
+            gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+
         if gallery and gallery.image:
             return self._image_url(gallery.image)
         return None
@@ -446,7 +458,13 @@ class ProductListSerializer(serializers.ModelSerializer):
         return f"https://malaikanest.com{url}"
 
     def _primary_gallery_url(self, obj):
-        gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+        if hasattr(obj, "_prefetched_objects_cache") and "images" in obj._prefetched_objects_cache:
+            images = obj.images.all()
+            primary = next((img for img in images if img.is_primary), None)
+            gallery = primary or next(iter(images), None)
+        else:
+            gallery = obj.images.filter(is_primary=True).first() or obj.images.first()
+
         if gallery and gallery.image:
             return self._image_url(gallery.image)
         return None

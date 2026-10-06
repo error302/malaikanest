@@ -222,9 +222,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         queryset = (
             Product.objects.filter(is_active=True)
             .select_related(
-                "category", "category__parent", "category__parent__parent", "brand"
+                "category", "category__parent", "category__parent__parent", "brand", "inventory"
             )
-            .prefetch_related("category__children", "variants__inventory")
+            .prefetch_related("category__children", "variants__inventory", "images")
             .annotate(
                 avg_rating=Coalesce(
                     Avg("reviews__rating"), Value(0.0), output_field=FloatField()

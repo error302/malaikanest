@@ -1,4 +1,3 @@
-
-## 2026-08-05 - Optimize N+1 queries in Django serializers
-**Learning:** In Django models and serializers, calling `.filter().count()` or `.filter().exists()` on related managers bypasses the `prefetch_related` cache, causing N+1 queries.
-**Action:** Optimize by checking `hasattr(self, '_prefetched_objects_cache')` and using Python-level aggregations (e.g., `sum()`, `any()`, `len()`) over `.all()` when the cache is present.
+## 2026-10-06 - N+1 Queries in Django Serializers
+**Learning:** In Django models and serializers, operations like `.filter()`, `.count()`, `.exists()`, and `.order_by()` on related managers bypass the `prefetch_related` cache, causing hidden N+1 queries. Django REST framework serializers evaluate these methods often leading to many queries.
+**Action:** Optimize by explicitly checking if `hasattr(obj, '_prefetched_objects_cache') and '<related_name>' in obj._prefetched_objects_cache` (or `_state.fields_cache` for `select_related`) and using Python-level equivalents (e.g., in-memory sorting via `list().sort()`, filtering via `next(...)`, or aggregations over `.all()`) when the cache is present. Update the ViewSet querysets to include the relevant `select_related` and `prefetch_related` fields to enable the cache.
