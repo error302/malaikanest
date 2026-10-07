@@ -1,0 +1,3 @@
+## 2024-05-15 - [Add contextual aria-label to remove cart items]
+**Learning:** For lists containing identical action buttons (e.g., 'Remove' items in a cart), screen readers will just read "Remove" multiple times which isn't helpful without context. Using interpolation with translation strings like `t('cart.removeItem', { name: item.name })` provides good context without breaking localization or ARIA rules.
+**Action:** When adding `aria-label` attributes for accessibility to lists of identical action buttons, provide complete, context-specific descriptions using the translation engine's interpolation feature rather than raw string concatenation.
