@@ -12,3 +12,8 @@
 **Vulnerability:** User-generated blog content was injected directly into the DOM using `dangerouslySetInnerHTML` in `frontend/src/app/(store)/blog/[slug]/page.tsx` without sanitization, leading to an XSS vulnerability.
 **Learning:** This codebase uses Next.js server-side rendering (SSR). Standard `dompurify` cannot be used as it fails during SSR due to missing browser APIs (like `window`). A specific library, `isomorphic-dompurify`, must be used to ensure sanitization works both on the server and the client.
 **Prevention:** Always wrap variables passed to `dangerouslySetInnerHTML={{ __html: ... }}` with `DOMPurify.sanitize()` from `isomorphic-dompurify`, especially when rendering potentially untrusted user content like blog markdown.
+
+## 2026-10-08 - Fixed SSRF in Product Image Downloads
+**Vulnerability:** Server-Side Request Forgery (SSRF) allowed the server to fetch arbitrary URLs when downloading product/category images.
+**Learning:** `requests.get(image_url)` was used without any hostname validation or restricting the scheme, making it easy to bypass.
+**Prevention:** Use `IMAGE_URL_ALLOWED_HOSTS` to validate the domain, enforce `https` scheme, and add `allow_redirects=False` to prevent open-redirect bypasses.
