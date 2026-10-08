@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -126,7 +126,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # BOLT OPTIMIZATION: Annotate the total orders count on the queryset using
+        # a JOIN/GROUP BY to prevent N+1 queries in the serializer.
+        queryset = super().get_queryset().annotate(annotated_total_orders=Count('order', distinct=True))
         search = self.request.query_params.get("search")
 
         if search:
