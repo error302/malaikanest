@@ -12,3 +12,8 @@
 **Vulnerability:** User-generated blog content was injected directly into the DOM using `dangerouslySetInnerHTML` in `frontend/src/app/(store)/blog/[slug]/page.tsx` without sanitization, leading to an XSS vulnerability.
 **Learning:** This codebase uses Next.js server-side rendering (SSR). Standard `dompurify` cannot be used as it fails during SSR due to missing browser APIs (like `window`). A specific library, `isomorphic-dompurify`, must be used to ensure sanitization works both on the server and the client.
 **Prevention:** Always wrap variables passed to `dangerouslySetInnerHTML={{ __html: ... }}` with `DOMPurify.sanitize()` from `isomorphic-dompurify`, especially when rendering potentially untrusted user content like blog markdown.
+
+## 2026-10-09 - Missing SSRF Allow_Redirects=False Protection
+**Vulnerability:** Several `requests.get` calls (e.g. downloading category/product images from admin serializers, token validation, invoice PDF fetching) allowed redirects, introducing Server-Side Request Forgery (SSRF) vulnerabilities even when the hostname was validated against an allowlist, since attackers could host an open redirect on an allowed domain pointing to internal services.
+**Learning:** Checking the hostname against an allowlist is insufficient if redirects are followed by default, as `requests` does for `get`. Additionally, some endpoints were downloading untrusted content without validating the scheme, hostname, or passing `allow_redirects=False`.
+**Prevention:** When fetching remote URLs in Python using `requests.get`, always enforce `allow_redirects=False` unless redirects are specifically needed and safely handled. Always validate the scheme ('https') and hostname against an allowlist before making a request.
