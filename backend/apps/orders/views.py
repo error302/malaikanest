@@ -770,6 +770,7 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
                 # (Cloudinary). Never fetch arbitrary/admin-supplied URLs.
                 if parsed.scheme == "https" and parsed.hostname and parsed.hostname.lower() in allowed_hosts:
                     try:
+                        import requests
                         remote_response = requests.get(pdf_url, timeout=30, allow_redirects=False)
                         if remote_response.status_code == 200:
                             pdf_content = remote_response.content

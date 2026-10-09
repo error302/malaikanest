@@ -484,6 +484,7 @@ def google_auth_view(request):
             "https://oauth2.googleapis.com/tokeninfo",
             params={"id_token": token},
             timeout=10,
+            allow_redirects=False,
         )
         if response.status_code != 200:
             return Response({"detail": "Invalid Google token"}, status=status.HTTP_401_UNAUTHORIZED)
