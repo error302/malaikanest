@@ -12,3 +12,8 @@
 **Vulnerability:** User-generated blog content was injected directly into the DOM using `dangerouslySetInnerHTML` in `frontend/src/app/(store)/blog/[slug]/page.tsx` without sanitization, leading to an XSS vulnerability.
 **Learning:** This codebase uses Next.js server-side rendering (SSR). Standard `dompurify` cannot be used as it fails during SSR due to missing browser APIs (like `window`). A specific library, `isomorphic-dompurify`, must be used to ensure sanitization works both on the server and the client.
 **Prevention:** Always wrap variables passed to `dangerouslySetInnerHTML={{ __html: ... }}` with `DOMPurify.sanitize()` from `isomorphic-dompurify`, especially when rendering potentially untrusted user content like blog markdown.
+
+## 2026-10-10 - IP Spoofing in CAPTCHA Validation Endpoint
+**Vulnerability:** The `require_captcha` function manually parsed `HTTP_X_FORWARDED_FOR` using `request.META.get("HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", ""))`, allowing any client to bypass IP-based CAPTCHA risk analysis by simply injecting a spoofed IP in the header.
+**Learning:** Trusting the `X-Forwarded-For` without properly filtering it is fundamentally insecure as it is entirely client-controlled.
+**Prevention:** Always use the centralized `get_client_ip` function in `apps.core.utils` to extract the client IP, which correctly uses Cloudflare's trusted `CF-Connecting-IP` or the right-most (proxy-appended) IP from `X-Forwarded-For`.
