@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Heart, ShoppingBag, Star, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
@@ -40,6 +41,7 @@ const PLACEHOLDER_GRADIENTS = [
 // Expected impact: Significant reduction in re-renders for large product grids when parent state changes.
 export const ProductCard = React.memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { t } = useI18n();
+  const router = useRouter();
   const { add: addToCart } = useCart();
   const { contains, toggle: toggleWishlist } = useWishlist();
   const wished = contains(product.id);
@@ -57,7 +59,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
     e?.stopPropagation?.();
     if (!inStock) return;
     if ((product.variantCount ?? 0) > 1) {
-      window.location.href = `/products/${product.slug}`;
+      router.push(`/products/${product.slug}`);
       return;
     }
     addToCart({
