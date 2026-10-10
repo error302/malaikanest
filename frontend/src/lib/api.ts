@@ -244,6 +244,7 @@ api.interceptors.response.use(
           !window.location.pathname.includes('/register') &&
           !window.location.pathname.includes('/forgot-password')
         ) {
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);
