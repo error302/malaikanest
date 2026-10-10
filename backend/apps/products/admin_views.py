@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -120,7 +120,12 @@ class AdminBannerViewSet(viewsets.ModelViewSet):
 
 
 class AdminUserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().order_by("-date_joined")
+    # ⚡ Bolt: Optimize N+1 queries by annotating the total orders count
+    # directly onto the queryset, preventing the serializer from firing
+    # a new query for each user.
+    queryset = User.objects.annotate(
+        total_orders_annotated=Count("order", distinct=True)
+    ).order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
     pagination_class = AdminLimitOffsetPagination
