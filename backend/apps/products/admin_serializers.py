@@ -740,6 +740,11 @@ class AdminUserSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_orders(self, obj):
+        # ⚡ Bolt: Use the annotated total_orders_annotated value to avoid N+1 queries,
+        # but safely fallback to a database query if this serializer is used in a context
+        # where the queryset was not annotated.
+        if hasattr(obj, "total_orders_annotated"):
+            return obj.total_orders_annotated
         return Order.objects.filter(user=obj).count()
 
 
