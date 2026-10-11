@@ -68,12 +68,26 @@ class AdminCategorySerializer(serializers.ModelSerializer):
     def _download_image(self, image_url):
         if not image_url:
             return None
+
+        from django.conf import settings
+        from urllib.parse import urlparse
+
+        parsed = urlparse(image_url)
+        allowed_hosts = getattr(
+            settings,
+            "IMAGE_URL_ALLOWED_HOSTS",
+            ["res.cloudinary.com", "cloudinary.com"],
+        )
+
+        if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+            logger.warning("SSRF blocked: attempt to fetch image from %s", image_url)
+            return None
+
         try:
             import requests
             from django.core.files.base import ContentFile
-            from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
                 parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
@@ -318,12 +332,26 @@ class AdminProductSerializer(serializers.ModelSerializer):
     def _download_image(self, image_url, default_name):
         if not image_url:
             return None
+
+        from django.conf import settings
+        from urllib.parse import urlparse
+
+        parsed = urlparse(image_url)
+        allowed_hosts = getattr(
+            settings,
+            "IMAGE_URL_ALLOWED_HOSTS",
+            ["res.cloudinary.com", "cloudinary.com"],
+        )
+
+        if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+            logger.warning("SSRF blocked: attempt to fetch image from %s", image_url)
+            return None
+
         try:
             import requests
             from django.core.files.base import ContentFile
-            from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
                 parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
