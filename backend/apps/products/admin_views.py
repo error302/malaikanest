@@ -1,6 +1,6 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count, OuterRef, Subquery, IntegerField
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -8,6 +8,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from apps.accounts.permissions import IsAdminUser
+from apps.orders.models import Order
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
@@ -126,7 +127,14 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # ⚡ Bolt Optimization: Annotate total_orders using a Subquery to prevent N+1 without breaking pagination .count()
+        orders_subquery = Order.objects.filter(user=OuterRef('pk')).values('user').annotate(
+            count=Count('pk')
+        ).values('count')[:1]
+
+        queryset = super().get_queryset().annotate(
+            annotated_total_orders=Subquery(orders_subquery, output_field=IntegerField())
+        )
         search = self.request.query_params.get("search")
 
         if search:
