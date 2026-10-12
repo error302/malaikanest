@@ -256,8 +256,9 @@ class RequestValidationMiddleware:
                     body_lower = body.lower()
                     for pattern in self.SUSPICIOUS_PATTERNS:
                         if pattern in body_lower:
+                            from apps.core.utils import get_client_ip
                             logger.warning(
-                                f"Suspicious pattern detected: {pattern} from {request.META.get('REMOTE_ADDR')}"
+                                f"Suspicious pattern detected: {pattern} from {get_client_ip(request)}"
                             )
                             # Don't block - just log
                             # Could be legitimate content
@@ -312,7 +313,7 @@ class RequestLoggingMiddleware:
             response.status_code,
             duration_ms,
             _email_mask or user,
-            request.META.get('REMOTE_ADDR', 'unknown')[:3] + '***',
+            __import__('apps.core.utils', fromlist=['get_client_ip']).get_client_ip(request)[:3] + '***',
         )
 
         response['X-Request-ID'] = request_id
