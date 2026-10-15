@@ -1,6 +1,7 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Subquery, OuterRef, Count
+from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -127,6 +128,13 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        # Optimize N+1 for total_orders by annotating the count
+        orders_subquery = Order.objects.filter(user=OuterRef('pk')).order_by().values('user').annotate(count=Count('pk')).values('count')[:1]
+        queryset = queryset.annotate(
+            annotated_total_orders=Coalesce(Subquery(orders_subquery), 0)
+        )
+
         search = self.request.query_params.get("search")
 
         if search:
