@@ -203,6 +203,9 @@ const en: Dict = {
   'cart.apply': 'Apply',
   'cart.applied': 'Coupon applied!',
   'cart.invalidCoupon': 'Invalid coupon code',
+  'cart.decreaseQty': 'Decrease quantity of {name}',
+  'cart.increaseQty': 'Increase quantity of {name}',
+  'cart.removeItem': 'Remove {name} from cart',
   'cart.addMore': 'Add KES {amount} more for free delivery',
 
   // Checkout
@@ -483,6 +486,9 @@ const sw: Dict = {
   'cart.apply': 'Tuma',
   'cart.applied': 'Punguzo limewekwa!',
   'cart.invalidCoupon': 'Msimbo wa punguzo si sahihi',
+  'cart.decreaseQty': 'Punguza idadi ya {name}',
+  'cart.increaseQty': 'Ongeza idadi ya {name}',
+  'cart.removeItem': 'Ondoa {name} kutoka kwenye rakibu',
   'cart.addMore': 'Ongeza KES {amount} zaidi kwa usafirishaji bure',
 
   // Checkout
