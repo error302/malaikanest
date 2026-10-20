@@ -126,6 +126,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
+        from django.db.models import Subquery, OuterRef, Count
+        from django.db.models.functions import Coalesce
+        from apps.orders.models import Order
         queryset = super().get_queryset()
         search = self.request.query_params.get("search")
 
@@ -135,6 +138,16 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 | Q(first_name__icontains=search)
                 | Q(last_name__icontains=search)
             )
+
+        orders_count = Order.objects.filter(
+            user=OuterRef('pk')
+        ).order_by().values('user').annotate(
+            count=Count('pk')
+        ).values('count')
+
+        queryset = queryset.annotate(
+            annotated_total_orders=Coalesce(Subquery(orders_count[:1]), 0)
+        )
 
         return queryset
 
