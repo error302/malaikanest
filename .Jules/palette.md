@@ -9,3 +9,6 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+## 2024-03-24 - Improve Quantity Button ARIA Labels
+**Learning:** Found that some buttons used concatenations of generic strings for their aria-label, leading to poor UX for screen readers. Example: the "+" and "-" buttons for modifying item quantities in the cart had an aria-label reading "Remove + " and "Remove - " because it fell back to concatenating `t('cart.remove')`.
+**Action:** Implemented better translations `cart.decreaseQty` and `cart.increaseQty` in English and Swahili to improve screen-reader accessibility on the shopping cart.
