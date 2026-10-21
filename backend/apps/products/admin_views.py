@@ -119,6 +119,8 @@ class AdminBannerViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+from django.db.models import Count
+
 class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
@@ -126,7 +128,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     pagination_class = AdminLimitOffsetPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().annotate(total_orders_count=Count('order'))
         search = self.request.query_params.get("search")
 
         if search:
