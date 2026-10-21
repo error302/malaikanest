@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { getSiteSettings, type Branding } from '@/lib/settings';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * Floating WhatsApp button — persistent on every page.
@@ -11,6 +12,7 @@ import { getSiteSettings, type Branding } from '@/lib/settings';
 export function WhatsAppButton() {
   const [whatsappUrl, setWhatsappUrl] = useState('https://wa.me/254726771321');
   const [expanded, setExpanded] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     getSiteSettings()
@@ -28,6 +30,7 @@ export function WhatsAppButton() {
     <div className="fixed bottom-[calc(8rem_+_env(safe-area-inset-bottom,_0px))] right-4 lg:bottom-6 lg:right-6 z-[140]">
       {expanded && (
         <div
+          id="whatsapp-chat-popup"
           className="absolute bottom-16 right-0 w-64 rounded-2xl shadow-warm-lg border p-4 animate-fade-in-up"
           style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}
         >
@@ -36,9 +39,9 @@ export function WhatsAppButton() {
               <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#25D366' }}>
                 <MessageCircle size={16} className="text-white" />
               </div>
-              <span className="text-sm font-semibold" style={{ color: 'var(--brand-text)' }}>Chat with us</span>
+              <span className="text-sm font-semibold" style={{ color: 'var(--brand-text)' }}>{t('nav.chatWithUs')}</span>
             </div>
-            <button type="button" onClick={() => setExpanded(false)} className="w-6 h-6 rounded-full flex items-center justify-center" aria-label="Close">
+            <button type="button" onClick={() => setExpanded(false)} className="w-6 h-6 rounded-full flex items-center justify-center" aria-label={t('nav.close')}>
               <X size={14} style={{ color: 'var(--brand-text-muted)' }} />
             </button>
           </div>
@@ -59,7 +62,9 @@ export function WhatsAppButton() {
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        aria-label="Chat on WhatsApp"
+        aria-expanded={expanded}
+        aria-controls="whatsapp-chat-popup"
+        aria-label={t('nav.chatOnWhatsapp')}
         className="w-14 h-14 rounded-full shadow-warm-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
         style={{ background: '#25D366' }}
       >
