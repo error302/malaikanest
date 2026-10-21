@@ -9,3 +9,7 @@
 ## 2026-08-08 - [Keyboard Navigation] focus-visible ring on mobile bottom nav
 **Learning:** Mobile users on tablets or with Bluetooth keyboards need a visible focus indicator on bottom-nav links, just like desktop users.
 **Action:** Every `<Link>` in `MobileBottomNav` now ships `rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]` so keyboard focus is announced visually with the brand gold ring.
+
+## 2024-11-21 - [Screen Reader Localization] Hardcoded Strings in ARIA Labels
+**Learning:** Dynamic elements like mobile navigation often interpolate user states or counts directly into ARIA labels (e.g., `aria-label="Cart (3 items)"` or `aria-label="Account (signed in as User)"`). If these strings are hardcoded in English, screen readers will read them incorrectly or inconsistently for users viewing the site in another language.
+**Action:** Always wrap dynamically interpolated strings inside `aria-label`s with `t()` translation functions and add any missing keys to the i18n dictionaries.
