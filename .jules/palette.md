@@ -1,0 +1,3 @@
+## 2024-10-21 - Added aria-labels to cart buttons
+**Learning:** Found that the frontend `cart-drawer.tsx` and `cart/page.tsx` were using hardcoded generic text (or dynamically generated template literals) for `aria-label`s on cart item buttons like "Remove", missing the actual item's name or failing to leverage translations properly. Screen readers would just read "Remove", leaving the user without context on which item was being modified.
+**Action:** Always add specific item context to aria-labels on repeated list item actions (e.g., cart items) and implement new keys in `i18n.tsx` that support string interpolation instead of concatenating translated strings with variables.
