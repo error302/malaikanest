@@ -4,18 +4,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
 import { Home, ShoppingBag, Search, ShoppingCart, User } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 const NAV_ITEMS = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Shop', href: '/categories', icon: ShoppingBag },
-  { name: 'Search', href: '/search', icon: Search },
-  { name: 'Cart', href: '/cart', icon: ShoppingCart, showBadge: true },
-  { name: 'Account', href: '/account', icon: User },
+  { name: 'Home', i18nKey: 'nav.home', href: '/', icon: Home },
+  { name: 'Shop', i18nKey: 'nav.shop', href: '/categories', icon: ShoppingBag },
+  { name: 'Search', i18nKey: 'nav.search', href: '/search', icon: Search },
+  { name: 'Cart', i18nKey: 'nav.cart', href: '/cart', icon: ShoppingCart, showBadge: true },
+  { name: 'Account', i18nKey: 'nav.account', href: '/account', icon: User },
 ];
 
 export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
+  const { t } = useI18n();
   const userInitial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
 
   return (
@@ -36,12 +38,13 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
           const badgeCount = item.showBadge && item.name === 'Cart' ? cartCount : 0;
           const isAccount = item.name === 'Account';
           const showAvatar = isAccount && isAuthenticated;
+          const translatedName = t(item.i18nKey);
 
-          let ariaLabel = item.name;
+          let ariaLabel = translatedName;
           if (isAccount && user) {
-            ariaLabel = `${item.name} (signed in as ${user.name || user.email})`;
+            ariaLabel = `${translatedName} (${t('nav.signedInAs')} ${user.name || user.email})`;
           } else if (item.name === 'Cart' && badgeCount > 0) {
-            ariaLabel = `${item.name} (${badgeCount} item${badgeCount === 1 ? '' : 's'})`;
+            ariaLabel = `${translatedName} (${badgeCount} ${badgeCount === 1 ? t('nav.item') : t('nav.items')})`;
           }
 
           return (
@@ -92,7 +95,7 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{item.name}</span>
+              <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{translatedName}</span>
             </Link>
           );
         })}
@@ -100,4 +103,3 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
     </nav>
   );
 }
-
