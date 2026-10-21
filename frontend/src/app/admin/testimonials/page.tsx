@@ -172,7 +172,7 @@ function TestimonialForm({ initial, onSave, onClose }: { initial: Testimonial | 
       <div className="bg-white rounded-2xl shadow-warm-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-xl font-semibold" style={{ color: 'var(--brand-text)' }}>{initial ? 'Edit' : 'Add'} Testimonial</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[var(--brand-warm)]"><X size={18} style={{ color: 'var(--brand-brown)' }} /></button>
+          <button type="button" onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[var(--brand-warm)]"><X size={18} style={{ color: 'var(--brand-brown)' }} /></button>
         </div>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
