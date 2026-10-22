@@ -373,6 +373,27 @@ class Product(BaseModel):
         return self.variants.filter(is_active=True).exists()
 
     def _variant_inventory_summary(self):
+        if hasattr(self, "_prefetched_objects_cache") and "variants" in self._prefetched_objects_cache:
+            total_quantity = 0
+            total_reserved = 0
+            for variant in self.variants.all():
+                if variant.is_active:
+                    has_inventory_cache = (
+                        (hasattr(variant, '_prefetched_objects_cache') and 'inventory' in variant._prefetched_objects_cache) or
+                        (hasattr(variant, '_state') and hasattr(variant._state, 'fields_cache') and 'inventory' in variant._state.fields_cache)
+                    )
+                    if has_inventory_cache and hasattr(variant, 'inventory') and variant.inventory:
+                        total_quantity += getattr(variant.inventory, 'quantity', 0)
+                        total_reserved += getattr(variant.inventory, 'reserved', 0)
+                    elif not has_inventory_cache:
+                        # Fallback to single aggregate query if ANY active variant lacks inventory cache
+                        # to prevent N+1 queries fetching the inventory individually
+                        return self._fallback_variant_inventory_summary()
+            return total_quantity, total_reserved
+
+        return self._fallback_variant_inventory_summary()
+
+    def _fallback_variant_inventory_summary(self):
         summary = VariantInventory.objects.filter(
             variant__product=self,
             variant__is_active=True,
