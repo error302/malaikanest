@@ -6,6 +6,7 @@ from django.db.models import (
     IntegerField,
     OuterRef,
     Q,
+    Subquery,
     Sum,
     Value,
 )
@@ -19,6 +20,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
 from apps.accounts.permissions import IsAdminUser as RoleAwareIsAdminUser
+from apps.orders.models import OrderItem
+from .models import Review
 from apps.core.cache import (
     cache_service,
 )  # noqa: F401  (used by _invalidate_products_cache)
@@ -227,15 +230,37 @@ class ProductViewSet(viewsets.ModelViewSet):
             .prefetch_related("category__children", "variants__inventory")
             .annotate(
                 avg_rating=Coalesce(
-                    Avg("reviews__rating"), Value(0.0), output_field=FloatField()
+                    Subquery(
+                        Review.objects.filter(product=OuterRef("pk"))
+                        .order_by()
+                        .values("product")
+                        .annotate(avg=Avg("rating"))
+                        .values("avg")[:1]
+                    ),
+                    0.0,
+                    output_field=FloatField(),
                 ),
                 review_count=Coalesce(
-                    Count("reviews", distinct=True),
-                    Value(0),
+                    Subquery(
+                        Review.objects.filter(product=OuterRef("pk"))
+                        .order_by()
+                        .values("product")
+                        .annotate(count=Count("pk"))
+                        .values("count")[:1]
+                    ),
+                    0,
                     output_field=IntegerField(),
                 ),
                 popularity=Coalesce(
-                    Sum("orderitem__quantity"), Value(0), output_field=IntegerField()
+                    Subquery(
+                        OrderItem.objects.filter(product=OuterRef("pk"))
+                        .order_by()
+                        .values("product")
+                        .annotate(sum=Sum("quantity"))
+                        .values("sum")[:1]
+                    ),
+                    0,
+                    output_field=IntegerField(),
                 ),
             )
         )
