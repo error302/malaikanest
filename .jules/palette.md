@@ -1,0 +1,3 @@
+## 2024-10-23 - Context-specific ARIA labels for Cart Buttons
+**Learning:** Translating generic strings like "Remove" and appending them with raw symbols (e.g. `t('cart.remove') + ' -'`) creates poor accessibility context for screen readers in lists, and using generic descriptions in the cart drawer makes it impossible for screen readers to differentiate which item's quantity is being altered.
+**Action:** Use the `t` function's interpolation feature to provide context-rich, accessible labels for action buttons within iterative lists (e.g. `aria-label={t('cart.removeItem', { name: item.name })}`). Added missing translations directly to the `en` and `sw` dictionaries in `lib/i18n.tsx`.
