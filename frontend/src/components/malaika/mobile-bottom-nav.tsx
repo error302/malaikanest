@@ -3,19 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
+import { useI18n } from '@/lib/i18n';
 import { Home, ShoppingBag, Search, ShoppingCart, User } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Shop', href: '/categories', icon: ShoppingBag },
-  { name: 'Search', href: '/search', icon: Search },
-  { name: 'Cart', href: '/cart', icon: ShoppingCart, showBadge: true },
-  { name: 'Account', href: '/account', icon: User },
+  { name: 'Home', nameKey: 'nav.home', href: '/', icon: Home },
+  { name: 'Shop', nameKey: 'nav.shop', href: '/categories', icon: ShoppingBag },
+  { name: 'Search', nameKey: 'nav.search', href: '/search', icon: Search },
+  { name: 'Cart', nameKey: 'nav.cart', href: '/cart', icon: ShoppingCart, showBadge: true },
+  { name: 'Account', nameKey: 'nav.account', href: '/account', icon: User },
 ];
 
 export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
+  const { t } = useI18n();
   const userInitial = (user?.name || user?.email || '?').trim().charAt(0).toUpperCase();
 
   return (
@@ -37,11 +39,11 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
           const isAccount = item.name === 'Account';
           const showAvatar = isAccount && isAuthenticated;
 
-          let ariaLabel = item.name;
+          let ariaLabel = t(item.nameKey);
           if (isAccount && user) {
-            ariaLabel = `${item.name} (signed in as ${user.name || user.email})`;
+            ariaLabel = t('nav.accountSignedIn', { name: t(item.nameKey), user: user.name || user.email || '?' });
           } else if (item.name === 'Cart' && badgeCount > 0) {
-            ariaLabel = `${item.name} (${badgeCount} item${badgeCount === 1 ? '' : 's'})`;
+            ariaLabel = t(badgeCount === 1 ? 'nav.cartItem_one' : 'nav.cartItem_other', { name: t(item.nameKey), count: badgeCount });
           }
 
           return (
@@ -92,7 +94,7 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{item.name}</span>
+              <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{t(item.nameKey)}</span>
             </Link>
           );
         })}
