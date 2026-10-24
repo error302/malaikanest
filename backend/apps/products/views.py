@@ -6,6 +6,7 @@ from django.db.models import (
     IntegerField,
     OuterRef,
     Q,
+    Subquery,
     Sum,
     Value,
 )
@@ -18,6 +19,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
+from django.apps import apps
 from apps.accounts.permissions import IsAdminUser as RoleAwareIsAdminUser
 from apps.core.cache import (
     cache_service,
@@ -225,17 +227,43 @@ class ProductViewSet(viewsets.ModelViewSet):
                 "category", "category__parent", "category__parent__parent", "brand"
             )
             .prefetch_related("category__children", "variants__inventory")
+            # ⚡ Bolt Optimization: Using correlated Subqueries instead of implicit JOINs
+            # Multiple independent .annotate() calls (e.g., reviews and orderitem) cause an N x M Cartesian
+            # product blowup in SQL, destroying performance and returning incorrect aggregation sums.
+            # Using Subqueries prevents the blowup by running isolated scalar aggregates per row.
             .annotate(
                 avg_rating=Coalesce(
-                    Avg("reviews__rating"), Value(0.0), output_field=FloatField()
+                    Subquery(
+                        Review.objects.filter(product=OuterRef("pk"))
+                        .order_by()
+                        .values("product")
+                        .annotate(avg=Avg("rating"))
+                        .values("avg")[:1],
+                        output_field=FloatField()
+                    ),
+                    Value(0.0), output_field=FloatField()
                 ),
                 review_count=Coalesce(
-                    Count("reviews", distinct=True),
-                    Value(0),
-                    output_field=IntegerField(),
+                    Subquery(
+                        Review.objects.filter(product=OuterRef("pk"))
+                        .order_by()
+                        .values("product")
+                        .annotate(count=Count("pk"))
+                        .values("count")[:1],
+                        output_field=IntegerField()
+                    ),
+                    Value(0), output_field=IntegerField()
                 ),
                 popularity=Coalesce(
-                    Sum("orderitem__quantity"), Value(0), output_field=IntegerField()
+                    Subquery(
+                        apps.get_model('orders', 'OrderItem').objects.filter(product=OuterRef("pk"))
+                        .order_by()
+                        .values("product")
+                        .annotate(pop=Sum("quantity"))
+                        .values("pop")[:1],
+                        output_field=IntegerField()
+                    ),
+                    Value(0), output_field=IntegerField()
                 ),
             )
         )
