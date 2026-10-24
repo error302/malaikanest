@@ -35,6 +35,10 @@ const en: Dict = {
   'nav.shopByAge': 'Shop by Age',
   'nav.featured': 'Featured',
   'nav.allProducts': 'All Products',
+  'nav.accountSignedIn': '{name} (signed in as {user})',
+  'nav.cartItem_one': '{name} ({count} item)',
+  'nav.cartItem_other': '{name} ({count} items)',
+
 
   // Mega menu groups
   'mega.shopByCategory': 'Shop by Category',
@@ -315,6 +319,10 @@ const sw: Dict = {
   'nav.shopByAge': 'Kwa Umri',
   'nav.featured': 'Vipengele',
   'nav.allProducts': 'Bidhaa Zote',
+  'nav.accountSignedIn': '{name} (umeingia kama {user})',
+  'nav.cartItem_one': '{name} (bidhaa {count})',
+  'nav.cartItem_other': '{name} (bidhaa {count})',
+
 
   // Mega menu groups
   'mega.shopByCategory': 'Duka kwa Jamii',
