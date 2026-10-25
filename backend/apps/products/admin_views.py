@@ -1,6 +1,7 @@
 import io
 
-from django.db.models import Q
+from django.db.models import Q, Count, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -135,6 +136,10 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 | Q(first_name__icontains=search)
                 | Q(last_name__icontains=search)
             )
+
+        # Optimize: Annotate with order count to prevent N+1 queries in AdminUserSerializer
+        order_count_sq = Order.objects.filter(user=OuterRef("pk")).order_by().values("user").annotate(count=Count("pk")).values("count")
+        queryset = queryset.annotate(annotated_total_orders=Coalesce(Subquery(order_count_sq[:1]), 0))
 
         return queryset
 
