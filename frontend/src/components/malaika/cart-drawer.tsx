@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { useCart } from '@/lib/cartContext';
 import { useCartDrawer } from '@/lib/cartDrawerStore';
 import { formatKES } from '@/lib/format';
+import { useI18n } from '@/lib/i18n';
 import { slideOver } from '@/lib/motion';
 
 /**
@@ -23,6 +24,7 @@ export function CartDrawer() {
   const open = useCartDrawer((s) => s.open);
   const closeDrawer = useCartDrawer((s) => s.closeDrawer);
   const { items, updateQty, remove, loading } = useCart();
+  const { t } = useI18n();
 
   // Compute subtotal client-side from items. The server-side subtotal lives in
   // cartContext's internal `cartData` field (not exposed in CartContextType) —
@@ -160,8 +162,9 @@ export function CartDrawer() {
                             onClick={() => remove(item.id)}
                             disabled={loading}
                             className="text-xs text-ink-muted hover:text-danger transition-colors ml-2 disabled:opacity-50"
+                            aria-label={t('cart.removeItem', { name: item.name })}
                           >
-                            Remove
+                            {t('cart.remove')}
                           </button>
                         </div>
                       </div>
