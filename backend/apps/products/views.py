@@ -1,4 +1,6 @@
+from apps.orders.models import OrderItem
 from django.db.models import (
+    Subquery,
     Avg,
     Count,
     Exists,
@@ -224,18 +226,37 @@ class ProductViewSet(viewsets.ModelViewSet):
             .select_related(
                 "category", "category__parent", "category__parent__parent", "brand"
             )
-            .prefetch_related("category__children", "variants__inventory")
+            .prefetch_related("category__children", "variants__inventory", "images")
             .annotate(
                 avg_rating=Coalesce(
-                    Avg("reviews__rating"), Value(0.0), output_field=FloatField()
+                    Subquery(
+                        Review.objects.filter(product=OuterRef("pk"))
+                        .values("product")
+                        .annotate(avg=Avg("rating"))
+                        .values("avg")[:1]
+                    ),
+                    Value(0.0),
+                    output_field=FloatField()
                 ),
                 review_count=Coalesce(
-                    Count("reviews", distinct=True),
+                    Subquery(
+                        Review.objects.filter(product=OuterRef("pk"))
+                        .values("product")
+                        .annotate(count=Count("pk"))
+                        .values("count")[:1]
+                    ),
                     Value(0),
                     output_field=IntegerField(),
                 ),
                 popularity=Coalesce(
-                    Sum("orderitem__quantity"), Value(0), output_field=IntegerField()
+                    Subquery(
+                        OrderItem.objects.filter(product=OuterRef("pk"))
+                        .values("product")
+                        .annotate(total=Sum("quantity"))
+                        .values("total")[:1]
+                    ),
+                    Value(0),
+                    output_field=IntegerField()
                 ),
             )
         )
