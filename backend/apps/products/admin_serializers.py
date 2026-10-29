@@ -73,9 +73,19 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            from django.conf import settings
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                logger.warning("Blocked attempt to download image from unapproved host: %s", image_url)
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or "category_image.jpg"
                 return ContentFile(response.content, name=filename)
         except Exception:
@@ -323,9 +333,19 @@ class AdminProductSerializer(serializers.ModelSerializer):
             from django.core.files.base import ContentFile
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            from django.conf import settings
+            parsed = urlparse(image_url)
+            allowed_hosts = getattr(
+                settings,
+                "IMAGE_URL_ALLOWED_HOSTS",
+                ["res.cloudinary.com", "cloudinary.com"],
+            )
+            if parsed.scheme != "https" or not parsed.hostname or parsed.hostname.lower() not in allowed_hosts:
+                logger.warning("Blocked attempt to download product image from unapproved host: %s", image_url)
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
