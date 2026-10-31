@@ -1,0 +1,3 @@
+## 2024-05-14 - Context-Specific Translation ARIA Labels
+**Learning:** Concatenating generic translation strings for repeated elements in lists (e.g., `aria-label={t('cart.remove') + ' -'}`) results in awkward screen reader experiences and breaks in translation when word order changes. Using template literals for these also sidesteps localization (e.g., `Decrease quantity of ${item.name}`).
+**Action:** When implementing repeated item actions in a list (like a cart), always create distinct, context-specific translation keys that use interpolation (e.g., `t('cart.decreaseQty', { name: item.name })`) rather than string concatenation or generic template literals.
