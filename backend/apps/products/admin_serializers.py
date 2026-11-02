@@ -740,6 +740,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_orders(self, obj):
+        if hasattr(obj, "total_orders_annotated"):
+            return obj.total_orders_annotated
         return Order.objects.filter(user=obj).count()
 
 

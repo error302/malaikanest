@@ -4,6 +4,8 @@ from django.db.models import Q
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
+from django.db.models import Subquery, OuterRef, Count, IntegerField
+from django.db.models.functions import Coalesce
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
@@ -127,6 +129,10 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        orders_subquery = Order.objects.filter(user=OuterRef("pk")).order_by().values("user").annotate(count=Count("pk")).values("count")
+        queryset = queryset.annotate(total_orders_annotated=Coalesce(Subquery(orders_subquery[:1]), 0, output_field=IntegerField()))
+
         search = self.request.query_params.get("search")
 
         if search:

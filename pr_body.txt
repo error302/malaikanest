@@ -1,0 +1,11 @@
+💡 What: The optimization implemented
+Replaced the `Order.objects.filter(user=obj).count()` query inside `AdminUserSerializer.get_total_orders` with an annotated Subquery in `AdminUserViewSet.get_queryset` that prefetches the count using `OuterRef`, `Subquery`, and `Coalesce` to fallback cleanly on missing annotations.
+
+🎯 Why: The performance problem it solves
+The admin API used to list users resulted in an N+1 query problem because `.count()` was called dynamically for every serialized user object, causing an individual database lookup per user.
+
+📊 Impact: Expected performance improvement
+Reduces database queries from O(N+1) to O(1) when fetching the paginated user list on the admin panel, saving up to ~50 separate queries per API hit and drastically speeding up the response time for `/api/accounts/admin/users/`.
+
+🔬 Measurement: How to verify the improvement
+Run standard `python manage.py test apps.products` locally. Or, check database query output when viewing `/api/accounts/admin/users/` using Django Debug Toolbar or similar DB-tracing tools—only one primary User fetch should occur.
