@@ -38,7 +38,7 @@ export function WhatsAppButton() {
               </div>
               <span className="text-sm font-semibold" style={{ color: 'var(--brand-text)' }}>Chat with us</span>
             </div>
-            <button type="button" onClick={() => setExpanded(false)} className="w-6 h-6 rounded-full flex items-center justify-center" aria-label="Close">
+            <button type="button" onClick={() => setExpanded(false)} className="w-6 h-6 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]" aria-label="Close">
               <X size={14} style={{ color: 'var(--brand-text-muted)' }} />
             </button>
           </div>
@@ -49,7 +49,7 @@ export function WhatsAppButton() {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="block text-center w-full rounded-full px-4 py-2.5 text-sm font-semibold"
+            className="block text-center w-full rounded-full px-4 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:ring-offset-2"
             style={{ background: '#25D366', color: '#FFFFFF' }}
           >
             Start Chat
@@ -60,7 +60,7 @@ export function WhatsAppButton() {
         type="button"
         onClick={() => setExpanded((e) => !e)}
         aria-label="Chat on WhatsApp"
-        className="w-14 h-14 rounded-full shadow-warm-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+        className="w-14 h-14 rounded-full shadow-warm-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:ring-offset-2"
         style={{ background: '#25D366' }}
       >
         {expanded ? (
