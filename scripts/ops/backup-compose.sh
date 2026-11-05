@@ -13,7 +13,10 @@
 #   30 3 * * * /opt/malaikanest/scripts/ops/backup-compose.sh >> /var/log/malaikanest/backup.log 2>&1
 set -euo pipefail
 
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
+# Was docker-compose.yml, which is NOT what production runs. The lean topology
+# is docker-compose.lean.yml; defaulting to the wrong file made `exec db` fail
+# against a project that is not up, so the nightly timer produced nothing.
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.lean.yml}"
 COMPOSE="docker compose -f ${COMPOSE_FILE}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/malaikanest/compose}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
@@ -54,6 +57,10 @@ else
 fi
 
 # --- 2. CMS PostgreSQL (malaika_cms) ------------------------------------------
+# Only exists when the `cms-db-init` one-shot from the FULL stack has run. On the
+# lean topology it does not, so treat its absence as a skip, not a failure -
+# otherwise the script exits non-zero every night and the real dump above is
+# never reported as successful.
 # The Next.js CMS lives in its own `malaika_cms` database on the same db
 # service. Dump it with pg_dump in the same run as the commerce DB.
 CMS_FILE="$BACKUP_DIR/cms-$TIMESTAMP.dump"

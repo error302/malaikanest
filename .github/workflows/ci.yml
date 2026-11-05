@@ -69,6 +69,21 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
+      - run: pip install -r requirements-dev.txt
+      # HARD GATE. F821 (undefined name) is the rule that would have stopped six
+      # production crashes: RefreshToken, audit_log x4, url, plus the four found
+      # by hand earlier (invalidate_all_user_tokens, settings, Decimal, exc x2).
+      # py_compile passes all of them because NameError is runtime-only.
+      - name: Ruff - blocking (undefined names, redefinitions, syntax)
+        run: ruff check . --select F821,F811,F822,F823,E9 --output-format github
+
+      # Advisory only. The codebase currently has ~470 style findings (unused
+      # imports, trailing whitespace, import order). Do not block PRs on these
+      # until they are cleaned up; run `ruff check . --fix` locally to burn most
+      # of them down in one pass, then promote this step to blocking.
+      - name: Ruff - advisory (style)
+        continue-on-error: true
+        run: ruff check . --statistics
       - name: Django system check
         run: python manage.py check
       - name: Django tests

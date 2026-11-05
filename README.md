@@ -1,3 +1,21 @@
+> ## ⚠️ Deployment reality check (verified 2026-09-17)
+>
+> **The `frontend/` Next.js app in this repository is not what serves
+> https://malaikanest.com.** The live storefront is a server-rendered Django
+> template app that loads Tailwind from `cdn.tailwindcss.com`, and its templates
+> are **not committed here** — `backend/templates/` contains only `emails/` and
+> `admin/`, and `config/urls.py` has no storefront routes, yet `/products/` and
+> `/cart/` return 200 in production. Evidence: the live HTML contains no
+> `__NEXT_DATA__` / `/_next/static` markers, and none of the live homepage copy
+> appears anywhere in this repo.
+>
+> The **API is** this repo — `/api/schema/` matches `SPECTACULAR_SETTINGS`
+> exactly and `/api/v1/orders/delivery-zones/` returns the seeded Kenyan zones.
+>
+> Two consequences: (1) changes to `frontend/` do not change the live shop;
+> (2) the live storefront exists only on one VM's disk, so **find it and commit
+> it** before that VM dies.
+
 # Malaika Nest — E-Commerce Platform
 
 A full-featured e-commerce platform for baby and children's clothing in Kenya, built with Next.js and Django.
@@ -15,7 +33,7 @@ A full-featured e-commerce platform for baby and children's clothing in Kenya, b
 - **Icons**: `lucide-react` (aliased to a Phosphor-backed shim — see `src/lib/icons.tsx`)
 - **State**: React Context + Zustand + TanStack Query (cart, wishlist, auth, i18n, catalog)
 - **HTTP Client**: Axios with interceptors (cache, retry, JWT refresh)
-- **Runtime**: Bun (prod start) · **CMS**: Prisma 6 (SQLite)
+- **Runtime**: Node 22 (`frontend/Dockerfile`), Next.js standalone output · **CMS**: Prisma 6 (**PostgreSQL**, `malaika_cms`)
 
 ### Backend (API)
 - **Framework**: Django 5.2 + Django REST Framework 3.15
@@ -28,8 +46,8 @@ A full-featured e-commerce platform for baby and children's clothing in Kenya, b
 
 ### Infrastructure & Deployment
 - **Hosting**: Docker Compose on a single VM (Frontend + Backend + Postgres + Redis + Celery)
-- **Tunnel/CDN/DNS**: Cloudflare Tunnel (hot-standby) + Cloudflare CDN + Analytics
-- **Database**: PostgreSQL 15 (commerce) + SQLite (frontend CMS, persistent volume)
+- **Tunnel/CDN/DNS**: Cloudflare Tunnel + Cloudflare CDN + Analytics
+- **Database**: PostgreSQL 15 — commerce in `$POSTGRES_DB`, frontend CMS in `malaika_cms` on the same server. SQLite is not used anywhere and is rejected at import time by `config/settings/guards.py`.
 - **Cache/Queue**: Redis 7 (Celery broker + cache + Channels)
 - **Media Storage**: Cloudinary
 - **Email**: Brevo (smtp-relay.brevo.com)
@@ -108,14 +126,17 @@ malaikanest/
 │   │   └── lib/         # API client, contexts, utilities
 │   ├── public/           # Static assets
 │   └── package.json
-├── docker-compose.yml    # Production orchestration (Cloudflare Tunnels)
+├── docker-compose.lean.yml   # PRODUCTION on the 1 GB GCP e2-micro (web + db + cloudflared)
+├── docker-compose.worker.yml # Optional overlay: Redis + one celery worker -B --pool=solo
+├── docker-compose.yml        # Full 9-service stack. DO NOT run on the free-tier VM.
 └── README.md
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- Python 3.10+, Node.js 18+, Docker, Docker Compose
+- Python 3.12+ (the image is `python:3.13-slim`; CI runs 3.13), Node.js 20+
+  (Next 16 requires it; the image is `node:22-alpine`), Docker, Docker Compose
 
 ### Development (Docker)
 
@@ -249,24 +270,42 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 ## Deployment
 
-> See `AGENTS.md`, `docs/ARCHITECTURE.md` and `docs/BUG-FIXES-2026-08-05.md` for onboarding and the
-> full production-readiness pass. The active topology is `docker-compose.yml` + `cloudflared/`.
+> See `AGENTS.md`, `docs/ARCHITECTURE.md` and `docs/BUG-FIXES-2026-08-05.md` for onboarding.
 
-### Production (Docker Compose + Cloudflare Tunnel)
+### Production topology — read this first
+
+There are two compose files and they are **not** interchangeable.
+
+| File | Services | Use it on |
+|---|---|---|
+| `docker-compose.lean.yml` | `db`, `migrate`, `web`, `cloudflared` — memory-limited to ~640 MB total | **The GCP Always Free e2-micro (1 GB). This is production.** |
+| `docker-compose.yml` | 9 services, **no memory limits** (`db`, `cms-db-init`, `redis`, `backend`, `backend_replica`, `celery_worker`, `celery_beat`, `frontend`, `cloudflared`, `cloudflared_standby`) | A VM with ≥4 GB RAM only. It **will OOM-kill a 1 GB box** and the kernel will pick postgres. |
 
 ```bash
-# Build and start the full stack (active topology in docker-compose.yml)
-docker compose up -d --build
-docker compose logs -f backend celery frontend
+# Production (1 GB VM)
+docker compose -f docker-compose.lean.yml up -d --build
+docker compose -f docker-compose.lean.yml logs -f web
+docker compose -f docker-compose.lean.yml exec web python manage.py migrate
 
-# Apply migrations
-docker compose exec backend python manage.py migrate
-# Push the frontend CMS schema to its persistent SQLite volume
-docker compose exec frontend npx prisma db push
+# Add scheduled jobs (M-Pesa reconciliation, stale-order cleanup) if you have
+# the ~112 MB to spare. Otherwise use the cron fallback in
+# scripts/ops/backup-and-cron.sh, which needs no broker at all.
+docker compose -f docker-compose.lean.yml -f docker-compose.worker.yml up -d
 ```
 
-> Traffic: Cloudflare → cloudflared tunnel → Nginx/Next.js/Django. Two `cloudflared` containers run
-> in hot-standby for instant failover (load-balanced by Cloudflare).
+The lean stack deliberately runs **no Redis and no Celery**. That is safe because
+`apps/core/outbox.py` drains the transactional outbox inline in the web process
+when no broker is reachable, so `order.paid` still deducts stock, generates the
+invoice and emails the receipt. What you lose without a worker is anything
+*scheduled* — see the table in `docker-compose.worker.yml`.
+
+`.github/workflows/deploy.yml` is pinned to the lean file and refuses to fall
+back to `docker-compose.yml`.
+
+> Traffic: Cloudflare → one `cloudflared` connector → Django (ASGI/daphne, so
+> WebSockets work on the same port). Running a second connector on the same
+> tunnel token is not a hot standby — Cloudflare already load-balances multiple
+> connections from one tunnel — it just costs ~40 MB.
 
 ### Cloudflare Cache Rule (Required)
 Create a Cache Rule in the Cloudflare dashboard to cache static assets:

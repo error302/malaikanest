@@ -1,64 +1,164 @@
+# =============================================================================
+# PATCH — .github/workflows/deploy.yml
+#
+# THE PROBLEM: this workflow triggers on EVERY push to main and runs
+#     docker compose build --pull backend frontend
+#     docker compose up -d --remove-orphans
+# with no -f flag, so it uses the repo's docker-compose.yml — the NINE-service
+# stack (db, cms-db-init, redis, backend, backend_replica, celery_worker,
+# celery_beat, frontend, cloudflared, cloudflared_standby) with ZERO memory
+# limits. Your VM is a 1 GB e2-micro running a THREE-container lean stack.
+#
+# So the next `git push origin main` will:
+#   1. build a Next.js image on the VM (npm ci + next build needs >1 GB alone)
+#   2. start 10 containers with no mem_limit
+#   3. the kernel OOM-kills the largest process — almost certainly postgres
+#   4. `--remove-orphans` tears down your lean containers
+# Result: the shop is down, and the DB may not come back cleanly.
+#
+# It also health-gates on http://127.0.0.1:8081/api/health/ with
+# Host: api.malaikanest.com — which is the lean stack's binding. So the gate is
+# written for the lean topology while the deploy command targets the full one.
+# The file is internally inconsistent about which stack is production.
+#
+# FIX BELOW: pin the workflow to docker-compose.lean.yml, stop building on the
+# VM, and make the trigger explicit rather than "any push".
+# =============================================================================
+
 name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
+  # Manual by default. Until the lean topology is committed and tested end to
+  # end, an automatic deploy on every push is how you take the shop down at 2am.
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (default: main)"
+        required: false
+        default: "main"
+  # Re-enable automatic deploys only once you have watched this succeed twice:
+  # push:
+  #   branches: [main]
+  #   paths-ignore:
+  #     - "docs/**"
+  #     - "**.md"
+  #     - ".github/workflows/ci.yml"
+
+# Never run two deploys at once against a single 1 GB VM.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
     steps:
-      - name: Deploy via Docker Compose on VM
+      - name: Deploy lean stack on VM
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 15m
           script_stop: true
           script: |
             set -euo pipefail
 
-            APP_DIR="$HOME/malaikanest"
-            if [ ! -d "$APP_DIR/.git" ] && [ -d "/opt/malaikanest/.git" ]; then
-              APP_DIR="/opt/malaikanest"
-            fi
-            if [ ! -d "$APP_DIR/.git" ]; then
-              echo "Expected deployment repo at $APP_DIR but it was not found."
+            APP_DIR="${APP_DIR:-$HOME/malaikanest}"
+            [ -d "$APP_DIR/.git" ] || { echo "No git repo at $APP_DIR"; exit 1; }
+            cd "$APP_DIR"
+
+            # ── Refuse to deploy if the lean topology is missing ─────────────
+            COMPOSE_FILE="docker-compose.lean.yml"
+            if [ ! -f "$COMPOSE_FILE" ]; then
+              echo "FATAL: $COMPOSE_FILE not found. Refusing to fall back to"
+              echo "docker-compose.yml — that is the 9-service stack and will"
+              echo "OOM-kill this 1 GB VM. Commit the lean file first."
               exit 1
             fi
 
-            cd "$APP_DIR"
-            git stash push --include-untracked -m "github-actions-predeploy-$(date +%Y%m%d%H%M%S)" || true
-            git pull --ff-only origin main
+            # ── Refuse to deploy on low memory ───────────────────────────────
+            AVAIL_KB=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
+            echo "MemAvailable: $((AVAIL_KB / 1024)) MB"
+            if [ "$AVAIL_KB" -lt 131072 ]; then
+              echo "FATAL: less than 128 MB available before deploy. Something"
+              echo "is already wrong; deploying now will OOM. Aborting."
+              free -m; docker ps --format 'table {{.Names}}\t{{.Status}}'
+              exit 1
+            fi
 
-            # Migrations run inside the backend container entrypoint on start.
-            docker compose build --pull backend frontend
-            docker compose up -d --remove-orphans
+            # ── Back up BEFORE touching anything ─────────────────────────────
+            # A failed migrate is the usual way a deploy destroys data.
+            mkdir -p "$HOME/backups"
+            STAMP=$(date +%Y%m%d-%H%M%S)
+            if docker compose -f "$COMPOSE_FILE" exec -T db \
+                 sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' \
+                 > "$HOME/backups/pre-deploy-$STAMP.dump" 2>/dev/null; then
+              echo "Pre-deploy dump: $(du -h "$HOME/backups/pre-deploy-$STAMP.dump" | cut -f1)"
+              # A dump smaller than 1 KB is almost certainly an error page, not a DB.
+              [ "$(stat -c%s "$HOME/backups/pre-deploy-$STAMP.dump")" -gt 1024 ] \
+                || { echo "FATAL: pre-deploy dump is suspiciously small. Aborting."; exit 1; }
+            else
+              echo "WARNING: pre-deploy dump failed. Continuing because the"
+              echo "nightly backup should exist — verify with: ls -la ~/backups"
+            fi
+
+            # ── Pull code ────────────────────────────────────────────────────
+            git fetch --prune origin
+            git stash push --include-untracked -m "ci-predeploy-$STAMP" || true
+            git checkout --detach "origin/${{ github.event.inputs.ref || 'main' }}"
+            git log --oneline -1
+
+            # ── Build ONLY the backend image, and only on the VM ─────────────
+            # Never `docker compose build frontend` here: `next build` needs more
+            # RAM than this machine has and will thrash swap for 20+ minutes.
+            docker compose -f "$COMPOSE_FILE" build --pull web migrate
+
+            # ── Roll out ─────────────────────────────────────────────────────
+            # No --remove-orphans: it would delete containers you may be running
+            # intentionally from docker-compose.worker.yml.
+            docker compose -f "$COMPOSE_FILE" up -d
             docker image prune -f
 
-            # Authoritative health gate: hit the backend directly on its host
-            # binding (same Host-header trick as the compose healthcheck).
+            # ── Health gate on the VM itself (authoritative) ─────────────────
+            OK=0
             for i in $(seq 1 30); do
-              code=$(curl -s -o /dev/null -w '%{http_code}' \
+              CODE=$(curl -s -o /dev/null -w '%{http_code}' \
                 -H 'Host: api.malaikanest.com' -H 'X-Forwarded-Proto: https' \
                 http://127.0.0.1:8081/api/health/ || true)
-              if [ "$code" = "200" ]; then
-                echo "Backend healthy (attempt $i)"
-                break
-              fi
-              echo "Attempt $i: HTTP $code — retrying in 10s"
-              [ "$i" = "30" ] && { echo "Backend never became healthy."; exit 1; }
-              sleep 10
+              if [ "$CODE" = "200" ]; then OK=1; echo "Healthy on attempt $i"; break; fi
+              echo "Attempt $i: HTTP $CODE"; sleep 10
             done
 
-      - name: Advisory external check (informational only)
+            # ── Business gate: the catalogue must not be empty ───────────────
+            # /api/health/ returns 200 with a completely empty database, which is
+            # exactly the state production is in right now. Health is not enough.
+            COUNT=$(curl -s -H 'Host: api.malaikanest.com' \
+              'http://127.0.0.1:8081/api/v1/products/products/?page_size=1' \
+              | grep -o '"count":[0-9]*' | head -1 | cut -d: -f2 || echo "")
+            echo "Live product count: ${COUNT:-unknown}"
+            if [ -n "$COUNT" ] && [ "$COUNT" -eq 0 ]; then
+              echo "WARNING: zero products are live. The storefront will render"
+              echo "its empty state and cannot take orders."
+            fi
+
+            docker stats --no-stream
+            free -m
+
+            if [ "$OK" != "1" ]; then
+              echo "Backend never became healthy — last 120 log lines:"
+              docker compose -f "$COMPOSE_FILE" logs --tail=120 web
+              exit 1
+            fi
+
+      - name: Advisory external check
         if: always()
         run: |
-          # Cloudflare bot protection may challenge datacenter IPs (GitHub
-          # runners), so a non-200 here is NOT necessarily an outage — the
-          # authoritative gate above runs on the VM itself.
-          code=$(curl -s -o /dev/null -w '%{http_code}' -A 'Mozilla/5.0 (deploy-check)' \
-            https://api.malaikanest.com/api/health/ || true)
-          echo "External probe status: $code (advisory)"
+          # Cloudflare may challenge datacenter IPs, so non-200 here is not
+          # necessarily an outage. The gate above ran on the VM.
+          for URL in https://api.malaikanest.com/api/health/ https://malaikanest.com/; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' -A 'Mozilla/5.0 (deploy-check)' "$URL" || true)
+            echo "$URL -> $CODE (advisory)"
+          done

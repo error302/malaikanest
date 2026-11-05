@@ -1,0 +1,19 @@
+target-version = "py312"
+line-length = 120
+extend-exclude = ["migrations", "staticfiles", "config/staticfiles", "scripts/.pydeps", "logs"]
+
+[lint]
+# F821 (undefined name) alone would have caught all four NameErrors that shipped
+# to production: invalidate_all_user_tokens, settings, Decimal, and the two
+# unbound `exc` references in metrics.py / circuit_breaker.py.
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = [
+    "E501",   # line length is handled by the formatter, not the linter
+    "B008",   # function call in default argument is idiomatic for DRF
+    "SIM108", # ternary rewriting churns payment code for no gain
+]
+
+[lint.per-file-ignores]
+"*/tests*.py" = ["B011", "SIM"]
+"manage.py" = ["E402"]
+"config/settings/*.py" = ["F403", "F405", "E402"]

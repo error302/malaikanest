@@ -1,0 +1,126 @@
+# =============================================================================
+# OPTIONAL overlay: add Redis + a single combined Celery beat/worker process.
+#
+#   docker compose -f docker-compose.lean.yml -f docker-compose.worker.yml up -d
+#
+# WHY YOU MIGHT WANT IT
+#   The lean stack drains the outbox synchronously inside the web request, so
+#   order.paid side effects work without a broker. What you CANNOT do without
+#   beat is anything SCHEDULED:
+#     * reconcile_payments_task   — recovers an M-Pesa payment whose callback
+#                                   never arrived. This is money.
+#     * cancel_stale_pending_orders — releases stock reserved by abandoned
+#                                   checkouts after 24h. Without it, a size
+#                                   stays "out of stock" forever.
+#     * low_stock_check, abandoned-cart email, payment-failure alerts.
+#
+# COST: ~112 MB of your 1 GB. Combined into ONE process (beat embedded in the
+# worker via -B) instead of the two containers + replica the full
+# docker-compose.yml runs.
+#
+# IF YOU SKIP THIS FILE, run the two money-critical jobs from cron instead —
+# see ops/09_backup_and_cron.sh, section B. That costs 0 MB resident.
+# =============================================================================
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    expose:
+      - "6379"
+    # maxmemory 48mb with allkeys-lru: this instance is cache + broker only, so
+    # eviction is safe and it can never grow into the OOM killer's crosshairs.
+    # appendonly OFF — you do not need AOF durability for a job queue, and the
+    # fsync traffic on a burstable 0.25 vCPU costs you latency.
+    command:
+      - redis-server
+      - --maxmemory
+      - 48mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - "no"
+      - --save
+      - ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    mem_limit: 64m
+    memswap_limit: 96m
+    cpus: 0.25
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DJANGO_ENV: production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      TZ: Africa/Nairobi
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # --pool=solo  : one thread, no forked children. prefork would give you
+    #                1 parent + 2 children ≈ 3x the RSS for zero benefit at
+    #                your order volume.
+    # -B           : embed beat in this process, so you do not pay for a second
+    #                container just to run a scheduler.
+    # --max-tasks-per-child is not available on solo; instead cap memory via the
+    # container limit and let `restart: unless-stopped` recycle it.
+    command:
+      - celery
+      - -A
+      - config
+      - worker
+      - -B
+      - --pool=solo
+      - --loglevel=info
+      - --scheduler
+      - django_celery_beat.schedulers:DatabaseScheduler
+    mem_limit: 160m
+    memswap_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+# With this overlay the total budget is roughly:
+#   db 256 + web 320 + cloudflared 64 + redis 64 + worker 160 = 864 MB of limits
+# Limits are ceilings, not reservations; actual RSS should sit near 600-650 MB.
+# Watch it for a day:
+#   ssh malaikanest-gcp "docker stats --no-stream && free -m"
+# If `free -m` shows available < 120 MB, drop the worker and use cron instead.
+
+# ── Also required when you enable Redis ──────────────────────────────────────
+# The web service must point at the same Redis or /api/health/ keeps reporting
+# "redis": "degraded" and Django's cache stays local-memory:
+#   environment:
+#     REDIS_URL: redis://redis:6379/0
+#     CELERY_BROKER_URL: redis://redis:6379/0
+# Add that to the `web` service in docker-compose.lean.yml, or put it in a
+# third override file. Do not enable it half-way: a web process that thinks
+# Redis exists but cannot reach it will pay a connection timeout on every
+# cache.get(), which is slower than not having a cache at all.

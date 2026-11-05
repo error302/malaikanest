@@ -1,0 +1,185 @@
+# =============================================================================
+# Malaika Nest — LEAN production topology (GCP Always Free e2-micro, 1 GB RAM)
+#
+# THIS FILE DID NOT EXIST IN THE REPO. It is the topology your VM actually runs
+# (web + db + cloudflared, per your own handoff brief), but it lived only at
+# /home/admin/malaikanest/docker-compose.lean.yml on the VM. That is a single
+# point of failure with no copy anywhere: lose the VM's disk and you cannot
+# rebuild the shop, and `git clone` + deploy does not reproduce production.
+#
+# Commit this. It is the authoritative production definition from now on.
+#
+# WHAT THIS DELIBERATELY OMITS (and why that is safe)
+#   redis, celery_worker, celery_beat, backend_replica, frontend, nginx.
+#   The full docker-compose.yml declares NINE services with ZERO memory limits
+#   and would OOM-kill a 1 GB VM. Do not run it here.
+#   With patches 02/03 applied, the transactional outbox drains synchronously
+#   inside the web process, so order.paid side effects (stock deduction,
+#   invoice PDF, receipt email) work with no broker at all.
+#
+# WHAT YOU LOSE BY OMITTING THEM (see docker-compose.worker.yml to add back)
+#   * scheduled jobs: M-Pesa reconciliation, stale-pending-order cancellation,
+#     low-stock digest, abandoned-cart emails, payment-failure alerts
+#   * Channels/WebSocket payment push (the checkout page polls instead, which
+#     is what it already does)
+#   * Django's Redis cache -> falls back to local-memory cache, which is
+#     per-process and lost on restart. Fine at your traffic.
+#
+# MEMORY BUDGET (limits below total ~640 MB, leaving ~350 MB for the kernel,
+# Docker and page cache on a 1 GB box with 2 GB swap):
+#   db          256 MB   (shared_buffers 64MB, work_mem 2MB, max_connections 30)
+#   web         320 MB   (single daphne process; ASGI, so WebSockets still work)
+#   cloudflared  64 MB
+#
+# PREREQUISITES ON THE VM (one-off)
+#   2 GB swapfile at /swapfile, vm.swappiness=20, google-cloud-ops-agent
+#   disabled. You have already done all three.
+# =============================================================================
+
+name: malaikanest
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    # Never bind a port. Reachable only on the compose network.
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployment/postgres-lowmem.conf:/etc/postgresql.conf:ro
+    # Tuned for 256 MB. Defaults (shared_buffers=128MB, work_mem=4MB,
+    # max_connections=100) will get this container OOM-killed under a modest
+    # concurrent load, because each connection can allocate work_mem per sort.
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    mem_limit: 256m
+    memswap_limit: 384m
+    cpus: 0.5
+    logging: &lean-logging
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # One-shot: apply migrations, collect static, seed reference data. Runs to
+  # completion before web starts, so the web container never spends its first
+  # 60s (and its memory spike) doing schema work.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: "no"
+    env_file:
+      - ./backend/.env
+    environment:
+      DJANGO_ENV: production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    # `|| true` on the seeds: they are idempotent reference data and must not
+    # fail the boot. migrate and collectstatic MUST succeed.
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        python manage.py migrate --noinput
+        python manage.py collectstatic --noinput
+        python manage.py seed_categories || true
+        python manage.py seed_delivery_zones || true
+    mem_limit: 256m
+    memswap_limit: 384m
+    logging: *lean-logging
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DJANGO_ENV: production
+      DJANGO_SETTINGS_MODULE: config.settings
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      # Pin the container clock. The M-Pesa STK Password embeds a timestamp that
+      # Safaricom validates in East Africa Time; a UTC container makes every
+      # push fail with 500.001.1001. See patches/backend/01.
+      TZ: Africa/Nairobi
+      # Do not let a single daphne process buffer unbounded connections.
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./backend/media:/code/media
+      - ./backend/staticfiles:/code/staticfiles
+    # 8000 is bound to loopback ONLY, so the host firewall is not the only thing
+    # between Django and the internet — cloudflared reaches it on the compose
+    # network regardless.
+    ports:
+      - "127.0.0.1:8081:8000"
+    # Single daphne process. Django's ASGI handler runs sync views in a thread
+    # pool, so this serves concurrent HTTP fine and also terminates WebSockets.
+    # Do NOT add gunicorn workers here: on 1 GB each extra worker costs ~120 MB.
+    command: ["daphne", "-b", "0.0.0.0", "-p", "8000", "--proxy-headers", "config.asgi:application"]
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request as u; r=u.Request('http://127.0.0.1:8000/api/health/', headers={'Host':'api.malaikanest.com','X-Forwarded-Proto':'https'}); u.urlopen(r, timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    mem_limit: 320m
+    memswap_limit: 512m
+    cpus: 0.75
+    logging: *lean-logging
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    # One connector is enough. The old file ran two (cloudflared_standby) on the
+    # SAME tunnel token, which does not add availability — Cloudflare already
+    # load-balances multiple connections from one tunnel, and a second idle
+    # container just costs ~40 MB you do not have.
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    mem_limit: 64m
+    memswap_limit: 96m
+    cpus: 0.25
+    logging: *lean-logging
+
+volumes:
+  postgres_data:
+    # Named volume on the VM's boot disk. Back it up — see ops/09.

@@ -1,11 +1,71 @@
+# =============================================================================
+# Cloudflare Tunnel ingress — corrected.
+#
+# Two changes vs the committed cloudflared/config.yml:
+#   1. A deny rule for /metrics/ on the API host (see backend/06 patch).
+#   2. Only ONE connector container should run this config. The old
+#      docker-compose.yml runs `cloudflared` and `cloudflared_standby` from the
+#      same token — that is not a hot standby, it is two connections on one
+#      tunnel, which Cloudflare already load-balances. It buys no availability
+#      and costs ~40 MB on a 1 GB VM.
+#
+# INGRESS IS FIRST-MATCH-WINS. Specific rules MUST come before the host catch-all.
+# =============================================================================
+
 tunnel: 7051dd66-78ee-42c5-9d20-22e89e2e6c6f
 credentials-file: /etc/cloudflared/7051dd66-78ee-42c5-9d20-22e89e2e6c6f.json
 
 ingress:
+  # ── Deny: internal observability must never be reachable from the internet ──
   - hostname: api.malaikanest.com
-    service: http://backend:8000
+    path: ^/metrics/?.*$
+    service: http_status:404
+
+  # ── Deny: Django admin behind an obfuscated prefix is fine, but the default
+  #    /admin/ path should keep 404ing so scanners learn nothing.
+  - hostname: api.malaikanest.com
+    path: ^/admin/?.*$
+    service: http_status:404
+
+  # ── API ────────────────────────────────────────────────────────────────────
+  # NOTE: this points at `backend:8000` in the repo's docker-compose.yml but at
+  # `web:8000` in docker-compose.lean.yml. Whichever service name your running
+  # stack uses, this MUST match, or every API call returns 502 from the tunnel.
+  # The lean stack names it `web`:
+  - hostname: api.malaikanest.com
+    service: http://web:8000
+
+  # ── Storefront ─────────────────────────────────────────────────────────────
+  # The lean stack serves the storefront from Django, so both hostnames go to
+  # `web`. If you redeploy the Next.js frontend container, point these at
+  # http://frontend:3000 instead — but note that needs ~400 MB you do not have.
   - hostname: www.malaikanest.com
-    service: http://frontend:3000
+    service: http://web:8000
   - hostname: malaikanest.com
-    service: http://frontend:3000
+    service: http://web:8000
+
+  # ── Catch-all: never proxy an unknown hostname to the app ──────────────────
   - service: http_status:404
+
+# =============================================================================
+# Also do this in the Cloudflare dashboard (no redeploy needed, takes effect in
+# seconds, and survives a config regression):
+#
+#  Zero Trust -> Networks -> Tunnels -> your tunnel -> Public Hostname
+#  -> Edit -> Additional application settings -> set HTTP Host header handling
+#     to the service, and enable "HTTP/2" + "HTTP/3".
+#
+#  Security -> WAF -> Custom rules -> Create rule:
+#     (http.request.uri.path contains "/metrics") -> Block
+#     (http.request.uri.path contains "/.env")    -> Block
+#     (http.request.uri.path contains "/wp-")     -> Block
+#
+#  Caching -> Cache Rules: your product/category GETs already send
+#  Cache-Control: public, max-age=300 from ProductViewSet.list, so a cache rule
+#  matching Host = api.malaikanest.com AND path starts with "/api/v1/products/"
+#  with "Eligible for cache" will absorb most of your read traffic at the edge
+#  for free. That matters a lot on 0.25 vCPU.
+#
+#  SSL/TLS -> Overview: set to "Full (strict)". Cloudflare Tunnel terminates at
+#  the edge, so "Flexible" gains you nothing and downgrades the browser leg.
+# =============================================================================
