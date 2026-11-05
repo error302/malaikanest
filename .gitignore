@@ -76,3 +76,115 @@ Thumbs.db
 
 # Secrets / keys (never commit)
 *.pem
+# =============================================================================
+# Append to .gitignore  (the existing file is mostly good — these are the gaps)
+#
+# WHY: .gitignore already lists .freebuff/, *.pem and .playwright-mcp/, yet all
+# three are STILL TRACKED. .gitignore never untracks a file that is already in
+# the index — it only stops NEW files matching. So the rules gave false comfort
+# while the private key stayed public. After running ops/10 you must also do:
+#
+#     git rm -r --cached .freebuff .npm-cache .localappdata .playwright-mcp \
+#                        .git.bak-20260317-062850
+#     git commit -m "chore: untrack tooling caches and leaked agent state"
+#
+# (filter-repo already removes them from history; this stops them coming back.)
+# =============================================================================
+
+# ── GAPS: these were tracked despite the intent to ignore them ───────────────
+.npm-cache/
+.localappdata/
+.jules/
+.Jules/
+*.tsbuildinfo
+
+# ── Agent / AI tooling state (chat DBs, WAL files, session sockets) ──────────
+# A .db-wal can be larger than the .db itself and contains the same content.
+.freebuff/
+*.db-wal
+*.db-shm
+.claude/
+.cursor/
+.aider*
+
+# ── Any committed git directory. Never legitimate. ───────────────────────────
+.git.bak*/
+*.git.bak/
+
+# ── Secrets: broaden beyond *.pem ───────────────────────────────────────────
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+*.crt
+!deployment/certs/*.example.crt
+credentials.json
+service-account*.json
+secrets.txt
+passwords.txt
+*_rsa
+*_ed25519
+
+# ── Real env files, in any directory, with any suffix ────────────────────────
+# The existing `.env*` + `!.env.example` pair is correct but only applies at the
+# repo root in some git versions. Be explicit about the nested ones that matter.
+.env
+.env.*
+!.env.example
+!.env.example.*
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ── Cloudflare Tunnel credentials ────────────────────────────────────────────
+# cloudflared/config.yml is safe to commit (it holds a tunnel UUID, not a
+# secret). The <tunnel-id>.json credential file is NOT — it lets anyone run a
+# connector for your tunnel and intercept traffic.
+cloudflared/*.json
+!cloudflared/*.example.json
+
+# ── Backups, dumps and DB files (never belong in git) ────────────────────────
+backups/
+*.dump
+*.sql.gz
+*.sqlite
+*.sqlite3
+*.db
+!frontend/prisma/schema.prisma
+
+# ── Process/runtime junk ─────────────────────────────────────────────────────
+nohup.out
+*.pid
+*.sock
+pm2_*.json
+migrate_output.txt
+
+# ── Screenshots and scratch audit artefacts from agent sessions ──────────────
+# 5.7 MB of PNGs sit at the repo root today. If you want them, put them in
+# docs/images/ and commit them deliberately — not as drive-by root files.
+/*.png
+/*.jpg
+audit*.json
+*_report.txt
+scratch/
+tmp/
+
+# ── Python ───────────────────────────────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+venv/
+.venv/
+
+# ── Vendored dependency copies (scripts/.pydeps is 1.5 MB of vendored pypdf) ─
+scripts/.pydeps/
