@@ -1,20 +1,31 @@
-> ## ⚠️ Deployment reality check (verified 2026-09-17)
+> ## ⚠️ Deployment reality check — WHERE THE LIVE CODE ACTUALLY IS
 >
-> **The `frontend/` Next.js app in this repository is not what serves
-> https://malaikanest.com.** The live storefront is a server-rendered Django
-> template app that loads Tailwind from `cdn.tailwindcss.com`, and its templates
-> are **not committed here** — `backend/templates/` contains only `emails/` and
-> `admin/`, and `config/urls.py` has no storefront routes, yet `/products/` and
-> `/cart/` return 200 in production. Evidence: the live HTML contains no
-> `__NEXT_DATA__` / `/_next/static` markers, and none of the live homepage copy
-> appears anywhere in this repo.
+> **The storefront that serves https://malaikanest.com is NOT on `main`.** It
+> lives on the unmerged branch **`feat/lean-django-monolith`**, in
+> `backend/apps/storefront/` and `backend/templates/storefront/`
+> (`home.html`, `cart.html`, `checkout.html`, `product_list.html`,
+> `order_status.html`, `base.html`, ...).
 >
-> The **API is** this repo — `/api/schema/` matches `SPECTACULAR_SETTINGS`
-> exactly and `/api/v1/orders/delivery-zones/` returns the seeded Kenyan zones.
+> Verified: that branch's `templates/storefront/base.html` contains
+> `<script src="https://cdn.tailwindcss.com">` and `home.html` contains the
+> live empty-state copy "New arrivals are being added" — both present in the
+> production HTML and in neither of them on `main`.
 >
-> Two consequences: (1) changes to `frontend/` do not change the live shop;
-> (2) the live storefront exists only on one VM's disk, so **find it and commit
-> it** before that VM dies.
+> `main` still carries the older Next.js `frontend/` app, which is **not
+> deployed**. The API is the same on both branches for the money paths
+> (`payments/services.py`, `payments/paypal.py`, `payments/views.py`,
+> `core/outbox.py`, `orders/models.py`, `accounts/authentication.py` are
+> byte-identical between `main` and `feat/lean-django-monolith`), so backend
+> fixes transfer — but storefront changes must be made on the lean branch.
+>
+> **Consequence: `git clone` + deploy of `main` does not reproduce production.**
+> Merge the lean branch forward before you deploy, or you will ship the wrong
+> storefront.
+>
+> Also note: that branch replaced the 64-char password-reset token with a
+> **6-digit numeric OTP** (15-minute expiry). A 10^6 search space with the
+> throttle applied to reset *requests* rather than to the *confirm* endpoint is
+> brute-forceable. Prefer the long random token, or rate-limit confirm hard.
 
 # Malaika Nest — E-Commerce Platform
 
