@@ -175,9 +175,16 @@ class PaymentGatewayFactory:
         return UnimplementedGateway(method=method)
 
 
+# NOTE: these used to be `lambda: UnimplementedGateway("paypal")`. That was
+# broken twice over - PaymentGatewayFactory.create() calls `gateway_cls(**kwargs)`
+# so a zero-arg lambda raises TypeError, and it returned an *instance* where a
+# class was expected. PayPal and card now point at the real strategies in
+# paypal.py, which were fully implemented but never registered.
+from .paypal import CardGateway, PayPalGateway
+
 PaymentGatewayFactory.register("mpesa", MpesaGateway)
 PaymentGatewayFactory.register("mock_mpesa", MockMpesaGateway)
 PaymentGatewayFactory.register("pesapal", PesapalGateway)
-PaymentGatewayFactory.register("paypal", lambda: UnimplementedGateway("paypal"))
-PaymentGatewayFactory.register("card", lambda: UnimplementedGateway("card"))
-PaymentGatewayFactory.register("bank_transfer", lambda: UnimplementedGateway("bank transfer"))
+PaymentGatewayFactory.register("paypal", PayPalGateway)
+PaymentGatewayFactory.register("card", CardGateway)
+PaymentGatewayFactory.register("bank_transfer", lambda **_kw: UnimplementedGateway("bank transfer"))

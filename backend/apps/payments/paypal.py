@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 
-from apps.core.outbox import publish_event
+from apps.core.outbox import publish_and_drain
 from apps.orders.models import Order
 from .gateway import PaymentGateway
 from .models import Payment, PaymentAuditLog
@@ -224,10 +224,15 @@ class PayPalService:
                 p.save(update_fields=["status", "paypal_transaction_id", "completed_at", "raw_callback_json", "updated_at"])
 
                 order = p.order
-                order.status = "paid"
                 order.payment_method = p.payment_method
-                order.paid_at = timezone.now()
-                order.save(update_fields=["status", "payment_method", "paid_at", "updated_at"])
+                order.save(update_fields=["payment_method", "updated_at"])
+                # Use the state machine so paid_at is set consistently and any
+                # other transition side effects still apply.
+                ok, _err = order.transition_to(Order.STATUS_PAID)
+                if not ok:
+                    order.status = "paid"
+                    order.paid_at = timezone.now()
+                    order.save(update_fields=["status", "paid_at", "updated_at"])
 
                 PaymentAuditLog.objects.create(
                     payment=p,
@@ -237,11 +242,25 @@ class PayPalService:
                     source="paypal",
                 )
 
-                # Transactional outbox event to generate PDF invoice and send email receipt
-                publish_event(
-                    event_type="order.paid",
-                    payload={
-                        "order_id": order.id,
+                # Transactional outbox event to generate the PDF invoice and send
+                # the receipt email.
+                #
+                # This call used to be publish_event(event_type=..., payload=...),
+                # but the signature is publish_event(aggregate_type, aggregate_id,
+                # event_type, payload). It raised TypeError for two missing
+                # positional args - INSIDE this atomic() block, after the order had
+                # been marked paid. The whole transaction rolled back, so PayPal
+                # had captured the customer's money while the database still said
+                # "pending". Every successful PayPal payment was silently lost.
+                #
+                # publish_and_drain also guarantees the invoice/receipt actually
+                # run on a host with no Celery broker.
+                publish_and_drain(
+                    "order",
+                    order.id,
+                    "order.paid",
+                    {
+                        "order_id": str(order.id),
                         "receipt_number": order.receipt_number,
                         "payment_id": p.id,
                         "payment_method": p.payment_method,

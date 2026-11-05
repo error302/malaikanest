@@ -56,7 +56,13 @@ def verify_mpesa_payment_async(self, payment_id):
         )
         return "no checkout_request_id"
 
-    shortcode = os.getenv("MPESA_SHORTCODE") or os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
+    # MUST be the same merchant identity used for the STK push, otherwise the
+    # query is rejected while the push appeared to succeed and paid orders stay
+    # stuck in "pending" forever. The old default of "174379" is the Daraja
+    # SANDBOX shortcode, which silently broke reconciliation on a live till.
+    from .services import resolve_merchant_code
+
+    shortcode, _txn_type = resolve_merchant_code()
     passkey = os.getenv("MPESA_PASSKEY")
     mpesa_env = (os.getenv("MPESA_ENV", "sandbox") or "sandbox").strip().lower()
     mpesa_env = "live" if mpesa_env in {"live", "production", "prod"} else "sandbox"
@@ -115,8 +121,10 @@ def verify_mpesa_payment_async(self, payment_id):
         metrics.incr("payments.failed")
         raise self.retry(exc=exc)
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    password = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
+    # East Africa Time, single clock read - same rule as the STK push.
+    from .services import stk_credentials
+
+    password, timestamp = stk_credentials(shortcode, passkey)
 
     payload = {
         "BusinessShortCode": shortcode,
@@ -217,6 +225,10 @@ def verify_mpesa_payment_async(self, payment_id):
 def verify_pesapal_payment_async(self, payment_id):
     from .models import Payment
     from .pesapal import PesapalService, PesapalError
+    # audit_log was used four times below but never imported in this function, so
+    # the first Pesapal reconciliation raised NameError. (The M-Pesa task imports
+    # it locally at the top of its own function - this one did not.)
+    from .services import audit_log
 
     try:
         payment = Payment.objects.get(pk=payment_id)

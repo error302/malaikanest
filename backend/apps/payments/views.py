@@ -98,7 +98,16 @@ class InitiatePaymentView(APIView):
         if payment_method == "pesapal":
             return Response({"payment_id": payment.id, "payment_method": "pesapal"})
         if payment_method == "paypal":
-            return Response({"detail": "PayPal not yet supported"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            # Use the dedicated endpoint; it returns the approval_url the shopper
+            # must be redirected to.
+            return Response(
+                {
+                    "payment_id": payment.id,
+                    "payment_method": "paypal",
+                    "detail": "Use POST /api/v1/payments/paypal/initiate/ to obtain an approval_url.",
+                },
+                status=status.HTTP_200_OK,
+            )
         return Response({"detail": "Card payment not yet supported"}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
@@ -603,12 +612,272 @@ class AdminReconcilePaymentsView(APIView):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class PayPalCallbackView(APIView):
+class PayPalInitiateView(APIView):
+    """
+    POST /api/v1/payments/paypal/initiate/
+
+    Creates a PayPal Orders V2 order and returns the `approval_url` the shopper
+    must be redirected to. The frontend already calls this route; it did not
+    exist, so every PayPal attempt 404'd AFTER the order row had been created and
+    stock reserved - leaking a reservation permanently, because releasing it
+    depends on the (non-running) cancel_stale_pending_orders beat task.
+
+    Accepts the same guest authorization as the rest of the checkout flow via
+    resolve_order_for_request(): checkout_token preferred, receipt_number legacy.
+    Never resolves to another user's order.
+    """
+
     permission_classes = [permissions.AllowAny]
+    throttle_scope = "payments"
 
     def post(self, request):
-        logger.info("PayPal callback received but PayPal is not yet implemented: %s", request.data)
-        return JsonResponse({"detail": "PayPal payments are not currently supported"}, status=501)
+        order_id = request.data.get("order_id")
+        if not order_id:
+            return Response({"detail": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = resolve_order_for_request(request, order_id)
+        if not order:
+            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        if order.status not in ("pending", "payment_failed", "initiated"):
+            return Response(
+                {"detail": "Order is not payable in status '%s'" % order.status},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from .paypal import PayPalService
+
+        service = PayPalService()
+        if not service.is_configured:
+            logger.error(
+                "PayPal requested for order %s but PAYPAL_CLIENT_ID/SECRET are not set",
+                order.receipt_number,
+            )
+            return Response(
+                {"detail": "PayPal is not configured on this store yet. Please pay via M-Pesa."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        payment, _ = Payment.objects.get_or_create(
+            order=order,
+            defaults={
+                "amount": order.total,
+                "payment_method": "paypal",
+                "status": "initiated",
+            },
+        )
+
+        # Guard against the order total drifting away from what we charge.
+        try:
+            if Decimal(str(payment.amount)) != Decimal(str(order.total)):
+                return Response({"detail": "Order total mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+        except (InvalidOperation, TypeError):
+            return Response({"detail": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if payment.status == "completed":
+            return Response(
+                {"detail": "Payment already completed", "payment_id": payment.id, "approval_url": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # A failed payment being retried: reset it so the shopper can pay again.
+        if payment.status in ("failed", "cancelled"):
+            payment.status = "initiated"
+            payment.save(update_fields=["status", "updated_at"])
+
+        try:
+            result = service.create_order(order=order, payment=payment)
+        except Exception as exc:
+            logger.exception("PayPal create_order failed for order %s", order.receipt_number)
+            audit_log(
+                event_type="stk_failed",
+                payment=payment,
+                payload={"stage": "create_order", "exception": str(exc)},
+                notes="PayPal order creation failed",
+                source="paypal",
+            )
+            return Response(
+                {"detail": "Could not start PayPal checkout. Please try again or pay via M-Pesa."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        approval_url = next(
+            (link.get("href") for link in result.get("links", []) if link.get("rel") == "approve"),
+            None,
+        )
+        if not approval_url:
+            logger.error(
+                "PayPal returned no approve link for order %s: %s", order.receipt_number, result
+            )
+            return Response(
+                {"detail": "PayPal did not return an approval link"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        # Stash the PayPal order id so the return leg can find the payment even if
+        # the redirect query string is stripped or reloaded.
+        payment.raw_callback_json = {
+            "paypal_order_id": result.get("paypal_order_id"),
+            "status": result.get("status"),
+            "amount_usd": result.get("amount_usd"),
+            "currency": result.get("currency"),
+            "mode": service.mode,
+        }
+        payment.save(update_fields=["raw_callback_json", "updated_at"])
+
+        # Move the order into `initiated` so it is visibly awaiting payment.
+        try:
+            order.transition_to(Order.STATUS_INITIATED)
+        except Exception as exc:
+            logger.debug("Could not move order %s to initiated: %s", order.receipt_number, exc)
+
+        return Response(
+            {
+                "payment_id": payment.id,
+                "order_id": order.id,
+                "receipt_number": order.receipt_number,
+                "checkout_token": order.checkout_token,
+                "paypal_order_id": result.get("paypal_order_id"),
+                "approval_url": approval_url,
+                "redirect_url": approval_url,
+                "amount_usd": result.get("amount_usd"),
+                "currency": result.get("currency"),
+            }
+        )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PayPalCallbackView(APIView):
+    """
+    The shopper's browser lands here after approving on PayPal, with
+    ?token=<PayPal order id>&PayerID=<...>.
+
+    Capture happens SERVER-SIDE. The return URL is fully attacker-controlled, so
+    nothing about it is trusted: we capture against PayPal's API and only mark the
+    order paid when PayPal itself reports COMPLETED.
+
+    Both GET (browser redirect) and POST (the route the frontend already had) are
+    accepted, so an existing success page keeps working either way.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "payments"
+
+    def _success_response(self, request, order, payment, already=False):
+        frontend_url = os.getenv("FRONTEND_URL", "https://malaikanest.com").rstrip("/")
+        redirect_url = (
+            "%s/checkout/success?order=%s&token=%s&status=paid"
+            % (frontend_url, order.receipt_number, order.checkout_token)
+        )
+        # A browser redirect wants a page; an XHR wants JSON.
+        accepts = request.headers.get("Accept", "")
+        if "text/html" in accepts:
+            from django.shortcuts import redirect
+
+            return redirect(redirect_url)
+        return Response(
+            {
+                "status": "success",
+                "detail": "Payment already confirmed." if already else "Payment confirmed.",
+                "order_id": order.id,
+                "receipt_number": order.receipt_number,
+                "order_status": order.status,
+                "paypal_transaction_id": payment.paypal_transaction_id,
+                "redirect_url": redirect_url,
+            }
+        )
+
+    def _handle(self, request):
+        params = request.query_params if request.query_params else request.data
+        paypal_order_id = params.get("token") or params.get("paypal_order_id")
+        payer_id = params.get("PayerID") or params.get("payer_id")
+
+        if not paypal_order_id:
+            return Response(
+                {"detail": "Missing PayPal token. Return to the checkout and try again."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Locate the Payment: our stored id first, then the order_id query param.
+        payment = (
+            Payment.objects.select_related("order")
+            .filter(payment_method="paypal", raw_callback_json__paypal_order_id=paypal_order_id)
+            .first()
+        )
+        if not payment:
+            order_id = params.get("order_id")
+            if order_id:
+                payment = (
+                    Payment.objects.select_related("order")
+                    .filter(order_id=order_id, payment_method="paypal")
+                    .first()
+                )
+
+        if not payment:
+            logger.warning("PayPal callback for unmatched PayPal order id %s", paypal_order_id)
+            return Response(
+                {
+                    "detail": "We could not match this PayPal approval to an order. "
+                    "If money left your account, contact us with your receipt number."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        order = payment.order
+
+        # Idempotent: the shopper may reload this page, or PayPal may send us here
+        # twice. If it already completed, just show success.
+        if payment.status == "completed":
+            return self._success_response(request, order, payment, already=True)
+
+        from .paypal import PayPalService
+
+        service = PayPalService()
+        if not service.is_configured:
+            return Response(
+                {"detail": "PayPal is not configured on this store."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        try:
+            result = service.capture_order(paypal_order_id, payment)
+        except Exception as exc:
+            message = str(exc)
+            payment.refresh_from_db()
+            # ORDER_ALREADY_CAPTURED means the money is in and we recorded it -
+            # treat as success rather than alarming the customer.
+            if payment.status == "completed" or "ALREADY_CAPTURED" in message.upper():
+                return self._success_response(request, order, payment, already=True)
+            logger.exception("PayPal capture failed for order %s", order.receipt_number)
+            audit_log(
+                event_type="callback_failed",
+                payment=payment,
+                payload={"stage": "capture", "exception": message, "payer_id": payer_id},
+                notes="PayPal capture failed",
+                source="paypal",
+            )
+            return Response(
+                {
+                    "detail": "PayPal did not confirm the payment. No money has been taken "
+                    "unless PayPal shows a completed transaction - contact us if it does."
+                },
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if result.get("status") != "completed":
+            return Response(
+                {"detail": result.get("detail") or "PayPal payment did not complete."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payment.refresh_from_db()
+        order.refresh_from_db()
+        return self._success_response(request, order, payment, already=False)
+
+    def get(self, request):
+        return self._handle(request)
+
+    def post(self, request):
+        return self._handle(request)
 
 
 @method_decorator(csrf_exempt, name="dispatch")

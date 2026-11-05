@@ -7,9 +7,11 @@ import os
 import ipaddress
 from collections.abc import Mapping
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import requests
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from django.conf import settings
 from django.core.cache import cache
 
 from django.db import transaction
@@ -19,7 +21,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from apps.orders.models import Order
 from apps.core.circuit_breaker import call_with_breaker, CircuitOpen
-from apps.core.outbox import publish_event
+from apps.core.outbox import publish_and_drain, publish_event
 from apps.core import metrics
 from .models import Payment, PaymentAuditLog
 from .tasks import verify_mpesa_payment_async
@@ -27,6 +29,45 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 logger = logging.getLogger("apps.payments")
+
+# Safaricom validates the STK Password/Timestamp pair in East Africa Time, not
+# in the server's local time. The backend container runs UTC (python:3.x-slim
+# with no TZ set), so datetime.now() produces a timestamp three hours behind and
+# every push fails with 500.001.1001 "[MerchantValidate] - Wrong credentials".
+# Django's TIME_ZONE setting does NOT affect datetime.now().
+MPESA_TZ = ZoneInfo("Africa/Nairobi")
+
+
+def stk_credentials(shortcode: str, passkey: str) -> tuple[str, str]:
+    """Return (Password, Timestamp) for an M-Pesa Express request.
+
+    Both values come from a SINGLE clock read and are returned together, so it
+    is structurally impossible for the Password and the Timestamp field to
+    disagree (the "two-clock" bug that causes intermittent 500.001.1001).
+    """
+    ts = datetime.datetime.now(MPESA_TZ).strftime("%Y%m%d%H%M%S")
+    password = base64.b64encode(f"{shortcode}{passkey}{ts}".encode("utf-8")).decode("utf-8")
+    return password, ts
+
+
+def resolve_merchant_code() -> tuple[str, str]:
+    """Return (merchant_code, transaction_type) for this deployment.
+
+    For Buy Goods (a till number) the SAME value must be used for
+    BusinessShortCode, PartyB and the shortcode component of the Password - it
+    must be the number that owns the passkey issued in the Daraja portal.
+    Previously BusinessShortCode/Password used MPESA_SHORTCODE while PartyB used
+    MPESA_TILL_NUMBER, so Safaricom decoded the password against one merchant
+    identity while being asked to route money to another.
+    """
+    till = (os.getenv("MPESA_TILL_NUMBER") or "").strip()
+    shortcode = (os.getenv("MPESA_SHORTCODE") or os.getenv("MPESA_BUSINESS_SHORT_CODE") or "").strip()
+    if till:
+        return till, "CustomerBuyGoodsOnline"
+    if shortcode:
+        return shortcode, "CustomerPayBillOnline"
+    return "", "CustomerPayBillOnline"
+
 
 MPESA_SAFARICOM_IPS = {
     # Safaricom's documented M-Pesa callback egress ranges. Keep these as narrow
@@ -257,7 +298,10 @@ class PaymentService:
         explicit = os.getenv("MPESA_MOCK_MODE")
         if explicit is not None:
             return explicit.strip().lower() in {"1", "true", "yes", "on"}
-        return bool(settings.DEBUG)
+        # `settings` is imported at module scope now; this used to raise NameError
+        # whenever MPESA_MOCK_MODE was unset, which 500'd every STK push. Default
+        # to False so an unset variable can never turn production into mock mode.
+        return bool(getattr(settings, "DEBUG", False))
 
     @staticmethod
     def _mpesa_env() -> str:
@@ -403,15 +447,18 @@ class PaymentService:
     def initiate_mpesa_stk(payment, phone):
         consumer_key = os.getenv("MPESA_CONSUMER_KEY")
         consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
-        shortcode = os.getenv("MPESA_SHORTCODE") or os.getenv("MPESA_BUSINESS_SHORT_CODE", "3104615")
-        till_number = (os.getenv("MPESA_TILL_NUMBER") or "3370347").strip()
         passkey = os.getenv("MPESA_PASSKEY")
         callback_url = os.getenv("MPESA_CALLBACK_URL")
         mpesa_env = PaymentService._mpesa_env()
-        transaction_type = os.getenv("MPESA_TRANSACTION_TYPE") or ("CustomerBuyGoodsOnline" if till_number else "CustomerPayBillOnline")
-        party_b = till_number if till_number else shortcode
 
-        mpesa_values = [consumer_key, consumer_secret, passkey, callback_url, shortcode]
+        # One merchant identity, used consistently for BusinessShortCode, PartyB
+        # and the Password. See resolve_merchant_code().
+        merchant_code, default_txn_type = resolve_merchant_code()
+        transaction_type = os.getenv("MPESA_TRANSACTION_TYPE") or default_txn_type
+        party_b = merchant_code
+        shortcode = merchant_code
+
+        mpesa_values = [consumer_key, consumer_secret, passkey, callback_url, merchant_code]
         mpesa_configured = all(mpesa_values) and not any(
             is_placeholder_secret(value) for value in mpesa_values
         )
@@ -438,12 +485,12 @@ class PaymentService:
             logger.error("M-Pesa auth exception: %s", str(exc))
             raise ValueError("M-Pesa service unavailable")
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        password = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
+        # East Africa Time, single clock read. See stk_credentials().
+        password, timestamp = stk_credentials(merchant_code, passkey)
         stk_url = PaymentService._mpesa_stk_url()
 
         payload = {
-            "BusinessShortCode": shortcode,
+            "BusinessShortCode": merchant_code,
             "Password": password,
             "Timestamp": timestamp,
             "TransactionType": transaction_type,
@@ -452,7 +499,10 @@ class PaymentService:
             "PartyB": party_b,
             "PhoneNumber": phone,
             "CallBackURL": callback_url,
-            "AccountReference": f"MalaikaNest-{payment.order.id}",
+            # Public, unguessable, and matches what the customer quotes back on
+            # WhatsApp - unlike the sequential internal order id. Daraja limits
+            # this to 12 characters.
+            "AccountReference": (payment.order.receipt_number or f"MN{payment.order.id}")[:12],
             "TransactionDesc": "Malaika Nest Order Payment",
         }
 
@@ -578,7 +628,7 @@ class PaymentService:
 
                             # Durable side-effect via outbox (restock) instead of
                             # fire-and-forget on_commit enqueue.
-                            publish_event("order", order.id, "order.cancelled", {"order_id": str(order.id)})
+                            publish_and_drain("order", order.id, "order.cancelled", {"order_id": str(order.id)})
                         except Exception as exc:
                             logger.error("Order transition/publish failed (amount mismatch, order=%s): %s", payment.order_id, exc)
                         audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="AMOUNT_MISMATCH", notes=f"Expected {payment.amount}, got {amount}")
@@ -609,7 +659,7 @@ class PaymentService:
                             order.status = "payment_failed"
                             order.save(update_fields=["status", "updated_at"])
 
-                        publish_event("order", order.id, "order.cancelled", {"order_id": str(order.id)})
+                        publish_and_drain("order", order.id, "order.cancelled", {"order_id": str(order.id)})
                     except Exception as exc:
                         logger.error("Order transition/publish failed (phone mismatch, order=%s): %s", payment.order_id, exc)
                     audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="PHONE_MISMATCH")
@@ -649,7 +699,10 @@ class PaymentService:
                 # Durable side-effects via the transactional outbox: the order is
                 # now paid, and the relay task will reduce inventory / invoice /
                 # confirm. Survives a worker crash between commit and enqueue.
-                publish_event("order", order.id, "order.paid", {"order_id": str(order.id)})
+                # Money has moved. Guarantee the post-payment side effects
+                # (stock deduction, invoice PDF, receipt email) run even when
+                # this host has no Celery broker.
+                publish_and_drain("order", order.id, "order.paid", {"order_id": str(order.id)})
                 metrics.incr("payments.completed")
 
                 audit_log(event_type="callback_completed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
@@ -672,7 +725,7 @@ class PaymentService:
 
             metrics.incr("payments.failed")
             try:
-                publish_event("order", payment.order_id, "order.cancelled", {"order_id": str(payment.order_id)})
+                publish_and_drain("order", payment.order_id, "order.cancelled", {"order_id": str(payment.order_id)})
             except Exception as exc:
                 logger.error("Failed to publish order.cancelled event for order %s: %s", payment.order_id, exc)
             audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes=result_desc)
