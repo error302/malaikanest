@@ -224,7 +224,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             .select_related(
                 "category", "category__parent", "category__parent__parent", "brand"
             )
-            .prefetch_related("category__children", "variants__inventory")
+            # "images" was missing: ProductSerializer.get_images iterates
+            # obj.images.all(), so every product on the page fired its own
+            # ProductImage query. On a 24-item page that is 24 extra queries on a
+            # 0.25 vCPU box.
+            .prefetch_related("category__children", "variants__inventory", "images")
             .annotate(
                 avg_rating=Coalesce(
                     Avg("reviews__rating"), Value(0.0), output_field=FloatField()

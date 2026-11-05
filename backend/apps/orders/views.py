@@ -328,8 +328,18 @@ class CartViewSet(viewsets.ViewSet):
                     if pm == "till" and till_code:
                         import re
                         if not re.match(r"^[A-Z0-9]{10}$", till_code):
-                            # keep order but flag code for admin review
-                            pass
+                            # Was a bare `pass` - the comment said "flag for admin
+                            # review" but nothing was flagged, so a malformed code
+                            # was stored verbatim and looked legitimate.
+                            logger.warning(
+                                "Guest order %s submitted malformed till code %r - needs manual review",
+                                order.receipt_number, till_code,
+                            )
+                            order.shipping_notes = (
+                                f"{order.shipping_notes or ''}\n"
+                                f"[!] INVALID M-PESA CODE FORMAT: {till_code} - verify manually"
+                            ).strip()
+                            order.save(update_fields=["shipping_notes", "updated_at"])
                         # unique check — mpesa_receipt_number is unique in Payment, not Order; store on Order for display
                         order.mpesa_receipt_number = till_code
                     order.save(update_fields=["payment_method", "mpesa_receipt_number", "updated_at"])

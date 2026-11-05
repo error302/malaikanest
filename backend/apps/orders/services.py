@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import F
 
@@ -118,7 +120,10 @@ class OrderService:
                     # Recompute unit price from the authoritative product/variant
                     # price at checkout time (never trust the stored CartItem.unit_price,
                     # which could be stale if the catalog price changed after add-to-cart).
-                    unit_price = ci.product.price + (variant.price_modifier if variant else Decimal("0.00"))
+                    # `variant` is always truthy in this branch (we are inside
+                    # `if ci.variant_id:`); Decimal was previously unimported, so
+                    # the else arm was a latent NameError.
+                    unit_price = ci.product.price + (variant.price_modifier or Decimal("0.00"))
                     line_total = unit_price * ci.quantity
                     subtotal += line_total
                     items.append((ci.product, variant, ci.quantity, unit_price, inv, True))

@@ -193,12 +193,22 @@ class AuthService:
         except Exception as e:
             raise ValueError(str(e))
 
-        user.set_password(new_password)
-        user.password_reset_token = None
-        user.password_reset_expires = None
-        user.save()
+        # Atomic: previously the password was committed and THEN
+        # invalidate_all_user_tokens() raised NameError (it was never imported),
+        # so the view returned 500, the user believed the reset had failed, and
+        # the token_version bump never happened - meaning a stolen refresh token
+        # SURVIVED a password reset. All of it or none of it.
+        from django.db import transaction as _tx
 
-        # Invalidate any outstanding refresh tokens (password reset = logout everywhere).
-        invalidate_all_user_tokens(user)
+        from .authentication import invalidate_all_user_tokens
+
+        with _tx.atomic():
+            user.set_password(new_password)
+            user.password_reset_token = None
+            user.password_reset_expires = None
+            user.save()
+
+            # Invalidate any outstanding refresh tokens (password reset = logout everywhere).
+            invalidate_all_user_tokens(user)
 
         return True

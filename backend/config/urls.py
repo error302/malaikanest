@@ -1,3 +1,5 @@
+import os
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -38,8 +40,14 @@ urlpatterns = [
     path('api/schema/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
-    # Prometheus metrics (Phase 5)
-    path('metrics/', include('apps.core.metrics_urls')),
+    # Prometheus metrics (Phase 5). Gated by METRICS_TOKEN in apps.core.metrics;
+    # set EXPOSE_METRICS=false to unmount the URL entirely (there is no scraper
+    # configured today, and a public /metrics/ leaks runtime + sales counters).
+    *(
+        [path('metrics/', include('apps.core.metrics_urls'))]
+        if os.getenv("EXPOSE_METRICS", "true").strip().lower() in {"1", "true", "yes", "on"}
+        else []
+    ),
 
     # Admin
     path(f'{admin_prefix}/', admin.site.urls),

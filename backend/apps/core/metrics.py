@@ -20,7 +20,10 @@ def incr(name, amount=1, *, timeout=86400 * 7):
         try:
             cache.set(key, amount, timeout)
         except Exception:
-            logger.debug("metric incr fallback set failed for %s: %s", name, exc)
+            # `exc` was never bound here (bare `except Exception:`), so this
+            # handler raised a second NameError and destroyed the original
+            # diagnostic - and it fires precisely when the cache is down.
+            logger.debug("metric incr fallback set failed for %s", name, exc_info=True)
 
 
 def get(name):
@@ -45,7 +48,7 @@ def reset(name):
 # the incr/get/reset API used across the codebase.
 #
 from prometheus_client import Gauge, generate_latest, CONTENT_TYPE_LATEST
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 
 _redis_gauges = {}
 
@@ -60,8 +63,38 @@ def _redis_gauge(name):
 
 
 def metrics_view(request):
-    """Scrape endpoint for Prometheus. Refreshes Redis-backed gauges, then
-    returns the full exposition (incl. python process + system metrics)."""
+    """Prometheus exposition. Gated.
+
+    This used to be world-readable, which leaked the exact Python patch level
+    (so an attacker can look up CVEs instead of guessing), resident memory and
+    fd limits (how close a 1 GB box is to OOM), process start time (an uptime /
+    redeploy oracle) and live payments_success / payments_stk_initiated counters
+    (i.e. your sales volume, free to anyone who polls it).
+
+    Now: allowed from loopback without a token, otherwise requires
+    `Authorization: Bearer $METRICS_TOKEN`. If no token is configured it fails
+    closed off-box. Set EXPOSE_METRICS=false to unmount the URL entirely.
+    """
+    import os
+    import secrets as _secrets
+
+    token = (os.getenv("METRICS_TOKEN") or "").strip()
+    client_ip = (
+        request.META.get("HTTP_CF_CONNECTING_IP")
+        or request.META.get("REMOTE_ADDR")
+        or ""
+    ).strip()
+    is_loopback = client_ip in {"127.0.0.1", "::1", "localhost"}
+
+    if not is_loopback:
+        if not token:
+            return HttpResponseForbidden("metrics disabled: METRICS_TOKEN not set")
+        supplied = request.headers.get("Authorization", "")
+        if supplied.lower().startswith("bearer "):
+            supplied = supplied[7:].strip()
+        if not supplied or not _secrets.compare_digest(supplied, token):
+            return HttpResponseForbidden("invalid metrics token")
+
     # Whitelist of meaningful business metrics to export from Redis.
     for name in ("payments_failed", "payments_success", "payments_stk_initiated"):
         try:

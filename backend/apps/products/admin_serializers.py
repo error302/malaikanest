@@ -329,7 +329,9 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
-            logger.debug("Product image download failed from %s", url)
+            # Was `url`, which is not defined in this scope - so a failed download
+            # raised NameError out of the handler and hid the real cause.
+            logger.debug("Product image download failed from %s", image_url, exc_info=True)
         return None
 
     @staticmethod

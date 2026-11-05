@@ -24,7 +24,6 @@ def _make_idempotency_key(request) -> str:
     """
     Deterministic key from method + path + Idempotency-Key header.
     """
-    import hashlib
     raw = f"{request.method}:{request.path}:{request.headers.get('Idempotency-Key', '')}"
     return f"idempotency:{hashlib.sha256(raw.encode()).hexdigest()}"
 

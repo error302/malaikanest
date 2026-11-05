@@ -49,7 +49,8 @@ def call_with_breaker(
         try:
             cache.set(key, state, timeout=reset_timeout * 2 + 60)
         except Exception:
-            logger.debug("Circuit breaker state persist failed for %s: %s", key, exc)
+            # `exc` was never bound here; see the same fix in apps/core/metrics.py.
+            logger.debug("Circuit breaker state persist failed for %s", key, exc_info=True)
         raise
     else:
         if state.get("failures", 0):

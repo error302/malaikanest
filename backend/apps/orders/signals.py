@@ -19,6 +19,21 @@ def order_status_changed(sender, instance, created, **kwargs):
         try:
             send_order_confirmation.delay(instance.id)
         except Exception as exc:
-            logger.error('Failed to enqueue order confirmation for order %s: %s', instance.id, exc)
+            # No broker on this host. .delay() raised, and previously the except
+            # swallowed it so the customer silently received nothing. Fall back to
+            # running the task body inline - this is the first email of the
+            # relationship and, for a guest, the only thing carrying their
+            # tracking token. The task is idempotent (renders and sends).
+            logger.warning(
+                'Broker unavailable for order confirmation (order %s: %s) - sending inline',
+                instance.id, exc,
+            )
+            try:
+                send_order_confirmation(instance.id)
+            except Exception as inline_exc:
+                logger.error(
+                    'Inline order confirmation failed for order %s: %s',
+                    instance.id, inline_exc,
+                )
 
     transaction.on_commit(enqueue_confirmation)

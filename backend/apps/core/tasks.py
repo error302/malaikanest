@@ -119,7 +119,6 @@ def generate_data_export_task(export_id: str) -> str:
     """
     import json
     import uuid
-    from datetime import timedelta
 
     from django.utils import timezone
     from django.core.files.base import ContentFile

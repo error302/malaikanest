@@ -434,8 +434,12 @@ class Order(BaseModel):
             }
             event_type = event_map.get((old_status, new_status))
             if event_type:
-                from apps.core.outbox import publish_event
-                transaction.on_commit(lambda e=event_type, oid=self.id: publish_event("order", oid, e, {"order_id": str(oid)}))
+                from apps.core.outbox import publish_auto
+                # order.paid / order.cancelled drive inventory, invoicing and the
+                # receipt email; they must not sit pending on a host with no
+                # Celery worker. publish_auto drains those inline and leaves
+                # everything else to the async relay.
+                transaction.on_commit(lambda e=event_type, oid=self.id: publish_auto("order", oid, e, {"order_id": str(oid)}))
 
         return True, None
 
