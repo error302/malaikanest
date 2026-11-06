@@ -1,0 +1,3 @@
+## 2024-05-14 - Detailed Item Accessibility in Cart
+**Learning:** For lists containing identical action buttons (e.g., 'Remove' items in a cart), ensure each button has a specific `aria-label` detailing the target item. When using translations, utilize the translation engine's interpolation feature (e.g., `t('cart.removeItem', { name: item.name })`) rather than raw string concatenation or template literals for screen reader accessibility.
+**Action:** Always check iterating lists for identical action buttons and provide specific contextual aria-labels using translation interpolation where appropriate.
