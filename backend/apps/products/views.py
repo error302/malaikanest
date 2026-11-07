@@ -6,10 +6,12 @@ from django.db.models import (
     IntegerField,
     OuterRef,
     Q,
+    Subquery,
     Sum,
     Value,
 )
 from django.db.models.functions import Coalesce
+from apps.orders.models import OrderItem
 from django.utils import timezone
 from django.core.cache import cache
 from django.utils.cache import patch_cache_control
@@ -219,6 +221,28 @@ class ProductViewSet(viewsets.ModelViewSet):
         return response
 
     def get_queryset(self):
+        avg_rating_sq = Subquery(
+            Review.objects.filter(product=OuterRef("pk"))
+            .order_by()
+            .values("product")
+            .annotate(avg=Avg("rating"))
+            .values("avg")[:1]
+        )
+        review_count_sq = Subquery(
+            Review.objects.filter(product=OuterRef("pk"))
+            .order_by()
+            .values("product")
+            .annotate(count=Count("pk"))
+            .values("count")[:1]
+        )
+        popularity_sq = Subquery(
+            OrderItem.objects.filter(product=OuterRef("pk"))
+            .order_by()
+            .values("product")
+            .annotate(total=Sum("quantity"))
+            .values("total")[:1]
+        )
+
         queryset = (
             Product.objects.filter(is_active=True)
             .select_related(
@@ -227,15 +251,13 @@ class ProductViewSet(viewsets.ModelViewSet):
             .prefetch_related("category__children", "variants__inventory")
             .annotate(
                 avg_rating=Coalesce(
-                    Avg("reviews__rating"), Value(0.0), output_field=FloatField()
+                    avg_rating_sq, Value(0.0), output_field=FloatField()
                 ),
                 review_count=Coalesce(
-                    Count("reviews", distinct=True),
-                    Value(0),
-                    output_field=IntegerField(),
+                    review_count_sq, Value(0), output_field=IntegerField()
                 ),
                 popularity=Coalesce(
-                    Sum("orderitem__quantity"), Value(0), output_field=IntegerField()
+                    popularity_sq, Value(0), output_field=IntegerField()
                 ),
             )
         )
