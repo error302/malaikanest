@@ -5,6 +5,7 @@ from django.db.models import (
     FloatField,
     IntegerField,
     OuterRef,
+    Subquery,
     Q,
     Sum,
     Value,
@@ -219,6 +220,34 @@ class ProductViewSet(viewsets.ModelViewSet):
         return response
 
     def get_queryset(self):
+        from apps.products.models import Review
+        from apps.orders.models import OrderItem
+
+        # Use correlated subqueries instead of implicit JOINs for annotations
+        # to prevent N x M Cartesian product blowups when aggregating across
+        # multiple independent reverse relations (reviews and orderitem).
+        avg_sq = Subquery(
+            Review.objects.filter(product=OuterRef("pk"))
+            .order_by()
+            .values("product")
+            .annotate(avg=Avg("rating"))
+            .values("avg")[:1]
+        )
+        count_sq = Subquery(
+            Review.objects.filter(product=OuterRef("pk"))
+            .order_by()
+            .values("product")
+            .annotate(cnt=Count("pk"))
+            .values("cnt")[:1]
+        )
+        pop_sq = Subquery(
+            OrderItem.objects.filter(product=OuterRef("pk"))
+            .order_by()
+            .values("product")
+            .annotate(sm=Sum("quantity"))
+            .values("sm")[:1]
+        )
+
         queryset = (
             Product.objects.filter(is_active=True)
             .select_related(
@@ -226,17 +255,9 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
             .prefetch_related("category__children", "variants__inventory")
             .annotate(
-                avg_rating=Coalesce(
-                    Avg("reviews__rating"), Value(0.0), output_field=FloatField()
-                ),
-                review_count=Coalesce(
-                    Count("reviews", distinct=True),
-                    Value(0),
-                    output_field=IntegerField(),
-                ),
-                popularity=Coalesce(
-                    Sum("orderitem__quantity"), Value(0), output_field=IntegerField()
-                ),
+                avg_rating=Coalesce(avg_sq, Value(0.0), output_field=FloatField()),
+                review_count=Coalesce(count_sq, Value(0), output_field=IntegerField()),
+                popularity=Coalesce(pop_sq, Value(0), output_field=IntegerField()),
             )
         )
 
