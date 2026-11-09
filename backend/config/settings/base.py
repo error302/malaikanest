@@ -489,3 +489,5 @@ if os.getenv("SENTRY_DSN"):
         send_default_pii=False,
         environment="production" if production_env_requested else "development",
     )
+
+IMAGE_URL_ALLOWED_HOSTS = ["res.cloudinary.com", "malaikanest.com", "www.malaikanest.com"]
