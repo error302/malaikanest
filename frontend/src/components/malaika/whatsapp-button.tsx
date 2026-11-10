@@ -60,7 +60,7 @@ export function WhatsAppButton() {
         type="button"
         onClick={() => setExpanded((e) => !e)}
         aria-label="Chat on WhatsApp"
-        className="w-14 h-14 rounded-full shadow-warm-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+        className="w-14 h-14 rounded-full shadow-warm-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:ring-offset-2"
         style={{ background: '#25D366' }}
       >
         {expanded ? (
