@@ -2,6 +2,7 @@ import io
 
 from django.db.models import Q
 from django.db import transaction
+from django.db.models import Count, OuterRef, Subquery
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
 from rest_framework import permissions, status, viewsets
@@ -10,6 +11,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from apps.accounts.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from django.db.models.functions import Coalesce
 
 
 class AdminLimitOffsetPagination(LimitOffsetPagination):
@@ -22,6 +24,7 @@ class AdminLimitOffsetPagination(LimitOffsetPagination):
 
     default_limit = 50
     max_limit = 200
+
 
 from apps.accounts.models import User
 from apps.orders.models import CartItem, OrderItem, Order
@@ -67,7 +70,9 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if OrderItem.objects.filter(product=instance).exists():
             raise ValidationError(
-                {"detail": "Cannot delete this product because it is referenced by existing orders. Deactivate it instead."}
+                {
+                    "detail": "Cannot delete this product because it is referenced by existing orders. Deactivate it instead."
+                }
             )
         with transaction.atomic():
             CartItem.objects.filter(product=instance).delete()
@@ -89,7 +94,9 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
             self.perform_destroy(instance)
         except ProtectedError:
             raise ValidationError(
-                {"detail": "This category cannot be deleted because it is used by products. Move or delete the products first."}
+                {
+                    "detail": "This category cannot be deleted because it is used by products. Move or delete the products first."
+                }
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -104,7 +111,9 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
         output = io.StringIO()
         with transaction.atomic():
             call_command("seed_categories", stdout=output)
-        return Response({"detail": "Category seeding complete.", "log": output.getvalue()})
+        return Response(
+            {"detail": "Category seeding complete.", "log": output.getvalue()}
+        )
 
 
 class AdminBannerViewSet(viewsets.ModelViewSet):
@@ -129,6 +138,16 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         search = self.request.query_params.get("search")
 
+        orders_count = Subquery(
+            Order.objects.filter(user=OuterRef("pk"))
+            .order_by()
+            .values("user")
+            .annotate(count=Count("pk"))
+            .values("count")[:1]
+        )
+
+        queryset = queryset.annotate(annotated_total_orders=Coalesce(orders_count, 0))
+
         if search:
             queryset = queryset.filter(
                 Q(email__icontains=search)
@@ -147,6 +166,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         # at next refresh. Without this the user keeps elevated access until
         # their old JWT expires even after a demote.
         from apps.accounts.authentication import invalidate_all_user_tokens
+
         with transaction.atomic():
             user.save(update_fields=["is_staff", "role"])
             invalidate_all_user_tokens(user)
@@ -163,6 +183,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         user.is_staff = False
         user.role = User.ROLE_CUSTOMER
         from apps.accounts.authentication import invalidate_all_user_tokens
+
         with transaction.atomic():
             user.save(update_fields=["is_staff", "role"])
             invalidate_all_user_tokens(user)
@@ -177,6 +198,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         from apps.accounts.authentication import invalidate_all_user_tokens
+
         with transaction.atomic():
             user.is_active = False
             user.save(update_fields=["is_active"])
@@ -238,10 +260,14 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
 
         try:
             from apps.orders.tasks import handle_order_status_change
+
             handle_order_status_change.delay(order.id, old_status, new_status)
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.error(f"Failed to trigger status change tasks for order {order.id}: {e}")
+            logger.error(
+                f"Failed to trigger status change tasks for order {order.id}: {e}"
+            )
 
         return Response(self.get_serializer(order).data)
