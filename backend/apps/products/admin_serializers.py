@@ -59,7 +59,11 @@ class AdminCategorySerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
+            host = (
+                settings.ALLOWED_HOSTS[0]
+                if settings.ALLOWED_HOSTS
+                else "malaikanest.com"
+            )
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
@@ -189,7 +193,11 @@ class AdminProductSerializer(serializers.ModelSerializer):
             # Fallback: construct URL manually
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
+            host = (
+                settings.ALLOWED_HOSTS[0]
+                if settings.ALLOWED_HOSTS
+                else "malaikanest.com"
+            )
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
@@ -212,17 +220,23 @@ class AdminProductSerializer(serializers.ModelSerializer):
                     else:
                         from django.conf import settings
 
-                        host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
+                        host = (
+                            settings.ALLOWED_HOSTS[0]
+                            if settings.ALLOWED_HOSTS
+                            else "malaikanest.com"
+                        )
                         if host.startswith(("http://", "https://")):
                             url = f"{host}{url}"
                         else:
                             url = f"https://{host}{url}"
-            items.append({
-                "id": img.id,
-                "url": url,
-                "alt_text": img.alt_text,
-                "is_primary": img.is_primary,
-            })
+            items.append(
+                {
+                    "id": img.id,
+                    "url": url,
+                    "alt_text": img.alt_text,
+                    "is_primary": img.is_primary,
+                }
+            )
         return items
 
     def _parse_json_list(self, value):
@@ -286,12 +300,20 @@ class AdminProductSerializer(serializers.ModelSerializer):
 
     def get_variants(self, obj):
         request = self.context.get("request")
-        variants = obj.variants.filter(is_active=True).select_related("inventory").order_by("color", "size", "id")
+        variants = (
+            obj.variants.filter(is_active=True)
+            .select_related("inventory")
+            .order_by("color", "size", "id")
+        )
         items = []
         for variant in variants:
             image_url = None
             if variant.image:
-                raw = variant.image.name if hasattr(variant.image, "name") else str(variant.image)
+                raw = (
+                    variant.image.name
+                    if hasattr(variant.image, "name")
+                    else str(variant.image)
+                )
                 if raw.startswith(("http://", "https://")):
                     image_url = raw
                 else:
@@ -307,8 +329,14 @@ class AdminProductSerializer(serializers.ModelSerializer):
                     "size_label": variant.get_size_display() if variant.size else "",
                     "sku": variant.sku,
                     "price_modifier": str(variant.price_modifier),
-                    "stock": getattr(getattr(variant, "inventory", None), "quantity", 0),
-                    "available_stock": variant.inventory.available() if hasattr(variant, "inventory") else 0,
+                    "stock": getattr(
+                        getattr(variant, "inventory", None), "quantity", 0
+                    ),
+                    "available_stock": (
+                        variant.inventory.available()
+                        if hasattr(variant, "inventory")
+                        else 0
+                    ),
                     "image": image_url,
                     "is_active": variant.is_active,
                 }
@@ -448,11 +476,11 @@ class AdminProductSerializer(serializers.ModelSerializer):
             try:
                 open_idx = raw_key.index("[")
                 close_idx = raw_key.index("]", open_idx)
-                n_str = raw_key[open_idx + 1:close_idx]
+                n_str = raw_key[open_idx + 1 : close_idx]
                 idx = int(n_str)
             except (ValueError, IndexError):
                 continue
-            remainder = raw_key[close_idx + 1:]
+            remainder = raw_key[close_idx + 1 :]
             if remainder.startswith("[") and remainder.endswith("]"):
                 field = remainder[1:-1]
             else:
@@ -479,9 +507,13 @@ class AdminProductSerializer(serializers.ModelSerializer):
                     image = self._download_image(image_url, f"variant_{index + 1}.jpg")
 
             if variant_id:
-                variant = ProductVariant.objects.filter(pk=variant_id, product=product).first()
+                variant = ProductVariant.objects.filter(
+                    pk=variant_id, product=product
+                ).first()
                 if not variant:
-                    raise serializers.ValidationError({"variants": [f"Variant #{index + 1} could not be found."]})
+                    raise serializers.ValidationError(
+                        {"variants": [f"Variant #{index + 1} could not be found."]}
+                    )
                 for field, value in item.items():
                     setattr(variant, field, value)
                 if image:
@@ -508,7 +540,9 @@ class AdminProductSerializer(serializers.ModelSerializer):
             inventory.save(update_fields=["quantity", "reserved", "updated_at"])
             seen_variant_ids.append(variant.id)
 
-        ProductVariant.objects.filter(product=product).exclude(id__in=seen_variant_ids).update(is_active=False)
+        ProductVariant.objects.filter(product=product).exclude(
+            id__in=seen_variant_ids
+        ).update(is_active=False)
         sync_product_stock(product)
 
     def validate_slug(self, value):
@@ -684,7 +718,11 @@ class AdminBannerSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
+            host = (
+                settings.ALLOWED_HOSTS[0]
+                if settings.ALLOWED_HOSTS
+                else "malaikanest.com"
+            )
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
@@ -700,7 +738,11 @@ class AdminBannerSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             from django.conf import settings
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
+            host = (
+                settings.ALLOWED_HOSTS[0]
+                if settings.ALLOWED_HOSTS
+                else "malaikanest.com"
+            )
             if host.startswith("http://") or host.startswith("https://"):
                 return f"{host}{url}"
             return f"https://{host}{url}"
@@ -740,7 +782,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_orders(self, obj):
-        return Order.objects.filter(user=obj).count()
+        return getattr(
+            obj, "annotated_total_orders", Order.objects.filter(user=obj).count()
+        )
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
