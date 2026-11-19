@@ -1,4 +1,6 @@
 import io
+from rest_framework.authentication import SessionAuthentication
+from apps.accounts.authentication import CookieJWTAuthentication
 
 from django.db.models import Q
 from django.db import transaction
@@ -36,6 +38,7 @@ from .admin_serializers import (
 
 
 class AdminProductViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     queryset = (
         Product.objects.all()
         .select_related("category", "brand")
@@ -76,6 +79,7 @@ class AdminProductViewSet(viewsets.ModelViewSet):
 
 
 class AdminCategoryViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     queryset = Category.objects.select_related("parent", "parent__parent").order_by(
         "group", "parent__name", "name"
     )
@@ -108,6 +112,7 @@ class AdminCategoryViewSet(viewsets.ModelViewSet):
 
 
 class AdminBannerViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     queryset = Banner.objects.all().order_by("position", "-created_at")
     serializer_class = AdminBannerSerializer
     permission_classes = [IsAdminUser]
@@ -120,6 +125,7 @@ class AdminBannerViewSet(viewsets.ModelViewSet):
 
 
 class AdminUserViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAdminUser]
@@ -192,6 +198,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
 
 class AdminOrderViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     queryset = (
         Order.objects.all().select_related("user").prefetch_related("items__product")
     )

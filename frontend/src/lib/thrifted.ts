@@ -31,12 +31,6 @@ export const CONDITION_LABELS: Record<string, string> = {
   fair: 'Fair',
 };
 
-export const CONDITION_COLORS: Record<string, string> = {
-  like_new: 'var(--brand-green-light)',
-  good: 'var(--brand-gold)',
-  fair: 'var(--brand-terra)',
-};
-
 // Sample thrifted catalog has been replaced by admin uploads via Prisma/DB.
 // The fetch functions below degrade gracefully to empty arrays on failure.
 
@@ -106,37 +100,6 @@ export async function getFeaturedThrifted(limit = 4): Promise<ThriftedProduct[]>
       });
       result = anyRows.length > 0 ? anyRows.map(normalize) : [];
     }
-  } catch {
-    result = [];
-  }
-  _tCacheSet(cacheKey, result);
-  return result;
-}
-
-/** Get all available thrifted items for the browse page (with optional filters). */
-export async function getThriftedProducts(filters?: {
-  condition?: string;
-  gender?: string;
-  ageGroup?: string;
-  search?: string;
-}): Promise<ThriftedProduct[]> {
-  const cacheKey = `list:${JSON.stringify(filters || {})}`;
-  const cached = _tCacheGet<ThriftedProduct[]>(cacheKey, THRIFTED_CACHE_TTL);
-  if (cached) return cached;
-
-  let result: ThriftedProduct[] = [];
-  try {
-    const where: any = { isAvailable: true, isActive: true };
-    if (filters?.condition) where.condition = filters.condition;
-    if (filters?.gender && filters.gender !== 'all') where.gender = filters.gender;
-    if (filters?.ageGroup && filters.ageGroup !== 'all') where.ageGroup = filters.ageGroup;
-    if (filters?.search) where.name = { contains: filters.search };
-
-    const rows = await db.thriftedProduct.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
-    result = rows.length > 0 ? rows.map(normalize) : [];
   } catch {
     result = [];
   }

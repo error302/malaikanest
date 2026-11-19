@@ -3,6 +3,7 @@ import logging
 import uuid
 
 from django.db import IntegrityError, transaction
+from django.db.models import Max
 from rest_framework import serializers
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ from apps.products.models import (
     ProductVariant,
     VariantInventory,
     sync_product_stock,
+    validate_image_file,
 )
 
 
@@ -50,6 +52,8 @@ class AdminCategorySerializer(serializers.ModelSerializer):
         }
 
     def get_image_full_url(self, obj):
+        if obj.image_url:
+            return obj.image_url
         if obj.image:
             url = obj.image.url
             if url.startswith("http://") or url.startswith("https://"):
@@ -68,31 +72,20 @@ class AdminCategorySerializer(serializers.ModelSerializer):
     def _download_image(self, image_url):
         if not image_url:
             return None
-        try:
-            import requests
-            from django.core.files.base import ContentFile
-            from urllib.parse import urlparse
-
-            response = requests.get(image_url, timeout=10)
-            if response.status_code == 200:
-                parsed = urlparse(image_url)
-                filename = parsed.path.split("/")[-1] or "category_image.jpg"
-                return ContentFile(response.content, name=filename)
-        except Exception:
-            logger.debug("Category image download failed from %s", image_url)
-        return None
+        from apps.core.utils import safe_download_image
+        return safe_download_image(image_url)
 
     def create(self, validated_data):
-        image_url = validated_data.pop("image_url", None)
-        if image_url:
+        image_url = validated_data.get("image_url")
+        if image_url and not validated_data.get("image"):
             downloaded = self._download_image(image_url)
             if downloaded:
                 validated_data["image"] = downloaded
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        image_url = validated_data.pop("image_url", None)
-        if image_url:
+        image_url = validated_data.get("image_url")
+        if image_url and not validated_data.get("image"):
             downloaded = self._download_image(image_url)
             if downloaded:
                 validated_data["image"] = downloaded
@@ -102,7 +95,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 class AdminProductSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(required=True, validators=[])
     category_name = serializers.SerializerMethodField()
-    image = serializers.ImageField(required=False, allow_null=True)
+    image = serializers.ImageField(required=False, allow_null=True, validators=[validate_image_file])
     image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     image_full_url = serializers.SerializerMethodField(read_only=True)
     images = serializers.SerializerMethodField(read_only=True)
@@ -115,6 +108,9 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "description",
+            "fabric",
+            "whats_included",
+            "size_guide",
             "price",
             "compare_price",
             "discount_price",
@@ -159,14 +155,15 @@ class AdminProductSerializer(serializers.ModelSerializer):
         # CharFields with blank=True but NOT null=True: null/absent must become
         # an empty string, otherwise DRF rejects them as "may not be null".
         blank_char_fields = [
-            "brand",
             "age_group",
             "age_range",
             "size_label",
-            "sku",
+            "fabric",
+            "whats_included",
+            "size_guide",
         ]
         for field_name in blank_char_fields:
-            if mutable_data.get(field_name) is None:
+            if field_name in mutable_data and mutable_data[field_name] is None:
                 mutable_data[field_name] = ""
 
         return super().to_internal_value(mutable_data)
@@ -176,6 +173,8 @@ class AdminProductSerializer(serializers.ModelSerializer):
         return getattr(category, "full_slug", "") or ""
 
     def get_image_full_url(self, obj):
+        if obj.image_url:
+            return obj.image_url
         if obj.image:
             raw = obj.image.name if hasattr(obj.image, "name") else str(obj.image)
             if raw.startswith("http://") or raw.startswith("https://"):
@@ -198,25 +197,21 @@ class AdminProductSerializer(serializers.ModelSerializer):
     def get_images(self, obj):
         items = []
         for img in obj.images.all():
-            if not img.image:
+            url = img.get_image_url
+            if not url:
                 continue
-            raw = img.image.name if hasattr(img.image, "name") else str(img.image)
-            if raw.startswith("http://") or raw.startswith("https://"):
-                url = raw
-            else:
-                url = img.image.url
-                if not (url.startswith("http://") or url.startswith("https://")):
-                    request = self.context.get("request")
-                    if request:
-                        url = request.build_absolute_uri(url)
-                    else:
-                        from django.conf import settings
+            if not (url.startswith("http://") or url.startswith("https://")):
+                request = self.context.get("request")
+                if request:
+                    url = request.build_absolute_uri(url)
+                else:
+                    from django.conf import settings
 
-                        host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
-                        if host.startswith(("http://", "https://")):
-                            url = f"{host}{url}"
-                        else:
-                            url = f"https://{host}{url}"
+                    host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
+                    if host.startswith(("http://", "https://")):
+                        url = f"{host}{url}"
+                    else:
+                        url = f"https://{host}{url}"
             items.append({
                 "id": img.id,
                 "url": url,
@@ -249,44 +244,74 @@ class AdminProductSerializer(serializers.ModelSerializer):
             return
 
         files = request.FILES.getlist("gallery_images") if request.FILES else []
+        for file in files:
+            serializers.ImageField(validators=[validate_image_file]).run_validation(file)
+            file.seek(0)
         if files:
-            base = product.images.count()
+            last_position = product.images.aggregate(last=Max("position"))["last"]
+            base = last_position + 1 if last_position is not None else 0
             for i, f in enumerate(files):
                 ProductImage.objects.create(
                     product=product, image=f, position=base + i, is_primary=False
                 )
+
+        add_urls = self._parse_json_list(request.data.get("gallery_image_urls"))
+        single_url = request.data.get("add_gallery_url")
+        if single_url and single_url not in add_urls:
+            add_urls.append(single_url)
+        if add_urls:
+            last_position = product.images.aggregate(last=Max("position"))["last"]
+            base = (last_position + 1) if last_position is not None else 0
+            for i, u in enumerate(add_urls):
+                if u and isinstance(u, str) and u.startswith(("http://", "https://")):
+                    ProductImage.objects.create(
+                        product=product, image_url=u, position=base + i, is_primary=False
+                    )
 
         delete_ids = self._parse_json_list(request.data.get("delete_image_ids"))
         if delete_ids:
             norm = [self._norm_id(x) for x in delete_ids]
             norm = [n for n in norm if n]
             if norm:
-                product.images.filter(id__in=norm).delete()
+                deleted = product.images.filter(id__in=norm)
+                if product.image and deleted.filter(image=product.image.name).exists():
+                    Product.objects.filter(pk=product.pk).update(image="")
+                    product.image.name = ""
+                deleted.delete()
 
         order = self._parse_json_list(request.data.get("image_orders"))
         if order:
             imgs = {str(img.id): img for img in product.images.all()}
-            for i, pid in enumerate(order):
-                img = imgs.get(self._norm_id(pid))
-                if img:
-                    img.position = 1000 + i
-            if imgs:
-                ProductImage.objects.bulk_update(list(imgs.values()), ["position"])
-            for i, pid in enumerate(order):
-                img = imgs.get(self._norm_id(pid))
-                if img:
-                    img.position = i
-            if imgs:
-                ProductImage.objects.bulk_update(list(imgs.values()), ["position"])
+            ordered_ids = list(dict.fromkeys(self._norm_id(pid) for pid in order))
+            ordered = [imgs[pid] for pid in ordered_ids if pid in imgs]
+            ordered.extend(img for pid, img in imgs.items() if pid not in ordered_ids)
+            base = max((img.position for img in ordered), default=0) + 1
+            if base + len(ordered) > 32767:
+                raise serializers.ValidationError({"image_orders": ["Too many photo positions to reorder."]})
+            for i, img in enumerate(ordered):
+                img.position = base + i
+            if ordered:
+                ProductImage.objects.bulk_update(ordered, ["position"])
+            for i, img in enumerate(ordered):
+                img.position = i
+            if ordered:
+                ProductImage.objects.bulk_update(ordered, ["position"])
 
-        primary_id = self._norm_id(request.data.get("primary_image_id"))
-        if primary_id:
+        if "image" in request.data:
+            product.images.update(is_primary=False)
+        if "primary_image_id" in request.data:
+            primary_id = self._norm_id(request.data.get("primary_image_id"))
+            primary = product.images.filter(id=primary_id).first() if primary_id else None
+            if not primary:
+                raise serializers.ValidationError({"primary_image_id": ["Select an existing photo for this product."]})
             product.images.update(is_primary=False)
             product.images.filter(id=primary_id).update(is_primary=True)
+            Product.objects.filter(pk=product.pk).update(image=primary.image.name)
+            product.image.name = primary.image.name
 
     def get_variants(self, obj):
         request = self.context.get("request")
-        variants = obj.variants.filter(is_active=True).select_related("inventory").order_by("color", "size", "id")
+        variants = obj.variants.all().select_related("inventory").order_by("color", "size", "id")
         items = []
         for variant in variants:
             image_url = None
@@ -334,14 +359,15 @@ class AdminProductSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def _store_image_url(product, url):
-        """Persist an absolute image URL verbatim into the image column.
+        """Persist an absolute image URL verbatim into image and image_url columns.
 
         Assigning a URL string to an ImageField would otherwise trigger the
         configured storage backend (Cloudinary) to re-upload it. Writing the
         raw value via a queryset update bypasses ImageField.pre_save entirely.
         """
-        Product.objects.filter(pk=product.pk).update(image=url)
+        Product.objects.filter(pk=product.pk).update(image=url, image_url=url)
         product.image.name = url
+        product.image_url = url
 
     def _parse_variants(self):
         """Normalize variant payloads coming from JSON or multipart bodies.
@@ -371,6 +397,8 @@ class AdminProductSerializer(serializers.ModelSerializer):
             if raw_variants is None:
                 # 3) Multipart flat map: variants[0][color], variants[0][size], ...
                 raw = self._collect_flat_variants(data)
+                if not raw:
+                    return None
             elif isinstance(raw_variants, list):
                 raw = raw_variants
             elif isinstance(raw_variants, str):
@@ -386,47 +414,46 @@ class AdminProductSerializer(serializers.ModelSerializer):
                     )
                 raw = parsed
             else:
-                raw = []
-
-        if raw is None or raw == [] or raw == "":
-            return None
+                raise serializers.ValidationError({"variants": ["Variants payload must be a list."]})
 
         variants = []
+        seen = set()
+        seen_ids = set()
         for index, item in enumerate(raw):
             if not isinstance(item, dict):
                 raise serializers.ValidationError(
                     {"variants": [f"Variant #{index + 1} is invalid."]}
                 )
 
-            color = (item.get("color") or "").strip()
-            stock = item.get("stock", 0)
-            if not color:
-                raise serializers.ValidationError(
-                    {"variants": [f"Variant #{index + 1} must include a color."]}
-                )
-
             try:
-                stock_value = int(stock or 0)
-            except (TypeError, ValueError):
-                raise serializers.ValidationError(
-                    {"variants": [f"Variant #{index + 1} stock must be a number."]}
-                )
-
-            if stock_value < 0:
-                raise serializers.ValidationError(
-                    {"variants": [f"Variant #{index + 1} stock cannot be negative."]}
-                )
+                color = serializers.ChoiceField(choices=ProductVariant.COLOR_CHOICES).run_validation(item.get("color"))
+                size = serializers.ChoiceField(choices=ProductVariant.SIZE_CHOICES, allow_null=True, allow_blank=True).run_validation(item.get("size")) or None
+                stock_value = serializers.IntegerField(min_value=0).run_validation(item.get("stock", 0))
+                active = serializers.BooleanField().run_validation(item.get("is_active", True))
+                modifier = serializers.DecimalField(max_digits=10, decimal_places=2).run_validation(item.get("price_modifier") or "0")
+                variant_id = serializers.UUIDField(allow_null=True).run_validation(item.get("id"))
+                sku = serializers.CharField(max_length=100, allow_blank=True, allow_null=True).run_validation(item.get("sku")) or None
+            except serializers.ValidationError as exc:
+                raise serializers.ValidationError({"variants": [f"Variant #{index + 1}: {exc.detail}"]})
+            key = (size, color)
+            if key in seen or (variant_id and variant_id in seen_ids):
+                raise serializers.ValidationError({"variants": [f"Variant #{index + 1} duplicates an existing row."]})
+            seen.add(key)
+            if variant_id:
+                seen_ids.add(variant_id)
 
             variant_payload = {
-                "id": item.get("id"),
+                "id": variant_id,
                 "color": color,
-                "size": (item.get("size") or "").strip() or None,
-                "sku": (item.get("sku") or "").strip() or None,
-                "price_modifier": item.get("price_modifier") or "0",
+                "size": size,
+                "sku": sku,
+                "price_modifier": modifier,
                 "stock": stock_value,
-                "is_active": bool(item.get("is_active", True)),
+                "is_active": active,
                 "image": None,
             }
+            if "sku" not in item:
+                variant_payload.pop("sku")
             variant_payload["image_url"] = (item.get("image_url") or "").strip() or None
             variants.append(variant_payload)
 
@@ -509,7 +536,12 @@ class AdminProductSerializer(serializers.ModelSerializer):
             seen_variant_ids.append(variant.id)
 
         ProductVariant.objects.filter(product=product).exclude(id__in=seen_variant_ids).update(is_active=False)
-        sync_product_stock(product)
+        if product.variants.filter(is_active=True).exists():
+            sync_product_stock(product)
+        else:
+            Product.objects.filter(pk=product.pk).update(stock=0)
+            Inventory.objects.update_or_create(product=product, defaults={"quantity": 0, "reserved": 0})
+        product.stock = Product.objects.get(pk=product.pk).stock
 
     def validate_slug(self, value):
         queryset = Product.objects.filter(slug=value)
@@ -675,6 +707,8 @@ class AdminBannerSerializer(serializers.ModelSerializer):
         return super().to_internal_value(mutable_data)
 
     def get_image_full_url(self, obj):
+        if obj.image_url:
+            return obj.image_url
         if obj.image:
             url = obj.image.url
             if url.startswith("http://") or url.startswith("https://"):
@@ -691,6 +725,8 @@ class AdminBannerSerializer(serializers.ModelSerializer):
         return None
 
     def get_mobile_image_full_url(self, obj):
+        if obj.mobile_image_url:
+            return obj.mobile_image_url
         if obj.mobile_image:
             url = obj.mobile_image.url
             if url.startswith("http://") or url.startswith("https://"):

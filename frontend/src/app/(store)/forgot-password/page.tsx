@@ -83,6 +83,7 @@ export default function ForgotPasswordPage() {
           >
             <div>
               <label
+                htmlFor="forgot-email"
                 className="text-xs uppercase tracking-wider font-semibold mb-2 block"
                 style={{ color: 'var(--brand-text-muted)' }}
               >
@@ -95,6 +96,7 @@ export default function ForgotPasswordPage() {
                   style={{ color: 'var(--brand-text-muted)' }}
                 />
                 <input
+                  id="forgot-email"
                   required
                   type="email"
                   value={email}

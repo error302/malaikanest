@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import api from '@/lib/api';
 
-export interface ApiCategory {
+interface ApiCategory {
   id: number;
   name: string;
   slug: string;

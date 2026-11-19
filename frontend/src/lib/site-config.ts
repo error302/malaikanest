@@ -13,14 +13,6 @@ export const SITE_URL =
 
 export const SITE_NAME = 'Malaika Nest';
 
-export const SITE_DOMAIN = (() => {
-  try {
-    return new URL(SITE_URL).hostname;
-  } catch {
-    return 'malaikanest.com';
-  }
-})();
-
 /**
  * Resolve the absolute API base URL for server-side fetches.
  * - Production: uses https://api.malaikanest.com

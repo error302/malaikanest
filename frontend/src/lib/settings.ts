@@ -11,7 +11,7 @@ import { db } from '@/lib/db';
 
 // ── Hardcoded defaults (used when DB has no override) ────────────────────────
 
-export const DEFAULT_BRANDING = {
+const DEFAULT_BRANDING = {
   logo_url: '/logo.png',                    // served from public/logo.png
   favicon_url: '',                          // empty = use /logo.png
   store_name: 'Malaika Nest',
@@ -20,7 +20,7 @@ export const DEFAULT_BRANDING = {
   primary_color: '#8B6914',
   accent_color: '#C4704A',
   announcement_messages: JSON.stringify([
-    'Free delivery on orders over <strong>KES 3,000</strong>',
+    'Free delivery on orders over <strong>KES 10,000</strong>',
     'Same-day delivery in Mombasa',
     'Lipa Na M-Pesa · Till 3370347',
     'Handcrafted with love in Kenya',
@@ -45,7 +45,7 @@ export const DEFAULT_BRANDING = {
   ]),
 } as const;
 
-export const DEFAULT_CONTENT: Record<string, Record<string, string>> = {
+const DEFAULT_CONTENT: Record<string, Record<string, string>> = {
   hero: {
     slide1_tag: 'Premium Baby Care',
     slide1_headline: 'A Premium Nest',
@@ -94,7 +94,16 @@ export const DEFAULT_CONTENT: Record<string, Record<string, string>> = {
   testimonials: {
     label: 'Loved by parents',
     title: 'What Families Are Saying',
-    aggregate_rating: '4.9 / 5 · 1,200+ reviews',
+    // Left empty on purpose. This previously shipped as the hardcoded claim
+    // "4.9 / 5 · 1,200+ reviews" with no review data behind it. The component
+    // hides the star row while no active testimonials exist, and an
+    // unsubstantiated aggregate rating is a legally risky advertising claim.
+    // Set it from the CMS once real reviews are collected.
+    aggregate_rating: '',
+    // Shown beneath the heading while there is no rating to display, so the
+    // section explains itself instead of looking unfinished.
+    empty_note_intro: 'Be the first to share your experience',
+    empty_note: 'We\'d love to hear how your order went — reviews from Mombasa families appear here once shared.',
   },
   newsletter: {
     badge: 'Join the Nest',
@@ -110,39 +119,36 @@ export const DEFAULT_CONTENT: Record<string, Record<string, string>> = {
   },
 } as const;
 
-export const DEFAULT_VALUE_PROPS = [
+const DEFAULT_VALUE_PROPS = [
   { icon: 'Shield', title: 'Safe Materials', subtitle: 'OEKO-TEX certified, tested for your baby' },
   { icon: 'Truck', title: 'Fast Delivery', subtitle: 'Same-day in Mombasa, 1–3 days countrywide' },
-  { icon: 'Heart', title: 'Parent Approved', subtitle: 'Trusted by 5,000+ Kenyan families' },
+  // Deliberately no numeric social-proof claim ("Trusted by 5,000+ families").
+  // The storefront has no review or order-count data to substantiate one, and
+  // an unsubstantiated figure is an advertising claim as well as a trust risk.
+  { icon: 'Heart', title: 'Parent Approved', subtitle: 'Handled with care by a small Mombasa team' },
   { icon: 'CreditCard', title: 'Secure M-Pesa', subtitle: 'Till 3370347 · Pay safely, every time' },
 ] as const;
 
-export const DEFAULT_TESTIMONIALS = [
-  {
-    name: 'Amina W.',
-    location: 'Mombasa',
-    rating: 5,
-    text: 'The organic cotton onesies are incredibly soft. My baby\'s skin has never been happier. Same-day delivery was a lifesaver!',
-    product: 'Organic Newborn Set',
-    initials: 'AW',
-  },
-  {
-    name: 'Grace M.',
-    location: 'Nairobi',
-    rating: 5,
-    text: 'I ordered the gift set for my sister\'s baby shower and it was beautifully packaged. The quality exceeded my expectations.',
-    product: 'Baby Shower Gift Bundle',
-    initials: 'GM',
-  },
-  {
-    name: 'Joy K.',
-    location: 'Kisumu',
-    rating: 5,
-    text: 'Finally a Kenyan baby shop that gets it right. Premium quality, fair prices, and the M-Pesa checkout was instant.',
-    product: 'Toddler Clothing Pack',
-    initials: 'JK',
-  },
-] as const;
+/**
+ * Intentionally empty.
+ *
+ * These used to be three finished-looking testimonials attributed to named
+ * customers, returned by `getTestimonials()` whenever the DB was empty *or*
+ * threw. The storefront would therefore publish fabricated reviews from real
+ * people, recommending products that are not in the catalogue at all
+ * ("Organic Newborn Set", "Baby Shower Gift Bundle", "Toddler Clothing Pack").
+ *
+ * The `Testimonials` component renders its `emptyMessage` instead, so the
+ * section stays honest until genuine customer reviews exist in the CMS.
+ */
+const DEFAULT_TESTIMONIALS: ReadonlyArray<{
+  name: string;
+  location: string;
+  rating: number;
+  text: string;
+  product: string | null;
+  initials: string;
+}> = [];
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -291,9 +297,4 @@ export async function getValueProps() {
 /** Invalidate the cache (call after admin updates). */
 export function invalidateSettingsCache() {
   cache = null;
-}
-
-/** Helper: get a single content value with fallback. */
-export function getContent(content: ContentMap, section: string, key: string, fallback = ''): string {
-  return content?.[section]?.[key] ?? fallback;
 }

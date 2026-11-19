@@ -1,0 +1,705 @@
+<style>
+  .benchmarks-container {
+    max-width: 1350px;
+    margin: 0 auto;
+    padding: 1.5rem 0.75rem 4rem;
+  }
+
+  .intro-header {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 2.5rem;
+  }
+
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .brand-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+    gap: 2.25rem;
+  }
+
+  .benchmark-card {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  }
+
+  .benchmark-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.09);
+  }
+
+  .benchmark-card.selected {
+    border-color: var(--accent);
+    background: var(--selected-bg);
+    box-shadow: 0 0 0 3px var(--accent);
+  }
+
+  .selection-pill {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 15px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .benchmark-card.selected .selection-pill {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* High-Fidelity Mobile Device Viewport */
+  .device-frame {
+    width: 100%;
+    max-width: 335px;
+    margin: 1.25rem auto;
+    background: #000;
+    border: 10px solid #1a1a1a;
+    border-radius: 42px;
+    overflow: hidden;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.22);
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    height: 640px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .device-status-bar {
+    height: 26px;
+    background: #000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+
+  .device-screen {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    scrollbar-width: none;
+  }
+  .device-screen::-webkit-scrollbar { display: none; }
+
+  /* Benchmark 1: Baby Mori Inspiration */
+  .mori-theme {
+    background: #FAF8F5;
+    color: #2D2926;
+  }
+  .mori-header {
+    background: #FAF8F5;
+    border-bottom: 1px solid #ECE7E1;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .mori-logo {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #2D2926;
+  }
+  .mori-pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    background: #fff;
+    border: 1px solid #ECE7E1;
+    color: #4A4643;
+    white-space: nowrap;
+  }
+  .mori-pill.active {
+    background: #2D2926;
+    color: #fff;
+    border-color: #2D2926;
+  }
+  .swatch-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  /* Benchmark 2: Kyte Baby Inspiration */
+  .kyte-theme {
+    background: #FFFFFF;
+    color: #111827;
+  }
+  .kyte-header {
+    background: #fff;
+    border-bottom: 1px solid #F3F4F6;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .kyte-logo {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #111827;
+  }
+  .kyte-badge {
+    background: #F3F4F6;
+    color: #374151;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  /* Benchmark 3: Zara Kids Inspiration */
+  .zara-theme {
+    background: #FFFFFF;
+    color: #000;
+  }
+  .zara-header {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #eaeaea;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .zara-logo {
+    font-family: Didot, Bodoni MT, serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .nav-bar-dock {
+    height: 48px;
+    background: #fff;
+    border-top: 1px solid #eaeaea;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-size: 9px;
+    color: #6b7280;
+    z-index: 10;
+  }
+  .nav-bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .nav-bar-item.active {
+    color: #000;
+    font-weight: 700;
+  }
+
+  .analysis-section {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.85rem;
+    font-size: 0.84rem;
+  }
+  .analysis-section h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    color: var(--text-primary);
+  }
+  .analysis-section ul {
+    margin-left: 1.2rem;
+    color: var(--text-secondary);
+  }
+  .analysis-section li {
+    margin-bottom: 0.35rem;
+  }
+</style>
+
+<div class="benchmarks-container">
+  <div class="intro-header">
+    <span class="badge-pill" style="background: rgba(0, 113, 227, 0.12); color: var(--accent);">Real Store Benchmarking & UX Case Studies</span>
+    <h2 style="font-size: 2rem; font-weight: 800; margin: 0.4rem 0 0.5rem; letter-spacing: -0.02em;">
+      Real Online Store Inspirations for Malaika Nest
+    </h2>
+    <p class="subtitle" style="font-size: 0.98rem; color: var(--text-secondary); line-height: 1.55;">
+      We analyzed three of the world’s most successful baby & kids fashion platforms (<strong>Baby Mori</strong>, <strong>Kyte Baby</strong>, and <strong>Zara Kids</strong>). Here is how each real-world design philosophy transforms Malaika Nest’s mobile storefront with actual photography and Kenyan market commerce features.
+    </p>
+  </div>
+
+  <div class="brand-cards-grid">
+
+    <!-- BENCHMARK 1: BABY MORI -->
+    <div class="benchmark-card" data-choice="mori" onclick="toggleSelect(this)">
+      <div class="selection-pill">1</div>
+      <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem;">
+        <span class="badge-pill" style="background: #E8ECE9; color: #2D312E;">Benchmark: Baby Mori (UK)</span>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">The "Soothing Organic Nursery" Look</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+        Inspired by <strong>babymori.com</strong>. Calming oat & almond tones, milestone age pills, certified organic cotton badges, and gentle micro-animations.
+      </p>
+
+      <!-- Device Viewport -->
+      <div class="device-frame">
+        <div class="device-status-bar">
+          <span>9:41</span>
+          <span>5G 🔋</span>
+        </div>
+
+        <div class="device-screen mori-theme">
+          <!-- Top Free Delivery Progress Bar -->
+          <div style="background: #E8ECE9; color: #2D312E; font-size: 9px; padding: 5px 12px; text-align: center; font-weight: 600;">
+            🚚 Add KES 800 more for <strong>Free Mombasa Delivery</strong>
+          </div>
+
+          <!-- Header -->
+          <div class="mori-header">
+            <div style="font-size: 16px;">☰</div>
+            <div class="mori-logo">MALAIKA NEST</div>
+            <div style="display: flex; gap: 12px; font-size: 15px;">
+              <span>🔍</span>
+              <span style="position: relative;">🛍️<span style="position: absolute; top:-4px; right:-6px; background:#C96E4B; color:#fff; font-size:7px; border-radius:50%; width:12px; height:12px; display:flex; align-items:center; justify-content:center; font-weight:bold;">2</span></span>
+            </div>
+          </div>
+
+          <!-- Milestone Age Selector (Baby Mori's #1 UX pattern) -->
+          <div style="padding: 10px 12px 6px; display: flex; gap: 6px; overflow-x: auto;">
+            <div class="mori-pill active">All Ages</div>
+            <div class="mori-pill">Newborn (0-1M)</div>
+            <div class="mori-pill">0 - 3 Months</div>
+            <div class="mori-pill">3 - 6 Months</div>
+            <div class="mori-pill">6 - 12 Months</div>
+            <div class="mori-pill">1 - 3 Years</div>
+          </div>
+
+          <!-- Lifestyle Hero Banner -->
+          <div style="margin: 6px 12px 10px; position: relative; border-radius: 16px; overflow: hidden; height: 160px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+            <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?w=500&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Baby sleeping in soft nursery">
+            <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(45,41,38,0.75) 0%, rgba(0,0,0,0.1) 60%); display: flex; flex-direction: column; justify-content: flex-end; padding: 12px;">
+              <span style="color: #E8ECE9; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Pure Organic Bamboo</span>
+              <div style="color: #fff; font-size: 14px; font-weight: 700; line-height: 1.2; margin: 2px 0 6px;">
+                Signature Zip Sleepsuits & Rompers
+              </div>
+              <div style="display: inline-block; background: #fff; color: #2D2926; font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 14px; width: fit-content;">
+                Shop New Arrivals • KES 1,650
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Feed (2-Column) -->
+          <div style="padding: 0 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 700; color: #2D2926;">Mombasa Favorites</span>
+              <span style="font-size: 10px; color: #8B6914; font-weight: 600;">View 36 items →</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <!-- Product 1 -->
+              <div style="background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #ECE7E1;">
+                <div style="height: 125px; position: relative; background: #f5f2ec;">
+                  <img src="https://images.unsplash.com/photo-1522771930-78848d9293e8?w=350&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Baby Romper">
+                  <span style="position: absolute; top: 6px; left: 6px; background: rgba(255,255,255,0.9); font-size: 7px; font-weight: 700; padding: 2px 5px; border-radius: 4px; color: #2D312E;">ORGANIC</span>
+                  <span style="position: absolute; top: 6px; right: 6px; font-size: 11px;">🤍</span>
+                </div>
+                <div style="padding: 8px;">
+                  <div style="display: flex; gap: 3px; margin-bottom: 4px;">
+                    <span class="swatch-dot" style="background: #F4EBE1;"></span>
+                    <span class="swatch-dot" style="background: #D8E2DC;"></span>
+                    <span class="swatch-dot" style="background: #C9A96E;"></span>
+                  </div>
+                  <div style="font-size: 10px; font-weight: 600; color: #2D2926; line-height: 1.25; height: 25px; overflow: hidden;">
+                    Ribbed Cotton Zip Sleepsuit
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                    <span style="font-size: 11px; font-weight: 800; color: #2D2926;">KES 1,450</span>
+                    <span style="background: #FAF8F5; border: 1px solid #ECE7E1; border-radius: 6px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #8B6914;">+</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Product 2 -->
+              <div style="background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #ECE7E1;">
+                <div style="height: 125px; position: relative; background: #f5f2ec;">
+                  <img src="https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=350&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Gift Set">
+                  <span style="position: absolute; top: 6px; left: 6px; background: #C96E4B; color:#fff; font-size: 7px; font-weight: 700; padding: 2px 5px; border-radius: 4px;">TOP GIFT</span>
+                  <span style="position: absolute; top: 6px; right: 6px; font-size: 11px;">🤍</span>
+                </div>
+                <div style="padding: 8px;">
+                  <div style="display: flex; gap: 3px; margin-bottom: 4px;">
+                    <span class="swatch-dot" style="background: #FAF7F2;"></span>
+                    <span class="swatch-dot" style="background: #EADBCE;"></span>
+                  </div>
+                  <div style="font-size: 10px; font-weight: 600; color: #2D2926; line-height: 1.25; height: 25px; overflow: hidden;">
+                    Newborn Welcome Gift Hamper
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                    <span style="font-size: 11px; font-weight: 800; color: #2D2926;">KES 2,900</span>
+                    <span style="background: #FAF8F5; border: 1px solid #ECE7E1; border-radius: 6px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #8B6914;">+</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Dock -->
+        <div class="nav-bar-dock" style="background: #FAF8F5; border-color: #ECE7E1;">
+          <div class="nav-bar-item active">
+            <span>🏠</span>
+            <span>Home</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>👶</span>
+            <span>By Age</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>🎁</span>
+            <span>Hampers</span>
+          </div>
+          <div class="nav-bar-item" style="color: #059669;">
+            <span>💬</span>
+            <span>WhatsApp</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="analysis-section">
+        <h4>Why Baby Mori Works:</h4>
+        <ul>
+          <li><strong>Parents shop by age:</strong> The horizontal milestone pills solve the #1 frustration of buying baby clothes.</li>
+          <li><strong>Free shipping motivator:</strong> Dynamic progress bar at the top directly drives cart size up.</li>
+          <li><strong>High emotional trust:</strong> Muted earthy tones make baby clothes look premium, hypoallergenic, and gentle on sensitive skin.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- BENCHMARK 2: KYTE BABY -->
+    <div class="benchmark-card" data-choice="kyte" onclick="toggleSelect(this)">
+      <div class="selection-pill">2</div>
+      <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem;">
+        <span class="badge-pill" style="background: #E5E7EB; color: #111827;">Benchmark: Kyte Baby (US/D2C)</span>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">The "Modern D2C Scandinavian" Utility</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+        Inspired by <strong>kytebaby.com</strong>. Razor-sharp typography, instant bottom-sheet size picker, express checkout wallets, and high-speed browsing.
+      </p>
+
+      <!-- Device Viewport -->
+      <div class="device-frame">
+        <div class="device-status-bar">
+          <span>9:41</span>
+          <span>5G 🔋</span>
+        </div>
+
+        <div class="device-screen kyte-theme">
+          <!-- Tawakal Shop Local Trust Bar -->
+          <div style="background: #111827; color: #fff; font-size: 9px; padding: 4px 12px; text-align: center; font-weight: 600;">
+            🏬 Pick Up Free at Tawakal Toto Shop, Mombasa
+          </div>
+
+          <!-- Header -->
+          <div class="kyte-header">
+            <div style="font-size: 16px;">☰</div>
+            <div class="kyte-logo">MALAIKA NEST</div>
+            <div style="display: flex; gap: 12px; font-size: 15px;">
+              <span>🔍</span>
+              <span>🛒</span>
+            </div>
+          </div>
+
+          <!-- Category Swipe Pills -->
+          <div style="padding: 8px 12px; display: flex; gap: 6px; overflow-x: auto; background: #FAFAFA; border-bottom: 1px solid #F3F4F6;">
+            <span class="kyte-badge" style="background: #111827; color: #fff;">Featured</span>
+            <span class="kyte-badge">Rompers</span>
+            <span class="kyte-badge">Sleep Bags</span>
+            <span class="kyte-badge">Bodysuits</span>
+            <span class="kyte-badge">Toddler Sets</span>
+            <span class="kyte-badge">Gift Sets</span>
+          </div>
+
+          <!-- Product Card with Instant Slide-Up Bottom Drawer Trigger -->
+          <div style="padding: 10px 12px;">
+            <div style="background: #FAFAFA; border-radius: 14px; overflow: hidden; margin-bottom: 10px;">
+              <div style="height: 175px; position: relative;">
+                <img src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Organic Baby Bodysuit">
+                <span style="position: absolute; top: 8px; left: 8px; background: #fff; font-size: 8px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">RESTOCKED</span>
+              </div>
+              <div style="padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 700; color: #111827;">Bamboo Zippered Footie (0-12M)</div>
+                    <div style="font-size: 9px; color: #059669; font-weight: 600; margin-top: 2px;">✓ 4 Colors Available in Mombasa</div>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 800; color: #111827;">KES 1,750</span>
+                </div>
+
+                <!-- Instant Size Selector (Direct on card) -->
+                <div style="display: flex; gap: 4px; margin: 8px 0 6px;">
+                  <button style="flex:1; border: 1px solid #D1D5DB; background: #fff; font-size: 8px; font-weight: 600; padding: 4px 0; border-radius: 4px;">NB</button>
+                  <button style="flex:1; border: 1.5px solid #111827; background: #111827; color: #fff; font-size: 8px; font-weight: 700; padding: 4px 0; border-radius: 4px;">0-3M</button>
+                  <button style="flex:1; border: 1px solid #D1D5DB; background: #fff; font-size: 8px; font-weight: 600; padding: 4px 0; border-radius: 4px;">3-6M</button>
+                  <button style="flex:1; border: 1px dashed #D1D5DB; background: #F3F4F6; color: #9CA3AF; font-size: 8px; padding: 4px 0; border-radius: 4px;">6-12M</button>
+                </div>
+
+                <!-- Quick Add CTA -->
+                <button style="width: 100%; background: #111827; color: #fff; border: none; font-size: 10px; font-weight: 700; padding: 7px 0; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <span>+ Quick Add</span> • <span>KES 1,750</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Trust Grid (Kyte Baby specialty) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+              <div style="background: #F9FAFB; border: 1px solid #F3F4F6; padding: 6px 8px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 12px;">🌿</div>
+                <div style="font-size: 8px; font-weight: 700; color: #111827; margin-top: 2px;">Hypoallergenic</div>
+                <div style="font-size: 7px; color: #6B7280;">Safe for sensitive skin</div>
+              </div>
+              <div style="background: #F9FAFB; border: 1px solid #F3F4F6; padding: 6px 8px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 12px;">📲</div>
+                <div style="font-size: 8px; font-weight: 700; color: #111827; margin-top: 2px;">Instant M-Pesa</div>
+                <div style="font-size: 7px; color: #6B7280;">Prompt straight to phone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Bottom Express Dock -->
+        <div class="nav-bar-dock">
+          <div class="nav-bar-item active">
+            <span>⚡</span>
+            <span>Shop</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>📂</span>
+            <span>Categories</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>❤️</span>
+            <span>Wishlist</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>🛒</span>
+            <span>Cart</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="analysis-section">
+        <h4>Why Kyte Baby Works:</h4>
+        <ul>
+          <li><strong>Zero waiting for product pages:</strong> Parents can select sizes (0-3M, 3-6M) right on the card and add to cart instantly.</li>
+          <li><strong>Out-of-stock transparency:</strong> Dashed borders clearly show sold-out sizes so parents don't waste clicks.</li>
+          <li><strong>Ultra-clean Scandinavian layout:</strong> High contrast, crisp whites, and zero clutter make it look like a high-end luxury brand.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- BENCHMARK 3: ZARA KIDS / MANGO KIDS -->
+    <div class="benchmark-card" data-choice="zara" onclick="toggleSelect(this)">
+      <div class="selection-pill">3</div>
+      <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem;">
+        <span class="badge-pill" style="background: #000; color: #fff;">Benchmark: Zara Kids (Spain/Global)</span>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">The "Editorial Lookbook & Complete Set"</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+        Inspired by <strong>zara.com/kids</strong>. High-impact photography, "Shop the Complete Look" bundling, understated serif typography, and magazine feel.
+      </p>
+
+      <!-- Device Viewport -->
+      <div class="device-frame">
+        <div class="device-status-bar">
+          <span>9:41</span>
+          <span>5G 🔋</span>
+        </div>
+
+        <div class="device-screen zara-theme">
+          <!-- Header -->
+          <div class="zara-header">
+            <div style="font-size: 15px;">≡</div>
+            <div class="zara-logo">MALAIKA NEST</div>
+            <div style="display: flex; gap: 14px; font-size: 14px;">
+              <span>SEARCH</span>
+              <span>BAG (1)</span>
+            </div>
+          </div>
+
+          <!-- Editorial Full-Bleed Lookbook Hero -->
+          <div style="position: relative; height: 280px; width: 100%;">
+            <img src="https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Little child outfit">
+            <div style="position: absolute; bottom: 14px; left: 14px; right: 14px; color: #fff;">
+              <span style="font-size: 9px; text-transform: uppercase; letter-spacing: 2px;">SPRING / SUMMER 2026</span>
+              <div style="font-family: Didot, serif; font-size: 19px; font-weight: bold; margin: 3px 0 6px;">
+                The Coastal Linen Collection
+              </div>
+              <button style="background: #fff; color: #000; border: none; font-size: 9px; font-weight: 700; padding: 6px 14px; letter-spacing: 1px; text-transform: uppercase;">
+                View Lookbook
+              </button>
+            </div>
+          </div>
+
+          <!-- "Shop the Complete Outfit" Multi-Item Set -->
+          <div style="padding: 14px 12px 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Shop The Set (3 Pieces)</span>
+              <span style="font-size: 9px; text-decoration: underline; color: #666;">Buy Together & Save 10%</span>
+            </div>
+
+            <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;">
+              <!-- Item 1 -->
+              <div style="width: 100px; flex-shrink: 0;">
+                <div style="height: 120px; background: #f4f4f4; border-radius: 4px; overflow: hidden;">
+                  <img src="https://images.unsplash.com/photo-1522771930-78848d9293e8?w=250&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Romper">
+                </div>
+                <div style="font-size: 9px; font-weight: 600; margin-top: 4px;">Cotton Romper</div>
+                <div style="font-size: 9px; color: #555;">KES 1,200</div>
+              </div>
+
+              <!-- Item 2 -->
+              <div style="width: 100px; flex-shrink: 0;">
+                <div style="height: 120px; background: #f4f4f4; border-radius: 4px; overflow: hidden;">
+                  <img src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=250&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Cardigan">
+                </div>
+                <div style="font-size: 9px; font-weight: 600; margin-top: 4px;">Knit Cardigan</div>
+                <div style="font-size: 9px; color: #555;">KES 1,500</div>
+              </div>
+
+              <!-- Item 3 -->
+              <div style="width: 100px; flex-shrink: 0;">
+                <div style="height: 120px; background: #f4f4f4; border-radius: 4px; overflow: hidden;">
+                  <img src="https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=250&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Booties">
+                </div>
+                <div style="font-size: 9px; font-weight: 600; margin-top: 4px;">Soft Booties</div>
+                <div style="font-size: 9px; color: #555;">KES 600</div>
+              </div>
+            </div>
+
+            <!-- Instant Bundle Add Button -->
+            <button style="width: 100%; background: #000; color: #fff; border: none; font-size: 10px; font-weight: 700; padding: 10px 0; margin-top: 6px; letter-spacing: 0.5px; text-transform: uppercase;">
+              Add Entire 3-Piece Set • KES 2,970 (Save 10%)
+            </button>
+          </div>
+        </div>
+
+        <!-- Sticky Dock -->
+        <div class="nav-bar-dock" style="background: #fff; border-color: #eee;">
+          <div class="nav-bar-item active">
+            <span>EDITORIAL</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>COLLECTION</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>SETS</span>
+          </div>
+          <div class="nav-bar-item">
+            <span>CART (1)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="analysis-section">
+        <h4>Why Zara Kids Works:</h4>
+        <ul>
+          <li><strong>Outfits sell better than single items:</strong> Parents struggle to match clothes; showing the full 3-piece set doubles the average order value (AOV).</li>
+          <li><strong>Magazine-quality imagery:</strong> Elevates Malaika Nest from a regular shop into a coveted lifestyle brand.</li>
+          <li><strong>High contrast & clean minimalism:</strong> Makes every garment look deliberate, expensive, and fashionable.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Real Comparison Breakdown -->
+  <div style="margin-top: 2.5rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem;">
+    <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem;">Which Real-World Elements Stand Out to You?</h3>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+      You don't have to pick just one brand. The most successful African and global e-commerce platforms combine the best of each:
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; font-size: 0.85rem;">
+      <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 0.75rem;">
+        <strong>From Baby Mori:</strong>
+        <p style="color: var(--text-secondary); margin-top: 0.35rem;">
+          The soothing oat/almond warm palette, horizontal "Shop by Age" pills (Newborn, 0-3M, 3-6M, etc.), and the free delivery progress bar.
+        </p>
+      </div>
+
+      <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 0.75rem;">
+        <strong>From Kyte Baby:</strong>
+        <p style="color: var(--text-secondary); margin-top: 0.35rem;">
+          The fast in-card size picker (NB, 0-3M, 3-6M) so moms don't have to wait for pages to load, color swatches, and instant slide-up cart drawer.
+        </p>
+      </div>
+
+      <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 0.75rem;">
+        <strong>From Zara Kids:</strong>
+        <p style="color: var(--text-secondary); margin-top: 0.35rem;">
+          "Shop the Complete Outfit" multi-piece bundle buying (Romper + Cardigan + Booties in 1 tap) and clean editorial lifestyle imagery.
+        </p>
+      </div>
+
+      <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: 0.75rem; border: 1.5px solid #059669;">
+        <strong style="color: #059669;">The Malaika Nest Kenya Advantage:</strong>
+        <p style="color: var(--text-secondary); margin-top: 0.35rem;">
+          1-Tap M-Pesa STK checkout, Tawakal Toto Shop Mombasa pickup verification, and instant WhatsApp concierge support.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 2rem;">
+    <p style="font-size: 1rem; font-weight: 700; color: var(--text-primary);">
+      👉 Click benchmark 1, 2, or 3 in the browser to highlight it, or tell me which specific parts you like (e.g. Baby Mori's warm colors + Kyte's quick-add size buttons + Zara's 3-piece sets)!
+    </p>
+  </div>
+</div>

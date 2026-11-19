@@ -1,4 +1,5 @@
 import { COLOR_CHOICES, SIZE_CHOICES, Variant } from "./api";
+import { availableVariantStock } from "./productDraft";
 
 const sizeLabel = (v: string | null | undefined) =>
   SIZE_CHOICES.find((s) => s.value === v)?.label ?? v ?? "";
@@ -16,9 +17,11 @@ const colorLabel = (v: string | null | undefined) =>
  */
 export function VariantsEditor({
   variants,
+  previous,
   onChange,
 }: {
   variants: Variant[];
+  previous: Variant[];
   onChange: (next: Variant[]) => void;
 }) {
   function update(index: number, patch: Partial<Variant>) {
@@ -26,7 +29,8 @@ export function VariantsEditor({
   }
 
   function addRow() {
-    onChange([...variants, { color: "blue", size: "0-3m", stock: 0, is_active: true, price_modifier: "0" }]);
+    const size = SIZE_CHOICES.find((choice) => !variants.some((row) => row.color === "blue" && row.size === choice.value));
+    onChange([...variants, { color: "blue", size: size?.value ?? null, stock: 0, is_active: true, price_modifier: "0" }]);
   }
 
   function removeRow(index: number) {
@@ -101,6 +105,8 @@ export function VariantsEditor({
                 <input
                   type="number"
                   min={0}
+                  step={1}
+                  required
                   value={v.stock}
                   aria-label={`${sizeLabel(v.size)} ${colorLabel(v.color)} stock`}
                   onChange={(e) => update(i, { stock: Math.max(0, Number(e.target.value) || 0) })}
@@ -108,11 +114,11 @@ export function VariantsEditor({
                 />
               </td>
               <td className="num" style={{ color: "var(--muted)" }}>
-                {v.available_stock ?? v.stock}
+                {availableVariantStock(v, previous)}
               </td>
               <td>
-                <button type="button" className="btn ghost small danger" onClick={() => removeRow(i)}>
-                  ✕
+                <button type="button" className="btn ghost small danger" disabled={!!v.id && !v.is_active} aria-label={`${v.id ? "Deactivate" : "Remove"} ${sizeLabel(v.size)} ${colorLabel(v.color)}`} onClick={() => removeRow(i)}>
+                  {v.id ? "Deactivate" : "Remove"}
                 </button>
               </td>
             </tr>

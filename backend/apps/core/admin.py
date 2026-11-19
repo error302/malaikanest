@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class SiteSettingsAdmin(admin.ModelAdmin):
     list_display = ("site_name", "contact_email", "contact_phone", "shipping_fee", "free_shipping_threshold")
     fieldsets = (
-        ("General", {"fields": ("site_name", "site_description", "logo")}),
+        ("General", {"fields": ("site_name", "site_description", "logo", "logo_url")}),
         ("Contact", {"fields": ("contact_email", "contact_phone", "address")}),
         ("Social", {"fields": ("facebook_url", "instagram_url", "twitter_url")}),
         ("Pricing", {"fields": ("shipping_fee", "free_shipping_threshold", "minimum_order_amount")}),

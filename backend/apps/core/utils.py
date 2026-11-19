@@ -68,3 +68,94 @@ def generate_receipt_number():
     timestamp = datetime.now().strftime('%Y%m%d')
     unique = uuid.uuid4().hex[:8].upper()
     return f"KBS-{timestamp}-{unique}"
+
+
+def is_safe_external_url(url: str) -> bool:
+    """Validate that a URL points to an external, routable public destination (SSRF protection)."""
+    if not url:
+        return False
+    try:
+        from urllib.parse import urlparse
+        import socket
+        import ipaddress
+
+        parsed = urlparse(url)
+        if parsed.scheme.lower() not in ("http", "https"):
+            return False
+        hostname = (parsed.hostname or "").strip().lower()
+        if not hostname:
+            return False
+
+        blocked_hostnames = {"localhost", "metadata.google.internal", "instance-data"}
+        if hostname in blocked_hostnames or hostname.endswith(".internal") or hostname.endswith(".local"):
+            return False
+
+        addr_info = socket.getaddrinfo(hostname, None)
+        if not addr_info:
+            return False
+
+        for item in addr_info:
+            ip_str = item[4][0]
+            ip = ipaddress.ip_address(ip_str)
+            if (
+                ip.is_loopback
+                or ip.is_private
+                or ip.is_link_local
+                or ip.is_reserved
+                or ip.is_multicast
+                or ip.is_unspecified
+            ):
+                return False
+        return True
+    except Exception:
+        return False
+
+
+def safe_download_image(image_url: str, max_size_bytes: int = 5 * 1024 * 1024):
+    """
+    Downloads an image from an external URL with strict SSRF protection,
+    streaming byte cap, and Pillow image verification.
+    """
+    if not is_safe_external_url(image_url):
+        return None
+
+    try:
+        import io
+        import requests
+        from urllib.parse import urlparse
+        from django.core.files.base import ContentFile
+        from PIL import Image
+
+        session = requests.Session()
+        resp = session.get(image_url, stream=True, timeout=10, allow_redirects=False)
+        if resp.status_code != 200:
+            return None
+
+        chunks = []
+        downloaded = 0
+        for chunk in resp.iter_content(chunk_size=65536):
+            downloaded += len(chunk)
+            if downloaded > max_size_bytes:
+                return None
+            chunks.append(chunk)
+
+        content = b"".join(chunks)
+        if not content:
+            return None
+
+        # Verify image content using Pillow
+        img = Image.open(io.BytesIO(content))
+        img.verify()
+        img_format = (img.format or "JPEG").lower()
+        if img_format not in ("jpeg", "jpg", "png", "webp", "gif"):
+            return None
+
+        parsed = urlparse(image_url)
+        raw_name = parsed.path.split("/")[-1] if parsed.path else "image"
+        filename = raw_name.split("?")[0] or f"image.{img_format}"
+        if not any(filename.lower().endswith(f".{ext}") for ext in ("jpg", "jpeg", "png", "webp", "gif")):
+            filename = f"{filename}.{img_format}"
+
+        return ContentFile(content, name=filename)
+    except Exception:
+        return None

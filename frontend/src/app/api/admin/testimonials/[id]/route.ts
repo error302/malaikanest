@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { invalidateSettingsCache } from '@/lib/settings';
-import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
+import { withAdminGuard } from '@/lib/admin-guard';
 
 /**
  * PUT /api/admin/testimonials/[id] — update a testimonial
  * DELETE /api/admin/testimonials/[id] — delete a testimonial
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const guard = await guardAdminRequest(req);
-  if (guard) return guard;
-  try {
+  return withAdminGuard(req, async () => {
     const { id } = await params;
     const body = await req.json();
     const updated = await db.testimonial.update({
@@ -28,20 +26,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
     invalidateSettingsCache();
     return NextResponse.json({ testimonial: updated });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+  });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const guard = await guardAdminRequest(req);
-  if (guard) return guard;
-  try {
+  return withAdminGuard(req, async () => {
     const { id } = await params;
     await db.testimonial.delete({ where: { id } });
     invalidateSettingsCache();
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: sanitizeError(e) ?? 'Delete failed' }, { status: 500 });
-  }
+  });
 }

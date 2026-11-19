@@ -17,12 +17,23 @@ interface Testimonial {
 interface TestimonialsProps {
   content?: Record<string, Record<string, string>>;
   testimonials?: Testimonial[];
+  /**
+   * Shown when there are no active testimonials. Without it the section still
+   * renders its heading + 5-star aggregate claim above an empty grid, which
+   * reads as broken social proof.
+   */
+  emptyMessage?: string;
 }
 
-export function Testimonials({ content, testimonials = [] }: TestimonialsProps) {
+export function Testimonials({ content, testimonials = [], emptyMessage }: TestimonialsProps) {
   const { t } = useI18n();
   const c = content?.testimonials || {};
-  const active = testimonials.filter((t) => t.isActive);
+  const active = (testimonials ?? []).filter((t) => t?.isActive);
+
+  // No testimonials and no placeholder copy -> render nothing at all. A
+  // heading plus an empty grid reads as broken social proof, which is worse
+  // than an absent section.
+  if (active.length === 0 && !emptyMessage) return null;
 
   return (
     <section
@@ -43,20 +54,38 @@ export function Testimonials({ content, testimonials = [] }: TestimonialsProps) 
           >
             {c.title || t('home.testimonials')}
           </h2>
-          <div className="flex items-center justify-center gap-2 mt-3">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={16} className="fill-current" style={{ color: 'var(--brand-gold)' }} />
-              ))}
+          {active.length > 0 && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={16} className="fill-current" style={{ color: 'var(--brand-gold)' }} />
+                ))}
+              </div>
+              <span className="text-[13px] font-medium" style={{ color: 'var(--brand-brown)' }}>
+                {c.aggregate_rating || t('home.aggregateRating')}
+              </span>
             </div>
-            <span className="text-[13px] font-medium" style={{ color: 'var(--brand-brown)' }}>
-              {c.aggregate_rating || t('home.aggregateRating')}
-            </span>
-          </div>
+          )}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-          {active.map((t) => (
+        {active.length === 0 ? (
+          <div
+            className="rounded-2xl border px-6 py-12 text-center"
+            style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}
+          >
+            <p
+              className="text-[13px] font-medium mb-1.5"
+              style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)', fontSize: '1.05rem' }}
+            >
+              {c.empty_note_intro || t('home.testimonialsEmptyIntro')}
+            </p>
+            <p className="text-sm max-w-md mx-auto" style={{ color: 'var(--brand-text-secondary)' }}>
+              {emptyMessage || c.empty_note || t('home.testimonialsEmpty')}
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+            {active.map((t) => (
             <figure
               key={t.id}
               className="rounded-2xl p-6 sm:p-7 border flex flex-col"
@@ -94,8 +123,9 @@ export function Testimonials({ content, testimonials = [] }: TestimonialsProps) 
                 </div>
               </figcaption>
             </figure>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

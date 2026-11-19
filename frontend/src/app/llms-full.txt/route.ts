@@ -148,15 +148,15 @@ const STATIC_PAGES = [
   { url: '/faq',       title: 'FAQ',                 summary: 'Shipping, M-Pesa payments, returns, sizing, materials, sustainability.' },
   { url: '/about',     title: 'About',               summary: 'Our story: Kenyan-owned and made. Handcrafted, organic, fair trade.' },
   { url: '/contact',   title: 'Contact',             summary: 'Email malikanest7@gmail.com, WhatsApp +254 726 771 321, phone, location.' },
-  { url: '/shipping',  title: 'Shipping Policy',     summary: 'Free delivery in Mombasa on orders over KES 3,000. Same-day in Mombasa. 1-2 days Nairobi. 2-3 days upcountry. Pick-up at our Mombasa shop.' },
-  { url: '/returns',   title: 'Returns Policy',      summary: 'Easy 7-day return policy for unused items. See FAQ page for full terms.' },
+  { url: '/shipping',  title: 'Shipping Policy',     summary: 'Free delivery across Kenya on qualifying orders over KES 10,000. Same-day in Mombasa. 1-2 days Nairobi. 2-3 days upcountry. Pick-up at our Mombasa shop.' },
+  { url: '/returns',   title: 'Returns Policy',      summary: 'Strict 72-hour return & exchange policy. Original brand tags must be attached and untampered. Customer covers return shipping. Hygiene and thrifted items are final sale.' },
 ];
 
 const FAQ = [
   { q: 'Where is Malaika Nest located?',
     a: 'Our shop and workshop is in Mombasa, Kenya. The full address and map are on the Find Us page.' },
   { q: 'Do you deliver outside Mombasa?',
-    a: 'Yes — we deliver to Nairobi (1-2 days, KES 300) and upcountry (2-3 days, KES 500). Free delivery in Mombasa on orders over KES 3,000, plus a KES 0 same-day pick-up option at our shop.' },
+    a: 'Yes — we deliver to Nairobi (1-2 days, KES 300) and upcountry (2-3 days, KES 500). Free delivery countrywide on orders over KES 10,000, plus a KES 0 same-day pick-up option at our shop.' },
   { q: 'How do I pay?',
     a: 'Pay first, then we dispatch — by M-Pesa (Till 3370347), Pesapal (cards & mobile money), or card. We do not offer cash on delivery to avoid fraud. All payments are SSL-secured.' },
   { q: 'Are the products organic?',
@@ -164,7 +164,7 @@ const FAQ = [
   { q: 'What ages do you cover?',
     a: 'Newborn through 12 years. Use the Shop by Age filter on the home page to jump straight to your stage.' },
   { q: 'Can I return an item?',
-    a: 'Yes — see our Returns page. Unused items can be returned within 7 days. Sale / thrifted items are final sale.' },
+    a: 'Strict 72-hour policy: items must be reported within 72 hours of receipt, completely unworn, with all original brand tags attached and untampered. Customer covers return shipping. Thrifted, underwear, and feeding items are final sale.' },
   { q: 'Do you sell pre-loved clothing?',
     a: 'Yes — visit the Mtumba / Thrifted section for curated pre-loved baby and kids items.' },
   { q: 'How fast is delivery in Mombasa?',

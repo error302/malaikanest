@@ -1,0 +1,66 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}Verify Order #{{ receipt_number }} · Malaika Nest{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-12 sm:py-16">
+  <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 sm:p-8 shadow-sm space-y-6">
+    <div class="text-center space-y-2">
+      <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-[#8B6914] flex items-center justify-center mx-auto text-xl">
+        <svg class="w-6 h-6 text-[#8B6914]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+      <h1 class="font-serif text-2xl font-bold text-[#2C1810]">
+        Verify Order #{{ receipt_number }}
+      </h1>
+      <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
+        To protect your customer details and delivery address, please enter the phone number or email used when placing this order.
+      </p>
+    </div>
+
+    {% if verify_error %}
+      <div class="p-3.5 rounded-xl text-xs sm:text-sm font-medium bg-rose-50 text-rose-800 border border-rose-200" role="alert">
+        {{ verify_error }}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'storefront:order_status' receipt_number=receipt_number %}" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="verify" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+          Phone Number or Email Address <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          name="verify" 
+          id="verify" 
+          required 
+          autofocus 
+          placeholder="e.g. 0722 000 000 or your.email@domain.com"
+          class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+        >
+      </div>
+
+      <button 
+        type="submit" 
+        class="w-full py-3.5 px-6 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-center text-xs sm:text-sm font-bold uppercase tracking-wider shadow transition-all"
+      >
+        View Order Details
+      </button>
+    </form>
+
+    <div class="pt-4 border-t border-[#EADBCE] text-center text-xs text-stone-500 space-y-1">
+      <p>Need assistance with this order?</p>
+      <a 
+        href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20need%20help%20tracking%20Order%20{{ receipt_number }}" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1.5 font-semibold text-emerald-700 hover:underline"
+      >
+        Chat on WhatsApp (+254 726 771 321)
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

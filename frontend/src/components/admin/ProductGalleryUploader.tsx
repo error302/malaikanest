@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Image as ImageIcon, Star, Trash2, Upload } from 'lucide-react';
 
-export interface GalleryItem {
+interface GalleryItem {
   id?: string;
   url: string;
   file?: File;

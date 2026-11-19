@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { invalidateSettingsCache } from '@/lib/settings';
-import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
+import { guardAdminRequest, sanitizeError, parsePagination } from '@/lib/admin-guard';
 
 /**
  * GET /api/admin/testimonials — list all testimonials (including inactive)
@@ -11,9 +11,7 @@ export async function GET(req: NextRequest) {
   const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
-    const url = new URL(req.url);
-    const take = Math.min(Math.max(parseInt(url.searchParams.get('take') || '50', 10) || 50, 1), 200);
-    const skip = Math.max(parseInt(url.searchParams.get('skip') || '0', 10) || 0, 0);
+    const { take, skip } = parsePagination(req);
     const [testimonials, total] = await Promise.all([
       db.testimonial.findMany({ orderBy: [{ position: 'asc' }, { createdAt: 'desc' }], take, skip }),
       db.testimonial.count(),

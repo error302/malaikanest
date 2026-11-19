@@ -3,11 +3,11 @@
 {% block title %}Shopping Bag · Malaika Nest{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-  <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mb-6 sm:mb-8">
+<div class="nest-cart-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+  <h1 class="font-serif text-2xl sm:text-4xl font-bold text-[#2C1810] mb-5 sm:mb-8">
     Shopping Bag
     {% if items %}
-      <span class="text-lg font-sans font-normal text-stone-500">({{ items|length }} item{{ items|length|pluralize }})</span>
+      <span class="text-base sm:text-lg font-sans font-normal text-stone-500">({{ items|length }} item{{ items|length|pluralize }})</span>
     {% endif %}
   </h1>
 
@@ -62,8 +62,8 @@
               <!-- Item Image + Meta -->
               <div class="flex items-center gap-4 flex-1 min-w-0">
                 <div class="w-20 h-20 rounded-2xl bg-stone-50 border border-[#EADBCE] overflow-hidden flex-shrink-0 relative">
-                  {% if item.product.image %}
-                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                  {% if item.product.get_image_url %}
+                    <img src="{{ item.product.get_image_url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
                   {% else %}
                     <div class="w-full h-full flex items-center justify-center font-serif text-xl font-bold text-[#EADBCE]">MN</div>
                   {% endif %}
@@ -163,10 +163,13 @@
                 name="delivery_region" 
                 id="delivery_region_select" 
                 onchange="document.getElementById('regionForm').submit()"
-                class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+                class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3 py-3 text-base sm:text-sm font-medium text-[#2C1810] focus:outline-none focus:border-[#8B6914] min-h-[48px]"
               >
+                <option value="mombasa_pickup" {% if cart.delivery_region == 'mombasa_pickup' %}selected{% endif %}>
+                  Store Pick-up (Tawakal Toto Wear, Likoni) — FREE
+                </option>
                 <option value="mombasa" {% if cart.delivery_region == 'mombasa' %}selected{% endif %}>
-                  Mombasa (Same Day) — {% if free_shipping_qualified %}FREE{% else %}KES 200{% endif %}
+                  Mombasa Delivery — {% if free_shipping_qualified %}FREE{% else %}KES 150{% endif %}
                 </option>
                 <option value="nairobi" {% if cart.delivery_region == 'nairobi' %}selected{% endif %}>
                   Nairobi (1–2 Days) — {% if free_shipping_qualified %}FREE{% else %}KES 300{% endif %}
@@ -240,10 +243,10 @@
           </div>
 
           <!-- Checkout CTA -->
-          <div class="pt-2">
+          <div class="pt-2 hidden sm:block">
             <a 
               href="{% url 'storefront:checkout' %}" 
-              class="w-full block py-4 px-6 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-center text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all"
+              class="w-full block py-4 px-6 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-center text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all min-h-[52px]"
             >
               Proceed to Checkout
             </a>
@@ -276,6 +279,17 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- Mobile sticky checkout bar -->
+    <div class="nest-sticky-cta">
+      <div class="flex flex-col justify-center pr-2 min-w-0">
+        <span class="text-[10px] uppercase tracking-wider text-stone-500 font-semibold">Total</span>
+        <span class="text-sm font-bold text-[#2C1810] truncate">KES {{ total|floatformat:0 }}</span>
+      </div>
+      <a href="{% url 'storefront:checkout' %}" class="nest-button !flex-[2]">
+        Checkout
+      </a>
     </div>
   {% endif %}
 </div>

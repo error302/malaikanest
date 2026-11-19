@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { invalidateSettingsCache } from '@/lib/settings';
-import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
+import { guardAdminRequest, sanitizeError, parsePagination } from '@/lib/admin-guard';
 
 /**
  * GET /api/admin/value-props — list all value props
@@ -11,9 +11,7 @@ export async function GET(req: NextRequest) {
   const guard = await guardAdminRequest(req);
   if (guard) return guard;
   try {
-    const url = new URL(req.url);
-    const take = Math.min(Math.max(parseInt(url.searchParams.get('take') || '50', 10) || 50, 1), 200);
-    const skip = Math.max(parseInt(url.searchParams.get('skip') || '0', 10) || 0, 0);
+    const { take, skip } = parsePagination(req);
     const [props, total] = await Promise.all([
       db.valueProp.findMany({ orderBy: [{ position: 'asc' }], take, skip }),
       db.valueProp.count(),
@@ -41,6 +39,6 @@ export async function POST(req: NextRequest) {
     invalidateSettingsCache();
     return NextResponse.json({ valueProp: created });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }
 }

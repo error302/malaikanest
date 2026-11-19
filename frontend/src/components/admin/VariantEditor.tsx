@@ -2,7 +2,7 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 
-export const COLOR_CHOICES: { value: string; label: string; hex: string }[] = [
+const COLOR_CHOICES: { value: string; label: string; hex: string }[] = [
   { value: 'white', label: 'White', hex: '#FFFFFF' },
   { value: 'black', label: 'Black', hex: '#1A1A1A' },
   { value: 'gray', label: 'Gray', hex: '#9CA3AF' },
@@ -18,7 +18,7 @@ export const COLOR_CHOICES: { value: string; label: string; hex: string }[] = [
   { value: 'multi', label: 'Multi', hex: 'linear-gradient(90deg,#F87171,#FDE047,#60A5FA)' },
 ];
 
-export const SIZE_CHOICES: { value: string; label: string }[] = [
+const SIZE_CHOICES: { value: string; label: string }[] = [
   { value: 'newborn', label: 'Newborn' },
   { value: '0-3m', label: '0-3M' },
   { value: '3-6m', label: '3-6M' },
@@ -49,7 +49,7 @@ export interface VariantForm {
   image_file?: File;
 }
 
-export function emptyVariant(): VariantForm {
+function emptyVariant(): VariantForm {
   return { color: '', size: '', sku: '', price_modifier: '0', stock: '0', image_url: '' };
 }
 

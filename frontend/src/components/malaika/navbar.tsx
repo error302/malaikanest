@@ -1,26 +1,21 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Search,
   Heart,
+  Heart as HeartIcon,
   User,
   ShoppingCart,
   Menu,
   X,
   ChevronDown,
-  ChevronRight,
   Package,
-  Gift,
-  Sparkles,
-  Flame,
   Baby,
   Settings,
   LogOut,
-  Heart as HeartIcon,
 } from 'lucide-react';
 import { Logo } from './logo';
 import { LanguageToggle } from './language-toggle';
@@ -29,9 +24,10 @@ import { useAuth } from '@/lib/authContext';
 import { showToast } from '@/lib/toast';
 import { useCategories } from '@/lib/categoriesContext';
 import { useCartDrawer } from '@/lib/cartDrawerStore';
-import Image from 'next/image';
 import type { Branding } from '@/lib/settings';
-import { getCategoryImage } from '@/lib/category-images';
+import { NavSearchModal } from './nav-search-modal';
+import { NavMobileDrawer } from './nav-mobile-drawer';
+import { NavMegaMenus } from './nav-mega-menus';
 
 const FALLBACK_COLORS = [
   '#FCE7E1', '#FEF3DC', '#E1EEF8', '#EFE3F8', '#E1F4E8', '#FCE1EE'
@@ -42,7 +38,7 @@ const NAV_LINKS = [
   { nameKey: 'nav.shop', href: '/categories', hasDropdown: true },
   { nameKey: 'nav.thrifted', href: '/thrifted' },
   { nameKey: 'nav.bestsellers', href: '/best-sellers' },
-  { nameKey: 'nav.contact', href: '/find-us' },
+  { nameKey: 'nav.contact', href: '/contact' },
 ];
 
 const SHOP_BY_AGE = [
@@ -302,7 +298,7 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
 
             <Link
               href="/wishlist"
-              className="relative hidden lg:flex w-10 h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
+              className="relative flex w-9 h-9 sm:w-10 sm:h-10 items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)] flex-shrink-0"
               style={{ color: 'var(--brand-brown)' }}
               aria-label={`Wishlist${wishlistCount > 0 ? `, ${wishlistCount} items` : ''}`}
             >
@@ -453,465 +449,51 @@ export function Navbar({ cartCount = 0, wishlistCount = 0, branding }: { cartCou
           </div>
         </nav>
 
-        {/* ── Shop Mega Menu ── */}
-        <div
-          onMouseEnter={openShop}
-          onMouseLeave={closeShop}
-          className={`hidden lg:block absolute top-full left-0 right-0 z-50 transition-all duration-200 origin-top ${
-            shopOpen
-              ? 'opacity-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 -translate-y-2 pointer-events-none'
-          }`}
-          style={{
-            background: '#FFFFFF',
-            borderTop: '1px solid var(--brand-border)',
-            boxShadow: 'var(--shadow-warm-lg)',
-          }}
-        >
-          {shopTouched && (
-          <div className="container-shell py-8">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {categories.slice(0, 6).map((cat, idx) => (
-                <Link
-                  key={cat.id}
-                  href={cat.slug ? `/categories?category=${cat.slug}` : '/categories'}
-                  onClick={() => setShopOpen(false)}
-                  className="group flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden hover:shadow-warm-md"
-                  style={{
-                    borderColor: 'var(--brand-border)',
-                    background: '#FFFFFF',
-                  }}
-                >
-                  <div
-                    className="h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 relative"
-                    style={{ background: FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
-                  >
-                    <Image
-                      src={getCategoryImage(cat)}
-                      alt={cat.name}
-                      fill
-                      sizes="(max-width: 1024px) 33vw, 16vw"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <div
-                      className="text-[13px] font-semibold group-hover:text-[var(--brand-gold)] transition-colors truncate"
-                      style={{ color: 'var(--brand-text)' }}
-                    >
-                      {cat.name}
-                    </div>
-                    {cat.product_count !== undefined && (
-                      <div
-                        className="text-[11px] mt-0.5 leading-snug"
-                        style={{ color: 'var(--brand-text-muted)' }}
-                      >
-                        {(cat.product_count ?? 0) === 1 ? '1 item' : `${cat.product_count ?? 0} items`}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            <div
-              className="mt-6 pt-5 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between"
-              style={{ borderTop: '1px solid var(--brand-border)' }}
-            >
-              <div className="flex flex-wrap gap-5">
-                <Link
-                  href="/best-sellers"
-                  onClick={() => setShopOpen(false)}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
-                  style={{ color: 'var(--brand-terra)' }}
-                >
-                  <Flame size={14} /> {t('nav.bestsellers')}
-                </Link>
-                <Link
-                  href="/categories?ordering=-created_at"
-                  onClick={() => setShopOpen(false)}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
-                  style={{ color: 'var(--brand-brown)' }}
-                >
-                  <Sparkles size={14} /> {t('nav.new')}
-                </Link>
-                <Link
-                  href="/categories?category=gifts"
-                  onClick={() => setShopOpen(false)}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-medium hover:underline"
-                  style={{ color: 'var(--brand-brown)' }}
-                >
-                  <Gift size={14} /> {t('cat.gifts')}
-                </Link>
-              </div>
-              <Link
-                href="/categories"
-                onClick={() => setShopOpen(false)}
-                className="text-[12px] font-medium px-4 py-2 min-h-11 rounded-full transition-all flex items-center"
-                style={{
-                  background: 'var(--brand-warm)',
-                  color: 'var(--brand-text)',
-                }}
-              >
-                {t('nav.allProducts')} →
-              </Link>
-            </div>
-          </div>
-          )}
-        </div>
-
-        {/* ── Shop by Age Mega Menu ── */}
-        <div
-          onMouseEnter={openAge}
-          onMouseLeave={closeAge}
-          className={`hidden lg:block absolute top-full left-0 right-0 z-50 transition-all duration-200 origin-top ${
-            ageOpen
-              ? 'opacity-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 -translate-y-2 pointer-events-none'
-          }`}
-          style={{
-            background: '#FFFFFF',
-            borderTop: '1px solid var(--brand-border)',
-            boxShadow: 'var(--shadow-warm-lg)',
-          }}
-        >
-          {ageTouched && (
-          <div className="container-shell py-8">
-            <div className="flex items-center justify-between mb-5">
-              <h3
-                className="font-serif text-[1.5rem] font-semibold"
-                style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}
-              >
-                {t('nav.shopByAge')}
-              </h3>
-              <Link
-                href="/categories"
-                onClick={() => setAgeOpen(false)}
-                className="inline-flex items-center gap-1 text-[13px] font-medium hover:gap-2 transition-all"
-                style={{ color: 'var(--brand-gold)' }}
-              >
-                {t('section.viewAll')} <ChevronRight size={14} />
-              </Link>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-              {SHOP_BY_AGE.map((age) => (
-                <Link
-                  key={age.label}
-                  href={`/categories?age_group=${age.slug}`}
-                  onClick={() => setAgeOpen(false)}
-                  className="group flex-shrink-0 flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all duration-200 hover:shadow-warm-md min-w-[110px]"
-                  style={{
-                    borderColor: 'var(--brand-border)',
-                    background: '#FFFFFF',
-                  }}
-                >
-                  <div
-                    className="w-14 h-14 rounded-full overflow-hidden relative border-2 border-white shadow-warm-sm transition-transform duration-200 group-hover:scale-105"
-                    style={{ background: 'var(--brand-warm)' }}
-                  >
-                    <Image
-                      src={age.image}
-                      alt={age.label}
-                      fill
-                      sizes="56px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <span
-                    className="text-[12px] font-medium whitespace-nowrap"
-                    style={{ color: 'var(--brand-text)' }}
-                  >
-                    {age.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-          )}
-        </div>
+        <NavMegaMenus
+          shopOpen={shopOpen}
+          shopTouched={shopTouched}
+          openShop={openShop}
+          closeShop={closeShop}
+          setShopOpen={setShopOpen}
+          ageOpen={ageOpen}
+          ageTouched={ageTouched}
+          openAge={openAge}
+          closeAge={closeAge}
+          setAgeOpen={setAgeOpen}
+          categories={categories}
+          fallbackColors={FALLBACK_COLORS}
+          shopByAge={SHOP_BY_AGE}
+        />
       </header>
 
-      {/* ── Search Overlay ── */}
-      {searchOpen && (
-        <div
-          className="fixed inset-0 z-[200] flex items-start justify-center pt-20 sm:pt-24 px-4 animate-fade-in-up"
-          style={{ background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(6px)' }}
-          onClick={() => setSearchOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-warm-xl w-full max-w-2xl p-5 sm:p-6 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setSearchOpen(false)}
-              className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
-              style={{ color: 'var(--brand-text-muted)' }}
-              aria-label="Close search"
-            >
-              <X size={20} />
-            </button>
-            <p
-              className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
-              style={{ color: 'var(--brand-text-muted)' }}
-            >
-              {t('nav.searchOverlayLabel')}
-            </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (searchQuery.trim()) {
-                  setSearchOpen(false);
-                  router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
-                }
-              }}
-              className="flex flex-col sm:flex-row gap-3"
-              role="search"
-            >
-              <input
-                autoFocus
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('nav.searchPlaceholder')}
-                className="flex-1 rounded-xl px-4 py-3 text-sm transition-colors"
-                style={{
-                  border: '1px solid var(--brand-border)',
-                  color: 'var(--brand-text)',
-                  background: 'var(--brand-bg-alt)',
-                }}
-                aria-label={t('nav.search')}
-              />
-              <button
-                type="submit"
-                className="rounded-xl px-6 py-3 text-sm font-medium transition-colors"
-                style={{
-                  background: 'var(--brand-gold)',
-                  color: '#FFFFFF',
-                }}
-              >
-                {t('nav.searchAction')}
-              </button>
-            </form>
-            <div className="mt-4 flex gap-2 flex-wrap">
-              {SEARCH_SUGGESTIONS.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => {
-                    setSearchOpen(false);
-                    router.push(`/categories?search=${encodeURIComponent(t)}`);
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-full transition-colors"
-                  style={{
-                    background: 'var(--brand-warm)',
-                    color: 'var(--brand-brown)',
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <NavSearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        suggestions={SEARCH_SUGGESTIONS}
+        onSubmit={(q) => {
+          setSearchOpen(false);
+          router.push(`/categories?search=${encodeURIComponent(q)}`);
+        }}
+      />
 
-      {/* ── Mobile Menu ── */}
-      {mobileOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[200] lg:hidden overflow-y-auto"
-            style={{ background: 'var(--brand-cream)' }}
-          >
-            <div
-              className="flex items-center justify-between h-16 px-5"
-              style={{ borderBottom: '1px solid var(--brand-border)' }}
-            >
-              <Logo logoUrl={branding?.logo_url} storeName={branding?.store_name} tagline={branding?.tagline} />
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                className="w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--brand-warm)]"
-                style={{ color: 'var(--brand-brown)' }}
-                aria-label="Close menu"
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            <div className="px-5 py-6 space-y-6">
-              <nav className="space-y-1" aria-label="Mobile navigation">
-                {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.nameKey}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="block py-3 text-lg font-medium border-b"
-                    style={{
-                      color: 'var(--brand-text)',
-                      borderColor: 'var(--brand-border)',
-                      fontFamily: 'var(--font-cormorant)',
-                    }}
-                  >
-                    {t(link.nameKey)}
-                  </Link>
-                ))}
-              </nav>
-
-              <div>
-                <p
-                  className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
-                  style={{ color: 'var(--brand-text-muted)' }}
-                >
-                  {t('nav.shopByAge')}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {SHOP_BY_AGE.slice(0, 6).map((age) => (
-                    <Link
-                      key={age.label}
-                  href={`/categories?age=${age.slug}`}
-                      onClick={() => setMobileOpen(false)}
-                      className="px-4 py-2 rounded-full border text-[13px] transition-all"
-                      style={{
-                        borderColor: 'var(--brand-border)',
-                        color: 'var(--brand-brown)',
-                      }}
-                    >
-                      {age.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p
-                  className="text-[11px] uppercase tracking-[0.14em] mb-3 font-semibold"
-                  style={{ color: 'var(--brand-text-muted)' }}
-                >
-                  {t('nav.categories')}
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {categories.slice(0, 6).map((cat, idx) => (
-                    <Link
-                      key={cat.id}
-                      href={cat.slug ? `/categories?category=${cat.slug}` : '/categories'}
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2.5 p-3 rounded-xl transition-colors border"
-                      style={{ 
-                        background: '#FFFFFF',
-                        borderColor: 'var(--brand-border)'
-                      }}
-                    >
-                      <div 
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden"
-                        style={{ background: FALLBACK_COLORS[idx % FALLBACK_COLORS.length] }}
-                      >
-                        <Image
-                          src={getCategoryImage(cat)}
-                          alt={cat.name}
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
-                      </div>
-                      <span
-                        className="text-[13px] font-medium truncate"
-                        style={{ color: 'var(--brand-text)' }}
-                      >
-                        {cat.name}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div
-                className="pt-5 space-y-3"
-                style={{ borderTop: '1px solid var(--brand-border)' }}
-              >
-                {isAuthenticated && (
-                  <div
-                    className="flex items-center gap-3 p-3 rounded-2xl mb-2"
-                    style={{ background: 'var(--brand-bg-alt)' }}
-                  >
-                    <span
-                      className="w-11 h-11 rounded-full flex items-center justify-center font-semibold flex-shrink-0"
-                      style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
-                    >
-                      {userInitial}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--brand-text)' }}>
-                        {user?.name || 'Welcome back'}
-                      </p>
-                      <p className="text-xs truncate" style={{ color: 'var(--brand-text-muted)' }}>
-                        {user?.email}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <Link
-                  href={isAuthenticated ? '/account' : '/login'}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 text-sm py-2"
-                  style={{ color: 'var(--brand-brown)' }}
-                >
-                  <User size={18} /> {isAuthenticated ? 'My Account' : `Account / ${t('nav.signin')}`}
-                </Link>
-                {isAuthenticated && (
-                  <>
-                    <Link
-                      href="/account/orders"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 text-sm py-2"
-                      style={{ color: 'var(--brand-brown)' }}
-                    >
-                      <Package size={18} /> My Orders
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-3 text-sm py-2"
-                        style={{ color: 'var(--brand-brown)' }}
-                      >
-                        <Settings size={18} /> Admin Dashboard
-                      </Link>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileOpen(false);
-                        handleLogout();
-                      }}
-                      className="flex items-center gap-3 text-sm py-2 w-full text-left"
-                      style={{ color: 'var(--brand-terra)' }}
-                    >
-                      <LogOut size={18} /> Sign Out
-                    </button>
-                  </>
-                )}
-                <Link
-                  href="/wishlist"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 text-sm py-2"
-                  style={{ color: 'var(--brand-brown)' }}
-                >
-                  <Heart size={18} /> {t('nav.wishlist')} ({wishlistCount})
-                </Link>
-                <Link
-                  href="/cart"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 text-sm py-2"
-                  style={{ color: 'var(--brand-brown)' }}
-                >
-                  <ShoppingCart size={18} /> {t('nav.cart')} ({cartCount})
-                </Link>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+      <NavMobileDrawer
+        isOpen={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        branding={branding}
+        navLinks={NAV_LINKS}
+        shopByAge={SHOP_BY_AGE}
+        categories={categories}
+        fallbackColors={FALLBACK_COLORS}
+        isAuthenticated={isAuthenticated}
+        isAdmin={isAdmin}
+        user={user}
+        userInitial={userInitial}
+        onLogout={handleLogout}
+        wishlistCount={wishlistCount}
+        cartCount={cartCount}
+      />
     </>
   );
 }

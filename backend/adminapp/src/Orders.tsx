@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
   ORDER_STATUS_LABELS,
@@ -27,7 +27,7 @@ const FILTER_STATUSES: (OrderStatus | "all")[] = [
 
 function paymentBadge(order: Order): { label: string; cls: string } {
   if (order.payment_status === "completed" || order.status === "paid") {
-    return { label: "M-Pesa ✓", cls: "on" };
+    return { label: "Paid", cls: "on" };
   }
   if (order.payment_status === "failed") {
     return { label: "Payment failed", cls: "cancelled" };
@@ -36,6 +36,8 @@ function paymentBadge(order: Order): { label: string; cls: string } {
 }
 
 export function Orders() {
+  const requestVersion = useRef(0);
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Paged<Order> | null>(null);
   const [status, setStatus] = useState<OrderStatus | "all">("all");
   const [page, setPage] = useState(0);
@@ -46,18 +48,26 @@ export function Orders() {
   const load = useCallback(() => {
     const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(page * PAGE_SIZE) });
     if (status !== "all") params.set("status", status);
+    const version = ++requestVersion.current;
+    setLoading(true);
+    setData(null);
     setError("");
     api
       .orders("?" + params.toString())
-      .then(setData)
-      .catch((e) => setError(e.message));
+      .then(result => { if (version === requestVersion.current) setData(result); })
+      .catch((e) => { if (version === requestVersion.current) setError(e.message); })
+      .finally(() => { if (version === requestVersion.current) setLoading(false); });
   }, [status, page]);
 
   useEffect(() => {
+    const requests = requestVersion;
     load();
+    return () => { requests.current++; };
   }, [load]);
 
   async function transition(order: Order, next: OrderStatus) {
+    if (busyId) return;
+    if (["cancelled", "refunded", "paid"].includes(next) && !window.confirm(`Change order ${order.order_number} to ${ORDER_STATUS_LABELS[next]}? This changes the order record; it does not send or refund a payment.`)) return;
     setBusyId(order.id);
     setError("");
     try {
@@ -78,8 +88,9 @@ export function Orders() {
       <h2>Orders</h2>
       <p className="sub">{data ? `${data.count} orders` : "Loading…"}</p>
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className="error" role="alert">{error} <button className="btn ghost" onClick={load}>Retry</button></div>}
 
+      {loading && <p role="status">Loading orders…</p>}
       <div className="toolbar" role="group" aria-label="Filter by status">
         {FILTER_STATUSES.map((s) => (
           <button
@@ -96,7 +107,7 @@ export function Orders() {
         ))}
       </div>
 
-      <div className="panel" style={{ padding: 0 }}>
+      <div className="panel table-scroll" role="region" aria-label="Orders table, scroll horizontally for more columns" tabIndex={0} style={{ padding: 0 }}>
         <table>
           <thead>
             <tr>
@@ -119,7 +130,7 @@ export function Orders() {
                   order={o}
                   pay={pay}
                   open={open}
-                  busy={busyId === o.id}
+                  busy={busyId !== null}
                   nexts={nexts}
                   onToggle={() => setExpanded(open ? null : o.id)}
                   onTransition={(s) => transition(o, s)}

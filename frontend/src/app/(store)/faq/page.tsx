@@ -19,17 +19,17 @@ const faqJsonLd = {
     {
       '@type': 'Question',
       name: 'What payment methods do you accept?',
-      acceptedAnswer: { '@type': 'Answer', text: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), and Pesapal (mobile money & bank). Pay first, then we dispatch — so we never risk fraud. All online payments are secured by 256-bit SSL encryption.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'We accept M-Pesa (Till 3370347 & instant STK push), PayPal, credit/debit cards (Visa & Mastercard), and Pesapal. Pay securely online or via M-Pesa Till before dispatch. All transactions are protected with 256-bit SSL encryption.' },
     },
     {
       '@type': 'Question',
       name: 'Is delivery really free?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Yes — delivery is FREE for all orders above KES 3,000 within Kenya. Below that, a flat fee applies: KES 300 for Nairobi and KES 500 for upcountry. Mombasa delivery is always free.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Yes — delivery is FREE for all qualifying orders of KES 10,000 and above across Kenya. For orders under KES 10,000, standard regional courier rates apply (Mombasa KES 250, Nairobi KES 300, and upcountry KES 500). Workshop pick-up in Mombasa is always free.' },
     },
     {
       '@type': 'Question',
       name: 'What is your return policy?',
-      acceptedAnswer: { '@type': 'Answer', text: 'We accept returns within 7 days of delivery for unused items in original packaging. Refunds are processed to your original payment method within 5–7 business days. Custom-made items are non-returnable.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Malaika Nest enforces a strict 72-hour return and exchange policy. Requests must be submitted within 72 hours of delivery. All returned clothing must be unworn, unwashed, and have original brand tags attached and untampered. Customer covers return courier fees. Hygiene items (underwear, bottles, pacifiers) and thrifted items are final sale.' },
     },
     {
       '@type': 'Question',
@@ -61,15 +61,15 @@ const FAQS = [
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept M-Pesa (Till 3370347), credit/debit cards (Visa & Mastercard), and Pesapal (mobile money & bank). Pay first, then we dispatch — so we never risk fraud. All online payments are secured by 256-bit SSL encryption.',
+    a: 'We accept M-Pesa (Till 3370347 & instant STK push), PayPal, credit/debit cards (Visa & Mastercard), and Pesapal. Pay securely online or via M-Pesa Till before dispatch. All transactions are protected with 256-bit SSL encryption.',
   },
   {
     q: 'Is delivery really free?',
-    a: 'Yes — delivery is FREE for all orders above KES 3,000 within Kenya. Below that, a flat fee applies: KES 300 for Nairobi and KES 500 for upcountry. Mombasa delivery is always free.',
+    a: 'Yes — delivery is FREE for all qualifying orders of KES 10,000 and above across Kenya. Below that, standard regional courier rates apply (Mombasa KES 250, Nairobi KES 300, and upcountry KES 500). Workshop pick-up in Mombasa is always free.',
   },
   {
     q: 'What is your return policy?',
-    a: 'We accept returns within 7 days of delivery for unused items in original packaging. Refunds are processed to your original payment method within 5–7 business days. Custom-made items are non-returnable.',
+    a: 'Malaika Nest enforces a strict 72-hour return and exchange policy. Sizing exchange requests must be submitted within 72 hours of delivery. All garments must be unworn, unwashed, and have original brand tags firmly attached and untampered. Customer covers return shipping. Hygiene items (underwear, bottles, pacifiers) and thrifted items are final sale.',
   },
   {
     q: 'Are your products safe for newborns?',

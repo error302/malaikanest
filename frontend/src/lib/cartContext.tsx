@@ -12,6 +12,7 @@ import React, {
 } from 'react';
 
 import api, { handleApiError } from '@/lib/api';
+import { trackCartActivity } from '@/lib/cartRecovery';
 import { showToast } from '@/lib/toast';
 
 type CartItem = {
@@ -187,6 +188,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // localStorage may be unavailable in private mode
     }
+    // Feeds the homepage CartRecoveryBanner; an empty cart (e.g. after
+    // checkout) clears the abandoned-cart record.
+    trackCartActivity(
+      state.items.map((i) => ({ id: String(i.id), name: i.name, price: i.price, qty: i.qty, image: i.image })),
+      state.items.reduce((sum, i) => sum + i.price * i.qty, 0)
+    );
   }, [state.items, synced]);
 
   const add = useCallback(

@@ -175,7 +175,8 @@ export default function TrackOrderPage() {
           {order.status !== 'cancelled' && order.status !== 'refunded' && (
             <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
               <h2 className="text-sm font-semibold mb-5" style={{ color: 'var(--brand-text)' }}>Order Progress</h2>
-              <div className="relative">
+              <div className="overflow-x-auto -mx-1 px-1">
+              <div className="relative min-w-[320px]">
                 {/* Progress line */}
                 <div className="absolute top-5 left-5 right-5 h-0.5" style={{ background: 'var(--brand-border)' }}>
                   <div
@@ -211,6 +212,7 @@ export default function TrackOrderPage() {
                     );
                   })}
                 </div>
+              </div>
               </div>
             </div>
           )}

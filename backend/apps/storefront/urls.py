@@ -1,16 +1,18 @@
 from django.urls import path
-from . import views, views_cart, views_checkout
+from . import views, views_cart, views_checkout, pwa
 from .admin_spa import AdminDashboardView
 
 app_name = "storefront"
 
 urlpatterns = [
+    path("manifest.webmanifest", pwa.manifest, name="manifest"),
+    path("sw.js", pwa.service_worker, name="service_worker"),
     # Catalogue
     path("", views.HomeView.as_view(), name="home"),
     path("products/", views.ProductListView.as_view(), name="product_list"),
     path("products/<slug:slug>/", views.ProductDetailView.as_view(), name="product_detail"),
     path("categories/", views.ProductListView.as_view(), name="category_list"),
-    path("categories/<slug:category_slug>/", views.ProductListView.as_view(), name="category_detail"),
+    path("categories/<path:category_slug>/", views.ProductListView.as_view(), name="category_detail"),
 
     # Cart
     path("cart/", views_cart.CartView.as_view(), name="cart"),
@@ -24,6 +26,7 @@ urlpatterns = [
     # Checkout & Payment
     path("checkout/", views_checkout.CheckoutView.as_view(), name="checkout"),
     path("checkout/paypal/return/", views_checkout.PayPalReturnView.as_view(), name="paypal_return"),
+    path("track/", views_checkout.OrderLookupView.as_view(), name="order_lookup"),
     path("orders/<str:receipt_number>/", views_checkout.OrderStatusView.as_view(), name="order_status"),
     path("orders/<str:receipt_number>/status/", views_checkout.OrderStatusPollView.as_view(), name="order_status_poll"),
 

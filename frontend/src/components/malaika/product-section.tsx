@@ -15,6 +15,13 @@ interface ProductSectionProps {
   columns?: 4 | 3 | 5;
   background?: 'cream' | 'bg-alt' | 'white' | 'paper' | 'paper-alt' | 'paper-card';
   /**
+   * Shown when `products` is empty. Without it an empty section vanishes
+   * silently (`return null`), which leaves the page with a hole where the
+   * heading should be and no route forward for the shopper. Any section that
+   * renders from live catalog data should pass this.
+   */
+  emptyMessage?: string;
+  /**
    * Layout mode. `grid` (default) keeps the existing responsive grid behavior.
    * `masonry` uses CSS columns for a Pinterest-style packed layout — the
    * `masonry` class is defined in globals.css. `carousel` is reserved for
@@ -33,6 +40,7 @@ export function ProductSection({
   columns = 4,
   background = 'cream',
   layout = 'grid',
+  emptyMessage,
 }: ProductSectionProps) {
   const { t } = useI18n();
   const viewAll = viewAllLabel ?? t('section.viewAll');
@@ -60,7 +68,10 @@ export function ProductSection({
   const isGeneric = genericLabels.includes(viewAll.trim().toLowerCase());
   const viewAllText = isGeneric ? `View All ${title}` : viewAll;
 
-  if (products.length === 0) return null;
+  // No products and no empty-state copy -> nothing worth rendering. Sections
+  // that pass `emptyMessage` stay visible so the heading, the "view all" link
+  // and a route forward survive an unstocked catalog.
+  if (products.length === 0 && !emptyMessage) return null;
 
   return (
     <section
@@ -94,7 +105,16 @@ export function ProductSection({
           </Link>
         </div>
 
-        {layout === 'masonry' ? (
+        {products.length === 0 ? (
+          <div
+            className="rounded-2xl border px-6 py-12 text-center"
+            style={{ background: 'var(--paper-card)', borderColor: 'var(--brand-border)' }}
+          >
+            <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
+              {emptyMessage}
+            </p>
+          </div>
+        ) : layout === 'masonry' ? (
           <div className="masonry">
             {products.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
@@ -108,7 +128,8 @@ export function ProductSection({
           </div>
         )}
 
-        {/* Mobile view-all */}
+        {/* Mobile view-all — also the only route forward when the section is
+            empty, so it renders in both states. */}
         <div className="mt-7 text-center sm:hidden">
           <Link
             href={viewAllHref}

@@ -6,7 +6,7 @@ export interface PublicSettings {
 }
 
 const FALLBACK: PublicSettings = {
-  free_shipping_threshold: '3000',
+  free_shipping_threshold: '10000',
   shipping_fee: '300',
 };
 

@@ -6,7 +6,9 @@ import requests
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import generics, permissions, status
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes, authentication_classes
+from rest_framework.authentication import SessionAuthentication
+from .authentication import CookieJWTAuthentication
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
@@ -305,6 +307,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
+@authentication_classes([CookieJWTAuthentication, SessionAuthentication])
 def logout_view(request):
     refresh_value = request.COOKIES.get(settings.SIMPLE_JWT.get("AUTH_COOKIE", "refresh_token"))
     if refresh_value:
@@ -331,7 +334,10 @@ def logout_view(request):
         except Exception as exc:
             logger.warning("Logout access token blacklist failed: %s", exc)
 
+    from django.contrib.auth import logout as django_logout
+    django_logout(request)
     resp = Response({"detail": "Logged out"})
+    resp.delete_cookie("access_token", path="/", domain=getattr(settings, "AUTH_COOKIE_DOMAIN", None))
     _clear_refresh_cookie(resp)
     return resp
 
@@ -441,6 +447,7 @@ class AdminSessionCheckView(APIView):
 
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
+@authentication_classes([CookieJWTAuthentication, SessionAuthentication])
 def admin_session_view(request):
     user = request.user
     is_admin = bool(getattr(user, "is_staff", False) or getattr(user, "role", "") == User.ROLE_ADMIN)

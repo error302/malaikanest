@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { existsSync } from 'fs';
 import { readFile } from 'fs/promises';
 import path from 'path';
+import { sanitizeError } from '@/lib/admin-guard';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads', 'branding');
 const MIME: Record<string, string> = {
@@ -45,6 +46,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ file
       },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Read failed' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }
 }

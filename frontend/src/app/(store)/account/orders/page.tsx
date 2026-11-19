@@ -31,6 +31,7 @@ export default function MyOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && !user) router.push('/login');
@@ -44,12 +45,37 @@ export default function MyOrdersPage() {
         const data = res.data;
         setOrders(data?.results ?? data?.data?.results ?? data ?? []);
       })
-      .catch(() => setOrders([]))
+      .catch(() => {
+        setOrders([]);
+        setError('Could not load your orders. Please try again.');
+      })
       .finally(() => setLoading(false));
   }, [user]);
 
   if (isLoading || loading) {
     return <div className="container-shell py-20 text-center" style={{ color: 'var(--brand-text-muted)' }}>Loading…</div>;
+  }
+
+  if (error && orders.length === 0) {
+    return (
+      <div className="container-shell py-16 text-center">
+        <p className="text-sm mb-4" style={{ color: 'var(--brand-terra)' }}>{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            api.get('/api/v1/orders/').then((res) => {
+              const data = res.data;
+              setOrders(data?.results ?? data?.data?.results ?? data ?? []);
+            }).catch(() => setError('Could not load your orders. Please try again.')).finally(() => setLoading(false));
+          }}
+          className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium"
+          style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+        >
+          Try Again
+        </button>
+      </div>
+    );
   }
 
   if (orders.length === 0) {
@@ -72,7 +98,7 @@ export default function MyOrdersPage() {
       </h1>
       <div className="space-y-3">
         {orders.map((order) => (
-          <div key={order.id} className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
+          <Link key={order.id} href={`/account/orders/${order.id}`} className="block p-5 rounded-2xl border transition-all hover:shadow-warm-md" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -92,7 +118,7 @@ export default function MyOrdersPage() {
                 <ChevronRight size={16} className="ml-auto mt-1" style={{ color: 'var(--brand-text-muted)' }} />
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ProductCard, type Product } from '@/components/malaika/product-card';
+import { ProductGridSkeleton } from '@/components/malaika/product-grid-skeleton';
 import api from '@/lib/api';
 import { getImageUrl } from '@/lib/media';
 
@@ -52,17 +53,7 @@ export function BestSellersClient() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="rounded-2xl border animate-pulse" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-              <div className="aspect-[4/5]" style={{ background: 'var(--brand-warm)' }} />
-              <div className="p-4 space-y-2">
-                <div className="h-3 w-3/4" style={{ background: 'var(--brand-warm)' }} />
-                <div className="h-3 w-1/2" style={{ background: 'var(--brand-warm)' }} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <ProductGridSkeleton count={8} columnsClassName="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5" />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
           {products.map((p, i) => (

@@ -1,3 +1,4 @@
+from decimal import Decimal
 import uuid
 
 from django.conf import settings
@@ -44,11 +45,17 @@ class SiteSettings(BaseModel):
 
     # Amounts are stored as strings in the current frontend; keep them as decimals for safety.
     shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=500)
-    free_shipping_threshold = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
+    free_shipping_threshold = models.DecimalField(max_digits=10, decimal_places=2, default=10000)
     minimum_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=1000)
 
     # Stored in Cloudinary via default storage in production.
     logo = models.ImageField(upload_to="site/logo/", null=True, blank=True)
+    logo_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Paste direct Cloudinary logo URL here",
+    )
 
     class Meta:
         verbose_name = "Site Settings"
@@ -57,12 +64,38 @@ class SiteSettings(BaseModel):
     def __str__(self) -> str:
         return f"SiteSettings({self.pk})"
 
+    @property
+    def get_logo_url(self) -> str:
+        if self.logo_url:
+            return self.logo_url
+        if self.logo:
+            try:
+                return self.logo.url
+            except Exception:
+                return str(self.logo)
+        return ""
+
     @classmethod
     def get_solo(cls) -> "SiteSettings":
         obj = cls.objects.first()
         if not obj:
             obj = cls.objects.create()
         return obj
+
+    @classmethod
+    def get_free_shipping_threshold(cls) -> Decimal:
+        """
+        Authoritative free shipping threshold configured by store admin.
+        Falls back to settings.FREE_SHIPPING_THRESHOLD or Decimal('10000.00').
+        """
+        try:
+            settings_obj = cls.get_solo()
+            if settings_obj and settings_obj.free_shipping_threshold is not None:
+                return Decimal(str(settings_obj.free_shipping_threshold))
+        except Exception:
+            pass
+        from django.conf import settings
+        return Decimal(str(getattr(settings, "FREE_SHIPPING_THRESHOLD", "10000.00")))
 
 
 class ShopPhoto(BaseModel):

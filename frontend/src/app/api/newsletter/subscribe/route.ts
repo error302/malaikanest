@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/admin-guard';
 
 /**
  * POST /api/newsletter/subscribe
@@ -65,6 +66,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Subscribed!' });
     }
   } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }
 }

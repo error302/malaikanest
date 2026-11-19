@@ -16,6 +16,8 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
+from urllib.parse import urlencode
 from django.views.generic import View
 
 from apps.accounts.authentication import CookieJWTAuthentication
@@ -54,17 +56,19 @@ def _staff_user(request):
 
 
 @method_decorator(never_cache, name="dispatch")
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class AdminDashboardView(View):
     """Serve the SPA shell at /manage/dashboard/ (staff only)."""
 
     def get(self, request):
         if _staff_user(request) is None:
-            return redirect("/manage-store/login/?next=/manage/dashboard/")
+            prefix = (getattr(settings, "ADMIN_URL_PREFIX", None) or "manage-store").strip("/")
+            return redirect(f"/{prefix}/login/?" + urlencode({"next": request.path}))
         html = _spa_asset("index.html")
         if html is None:
             return HttpResponse(
-                "<h1>Store manager</h1><p>Admin app bundle not built yet. "
-                "Run <code>npm --prefix backend/adminapp run build</code>.</p>",
+                "<h1>Store manager temporarily unavailable</h1><p>Please try again later.</p>",
+                status=503,
                 content_type="text/html",
             )
         return HttpResponse(html, content_type="text/html")

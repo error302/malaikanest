@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag, Star, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useCart } from '@/lib/cartContext';
@@ -36,52 +37,28 @@ const PLACEHOLDER_GRADIENTS = [
   'linear-gradient(135deg, #FEF3DC 0%, #F8E5B8 100%)',
 ];
 
-// ⚡ Bolt: Wrapped ProductCard in React.memo to prevent unnecessary re-renders in list views
-// Expected impact: Significant reduction in re-renders for large product grids when parent state changes.
-export const ProductCard = React.memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+interface ThumbnailProps {
+  product: Product;
+  index: number;
+  wished: boolean;
+  inStock: boolean;
+  gradient: string;
+  onToggleWishlist: () => void;
+}
+
+function ProductCardThumbnail({
+  product,
+  index,
+  wished,
+  inStock,
+  gradient,
+  onToggleWishlist,
+}: ThumbnailProps) {
   const { t } = useI18n();
-  const { add: addToCart } = useCart();
-  const { contains, toggle: toggleWishlist } = useWishlist();
-  const wished = contains(product.id);
-  const [hovered, setHovered] = useState(false);
   const [imageErrored, setImageErrored] = useState(false);
 
-  const inStock = product.inStock !== false;
-  const discount = product.originalPrice
-    ? parseFloat(((product.originalPrice - product.price) / product.originalPrice * 100).toFixed(1))
-    : 0;
-  const gradient = PLACEHOLDER_GRADIENTS[product.id % PLACEHOLDER_GRADIENTS.length];
-
-  const handleAdd = (e?: React.MouseEvent | React.KeyboardEvent) => {
-    e?.preventDefault?.();
-    e?.stopPropagation?.();
-    if (!inStock) return;
-    if ((product.variantCount ?? 0) > 1) {
-      window.location.href = `/products/${product.slug}`;
-      return;
-    }
-    addToCart({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: product.price,
-      image: product.image,
-      qty: 1,
-    });
-    showToast(t('product.addedToCart') || 'Added to cart', 'success');
-  };
-
   return (
-    <article
-      className="group relative flex flex-col"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={() => setHovered(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false);
-      }}
-    >
-      {/* Image — sharp corners, no border, no shadow, portrait aspect */}
+    <>
       <Link
         href={`/products/${product.slug}`}
         className="relative block w-full overflow-hidden aspect-[3/4]"
@@ -110,7 +87,6 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
           </div>
         )}
 
-        {/* Subtle scrim only when image needs text protection — kept minimal */}
         {!inStock && (
           <div
             className="absolute inset-0 flex items-center justify-center"
@@ -126,29 +102,20 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
         )}
       </Link>
 
-      {/* Wishlist — minimal overlay, only on hover (desktop) */}
       <button
         type="button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          toggleWishlist({
-            id: String(product.id),
-            productId: product.id,
-            name: product.name,
-            slug: product.slug,
-            price: product.price,
-            image: product.image,
-            categoryName: product.category,
-            availableStock: inStock ? 1 : 0,
-            hasVariants: Boolean(product.hasVariants),
-          });
+          onToggleWishlist();
         }}
         aria-label={wished ? t('product.removeWishlist') : t('product.wishlist')}
         aria-pressed={wished}
-        className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
-          hovered || wished ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-        } sm:opacity-0 sm:group-hover:opacity-100 sm:group-hover:scale-100`}
+        className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-200 z-10 ${
+          wished
+            ? 'opacity-100 scale-100 shadow-sm'
+            : 'opacity-90 sm:opacity-0 sm:group-hover:opacity-100 sm:group-hover:scale-100'
+        }`}
         style={{
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(8px)',
@@ -161,8 +128,29 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
           style={{ color: wished ? 'var(--brand-terra)' : 'var(--brand-brown)' }}
         />
       </button>
+    </>
+  );
+}
 
-      {/* Badges — moved off image to the meta row below (editorial) */}
+interface DetailsProps {
+  product: Product;
+  discount: number;
+  inStock: boolean;
+  hovered: boolean;
+  onAdd: (e?: React.MouseEvent | React.KeyboardEvent) => void;
+}
+
+function ProductCardDetails({
+  product,
+  discount,
+  inStock,
+  hovered,
+  onAdd,
+}: DetailsProps) {
+  const { t } = useI18n();
+
+  return (
+    <>
       {(product.badge || discount > 0) && (
         <div className="flex items-center gap-1.5 mt-3">
           {product.badge && (
@@ -190,7 +178,6 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
         </div>
       )}
 
-      {/* Meta row — minimal, breathing space */}
       <div className="flex flex-col flex-1 mt-2.5">
         {product.category && (
           <div
@@ -255,12 +242,10 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
           )}
         </div>
 
-        {/* Add action — understated, not a giant CTA bar */}
         <div className="mt-3">
-          {/* Mobile: rounded pill button with icon */}
           <button
             type="button"
-            onClick={handleAdd}
+            onClick={onAdd}
             disabled={!inStock}
             className="sm:hidden inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-200 active:scale-95 disabled:opacity-40"
             style={{
@@ -278,10 +263,9 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
               : t('product.outOfStock')}
           </button>
 
-          {/* Desktop hover: subtle bordered slide-up bar */}
           <button
             type="button"
-            onClick={handleAdd}
+            onClick={onAdd}
             disabled={!inStock}
             className={`hidden sm:inline-flex items-center justify-center gap-1.5 w-full py-2.5 mt-1 text-[12px] font-medium uppercase tracking-[0.1em] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${
               hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'
@@ -301,9 +285,86 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
           </button>
         </div>
       </div>
+    </>
+  );
+}
+
+export const ProductCard = React.memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+  const router = useRouter();
+  const { t } = useI18n();
+  const { add: addToCart } = useCart();
+  const { contains, toggle: toggleWishlist } = useWishlist();
+  const wished = contains(product.id);
+  const [hovered, setHovered] = useState(false);
+
+  const inStock = product.inStock !== false;
+  const discount = product.originalPrice
+    ? parseFloat(((product.originalPrice - product.price) / product.originalPrice * 100).toFixed(1))
+    : 0;
+  const gradient = PLACEHOLDER_GRADIENTS[product.id % PLACEHOLDER_GRADIENTS.length];
+
+  const handleAdd = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    if (!inStock) return;
+    if ((product.variantCount ?? 0) > 1) {
+      router.push(`/products/${product.slug}`);
+      return;
+    }
+    addToCart({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      image: product.image,
+      qty: 1,
+    });
+    showToast(t('product.addedToCart') || 'Added to cart', 'success');
+  };
+
+  const handleToggleWishlist = () => {
+    const willBeWished = !wished;
+    toggleWishlist({
+      id: String(product.id),
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      image: product.image,
+      categoryName: product.category,
+      availableStock: inStock ? 1 : 0,
+      hasVariants: Boolean(product.hasVariants),
+    });
+    showToast(willBeWished ? 'Saved to your wishlist' : 'Removed from wishlist', 'info');
+  };
+
+  return (
+    <article
+      className="group relative flex flex-col"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false);
+      }}
+    >
+      <ProductCardThumbnail
+        product={product}
+        index={index}
+        wished={wished}
+        inStock={inStock}
+        gradient={gradient}
+        onToggleWishlist={handleToggleWishlist}
+      />
+      <ProductCardDetails
+        product={product}
+        discount={discount}
+        inStock={inStock}
+        hovered={hovered}
+        onAdd={handleAdd}
+      />
     </article>
   );
 });
-
 
 ProductCard.displayName = 'ProductCard';

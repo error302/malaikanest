@@ -60,10 +60,6 @@ export function getBannerUrl(imageUrl: string | null | undefined): string {
   return getImageUrl(imageUrl);
 }
 
-export function getProductImageUrl(imageUrl: string | null | undefined): string {
-  return getImageUrl(imageUrl);
-}
-
 /**
  * Returns true when the <Image> component should bypass Next.js optimizer.
  * Cloudinary URLs are already globally distributed — no double-optimization needed.

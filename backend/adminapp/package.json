@@ -5,18 +5,29 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "build": "tsc --noEmit && vite build && npm run build:storefront",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test productDraft.test.mjs api.test.mjs",
+    "build:storefront": "tailwindcss -c tailwind.config.cjs -i storefront.css -o ../static/css/storefront.css --minify",
+    "lint": "eslint src --max-warnings=0",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "axe-core": "4.13.0",
+    "eslint": "10.11.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "tailwindcss": "3.4.17",
     "typescript": "^5.6.3",
+    "typescript-eslint": "8.70.1",
     "vite": "^5.4.11"
   }
 }

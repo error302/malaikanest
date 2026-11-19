@@ -234,32 +234,9 @@
   --input: var(--line);
   --ring: var(--accent);
 
-  /* Re-alias brand tokens for dark */
-  --brand-cream: var(--paper);
-  --brand-bg: var(--paper);
+  /* Brand token overrides for dark */
   --brand-bg-alt: var(--paper-card);
   --brand-warm: var(--paper-card);
-  --brand-sand: var(--line);
-  --brand-border: var(--line);
-  --brand-border-hover: var(--line-strong);
-  --brand-gold: var(--accent);
-  --brand-gold-light: var(--accent);
-  --brand-gold-soft: var(--accent-soft);
-  --brand-gold-dark: var(--accent-dark);
-  --brand-gold-contrast: var(--accent-dark);
-  --brand-brown: var(--ink-soft);
-  --brand-brown-dark: var(--ink);
-  --brand-brown-light: var(--ink-muted);
-  --brand-terra: var(--accent);
-  --brand-terra-light: var(--accent);
-  --brand-terra-soft: var(--accent-soft);
-  --brand-green: var(--success);
-  --brand-green-light: var(--success);
-  --brand-green-soft: var(--accent-soft);
-  --brand-success: var(--success);
-  --brand-text: var(--ink);
-  --brand-text-secondary: var(--ink-soft);
-  --brand-text-muted: var(--ink-muted);
 }
 
 @layer base {

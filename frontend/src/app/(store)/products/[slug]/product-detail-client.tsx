@@ -2,12 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { ShoppingBasket, Heart, Check, Share2, Minus, Plus } from 'lucide-react';
+import { ShoppingBasket, Heart, Check, Share2, Minus, Plus, MessageCircle } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { useCartDrawer } from '@/lib/cartDrawerStore';
 import { useWishlist } from '@/lib/wishlistContext';
 import { showToast } from '@/lib/toast';
 import { trackRecentlyViewed } from '@/lib/recently-viewed';
+import { SizeGuideModal } from '@/components/malaika/size-guide-modal';
+import { ProductTrustBadges } from '@/components/malaika/product-detail/ProductTrustBadges';
+import { ProductSafetyAccordions } from '@/components/malaika/product-detail/ProductSafetyAccordions';
+import { ProductStickyCTA } from '@/components/malaika/product-detail/ProductStickyCTA';
+import { ProductVariantsSelector } from '@/components/malaika/product-detail/ProductVariantsSelector';
 
 interface DetailProps {
   product: {
@@ -105,6 +110,7 @@ export function ProductDetailClient({ product }: DetailProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [showSticky, setShowSticky] = useState(false);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
   const addBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const variants = product.variants || [];
@@ -114,6 +120,11 @@ export function ProductDetailClient({ product }: DetailProps) {
     ? (activeVariant ? activeVariant.stock <= 0 : true)
     : !product.inStock;
 
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://malaikanest.com/products/${product.slug}`;
+  const variantLabel = activeVariant ? [activeVariant.size_label, activeVariant.color_label].filter(Boolean).join(' / ') : '';
+  const waMsg = `Hi Malaika Nest! I would like to order: *${product.name}* (KES ${currentPrice.toLocaleString('en-KE')})${variantLabel ? ` [Option: ${variantLabel}]` : ''} × ${qty}.\nLink: ${currentUrl}`;
+  const whatsAppOrderUrl = `https://wa.me/254726771321?text=${encodeURIComponent(waMsg)}`;
+
   useEffect(() => {
     if (product.hasVariants && variants.length > 0 && !selectedVariant) {
       const firstInStock = variants.find((v) => v.stock > 0) || variants[0];
@@ -121,11 +132,9 @@ export function ProductDetailClient({ product }: DetailProps) {
     }
   }, [product.hasVariants, variants, selectedVariant]);
 
-  // Show sticky CTA when in-page Add-to-Cart scrolls out of view (mobile only)
   useEffect(() => {
     const el = addBtnRef.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === 'undefined') return;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
 
     const obs = new IntersectionObserver(
       (entries) => {
@@ -185,6 +194,8 @@ export function ProductDetailClient({ product }: DetailProps) {
   };
 
   const handleWishlist = () => {
+    const nextState = !isWishlisted;
+    setIsWishlisted(nextState);
     toggle({
       id: `wishlist-${product.id}`,
       productId: product.id,
@@ -195,6 +206,7 @@ export function ProductDetailClient({ product }: DetailProps) {
       availableStock: product.inStock ? 1 : 0,
       hasVariants: product.hasVariants,
     });
+    showToast(nextState ? 'Saved to your wishlist' : 'Removed from wishlist', 'info');
   };
 
   const handleShare = async () => {
@@ -218,39 +230,13 @@ export function ProductDetailClient({ product }: DetailProps) {
         {!isOutOfStock ? 'In stock' : 'Out of stock'}
       </div>
 
-      {product.hasVariants && (
-        <div className="space-y-4">
-          <span className="text-sm font-medium block" style={{ color: 'var(--brand-text-secondary)' }}>
-            Select Option
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => {
-              const label = [v.size_label, v.color_label].filter(Boolean).join(' / ');
-              const isSelected = selectedVariant === v.id;
-              const isVariantOutOfStock = v.stock <= 0;
-
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setSelectedVariant(v.id)}
-                  className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    isSelected ? 'ring-2' : ''
-                  } ${isVariantOutOfStock ? 'opacity-40 grayscale' : ''}`}
-                  style={{
-                    borderColor: isSelected ? 'var(--brand-gold)' : 'var(--brand-border)',
-                    background: isSelected ? 'rgba(139,105,20,0.04)' : '#FFFFFF',
-                    color: isSelected ? 'var(--brand-gold)' : 'var(--brand-text)',
-                  }}
-                >
-                  {label}
-                  {isVariantOutOfStock && ' (Sold out)'}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <ProductVariantsSelector
+        hasVariants={product.hasVariants}
+        variants={variants}
+        selectedVariant={selectedVariant}
+        onSelectVariant={setSelectedVariant}
+        onOpenSizeGuide={() => setShowSizeGuide(true)}
+      />
 
       {/* Quantity selector */}
       <div className="flex items-center gap-3">
@@ -279,101 +265,70 @@ export function ProductDetailClient({ product }: DetailProps) {
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <button
-          ref={addBtnRef}
-          type="button"
-          onClick={handleAdd}
-          disabled={isOutOfStock || adding}
-          data-pdp-cta
-          className="flex-1 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-full font-semibold text-sm transition-all disabled:opacity-50"
-          style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
-        >
-          {added ? <><Check size={18} /> Added</> : <><ShoppingBasket size={18} /> {adding ? 'Adding…' : 'Add to Cart'}</>}
-        </button>
-        <button
-          type="button"
-          onClick={handleWishlist}
-          aria-label="Add to wishlist"
-          aria-pressed={isWishlisted}
-          className="w-12 h-[52px] inline-flex items-center justify-center rounded-full border transition-colors"
-          style={{ borderColor: 'var(--brand-border)', color: isWishlisted ? 'var(--brand-terra)' : 'var(--brand-brown)' }}
-        >
-          <Heart size={18} className={isWishlisted ? 'fill-current' : ''} />
-        </button>
-        <button
-          type="button"
-          onClick={handleShare}
-          aria-label="Share this product"
-          className="w-12 h-[52px] inline-flex items-center justify-center rounded-full border transition-colors"
-          style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
-        >
-          <Share2 size={18} />
-        </button>
-      </div>
-
-      {/* Trust badges (materials & sustainability) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 mt-6" style={{ borderTop: '1px solid var(--brand-border)' }}>
-        {[
-          { label: 'Made in Kenya' },
-          { label: 'Organic Cotton' },
-          { label: 'OEKO-TEX Certified' },
-          { label: 'Handcrafted' },
-        ].map((b) => (
-          <div
-            key={b.label}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg"
-            style={{ background: 'var(--brand-green-soft, #E8F0EB)' }}
-          >
-            <span
-              className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold flex-shrink-0"
-              style={{ background: 'var(--brand-success, #4A7C59)', color: '#FFFFFF' }}
-              aria-hidden
-            >
-              ✓
-            </span>
-            <span className="text-[12px] font-medium leading-tight" style={{ color: 'var(--brand-text)' }}>
-              {b.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Sticky bottom CTA bar — mobile only, appears when in-page CTA is out of view */}
-      <div
-        aria-hidden={!showSticky}
-        className={`lg:hidden fixed left-0 right-0 z-50 transition-transform duration-300 ${
-          showSticky ? 'translate-y-0' : 'translate-y-full'
-        }`}
-        style={{
-          bottom: '64px',
-          background: 'rgba(255, 255, 255, 0.97)',
-          backdropFilter: 'blur(12px)',
-          borderTop: '1px solid var(--brand-border)',
-          boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.06)',
-        }}
-      >
-        <div className="flex items-stretch gap-3 px-4 py-3">
-          <div className="flex flex-col justify-center min-w-0 flex-1">
-            <span className="text-[10px] uppercase tracking-[0.16em] font-medium" style={{ color: 'var(--brand-text-muted)' }}>
-              {product.name.length > 28 ? product.name.slice(0, 28) + '…' : product.name}
-            </span>
-            <span className="text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>
-              KES {currentPrice.toLocaleString('en-KE')}
-            </span>
-          </div>
+      <div className="space-y-3">
+        <div className="flex gap-3">
           <button
+            ref={addBtnRef}
             type="button"
             onClick={handleAdd}
             disabled={isOutOfStock || adding}
-            className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold text-sm transition-all disabled:opacity-50"
+            data-pdp-cta
+            className="flex-1 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-full font-semibold text-sm transition-all disabled:opacity-50"
             style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
-            aria-label={added ? 'Added to cart' : 'Add to cart'}
           >
-            {added ? <><Check size={18} /> Added</> : <><ShoppingBasket size={18} /> {adding ? 'Adding…' : 'Add to Cart'}</>}
+            {added ? <><Check size={18} /> Added to Cart</> : <><ShoppingBasket size={18} /> {adding ? 'Adding…' : 'Add to Cart'}</>}
+          </button>
+          <button
+            type="button"
+            onClick={handleWishlist}
+            aria-label="Add to wishlist"
+            aria-pressed={isWishlisted}
+            className="w-12 h-[52px] inline-flex items-center justify-center rounded-full border transition-colors"
+            style={{ borderColor: 'var(--brand-border)', color: isWishlisted ? 'var(--brand-terra)' : 'var(--brand-brown)' }}
+          >
+            <Heart size={18} className={isWishlisted ? 'fill-current' : ''} />
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="Share this product"
+            className="w-12 h-[52px] inline-flex items-center justify-center rounded-full border transition-colors"
+            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
+          >
+            <Share2 size={18} />
           </button>
         </div>
+
+        <a
+          href={whatsAppOrderUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full font-semibold text-sm transition-all border hover:shadow-warm-sm"
+          style={{
+            borderColor: '#25D366',
+            color: '#128C7E',
+            background: 'rgba(37, 211, 102, 0.08)',
+          }}
+        >
+          <MessageCircle size={18} style={{ color: '#25D366' }} /> Order Directly via WhatsApp (+254 726 771 321)
+        </a>
       </div>
+
+      <ProductTrustBadges />
+
+      <ProductSafetyAccordions />
+
+      <ProductStickyCTA
+        showSticky={showSticky}
+        productName={product.name}
+        currentPrice={currentPrice}
+        isOutOfStock={isOutOfStock}
+        adding={adding}
+        added={added}
+        onAdd={handleAdd}
+      />
+
+      <SizeGuideModal isOpen={showSizeGuide} onClose={() => setShowSizeGuide(false)} />
     </div>
   );
 }

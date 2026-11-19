@@ -14,6 +14,15 @@ from apps.products.models import Inventory, Product, ProductVariant, VariantInve
 logger = logging.getLogger(__name__)
 
 FREE_SHIPPING_THRESHOLD = Decimal("10000.00")
+PUBLIC_STATUS = "published"
+
+
+def get_free_shipping_threshold() -> Decimal:
+    try:
+        from apps.core.models import SiteSettings
+        return SiteSettings.get_free_shipping_threshold()
+    except Exception:
+        return FREE_SHIPPING_THRESHOLD
 
 
 def get_or_create_cart(request) -> Cart:
@@ -57,23 +66,24 @@ class CartView(View):
 
         # Update delivery region if provided via query param
         region_param = request.GET.get("region")
-        if region_param in ["mombasa", "nairobi", "upcountry"]:
+        if region_param in ["mombasa_pickup", "mombasa", "nairobi", "upcountry"]:
             if cart.delivery_region != region_param:
                 cart.delivery_region = region_param
                 cart.save(update_fields=["delivery_region"])
 
         subtotal = cart.subtotal_amount()
         discount = cart.discount_amount()
+        free_shipping_threshold = get_free_shipping_threshold()
 
-        # Free shipping if subtotal >= KES 2,000
-        if subtotal >= FREE_SHIPPING_THRESHOLD and subtotal > 0:
+        # Free shipping if subtotal >= free_shipping_threshold
+        if subtotal >= free_shipping_threshold and subtotal > 0:
             delivery_fee = Decimal("0.00")
             free_shipping_qualified = True
             free_shipping_remaining = Decimal("0.00")
         else:
             delivery_fee = get_delivery_fee_for_region(cart.delivery_region)
             free_shipping_qualified = False
-            free_shipping_remaining = max(Decimal("0.00"), FREE_SHIPPING_THRESHOLD - subtotal)
+            free_shipping_remaining = max(Decimal("0.00"), free_shipping_threshold - subtotal)
 
         total = max(Decimal("0.00"), subtotal - discount) + delivery_fee
 
@@ -84,7 +94,7 @@ class CartView(View):
             "discount": discount,
             "delivery_fee": delivery_fee,
             "total": total,
-            "free_shipping_threshold": FREE_SHIPPING_THRESHOLD,
+            "free_shipping_threshold": free_shipping_threshold,
             "free_shipping_qualified": free_shipping_qualified,
             "free_shipping_remaining": free_shipping_remaining,
         }
@@ -110,12 +120,15 @@ class AddToCartView(View):
             return redirect(redirect_url)
 
         with transaction.atomic():
-            # Validate product exists and is active
-            product = Product.objects.select_for_update().filter(pk=product_id, is_active=True).first()
+            # Validate product exists, is active and published
+            product = Product.objects.select_for_update().filter(
+                pk=product_id, is_active=True, status=PUBLIC_STATUS
+            ).first()
             if not product:
                 messages.error(request, "Product is not available.")
                 return redirect(redirect_url)
 
+            has_variants = ProductVariant.objects.filter(product=product).exists()
             variant = None
             if variant_id:
                 variant = ProductVariant.objects.select_for_update().select_related("product").filter(
@@ -124,19 +137,14 @@ class AddToCartView(View):
                 if not variant:
                     messages.error(request, "Selected variant is not available.")
                     return redirect(redirect_url)
+            elif has_variants:
+                messages.error(request, "Please choose a size or option for this item.")
+                return redirect(redirect_url)
 
-            # Determine available stock
+            # Determine available stock (variant stock never falls back to parent)
             if variant:
-                var_inv, _ = VariantInventory.objects.select_for_update().get_or_create(
-                    variant=variant, defaults={"quantity": 0}
-                )
-                if var_inv.quantity > 0:
-                    available_stock = var_inv.available()
-                else:
-                    inv, _ = Inventory.objects.select_for_update().get_or_create(
-                        product=product, defaults={"quantity": product.stock}
-                    )
-                    available_stock = inv.available()
+                var_inv = VariantInventory.objects.select_for_update().filter(variant=variant).first()
+                available_stock = var_inv.available() if var_inv else 0
                 unit_price = product.price + (variant.price_modifier or Decimal("0.00"))
             else:
                 inv, _ = Inventory.objects.select_for_update().get_or_create(
@@ -210,17 +218,26 @@ class UpdateCartItemView(View):
                 messages.info(request, f"Removed {cart_item.product.name} from your cart.")
                 return redirect("storefront:cart")
 
-            # Check stock
+            product = cart_item.product
+            if not (product.is_active and product.status == PUBLIC_STATUS):
+                messages.error(request, "This item is no longer available.")
+                return redirect("storefront:cart")
+
+            has_variants = ProductVariant.objects.filter(product=product).exists()
+            if has_variants and not cart_item.variant:
+                messages.error(request, "Please choose a size or option for this item.")
+                return redirect("storefront:cart")
+
+            # Check stock (variant stock never falls back to parent)
             if cart_item.variant:
+                if not cart_item.variant.is_active:
+                    messages.error(request, "Selected size is no longer available.")
+                    return redirect("storefront:cart")
                 var_inv = VariantInventory.objects.filter(variant=cart_item.variant).first()
-                if var_inv and var_inv.quantity > 0:
-                    available = var_inv.available()
-                else:
-                    inv = Inventory.objects.filter(product=cart_item.product).first()
-                    available = inv.available() if inv else cart_item.product.stock
+                available = var_inv.available() if var_inv else 0
             else:
-                inv = Inventory.objects.filter(product=cart_item.product).first()
-                available = inv.available() if inv else cart_item.product.stock
+                inv = Inventory.objects.filter(product=product).first()
+                available = inv.available() if inv else product.stock
 
             if available < quantity:
                 messages.error(request, f"Only {available} available in stock.")
@@ -300,7 +317,7 @@ class UpdateDeliveryRegionView(View):
     """
     def post(self, request):
         region = request.POST.get("delivery_region", "nairobi")
-        if region in ["mombasa", "nairobi", "upcountry"]:
+        if region in ["mombasa_pickup", "mombasa", "nairobi", "upcountry"]:
             cart = get_or_create_cart(request)
             cart.delivery_region = region
             cart.save(update_fields=["delivery_region"])

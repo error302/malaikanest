@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sanitizeError } from '@/lib/admin-guard';
 
 /** GET /api/blog — list published posts */
 export async function GET(req: NextRequest) {
@@ -20,6 +21,6 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message, posts: [] }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e), posts: [] }, { status: 500 });
   }
 }

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Save, Image as ImageIcon, Upload, Loader2 } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
-import VariantEditor, { VariantForm } from '@/components/admin/VariantEditor';
-import ProductGalleryUploader, { GalleryChange } from '@/components/admin/ProductGalleryUploader';
+import { VariantForm } from '@/components/admin/VariantEditor';
+import { GalleryChange } from '@/components/admin/ProductGalleryUploader';
+import { submitProductUpdate } from '@/lib/product-admin';
+import { ProductFormLayout } from '@/components/admin/ProductFormLayout';
 
 interface Category {
   id: string;
@@ -32,7 +32,6 @@ export default function EditProductPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        // Fetch product from admin endpoint + categories in parallel
         const [productRes, catRes] = await Promise.all([
           api.get(`/api/v1/products/admin/products/${params.id}/`),
           api.get('/api/v1/products/categories/', { headers: { 'X-No-Auth-Redirect': 'true' } }),
@@ -110,95 +109,8 @@ export default function EditProductPage() {
     e.preventDefault();
     setSaving(true);
 
-    const payload: Record<string, any> = {
-      name: form.name,
-      slug: form.slug,
-      description: form.description || '',
-      price: form.price,
-      stock: parseInt(form.stock) || 0,
-      gender: form.gender || 'unisex',
-      status: form.status || 'draft',
-      featured: Boolean(form.featured),
-      is_active: Boolean(form.is_active),
-      category: form.category ? form.category : null,
-    };
-
-    if (form.compare_price) payload.compare_price = form.compare_price;
-    if (form.brand) payload.brand = form.brand;
-    if (form.sku) payload.sku = form.sku;
-    if (form.age_group) payload.age_group = form.age_group;
-    if (form.age_range) payload.age_range = form.age_range;
-    if (form.size_label) payload.size_label = form.size_label;
-    if (!imageFile && form.image_url) payload.image_url = form.image_url;
-
-    if (variantsTouched) {
-      const clean = variants
-        .filter((v) => v.color)
-        .map((v) => ({
-          id: v.id,
-          color: v.color,
-          size: v.size || null,
-          sku: v.sku || null,
-          price_modifier: v.price_modifier || '0',
-          stock: parseInt(v.stock) || 0,
-          image_url: v.image_url || null,
-          image_file: v.image_file,
-        }));
-      payload.variants = clean;
-    }
-
     try {
-      const hasGallery =
-        galleryChange &&
-        (galleryChange.galleryFiles.length > 0 ||
-          galleryChange.deleteIds.length > 0 ||
-          galleryChange.primaryId !== null ||
-          galleryChange.order.length > 0);
-
-      const hasVariantFiles = variantsTouched && payload.variants.some((v: any) => v.image_file);
-
-      if (imageFile || hasGallery || hasVariantFiles) {
-        const fd = new FormData();
-        Object.entries(payload).forEach(([k, v]) => {
-          if (k !== 'variants' && v !== null && v !== undefined) fd.append(k, String(v));
-        });
-        if (imageFile) fd.append('image', imageFile);
-        if (galleryChange) {
-          galleryChange.galleryFiles.forEach((f) => fd.append('gallery_images', f));
-          if (galleryChange.deleteIds.length > 0) {
-            fd.append('delete_image_ids', JSON.stringify(galleryChange.deleteIds));
-          }
-          if (galleryChange.primaryId !== null) {
-            fd.append('primary_image_id', galleryChange.primaryId);
-          }
-          if (galleryChange.order.length > 0) {
-            fd.append('image_orders', JSON.stringify(galleryChange.order));
-          }
-        }
-        if (variantsTouched) {
-          if (hasVariantFiles) {
-            payload.variants.forEach((v: any, idx: number) => {
-              if (v.id) fd.append(`variants[${idx}][id]`, String(v.id));
-              fd.append(`variants[${idx}][color]`, v.color || '');
-              fd.append(`variants[${idx}][size]`, v.size || '');
-              fd.append(`variants[${idx}][sku]`, v.sku || '');
-              fd.append(`variants[${idx}][price_modifier]`, v.price_modifier || '0');
-              fd.append(`variants[${idx}][stock]`, String(v.stock || 0));
-              if (v.image_url) fd.append(`variants[${idx}][image_url]`, v.image_url);
-              if (v.image_file) fd.append(`variants[${idx}][image]`, v.image_file);
-            });
-          } else {
-            fd.append('variants', JSON.stringify(payload.variants));
-          }
-        }
-        await api.put(`/api/v1/products/admin/products/${params.id}/`, fd);
-      } else {
-        // Strip image_file from payload before sending JSON
-        if (variantsTouched) {
-          payload.variants = payload.variants.map(({ image_file, ...rest }: any) => rest);
-        }
-        await api.put(`/api/v1/products/admin/products/${params.id}/`, payload);
-      }
+      await submitProductUpdate(params.id, form, variants, variantsTouched, imageFile, galleryChange);
       showToast('Product updated successfully!', 'success');
       router.push('/admin/products');
     } catch (err: any) {
@@ -214,151 +126,21 @@ export default function EditProductPage() {
     return <div className="text-center py-20" style={{ color: 'var(--brand-text-muted)' }}>Loading…</div>;
   }
 
-  const inputClass = 'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none';
-  const inputStyle = { background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-text)' };
-
   return (
-    <div className="max-w-3xl">
-      <Link href="/admin/products" className="inline-flex items-center gap-2 text-sm mb-4" style={{ color: 'var(--brand-text-muted)' }}>
-        <ArrowLeft size={14} /> Back to products
-      </Link>
-      <h1 className="font-serif text-2xl sm:text-3xl font-semibold mb-6" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-        Edit: {form.name}
-      </h1>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Basic Information</h2>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Name</label>
-              <input value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} style={inputStyle} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Slug (URL)</label>
-              <input value={form.slug || ''} onChange={(e) => setForm({ ...form, slug: e.target.value })} className={inputClass} style={inputStyle} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Description</label>
-              <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} className={inputClass} style={inputStyle} />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Category</label>
-                <select value={form.category || ''} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputClass} style={inputStyle}>
-                  <option value="">Select a category…</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>SKU</label>
-                <input value={form.sku || ''} onChange={(e) => setForm({ ...form, sku: e.target.value })} className={inputClass} style={inputStyle} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Image */}
-        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <ImageIcon size={18} style={{ color: 'var(--brand-gold)' }} />
-            <h2 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>Product Image</h2>
-          </div>
-
-          <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Upload from your computer</label>
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer" style={{ background: 'var(--brand-bg-alt)', border: '1px solid var(--brand-border)', color: 'var(--brand-brown)' }}>
-              <Upload size={15} /> Choose image
-              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-            </label>
-            {imageFile && <span className="text-xs truncate" style={{ color: 'var(--brand-text-muted)' }}>{imageFile.name}</span>}
-          </div>
-
-          {(imagePreview || form.image_url) && (
-            <div className="mt-3 w-32 h-32 rounded-xl overflow-hidden border" style={{ borderColor: 'var(--brand-border)' }}>
-              <img src={imagePreview || form.image_url} alt="Preview" className="w-full h-full object-cover" />
-            </div>
-          )}
-
-          <div className="my-4 border-t" style={{ borderColor: 'var(--brand-border)' }} />
-
-          <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>…or paste an image URL (Cloudinary/CDN)</label>
-          <input value={form.image_url || ''} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://res.cloudinary.com/…" className={inputClass} style={inputStyle} disabled={!!imageFile} />
-
-          <div className="my-4 border-t" style={{ borderColor: 'var(--brand-border)' }} />
-
-          <ProductGalleryUploader initialImages={galleryInitial} onChange={setGalleryChange} />
-        </div>
-
-        {/* Variants */}
-        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Variants (color / size)</h2>
-          <VariantEditor variants={variants} onChange={handleVariantsChange} />
-        </div>
-
-        <div className="p-5 rounded-2xl border" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-          <h2 className="font-serif text-lg font-semibold mb-4" style={{ color: 'var(--brand-text)' }}>Pricing & Attributes</h2>
-          <div className="grid sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Price (KES)</label>
-              <input type="number" step="0.01" value={form.price || ''} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} style={inputStyle} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Compare price</label>
-              <input type="number" step="0.01" value={form.compare_price || ''} onChange={(e) => setForm({ ...form, compare_price: e.target.value })} className={inputClass} style={inputStyle} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Stock</label>
-              <input type="number" value={form.stock || '0'} onChange={(e) => setForm({ ...form, stock: e.target.value })} className={inputClass} style={inputStyle} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Gender</label>
-              <select value={form.gender || 'unisex'} onChange={(e) => setForm({ ...form, gender: e.target.value })} className={inputClass} style={inputStyle}>
-                <option value="unisex">Unisex</option>
-                <option value="boy">Boy</option>
-                <option value="girl">Girl</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Age group</label>
-              <select value={form.age_group || ''} onChange={(e) => setForm({ ...form, age_group: e.target.value })} className={inputClass} style={inputStyle}>
-                <option value="">—</option>
-                <option value="baby">Baby (0-2)</option>
-                <option value="toddler">Toddler (2-5)</option>
-                <option value="kids">Kids (6-12)</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider font-semibold mb-1.5 block" style={{ color: 'var(--brand-text-muted)' }}>Status</label>
-              <select value={form.status || 'draft'} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputClass} style={inputStyle}>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex gap-4 mt-4">
-            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--brand-brown)' }}>
-              <input type="checkbox" checked={form.featured ?? false} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
-              Featured
-            </label>
-            <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--brand-brown)' }}>
-              <input type="checkbox" checked={form.is_active ?? true} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
-              Active
-            </label>
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}>
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {saving ? 'Saving…' : 'Save Changes'}
-          </button>
-          <Link href="/admin/products" className="inline-flex items-center rounded-full border px-6 py-3 text-sm font-medium" style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}>
-            Cancel
-          </Link>
-        </div>
-      </form>
-    </div>
+    <ProductFormLayout
+      title={`Edit: ${form.name}`}
+      form={form}
+      setForm={setForm}
+      categories={categories}
+      imageFile={imageFile}
+      imagePreview={imagePreview}
+      onFileChange={handleFileChange}
+      galleryInitial={galleryInitial}
+      onGalleryChange={setGalleryChange}
+      variants={variants}
+      onVariantsChange={handleVariantsChange}
+      saving={saving}
+      onSubmit={handleSubmit}
+    />
   );
 }

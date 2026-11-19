@@ -1,0 +1,73 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "public/sw.js",
+    "scripts/*.{js,mjs}",
+    "src/components/ui/demo.tsx",
+    "src/components/ui/expandable-tabs.tsx"
+  ],
+  "ignoreDependencies": [
+    "lucide-react"
+  ],
+  "ignoreExports": [
+    {
+      "file": "src/components/malaika/value-props.tsx",
+      "exports": [
+        "ValueProps"
+      ]
+    },
+    {
+      "file": "src/components/malaika/testimonials.tsx",
+      "exports": [
+        "Testimonials"
+      ]
+    },
+    {
+      "file": "src/components/malaika/newsletter.tsx",
+      "exports": [
+        "Newsletter"
+      ]
+    },
+    {
+      "file": "src/components/ui/sonner.tsx",
+      "exports": [
+        "*"
+      ]
+    },
+    {
+      "file": "src/components/ui/toaster.tsx",
+      "exports": [
+        "*"
+      ]
+    },
+    {
+      "file": "src/components/ui/toast.tsx",
+      "exports": [
+        "*"
+      ]
+    }
+  ],
+  "duplicates": {
+    "ignore": [
+      "src/app/(store)/privacy-policy/**",
+      "src/app/(store)/terms-of-service/**"
+    ]
+  },
+  "rules": {
+    "boundary-violation": "off",
+    "policy-violation": "off"
+  },
+  "health": {
+    "ignore": [
+      "src/lib/icons.tsx",
+      "src/components/ui/demo.tsx",
+      "src/components/ui/expandable-tabs.tsx",
+      "src/app/llms-full.txt/**",
+      "src/app/(store)/privacy-policy/**",
+      "src/app/(store)/terms-of-service/**",
+      "src/app/(store)/shipping/**",
+      "src/app/(store)/returns/**",
+      "src/lib/**"
+    ]
+  }
+}

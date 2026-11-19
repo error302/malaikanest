@@ -42,7 +42,7 @@ export default async function CheckoutSuccessPage({
       <div className="p-4 rounded-xl border mb-8 text-left" style={{ background: 'var(--brand-bg-alt)', borderColor: 'var(--brand-border)' }}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--brand-text-secondary)' }}>
           <strong style={{ color: 'var(--brand-text)' }}>What happens next?</strong><br />
-          If you paid via M-Pesa, check your phone for the payment prompt. Once payment is confirmed, you&apos;ll receive an SMS with your tracking number. For any questions, WhatsApp us anytime — we usually reply within minutes.
+          Once your payment is confirmed, you&apos;ll receive a confirmation email with your order details and tracking information. For any questions, WhatsApp us anytime — we usually reply within minutes.
         </p>
       </div>
 

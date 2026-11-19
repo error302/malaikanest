@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.orders.models import Cart, CartItem, Coupon
-from apps.products.models import Category, Inventory, Product, ProductVariant
+from apps.products.models import Category, Inventory, Product, ProductVariant, VariantInventory
 
 
 class StorefrontCartTests(TestCase):
@@ -20,6 +20,7 @@ class StorefrontCartTests(TestCase):
             stock=10,
             category=self.category,
             is_active=True,
+            status="published",
         )
         Inventory.objects.create(product=self.product, quantity=10)
 
@@ -30,6 +31,7 @@ class StorefrontCartTests(TestCase):
             stock=5,
             category=self.category,
             is_active=True,
+            status="published",
         )
         Inventory.objects.create(product=self.variant_product, quantity=5)
         self.variant = ProductVariant.objects.create(
@@ -38,6 +40,96 @@ class StorefrontCartTests(TestCase):
             color="white",
             price_modifier=Decimal("100.00"),
         )
+        VariantInventory.objects.update_or_create(variant=self.variant, defaults={"quantity": 5, "reserved": 0})
+
+    def test_add_rejects_unavailable_products(self):
+        for active, status in ((True, "draft"), (False, "published"), (False, "draft")):
+            with self.subTest(active=active, status=status):
+                Product.objects.filter(pk=self.product.pk).update(is_active=active, status=status)
+                response = self.client.post(reverse("storefront:cart_add"), {
+                    "product_id": str(self.product.pk), "quantity": 1,
+                })
+                self.assertEqual(response.status_code, 302)
+                self.assertFalse(CartItem.objects.exists())
+                self.product.refresh_from_db()
+                self.assertEqual(self.product.status, status)
+
+    def test_variant_products_require_variant_even_if_all_inactive(self):
+        for active in (True, False):
+            with self.subTest(active=active):
+                self.variant_product.variants.update(is_active=active)
+                response = self.client.post(reverse("storefront:cart_add"), {
+                    "product_id": str(self.variant_product.pk), "quantity": 1,
+                })
+                self.assertEqual(response.status_code, 302)
+                self.assertFalse(CartItem.objects.exists())
+
+    def test_add_variant_never_falls_back_to_parent_inventory(self):
+        for quantity, reserved in ((None, 0), (0, 0), (2, 2)):
+            with self.subTest(quantity=quantity, reserved=reserved):
+                VariantInventory.objects.filter(variant=self.variant).delete()
+                if quantity is not None:
+                    VariantInventory.objects.create(variant=self.variant, quantity=quantity, reserved=reserved)
+                Inventory.objects.filter(product=self.variant_product).update(quantity=10, reserved=0)
+                Product.objects.filter(pk=self.variant_product.pk).update(stock=10)
+                response = self.client.post(reverse("storefront:cart_add"), {
+                    "product_id": str(self.variant_product.pk),
+                    "variant_id": str(self.variant.pk), "quantity": 1,
+                })
+                self.assertEqual(response.status_code, 302)
+                self.assertFalse(CartItem.objects.exists())
+
+    def test_update_variant_never_falls_back_to_parent_inventory(self):
+        self.client.get(reverse("storefront:cart"))
+        cart = Cart.objects.get(session_key=self.client.session.session_key)
+        item = CartItem.objects.create(
+            cart=cart, product=self.variant_product, variant=self.variant,
+            quantity=1, unit_price="900.00",
+        )
+        for quantity, reserved in ((None, 0), (0, 0), (2, 2)):
+            with self.subTest(quantity=quantity, reserved=reserved):
+                VariantInventory.objects.filter(variant=self.variant).delete()
+                if quantity is not None:
+                    VariantInventory.objects.create(variant=self.variant, quantity=quantity, reserved=reserved)
+                Inventory.objects.filter(product=self.variant_product).update(quantity=10, reserved=0)
+                Product.objects.filter(pk=self.variant_product.pk).update(stock=10)
+                response = self.client.post(reverse("storefront:cart_update"), {
+                    "item_id": str(item.pk), "quantity": 2,
+                })
+                self.assertEqual(response.status_code, 302)
+                item.refresh_from_db()
+                self.assertEqual(item.quantity, 1)
+
+    def test_update_rejects_unavailable_products(self):
+        self.client.get(reverse("storefront:cart"))
+        cart = Cart.objects.get(session_key=self.client.session.session_key)
+        item = CartItem.objects.create(cart=cart, product=self.product, quantity=1, unit_price="1200.00")
+        for active, status in ((True, "draft"), (False, "published")):
+            with self.subTest(active=active, status=status):
+                Product.objects.filter(pk=self.product.pk).update(is_active=active, status=status)
+                self.client.post(reverse("storefront:cart_update"), {"item_id": str(item.pk), "quantity": 2})
+                item.refresh_from_db()
+                self.assertEqual(item.quantity, 1)
+
+    def test_update_rejects_inactive_variant(self):
+        self.client.get(reverse("storefront:cart"))
+        cart = Cart.objects.get(session_key=self.client.session.session_key)
+        item = CartItem.objects.create(
+            cart=cart, product=self.variant_product, variant=self.variant,
+            quantity=1, unit_price="900.00",
+        )
+        self.variant_product.variants.update(is_active=False)
+        self.client.post(reverse("storefront:cart_update"), {"item_id": str(item.pk), "quantity": 2})
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 1)
+
+    def test_update_requires_variant_for_legacy_parent_item(self):
+        self.client.get(reverse("storefront:cart"))
+        cart = Cart.objects.get(session_key=self.client.session.session_key)
+        item = CartItem.objects.create(cart=cart, product=self.variant_product, quantity=1, unit_price="800.00")
+        self.client.post(reverse("storefront:cart_update"), {"item_id": str(item.pk), "quantity": 2})
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 1)
 
     def test_empty_cart_renders_empty_state(self):
         """Visiting empty cart returns 200 and indicates bag is empty."""

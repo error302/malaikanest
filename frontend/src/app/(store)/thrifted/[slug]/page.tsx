@@ -185,7 +185,7 @@ export default async function ThriftedDetailPage({ params }: Props) {
             {[
               { Icon: Truck, label: 'Fast delivery' },
               { Icon: Shield, label: 'Quality checked' },
-              { Icon: RotateCcw, label: '7-day returns' },
+              { Icon: Shield, label: 'Final sale (as-is)' },
             ].map(({ Icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-1.5 text-center">
                 <Icon size={20} style={{ color: 'var(--brand-gold)' }} />

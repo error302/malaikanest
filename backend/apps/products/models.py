@@ -73,6 +73,12 @@ class Category(BaseModel):
         null=True,
         validators=[validate_image_file],
     )
+    image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Paste direct Cloudinary URL here instead of uploading",
+    )
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -160,6 +166,43 @@ class Category(BaseModel):
             ids.extend(child.descendant_ids(include_self=True))
         return ids
 
+    @classmethod
+    def resolve_by_path(cls, path_str):
+        """
+        Resolves a category by full hierarchical path (e.g. 'girls/dresses')
+        or single slug, disambiguating same-slug leaves under different parents.
+        """
+        if not path_str:
+            return None
+        parts = [p.strip() for p in str(path_str).strip("/").split("/") if p.strip()]
+        if not parts:
+            return None
+
+        # 1. Full hierarchical walk from root
+        current = cls.objects.filter(slug=parts[0], parent__isnull=True).first()
+        if current:
+            for part in parts[1:]:
+                current = cls.objects.filter(slug=part, parent=current).first()
+                if not current:
+                    break
+            if current:
+                return current
+
+        # 2. Single slug direct match (or fallback if path root was not found)
+        target_slug = parts[-1]
+        matches = list(cls.objects.filter(slug=target_slug))
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            # If multiple have the same slug, prefer one that matches the immediate parent slug if provided
+            if len(parts) >= 2:
+                parent_slug = parts[-2]
+                for m in matches:
+                    if m.parent and m.parent.slug == parent_slug:
+                        return m
+            return matches[0]
+        return None
+
     def save(self, *args, **kwargs):
         self.slug = self._generate_unique_slug(self.slug or self.name)
         if self.parent is None:
@@ -171,6 +214,17 @@ class Category(BaseModel):
     @property
     def is_top_level(self):
         return self.parent is None
+
+    @property
+    def get_image_url(self) -> str:
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                return str(self.image)
+        return ""
 
     def __str__(self):
         return self.name
@@ -355,6 +409,12 @@ class Product(BaseModel):
         max_length=500,
         validators=[validate_image_file],
     )
+    image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Paste direct Cloudinary or external image URL here instead of uploading",
+    )
     is_active = models.BooleanField(default=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="products")
 
@@ -444,6 +504,14 @@ class Product(BaseModel):
             return int(((self.price - self.discount_price) / self.price) * 100)
         return 0
 
+    @property
+    def get_image_url(self):
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            return self.image.url
+        return ""
+
 
 class Inventory(BaseModel):
     product = models.OneToOneField(
@@ -523,7 +591,17 @@ class ProductImage(BaseModel):
         Product, related_name="images", on_delete=models.CASCADE
     )
     image = models.ImageField(
-        upload_to="products/gallery/", validators=[validate_image_file]
+        upload_to="products/gallery/",
+        validators=[validate_image_file],
+        blank=True,
+        null=True,
+        max_length=500,
+    )
+    image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Paste direct Cloudinary or external image URL here instead of uploading",
     )
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False)
@@ -535,6 +613,14 @@ class ProductImage(BaseModel):
 
     def __str__(self):
         return f"{self.product.name} - Image {self.position}"
+
+    @property
+    def get_image_url(self):
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            return self.image.url
+        return ""
 
 
 class VariantInventory(BaseModel):

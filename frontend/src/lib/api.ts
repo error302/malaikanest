@@ -2,15 +2,6 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { clearAccessToken, getAccessToken, setAccessToken } from './authToken';
 import { getApiBaseUrl } from '@/lib/site-config';
 
-const CACHE_DURATION = {
-  PRODUCTS: 5 * 60 * 1000,
-  CATEGORIES: 10 * 60 * 1000,
-  BANNERS: 5 * 60 * 1000,
-  DEFAULT: 2 * 60 * 1000,
-};
-
-const responseCache = new Map<string, { data: any; timestamp: number }>();
-
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
@@ -29,35 +20,15 @@ const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
   // bounced to /login right after a successful login.
 ];
 
-const CACHEABLE_ENDPOINTS = [
-  '/api/v1/products/products/',
-  '/api/v1/products/categories/',
-  '/api/v1/products/banners/',
-  '/api/products/products/',
-  '/api/products/categories/',
-  '/api/products/banners/',
-];
-
 const isAuthEndpoint = (url?: string) => {
   if (!url) return false;
   return AUTH_ENDPOINTS_WITHOUT_REFRESH.some((path) => url.includes(path));
 };
 
-const isCacheableEndpoint = (url?: string) => {
-  if (!url) return false;
-  return CACHEABLE_ENDPOINTS.some((path) => url.includes(path));
-};
-
-const getCacheDuration = (url: string): number => {
-  if (url.includes('/products/products')) return CACHE_DURATION.PRODUCTS;
-  if (url.includes('/categories')) return CACHE_DURATION.CATEGORIES;
-  if (url.includes('/banners')) return CACHE_DURATION.BANNERS;
-  return CACHE_DURATION.DEFAULT;
-};
-
-const getCacheKey = (method: string, url: string, params?: any, data?: any): string => {
-  return `${method}:${url}:${JSON.stringify(params)}:${JSON.stringify(data)}`;
-};
+// Only auto-retry requests that are safe to repeat. Retrying a POST after a
+// timeout/5xx can double-submit orders or fire duplicate M-Pesa STK pushes,
+// because the server may already have processed the first attempt.
+const IDEMPOTENT_METHODS = new Set(['get', 'head', 'options']);
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -171,21 +142,6 @@ api.interceptors.response.use(
       }
     }
 
-    const cacheKey = getCacheKey(
-      response.config.method || 'GET',
-      response.config.url || '',
-      response.config.params,
-      response.config.data
-    );
-
-    if (response.config.method === 'GET' && isCacheableEndpoint(response.config.url)) {
-      responseCache.set(cacheKey, {
-        data: response.data,
-        timestamp: Date.now(),
-      });
-      evictCache();
-    }
-
     return response;
   },
   async (error: AxiosError) => {
@@ -194,7 +150,8 @@ api.interceptors.response.use(
       metadata?: { startTime: number };
     };
 
-    const shouldRetry = !originalRequest?._retry && (
+    const isIdempotent = IDEMPOTENT_METHODS.has((originalRequest?.method || 'get').toLowerCase());
+    const shouldRetry = isIdempotent && !originalRequest?._retry && (
       error.code === 'ECONNABORTED' ||
       error.code === 'ERR_NETWORK' ||
       (error.response?.status !== undefined && error.response.status >= 500) ||
@@ -254,58 +211,6 @@ api.interceptors.response.use(
   }
 );
 
-export const apiGet = async <T>(
-  url: string,
-  options?: {
-    params?: Record<string, any>;
-    useCache?: boolean;
-    cacheDuration?: number;
-  }
-): Promise<T> => {
-  const { params, useCache = true, cacheDuration } = options || {};
-
-  if (useCache) {
-    const cacheKey = getCacheKey('GET', url, params);
-    const cached = responseCache.get(cacheKey);
-    if (cached) {
-      const duration = cacheDuration || getCacheDuration(url);
-      if (Date.now() - cached.timestamp < duration) {
-        return cached.data as T;
-      }
-    }
-  }
-
-  const response = await api.get<T>(url, { params });
-
-  if (useCache && isCacheableEndpoint(url)) {
-    const cacheKey = getCacheKey('GET', url, params);
-    responseCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
-    evictCache();
-  }
-
-  return response.data;
-};
-
-const MAX_CACHE_SIZE = 100;
-
-const evictCache = () => {
-  while (responseCache.size > MAX_CACHE_SIZE) {
-    const oldestKey = responseCache.keys().next().value;
-    if (oldestKey !== undefined) responseCache.delete(oldestKey);
-    else break;
-  }
-};
-
-export const clearCache = (urlPattern?: string) => {
-  if (urlPattern) {
-    for (const key of responseCache.keys()) {
-      if (key.includes(urlPattern)) responseCache.delete(key);
-    }
-  } else {
-    responseCache.clear();
-  }
-};
-
 export default api;
 
 export const handleApiError = (error: unknown, fallback = 'An error occurred. Please try again.') => {
@@ -346,10 +251,6 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
 };
 
 export const extractApiError = handleApiError;
-
-export const isValidResponse = (data: any): boolean => {
-  return data !== null && data !== undefined && (typeof data === 'object' ? Object.keys(data).length > 0 : true);
-};
 
 export const getPaymentStatusByCheckoutId = async (checkoutRequestId: string): Promise<{
   checkout_request_id: string;

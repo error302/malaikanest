@@ -1,35 +1,137 @@
 {% extends "storefront/base.html" %}
 
-{% block title %}Contact Us · Malaika Nest{% endblock %}
+{% block title %}Contact Us &amp; Mombasa Store Location · Malaika Nest{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-  <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mb-2">Contact Us</h1>
-  <p class="text-sm text-gray-500 mb-10">We reply fastest on WhatsApp — but calls and email work too.</p>
-
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-    <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-sm transition-all">
-      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-2">WhatsApp</p>
-      <p class="text-sm font-semibold text-[#2C1810]">+254 726 771 321</p>
-      <p class="text-[11px] text-gray-500 mt-1">Fastest replies · 8am–8pm daily</p>
-    </a>
-    <a href="tel:+254726771321" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-sm transition-all">
-      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-2">Call</p>
-      <p class="text-sm font-semibold text-[#2C1810]">+254 726 771 321</p>
-      <p class="text-[11px] text-gray-500 mt-1">Order questions &amp; sizing help</p>
-    </a>
-    <a href="mailto:hello@malaikanest.com" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-sm transition-all">
-      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-2">Email</p>
-      <p class="text-sm font-semibold text-[#2C1810]">hello@malaikanest.com</p>
-      <p class="text-[11px] text-gray-500 mt-1">Bulk &amp; gift enquiries</p>
-    </a>
-  </div>
-
-  <div class="bg-white rounded-2xl border border-[#EADBCE] p-6 sm:p-8">
-    <h2 class="font-serif text-xl font-bold text-[#2C1810] mb-3">Visit or Collect</h2>
-    <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">
-      Our physical shop, <strong>Tawakal Toto Wear</strong>, is based in <strong>Mombasa, Kenya</strong> — the home of Malaika Nest online. Same-day and next-day delivery is available across Mombasa island and county, and free pickup at the shop is possible by arrangement — just message us on WhatsApp before you order and we'll set it up.
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+  <div class="mb-10 text-center sm:text-left">
+    <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Customer Support &amp; Boutique</span>
+    <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mt-1">Get in Touch with Us</h1>
+    <p class="text-xs sm:text-sm text-stone-600 mt-2">
+      We reply fastest on WhatsApp — but phone calls, emails, and shop visits are always warmly welcomed.
     </p>
   </div>
+
+  <!-- Contact Cards Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+    <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-md transition-all group min-h-[44px]">
+      <div class="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.101.005.242-.039.378.29.144.348.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.392-12.416c-5.518 0-10 4.482-10 10 0 1.911.536 3.696 1.464 5.222l-1.554 5.679 5.867-1.539c1.47.808 3.16 1.267 4.954 1.267 5.518 0 10-4.482 10-10 0-5.518-4.482-10-10-10z"/></svg>
+      </div>
+      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-1">WhatsApp</p>
+      <p class="text-sm font-semibold text-[#2C1810]">+254 726 771 321</p>
+      <p class="text-[11px] text-stone-500 mt-1">Instant help &amp; sizing advice · 8am–8pm</p>
+    </a>
+
+    <a href="tel:+254726771321" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-md transition-all group">
+      <div class="w-11 h-11 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.69l1.5 4.49a1 1 0 01-.5 1.21l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.49 1.5a1 1 0 01.69.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z"/></svg>
+      </div>
+      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-1">Direct Call</p>
+      <p class="text-sm font-semibold text-[#2C1810]">+254 726 771 321</p>
+      <p class="text-[11px] text-stone-500 mt-1">Order status &amp; delivery queries</p>
+    </a>
+
+    <a href="mailto:orders@malaikanest.com" class="bg-white rounded-2xl border border-[#EADBCE] p-6 text-center hover:border-[#8B6914] hover:shadow-md transition-all group">
+      <div class="w-11 h-11 rounded-full bg-orange-50 text-orange-700 flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </div>
+      <p class="text-xs uppercase tracking-wider font-bold text-[#8B6914] mb-1">Email</p>
+      <p class="text-sm font-semibold text-[#2C1810]">orders@malaikanest.com</p>
+      <p class="text-[11px] text-stone-500 mt-1">Gift hampers &amp; wholesale</p>
+    </a>
+  </div>
+
+  <!-- Physical Store & Leaflet Map Card -->
+  <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 sm:p-8 shadow-sm space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EADBCE] pb-6">
+      <div>
+        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Mombasa Physical Boutique</span>
+        <h2 class="font-serif text-2xl font-bold text-[#2C1810] mt-1">Visit Tawakal Toto Wear</h2>
+        <p class="text-xs sm:text-sm text-stone-600 mt-1">
+          Pick up your orders directly or shop baby outfits in person at our Mombasa boutique.
+        </p>
+      </div>
+      <a 
+        href="https://maps.app.goo.gl/AHTa75obHAyjB3xZ8" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-xs font-bold transition-all shadow"
+      >
+        <span>Open in Google Maps</span>
+        <svg class="w-3.5 h-3.5 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      </a>
+    </div>
+
+    <!-- Store Info Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm text-stone-700">
+      <div class="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE]">
+        <p class="font-bold text-[#2C1810] mb-1">Location</p>
+        <p class="leading-relaxed">
+          Tawakal Toto Wear<br>
+          Likoni, Mombasa (near Palma Gardens)<br>
+          Coast, Kenya (80100)
+        </p>
+      </div>
+      <div class="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE]">
+        <p class="font-bold text-[#2C1810] mb-1">Opening Hours</p>
+        <p class="leading-relaxed">
+          Monday – Friday: 08:00 – 18:00<br>
+          Saturday: 08:00 – 16:00<br>
+          Sunday: Closed
+        </p>
+      </div>
+      <div class="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE]">
+        <p class="font-bold text-[#2C1810] mb-1">Free Store Pickup</p>
+        <p class="leading-relaxed">
+          Select "Store Pick-up (FREE)" at checkout to collect with zero delivery fee.
+        </p>
+      </div>
+    </div>
+
+    <!-- Leaflet Interactive Map -->
+    <div class="space-y-2">
+      <p id="mapStatus" role="status">Loading the map. The address and directions link remain available above.</p>
+      <div id="shopMap" aria-label="Map of Tawakal Toto Wear in Likoni, Mombasa" class="w-full h-80 sm:h-96 rounded-2xl overflow-hidden border border-[#EADBCE] shadow-inner z-0"></div>
+      <p class="text-[11px] text-stone-400 text-right">
+        Coordinates: -4.0856032, 39.661555 · Leaflet OpenStreetMap
+      </p>
+    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var mapStatus = document.getElementById("mapStatus");
+    if (!window.L) { mapStatus.textContent = "The map could not load. Use the address or directions link above."; return; }
+    var lat = -4.0856032;
+    var lng = 39.661555;
+    var map = L.map("shopMap", { scrollWheelZoom: false }).setView([lat, lng], 16);
+
+    var tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    tiles.on("tileerror", function () { mapStatus.hidden = false; mapStatus.textContent = "Some map tiles could not load. Use the directions link above."; });
+    tiles.on("load", function () { if (!mapStatus.textContent.includes("could not")) mapStatus.hidden = true; });
+    if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(document.getElementById("shopMap"));
+    var marker = L.marker([lat, lng], { alt: "Tawakal Toto Wear, Likoni, Mombasa" }).addTo(map);
+    marker.bindPopup(
+      '<div style="font-family:sans-serif;font-size:12px;padding:4px;">' +
+      '<strong style="color:#2C1810;font-size:13px;">Tawakal Toto Wear</strong><br>' +
+      '<span style="color:#666;">Malaika Nest Storefront</span><br>' +
+      '<span style="color:#8B6914;font-weight:bold;">Likoni, Mombasa</span><br><br>' +
+      '<a href="https://maps.app.goo.gl/AHTa75obHAyjB3xZ8" target="_blank" rel="noopener noreferrer" style="color:#0066cc;font-weight:bold;text-decoration:none;">Directions on Google Maps &rarr;</a>' +
+      '</div>'
+    ).openPopup();
+  });
+</script>
 {% endblock %}

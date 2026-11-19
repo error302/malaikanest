@@ -104,12 +104,26 @@ class OrderService:
                 for inv in VariantInventory.objects.select_for_update().filter(variant_id__in=variant_ids)
             }
 
+            # G12: Validate delivery region
+            ALLOWED_REGIONS = ("nairobi", "mombasa", "upcountry", "mombasa_pickup", "pickup")
+            if delivery_region not in ALLOWED_REGIONS:
+                raise ValueError(f"Invalid delivery region '{delivery_region}'. Please select a valid region.")
+
             subtotal = 0
             items = []
 
             for ci in cart_items:
+                # G06: Revalidate product availability and publication status
+                if not ci.product.is_active or ci.product.status != "published":
+                    raise ValueError(f"Product '{ci.product.name}' is no longer available for purchase.")
+
                 if ci.variant_id:
                     variant = ci.variant
+                    if not variant or not variant.is_active:
+                        raise ValueError(f"The selected option for '{ci.product.name}' is no longer available.")
+                    if variant.product_id != ci.product_id:
+                        raise ValueError(f"Invalid option reference for '{ci.product.name}'.")
+
                     inv = variant_inventories.get(ci.variant_id)
                     if inv is None:
                         inv = OrderService._get_locked_variant_inventory(variant)
@@ -126,6 +140,10 @@ class OrderService:
                     subtotal += line_total
                     items.append((ci.product, variant, ci.quantity, unit_price, inv, True))
                     continue
+
+                # If product now has active variants, require a variant selection
+                if ci.product.variants.filter(is_active=True).exists():
+                    raise ValueError(f"Please select a specific size/option for '{ci.product.name}'.")
 
                 inv = inventories.get(ci.product_id)
                 if inv is None:
@@ -148,11 +166,9 @@ class OrderService:
                     raise ValueError("Coupon usage limit reached")
                 Coupon.objects.filter(pk=coupon.pk).update(used_count=F("used_count") + 1)
                 discount_amount = coupon.calculate_discount(subtotal)
-            # Free delivery across Kenya for orders at/above the storefront
-            # threshold — keep this in sync with apps.storefront.views_cart.
-            free_shipping_threshold = Decimal(
-                str(getattr(settings, "FREE_SHIPPING_THRESHOLD", "10000.00"))
-            )
+            # G12: Authoritative free delivery threshold from SiteSettings
+            from apps.core.models import SiteSettings
+            free_shipping_threshold = SiteSettings.get_free_shipping_threshold()
             if subtotal >= free_shipping_threshold > 0:
                 delivery_fee = Decimal("0.00")
             else:

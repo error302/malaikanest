@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { guardAdminRequest, sanitizeError } from '@/lib/admin-guard';
+import { withAdminGuard } from '@/lib/admin-guard';
+import { clearThriftedCache } from '@/lib/thrifted';
 
 /**
  * PUT /api/admin/thrifted/[id] — update a thrifted product
  * DELETE /api/admin/thrifted/[id] — delete a thrifted product
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const guard = await guardAdminRequest(req);
-  if (guard) return guard;
-  try {
+  return withAdminGuard(req, async () => {
     const { id } = await params;
     const body = await req.json();
     const updated = await db.thriftedProduct.update({
@@ -34,20 +33,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(body.isActive !== undefined && { isActive: body.isActive }),
       },
     });
+    clearThriftedCache();
     return NextResponse.json({ product: updated });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+  });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const guard = await guardAdminRequest(req);
-  if (guard) return guard;
-  try {
+  return withAdminGuard(req, async () => {
     const { id } = await params;
     await db.thriftedProduct.delete({ where: { id } });
+    clearThriftedCache();
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+  });
 }

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 
-export type Language = 'en' | 'sw';
+type Language = 'en' | 'sw';
 
 type Dict = Record<string, string>;
 
@@ -98,9 +98,9 @@ const en: Dict = {
   'hero.slide3.title': 'Grow With Us',
   'hero.slide3.subtitle': 'Sizes from newborn to age 5, all in one place.',
   'hero.slide3.cta': 'Shop by Age',
-  'hero.trust1': 'Free delivery over KSh 2,000',
+  'hero.trust1': 'Free delivery over KES 10,000',
   'hero.trust2': 'Safe & secure checkout',
-  'hero.trust3': 'Easy 7-day returns',
+  'hero.trust3': '72h exchange (tags attached)',
   'hero.shopNow': 'Shop Now',
 
   // Product card
@@ -133,13 +133,17 @@ const en: Dict = {
   'home.why1.desc': 'Every product meets international safety standards.',
   'home.why2.title': 'Fast Delivery',
   'home.why2.desc': 'Same-day dispatch for orders placed before 2pm.',
-  'home.why3.title': 'Easy Returns',
-  'home.why3.desc': '7-day hassle-free returns on all orders.',
+  'home.why3.title': '72-Hour Exchanges',
+  'home.why3.desc': '72-hour exchange window with original brand tags attached.',
   'home.why4.title': 'Parent Loved',
-  'home.why4.desc': 'Thousands of happy families shop with us.',
+  'home.why4.desc': 'Loved by families across Mombasa and Kenya.',
   'home.testimonials': 'What Parents Say',
   'home.testimonialsLabel': 'Loved by parents',
-  'home.aggregateRating': '4.9 / 5 · 1,200+ reviews',
+  // Intentionally blank — no real review dataset exists yet. Previously
+  // "4.9 / 5 · 1,200+ reviews", which had no data behind it.
+  'home.aggregateRating': '',
+  'home.testimonialsEmptyIntro': 'Be the first to share your experience',
+  'home.testimonialsEmpty': "We'd love to hear how your order went — reviews from Mombasa families appear here once shared.",
   'home.newsletter': 'Join Our Newsletter',
   'home.newsletterSub': 'Get 10% off your first order plus parenting tips.',
   'home.newsletterEmail': 'Your email address',
@@ -225,7 +229,7 @@ const en: Dict = {
   'checkout.till': 'Lipa na M-Pesa — Till 3370347',
   'checkout.tillDesc': 'Manual Till — paste M-Pesa code',
   'checkout.paypal': 'PayPal',
-  'checkout.paypalDesc': 'Pay with PayPal',
+  'checkout.paypalDesc': 'PayPal, Visa & Mastercard accepted',
   'checkout.card': 'Card',
   'checkout.cardDesc': 'Visa, Mastercard accepted',
   'checkout.pesapal': 'Pesapal',
@@ -378,9 +382,9 @@ const sw: Dict = {
   'hero.slide3.title': 'Kua na Sisi',
   'hero.slide3.subtitle': 'Vipimo kuanzia mtoto mchanga hadi umri wa miaka 5, mahali pamoja.',
   'hero.slide3.cta': 'Duka kwa Umri',
-  'hero.trust1': 'Utoaji bure zaidi ya KSh 2,000',
+  'hero.trust1': 'Utoaji bure zaidi ya KES 10,000',
   'hero.trust2': 'Malipo salama na ya kuaminika',
-  'hero.trust3': 'Marudio rahisi ya siku 7',
+  'hero.trust3': 'Kubadilisha ndani ya saa 72 (na tagi)',
   'hero.shopNow': 'Nunua Sasa',
 
   // Product card
@@ -413,13 +417,16 @@ const sw: Dict = {
   'home.why1.desc': 'Kila bidhaa inakidhi viwango vya kimataifa vya usalama.',
   'home.why2.title': 'Utoaji wa Haraka',
   'home.why2.desc': 'Tunatuma siku iyo hiyo kwa maagizo kabla ya saa 2 alasiri.',
-  'home.why3.title': 'Marudio Rahisi',
-  'home.why3.desc': 'Marudio ya siku 7 bila shida kwa maagizo yote.',
+  'home.why3.title': 'Kubadilisha Saa 72',
+  'home.why3.desc': 'Kubadilisha ndani ya saa 72 nguo zikiwa na tagi zake kamili.',
   'home.why4.title': 'Wazazi Wanapenda',
-  'home.why4.desc': 'Mamia ya familia za furaha zinanunua na sisi.',
+  'home.why4.desc': 'Wanapendwa na familia kote Mombasa na Kenya.',
   'home.testimonials': 'Wazazi Wasemavyo',
   'home.testimonialsLabel': 'Wanaozipendwa na wazazi',
-  'home.aggregateRating': '4.9 / 5 · maoni 1,200+',
+  // Intentionally blank — mirror of the English key; no review data exists yet.
+  'home.aggregateRating': '',
+  'home.testimonialsEmptyIntro': 'Kuwa wa kwanza kushiriki uzoefu wako',
+  'home.testimonialsEmpty': 'Tungependa kusikia uzoefu wako — maoni kutoka familia za Mombasa yataonekana hapa yakishirikiwa.',
   'home.newsletter': 'Jiunge na Barua Yetu',
   'home.newsletterSub': 'Pata punguzo la 10% kwa agizo lako la kwanza na vidokezo vya ukuzaji watoto.',
   'home.newsletterEmail': 'Anwani yako ya barua pepe',
@@ -505,7 +512,7 @@ const sw: Dict = {
   'checkout.till': 'Lipa na M-Pesa — Till 3370347',
   'checkout.tillDesc': 'Malipo ya Till — weka kodi ya M-Pesa',
   'checkout.paypal': 'PayPal',
-  'checkout.paypalDesc': 'Lipa na PayPal',
+  'checkout.paypalDesc': 'PayPal, Visa & Mastercard zinakubalika',
   'checkout.card': 'Card',
   'checkout.cardDesc': 'Visa, Mastercard zinakubalika',
   'checkout.pesapal': 'Pesapal',

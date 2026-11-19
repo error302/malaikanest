@@ -1,3 +1,5 @@
+from rest_framework.authentication import SessionAuthentication
+from apps.accounts.authentication import CookieJWTAuthentication
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
@@ -137,13 +139,15 @@ class ContactFormView(APIView):
         )
 
         try:
-            send_mail(
+            from django.core.mail import EmailMessage
+            msg = EmailMessage(
                 subject=f"[Malaika Nest] {subject}",
-                message=body,
+                body=body,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[recipient],
-                fail_silently=False,
+                to=[recipient],
+                reply_to=[email],
             )
+            msg.send(fail_silently=False)
             logger.info("Contact form email sent from %s (%s)", email, name)
             return Response(
                 {"detail": "Message sent successfully."}, status=status.HTTP_200_OK
@@ -162,6 +166,7 @@ PUBLIC_SETTINGS_CACHE_KEY = "core_public_site_settings_v1"
 
 
 class SiteSettingsView(APIView):
+    authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     """Get and update site settings"""
 
     permission_classes = [IsAdminUser]

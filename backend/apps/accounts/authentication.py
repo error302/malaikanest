@@ -15,43 +15,77 @@ logger = logging.getLogger('security')
 class CookieJWTAuthentication(JWTAuthentication):
     """
     Custom authentication class that checks for the 'access_token' in
-    HTTPOnly cookies instead of just the Authorization header.
+    HTTPOnly/secure cookies instead of just the Authorization header.
+    Enforces explicit CSRF checks on mutating requests when cookie-authenticated
+    and verifies User.token_version to reject revoked tokens immediately.
     """
+    def enforce_csrf(self, request):
+        from rest_framework.authentication import CSRFCheck
+        from rest_framework import exceptions
+
+        def dummy_get_response(request):
+            return None
+
+        check = CSRFCheck(dummy_get_response)
+        check.process_request(request)
+        reason = check.process_view(request, None, (), {})
+        if reason:
+            raise exceptions.PermissionDenied(f"CSRF Failed: {reason}")
+
     def authenticate(self, request):
         # Default behavior: checks Authorization header first
         header = self.get_header(request)
-        
+        is_cookie_auth = False
+
         if header is None:
             # If no Authorization header, look for cookie
             raw_token = request.COOKIES.get('access_token')
             if not raw_token:
                 return None
+            is_cookie_auth = True
         else:
             raw_token = self.get_raw_token(header)
             if raw_token is None:
                 return None
+
+        # G05: When authenticating mutating requests via cookie, require valid CSRF
+        if is_cookie_auth and request.method not in ("GET", "HEAD", "OPTIONS", "TRACE"):
+            self.enforce_csrf(request)
 
         # Important: if the cookie contains an expired/invalid token we should
         # treat it as "no credentials" instead of hard-failing the request.
         # Otherwise public endpoints and the refresh endpoint get stuck in 401 loops.
         try:
             validated_token = self.get_validated_token(raw_token)
-            
-            # P0 Security Check: Validate against Redis blacklist
+
+            # Validate against cache blacklist if present
             from django.core.cache import cache
             jti = validated_token.payload.get('jti')
             if jti and cache.get(f"blacklisted_jti_{jti}"):
                 if header is not None:
                     raise InvalidToken("Token has been blacklisted")
                 return None
-                
+
         except (InvalidToken, TokenError):
             # If the client explicitly sent an Authorization header, keep strict behavior.
             if header is not None:
                 raise
             return None
 
-        return self.get_user(validated_token), validated_token
+        user = self.get_user(validated_token)
+        return user, validated_token
+
+    def get_user(self, validated_token):
+        user = super().get_user(validated_token)
+        if not user.is_active:
+            raise InvalidToken("User account is disabled")
+
+        # G05: Verify token_version against current user state
+        token_version = validated_token.payload.get("token_version", 1)
+        if getattr(user, "token_version", 1) != token_version:
+            raise InvalidToken("Token has been revoked (password changed or logged out)")
+
+        return user
 
 
 class JWTAuthenticationWithRotation(JWTAuthentication):

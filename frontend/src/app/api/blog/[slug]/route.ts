@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sanitizeError } from '@/lib/admin-guard';
 
 /** GET /api/blog/[slug] — single published post */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -11,6 +12,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     }
     return NextResponse.json({ post });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }
 }

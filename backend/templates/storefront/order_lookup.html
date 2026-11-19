@@ -1,0 +1,80 @@
+{% extends "storefront/base.html" %}
+
+{% block title %}Track Order · Malaika Nest{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-10 sm:py-16">
+  <div class="bg-white rounded-3xl border border-[#EADBCE] p-5 sm:p-8 shadow-sm space-y-6">
+    <div class="text-center space-y-2">
+      <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-[#8B6914] flex items-center justify-center mx-auto">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+      <h1 class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810]">
+        Track Your Order
+      </h1>
+      <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
+        Check live processing, delivery, and payment status of your baby clothes package.
+      </p>
+    </div>
+
+    <form method="post" action="{% url 'storefront:order_lookup' %}" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="order_ref" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+          Order / Receipt Number <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          name="order_ref" 
+          id="order_ref" 
+          required 
+          autofocus 
+          autocomplete="off"
+          enterkeyhint="next"
+          value="{{ order_ref|default:'' }}"
+          placeholder="e.g. MN-XXXXX or 1042"
+          class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-3 text-base font-mono uppercase text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914] min-h-[48px]"
+        >
+        <p class="text-[11px] text-stone-400 mt-1">Found in your SMS receipt or confirmation email.</p>
+      </div>
+
+      <div>
+        <label for="contact" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
+          Phone Number or Email <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          name="contact" 
+          id="contact" 
+          required 
+          autocomplete="tel"
+          enterkeyhint="go"
+          value="{{ contact|default:'' }}"
+          placeholder="07XX XXX XXX or name@email.com"
+          class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-3 text-base text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914] min-h-[48px]"
+        >
+      </div>
+
+      <button 
+        type="submit" 
+        class="w-full py-3.5 px-6 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-center text-sm font-bold uppercase tracking-wider shadow transition-all min-h-[52px]"
+      >
+        Track Order Status
+      </button>
+    </form>
+
+    <div class="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE] space-y-2 text-xs text-stone-600">
+      <p class="font-semibold text-[#2C1810]">
+        Store Pick-up &amp; Delivery
+      </p>
+      <p>
+        Orders are processed promptly from our Mombasa shop (Tawakal Toto Wear). 
+        Same-day dispatch for Mombasa orders; 1–2 business days for Nairobi; 2–3 days for other regions across Kenya.
+      </p>
+      <p class="pt-1 text-stone-500">
+        Questions? Contact us on WhatsApp: <a href="https://wa.me/254726771321" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-bold hover:underline">+254 726 771 321</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

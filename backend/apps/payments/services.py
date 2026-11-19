@@ -11,6 +11,7 @@ from uuid import uuid4
 import requests
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.core.cache import cache
+from django.conf import settings
 
 from django.db import transaction
 from django.utils import timezone

@@ -51,15 +51,11 @@ class CategoryAdmin(CategoryChoicesMixin, admin.ModelAdmin):
     search_fields = ('name', 'slug', 'group')
     list_filter = ('group', ('parent', CategoryPathFilter))
     prepopulated_fields = {'slug': ('name',)}
+    fields = ('name', 'slug', 'description', 'parent', 'group', 'image', 'image_url')
 
     def image_preview(self, obj):
         from django.utils.html import format_html
-        url = None
-        try:
-            if obj.image:
-                url = obj.image.url
-        except Exception:
-            url = None
+        url = obj.get_image_url
         if url:
             return format_html('<img src="{}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" />', url)
         return "—"
@@ -107,8 +103,9 @@ class ProductAdmin(CategoryChoicesMixin, admin.ModelAdmin):
 
     @admin.display(description='Photo')
     def photo_preview(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" alt="" width="52" height="64" loading="lazy" style="object-fit:contain;border-radius:6px" />', obj.image.url)
+        url = obj.get_image_url
+        if url:
+            return format_html('<img src="{}" alt="" width="52" height="64" loading="lazy" style="object-fit:contain;border-radius:6px" />', url)
         return '—'
 
     fieldsets = (
@@ -122,7 +119,7 @@ class ProductAdmin(CategoryChoicesMixin, admin.ModelAdmin):
             'fields': ('description', 'fabric', 'whats_included', 'gender', 'age_group', 'age_range', 'size_label', 'size_guide', 'weight', 'condition')
         }),
         ('Images', {
-            'fields': ('image',)
+            'fields': ('image', 'image_url')
         }),
         ('SEO', {
             'fields': ('seo_title', 'seo_description')

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, X } from 'lucide-react';
 import type { Product } from '@/components/malaika/product-card';
 import { ProductCard } from '@/components/malaika/product-card';
+import { ProductGridSkeleton } from '@/components/malaika/product-grid-skeleton';
 import api from '@/lib/api';
 import { normalizeProduct } from '@/lib/products';
 
@@ -199,17 +200,7 @@ function CategoriesBrowser() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="rounded-2xl border animate-pulse" style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}>
-                  <div className="aspect-[4/5]" style={{ background: 'var(--brand-warm)' }} />
-                  <div className="p-4 space-y-2">
-                    <div className="h-3 w-3/4" style={{ background: 'var(--brand-warm)' }} />
-                    <div className="h-3 w-1/2" style={{ background: 'var(--brand-warm)' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductGridSkeleton count={9} />
           ) : products.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-sm" style={{ color: 'var(--brand-text-muted)' }}>No products found. Try adjusting your filters.</p>

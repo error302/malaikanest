@@ -40,21 +40,15 @@ class Command(BaseCommand):
             )
             raise SystemExit(1)
 
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                'phone_number': '+254700000000',  # Placeholder phone
-                'is_staff': True,
-                'is_superuser': True,
-                'role': User.ROLE_ADMIN,
-                'is_active': True,
-                'is_email_verified': True,
-            }
-        )
-
-        if created:
-            user.set_password(password)
-            user.save()
+        user = User.objects.filter(email=email).first()
+        if not user:
+            user = User.objects.create_superuser(
+                email=email,
+                phone_number='+254700000000',
+                password=password,
+                is_active=True,
+                is_email_verified=True,
+            )
             self.stdout.write(self.style.SUCCESS(f'Created admin user: {email}'))
         else:
             # Fix existing user
@@ -74,4 +68,3 @@ class Command(BaseCommand):
         self.stdout.write(f'  role: {user.role}')
         self.stdout.write(f'  is_active: {user.is_active}')
         self.stdout.write(f'  is_email_verified: {user.is_email_verified}')
-

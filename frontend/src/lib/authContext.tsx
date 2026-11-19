@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/lib/api';
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/authToken';
+import { clearAccessToken, setAccessToken } from '@/lib/authToken';
 
 type User = {
   id: number | string;
@@ -203,9 +203,4 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
-}
-
-export function isLoggedIn(): boolean {
-  if (typeof window === 'undefined') return false;
-  return !!getAccessToken();
 }

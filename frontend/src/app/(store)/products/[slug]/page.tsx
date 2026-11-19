@@ -240,7 +240,7 @@ export default async function ProductDetailPage({ params }: Props) {
             {[
               { Icon: Truck, label: 'Fast delivery' },
               { Icon: Shield, label: 'Secure M-Pesa' },
-              { Icon: RotateCcw, label: '7-day returns' },
+              { Icon: RotateCcw, label: '72h returns (tags on)' },
             ].map(({ Icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-1.5 text-center">
                 <Icon size={20} style={{ color: 'var(--brand-gold)' }} />

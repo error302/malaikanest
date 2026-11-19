@@ -171,7 +171,7 @@
           <table role="presentation" cellpadding="0" cellspacing="0">
             <tr>
               <td align="center" style="background:linear-gradient(135deg,#C8956C,#B07D5A);border-radius:50px;padding:0;">
-                <a href="https://malaikanest.com/account/orders" target="_blank" style="display:inline-block;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:50px;background:transparent;">View My Order</a>
+                <a href="https://malaikanest.com/orders/{{ order.receipt_number }}/?token={{ order.checkout_token }}" target="_blank" style="display:inline-block;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:50px;background:transparent;">View My Order</a>
               </td>
             </tr>
           </table>

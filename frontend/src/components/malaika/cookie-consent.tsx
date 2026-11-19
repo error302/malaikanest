@@ -44,7 +44,7 @@ export function CookieConsent() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-[150] p-3 sm:p-4 animate-fade-in-up"
+      className="fixed bottom-[calc(4.5rem_+_env(safe-area-inset-bottom,0px))] sm:bottom-0 left-0 right-0 z-[150] p-3 sm:p-4 animate-fade-in-up"
       style={{ pointerEvents: 'none' }}
       role="dialog"
       aria-live="polite"

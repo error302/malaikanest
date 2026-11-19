@@ -11,9 +11,9 @@ export function AnnouncementBar({ messages = [] }: AnnouncementBarProps) {
   const [index, setIndex] = useState(0);
 
   const defaultMessages = [
-    '🚚 <strong>Same-Day Delivery in Mombasa</strong> · 1–3 Days Across Kenya',
-    '💚 <strong>Lipa Na M-Pesa Accepted</strong> · Till 3370347',
-    '✨ Handcrafted Organic Baby Clothing & Premium Essentials',
+    '🚚 <strong>Free Delivery Over KES 10,000</strong> · Express Kenya Dispatch',
+    '💚 <strong>Lipa Na M-Pesa Accepted</strong> · Buy Goods Till 3370347',
+    '✨ Handcrafted Organic Baby Clothing & Certified Newborn Essentials',
     '📲 <strong>Order via WhatsApp:</strong> <a href="https://wa.me/254726771321" target="_blank" rel="noopener noreferrer" class="underline hover:text-amber-100">+254 726 771 321</a>',
   ];
 

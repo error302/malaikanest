@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Server-side data fetchers for the Malaika Nest storefront.
  * These call the Django backend at /api/v1/products/* with graceful fallbacks
  * to sample data when the API is unreachable (e.g. sandbox/dev preview).
@@ -31,10 +31,6 @@ function _cacheSet<T>(key: string, data: T): void {
     const firstKey = _productCache.keys().next().value;
     if (firstKey !== undefined) _productCache.delete(firstKey);
   }
-}
-
-export function clearProductCache(): void {
-  _productCache.clear();
 }
 
 export interface Banner {

@@ -1,3 +1,5 @@
+from rest_framework.authentication import SessionAuthentication
+from apps.accounts.authentication import CookieJWTAuthentication
 import csv
 import datetime
 import logging
@@ -22,6 +24,7 @@ from .invoice import generate_invoice_pdf, save_invoice_pdf
 
 
 class AdminAnalyticsView(APIView):
+    authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     permission_classes = [IsAdminUser]
 
     def get(self, request):

@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from apps.orders.models import Cart, Order
@@ -20,6 +20,7 @@ class StorefrontCheckoutTests(TestCase):
             stock=8,
             category=self.category,
             is_active=True,
+            status="published",
         )
         Inventory.objects.create(product=self.product, quantity=8)
 
@@ -45,6 +46,25 @@ class StorefrontCheckoutTests(TestCase):
         self.assertContains(response, "FREE")  # 20000 >= 10000 free delivery
         self.assertContains(response, "M-Pesa STK Push")
         self.assertContains(response, "3370347")  # Till number
+
+    def test_checkout_exposes_authoritative_region_fees(self):
+        """Displayed delivery fees come from the same source used to charge the order."""
+        from apps.orders.models import get_delivery_fee_for_region
+
+        self.product.price = Decimal("2000.00")
+        self.product.save(update_fields=["price"])
+        self._add_product_to_cart(quantity=1)
+        response = self.client.get(reverse("storefront:checkout"))
+        self.assertEqual(response.status_code, 200)
+        fees = response.context["region_fees"]
+        for region in ("mombasa", "nairobi", "upcountry"):
+            with self.subTest(region=region):
+                self.assertEqual(Decimal(fees[region]), get_delivery_fee_for_region(region))
+        from apps.core.models import SiteSettings
+        self.assertEqual(
+            response.context["free_shipping_threshold"], SiteSettings.get_free_shipping_threshold()
+        )
+        self.assertContains(response, "data-region-fees")
 
     def test_guest_checkout_places_order_and_reserves_stock(self):
         """Submitting the checkout form reserves stock, clears cart, and creates order."""
@@ -107,14 +127,16 @@ class StorefrontCheckoutTests(TestCase):
         )
         order = Order.objects.get(guest_email="zahra@example.com")
 
-        # Without token -> 404
-        unauth_response = self.client.get(
+        # Unauthenticated external visitor without token or session -> does not expose order details, renders verify prompt
+        unauth_client = Client()
+        unauth_response = unauth_client.get(
             reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number})
         )
-        self.assertEqual(unauth_response.status_code, 404)
+        self.assertNotContains(unauth_response, "Zahra Ali")
+        self.assertContains(unauth_response, "Verify Order #")
 
         # With correct token -> 200
-        auth_response = self.client.get(
+        auth_response = unauth_client.get(
             reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number})
             + f"?token={order.checkout_token}"
         )

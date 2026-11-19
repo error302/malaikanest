@@ -1,49 +1,15 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import Image from 'next/image';
-import {
-  Plus,
-  Folder,
-  Upload,
-  Image as ImageIcon,
-  Pencil,
-  Trash2,
-  X,
-  Save,
-  Loader2,
-  RefreshCw,
-} from 'lucide-react';
+import { Plus, Folder, Loader2, RefreshCw } from 'lucide-react';
 import api, { handleApiError } from '@/lib/api';
 import { showToast } from '@/lib/toast';
-
-interface ApiCategory {
-  id: string | number;
-  name: string;
-  slug: string;
-  full_slug?: string;
-  parent?: string | number | null;
-  description?: string;
-  group?: string;
-  image?: string | null;
-  children?: ApiCategory[];
-  product_count?: number;
-  level?: number;
-}
-
-interface CategoryForm {
-  name: string;
-  group: string;
-  description: string;
-  parent: string;
-}
+import type { ApiCategory, CategoryForm } from '@/components/admin/category-types';
+import { CategoryRow } from '@/components/admin/CategoryRow';
+import { CategoryModal } from '@/components/admin/CategoryModal';
+import { CategoryDeleteDialog } from '@/components/admin/CategoryDeleteDialog';
 
 const EMPTY_FORM: CategoryForm = { name: '', group: '', description: '', parent: '' };
-
-const fieldCls =
-  'w-full rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--brand-gold)]/60 bg-[var(--brand-bg-alt)] border border-[var(--brand-border)]';
-const labelCls =
-  'text-xs uppercase tracking-wider font-semibold mb-1.5 block text-[var(--brand-text-muted)]';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<ApiCategory[]>([]);
@@ -61,7 +27,6 @@ export default function AdminCategoriesPage() {
   const [seeding, setSeeding] = useState(false);
 
   const thumbFileRef = useRef<HTMLInputElement>(null);
-  const modalFileRef = useRef<HTMLInputElement>(null);
   const [activeCategoryId, setActiveCategoryId] = useState<string | number | null>(null);
 
   const fetchCategories = async () => {
@@ -243,69 +208,6 @@ export default function AdminCategoriesPage() {
     });
   };
 
-  const renderRow = (cat: ApiCategory, depth = 0) => (
-    <div key={cat.id}>
-      <div
-        className="flex items-center justify-between p-3 rounded-lg hover:bg-[var(--brand-bg-alt)] transition-colors group"
-        style={{ paddingLeft: `${12 + depth * 24}px` }}
-      >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div
-            className="w-10 h-10 rounded-md overflow-hidden flex items-center justify-center flex-shrink-0 cursor-pointer border hover:opacity-80 transition-opacity relative"
-            style={{ background: 'var(--brand-warm)', borderColor: 'var(--brand-border)' }}
-            onClick={() => handleThumbClick(cat.id)}
-            title="Upload/Change Image"
-          >
-            {uploadingId === cat.id ? (
-              <div className="w-4 h-4 border-2 border-t-transparent border-[var(--brand-gold)] rounded-full animate-spin" />
-            ) : cat.image ? (
-              <Image src={cat.image} alt={cat.name} fill className="object-cover" />
-            ) : (
-              <ImageIcon size={18} style={{ color: 'var(--brand-gold)' }} />
-            )}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <Upload size={14} className="text-white" />
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate flex items-center gap-2" style={{ color: 'var(--brand-text)' }}>
-              {cat.name}
-              {cat.product_count !== undefined && (
-                <span className="text-xs font-normal" style={{ color: 'var(--brand-text-muted)' }}>
-                  ({cat.product_count} {cat.product_count === 1 ? 'product' : 'products'})
-                </span>
-              )}
-            </div>
-            <div className="text-xs flex items-center gap-1" style={{ color: 'var(--brand-text-muted)' }}>
-              {cat.group && <Folder size={12} />} /{cat.full_slug || cat.slug}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => openEdit(cat)}
-            className="p-2 rounded-lg hover:bg-[var(--brand-warm)] transition-colors"
-            title="Edit category"
-            aria-label={`Edit ${cat.name}`}
-          >
-            <Pencil size={15} style={{ color: 'var(--brand-brown)' }} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(cat)}
-            className="p-2 rounded-lg hover:bg-red-50 transition-colors"
-            title="Delete category"
-            aria-label={`Delete ${cat.name}`}
-          >
-            <Trash2 size={15} style={{ color: 'var(--brand-brown)', opacity: 0.6 }} />
-          </button>
-        </div>
-      </div>
-      {cat.children?.map((child) => renderRow(child, depth + 1))}
-    </div>
-  );
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -363,191 +265,43 @@ export default function AdminCategoriesPage() {
           </div>
         ) : (
           <div className="p-3 space-y-1">
-            {categories.map((cat) => renderRow(cat))}
+            {categories.map((cat) => (
+              <CategoryRow
+                key={cat.id}
+                cat={cat}
+                uploadingId={uploadingId}
+                onThumbClick={handleThumbClick}
+                onEdit={openEdit}
+                onDelete={setConfirmDelete}
+              />
+            ))}
           </div>
         )}
       </div>
 
-      {/* Create / Edit modal */}
-      {modalOpen && (
-        <div
-          className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4"
-          style={{ background: 'rgba(44,24,16,0.5)' }}
-          onClick={closeModal}
-        >
-          <div
-            className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-serif text-xl font-semibold" style={{ color: 'var(--brand-text)', fontFamily: 'var(--font-cormorant)' }}>
-                {mode === 'create' ? 'Add Category' : `Edit · ${editing?.name || ''}`}
-              </h2>
-              <button type="button" onClick={closeModal} aria-label="Close">
-                <X size={20} style={{ color: 'var(--brand-brown)' }} />
-              </button>
-            </div>
+      <CategoryModal
+        isOpen={modalOpen}
+        mode={mode}
+        editing={editing}
+        form={form}
+        setForm={setForm}
+        imagePreview={imagePreview}
+        saving={saving}
+        flatOptions={flatOptions}
+        invalidParents={invalidParents}
+        onClose={closeModal}
+        onSubmit={handleSubmit}
+        onFileChange={handleModalFile}
+        onParentChange={handleParentChange}
+      />
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className={labelCls} htmlFor="cat-name">Name *</label>
-                <input
-                  id="cat-name"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="e.g. Baby Onesies"
-                  className={fieldCls}
-                  style={{ color: 'var(--brand-text)' }}
-                />
-              </div>
-
-              <div>
-                <label className={labelCls} htmlFor="cat-parent">Parent Category</label>
-                <select
-                  id="cat-parent"
-                  value={form.parent}
-                  onChange={(e) => handleParentChange(e.target.value)}
-                  className={fieldCls}
-                  style={{ color: 'var(--brand-text)' }}
-                >
-                  <option value="">— Top level (no parent) —</option>
-                  {flatOptions
-                    .filter((o) => !invalidParents.has(o.id))
-                    .map((o) => (
-                      <option key={o.id} value={String(o.id)}>
-                        {'\u00A0'.repeat(o.depth * 2)}{o.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls} htmlFor="cat-group">Group</label>
-                <input
-                  id="cat-group"
-                  value={form.group}
-                  onChange={(e) => setForm((p) => ({ ...p, group: e.target.value }))}
-                  placeholder="e.g. Clothing"
-                  className={fieldCls}
-                  style={{ color: 'var(--brand-text)' }}
-                />
-              </div>
-
-              <div>
-                <label className={labelCls} htmlFor="cat-description">Description</label>
-                <textarea
-                  id="cat-description"
-                  rows={2}
-                  value={form.description}
-                  onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-                  placeholder="Optional short description"
-                  className={fieldCls}
-                  style={{ color: 'var(--brand-text)', resize: 'none' }}
-                />
-              </div>
-
-              <div>
-                <label className={labelCls}>Image</label>
-                <button
-                  type="button"
-                  onClick={() => modalFileRef.current?.click()}
-                  className="relative w-full h-32 rounded-xl overflow-hidden border border-dashed flex items-center justify-center gap-2 text-sm"
-                  style={{
-                    borderColor: 'var(--brand-border)',
-                    color: 'var(--brand-text-muted)',
-                    background: 'var(--brand-bg-alt)',
-                  }}
-                >
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="Category preview" className="absolute inset-0 w-full h-full object-cover" />
-                  ) : editing?.image ? (
-                    <Image src={editing.image} alt={editing.name} fill className="object-cover" />
-                  ) : (
-                    <>
-                      <Upload size={16} /> Upload image
-                    </>
-                  )}
-                  {imagePreview && (
-                    <span className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs bg-black/60 text-white">
-                      New image
-                    </span>
-                  )}
-                </button>
-                <input
-                  ref={modalFileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleModalFile}
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={saving}
-                  className="inline-flex items-center rounded-full border px-5 py-2.5 text-sm font-medium"
-                  style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
-                  style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  {saving ? 'Saving…' : mode === 'create' ? 'Create Category' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete confirmation modal */}
       {confirmDelete && (
-        <div
-          className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4"
-          style={{ background: 'rgba(44,24,16,0.5)' }}
-          onClick={() => setConfirmDelete(null)}
-        >
-          <div
-            className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-5 sm:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="font-serif text-lg font-semibold" style={{ color: 'var(--brand-text)' }}>
-              Delete “{confirmDelete.name}”?
-            </h3>
-            <p className="text-sm mt-1 mb-5" style={{ color: 'var(--brand-text-muted)' }}>
-              This category will be removed. Categories still in use by products cannot be deleted.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(null)}
-                disabled={deletingId !== null}
-                className="inline-flex items-center rounded-full border px-5 py-2.5 text-sm font-medium"
-                style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-brown)' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deletingId !== null}
-                className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold disabled:opacity-60"
-                style={{ background: '#B91C1C', color: '#FFFFFF' }}
-              >
-                {deletingId !== null ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                {deletingId !== null ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CategoryDeleteDialog
+          category={confirmDelete}
+          isDeleting={deletingId !== null}
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={handleDelete}
+        />
       )}
     </div>
   );

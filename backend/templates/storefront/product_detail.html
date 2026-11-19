@@ -4,17 +4,17 @@
 {% block meta_description %}{{ product.description|striptags|truncatewords:25 }}{% endblock %}
 
 {% block content %}
-<div class="nest-product-detail max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+<div class="nest-product-detail max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
 
   <!-- Breadcrumbs -->
-  <div class="text-xs text-gray-500 mb-6 flex items-center gap-1.5">
+  <div class="text-xs text-gray-500 mb-4 sm:mb-6 flex items-center gap-1.5 flex-wrap">
     <a href="{% url 'storefront:home' %}" class="hover:text-[#8B6914]">Home</a>
     <span>/</span>
     <a href="{% url 'storefront:product_list' %}" class="hover:text-[#8B6914]">Products</a>
     <span>/</span>
     <a href="{% url 'storefront:category_detail' category_slug=product.category.slug %}" class="hover:text-[#8B6914]">{{ product.category.name }}</a>
     <span>/</span>
-    <span class="text-[#2C1810] font-medium truncate max-w-xs">{{ product.name }}</span>
+    <span class="text-[#2C1810] font-medium truncate max-w-[12rem] sm:max-w-xs">{{ product.name }}</span>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
@@ -22,10 +22,10 @@
     <!-- Image Gallery -->
     <div class="space-y-4">
       <div class="aspect-square bg-white rounded-3xl overflow-hidden border border-[#EADBCE] shadow-sm relative">
-        {% if product.image %}
-          <img id="mainProductImage" src="{{ product.image.url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
+        {% if product.get_image_url %}
+          <img id="mainProductImage" src="{{ product.get_image_url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
         {% elif product.images.first %}
-          <img id="mainProductImage" src="{{ product.images.first.image.url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
+          <img id="mainProductImage" src="{{ product.images.first.get_image_url|default:product.images.first.image.url }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
         {% else %}
           <div class="w-full h-full flex items-center justify-center font-serif text-5xl font-bold text-[#EADBCE]">MN</div>
         {% endif %}
@@ -44,23 +44,23 @@
       <!-- Thumbnails -->
       {% if product.images.all|length > 1 %}
         <div class="flex gap-2 overflow-x-auto pb-2">
-          {% if product.image %}
+          {% if product.get_image_url %}
             <button 
               type="button" 
-              onclick="document.getElementById('mainProductImage').src='{{ product.image.url }}'" 
+              onclick="document.getElementById('mainProductImage').src='{{ product.get_image_url }}'" 
               class="w-16 h-16 rounded-xl overflow-hidden border-2 border-[#8B6914] flex-shrink-0 bg-white"
             >
-              <img src="{{ product.image.url }}" class="w-full h-full object-cover">
+              <img src="{{ product.get_image_url }}" class="w-full h-full object-cover">
             </button>
           {% endif %}
           {% for img in product.images.all %}
             <button 
               type="button" 
-              onclick="document.getElementById('mainProductImage').src='{{ img.image.url }}'" 
+              onclick="document.getElementById('mainProductImage').src='{{ img.get_image_url|default:img.image.url }}'" 
               class="w-16 h-16 rounded-xl overflow-hidden border border-[#EADBCE] hover:border-[#8B6914] flex-shrink-0 bg-white"
               aria-label="View image {{ forloop.counter }}"
             >
-              <img src="{{ img.image.url }}" alt="{{ product.name }} — view {{ forloop.counter }}" width="64" height="64" loading="lazy" class="w-full h-full object-cover">
+              <img src="{{ img.get_image_url|default:img.image.url }}" alt="{{ product.name }} — view {{ forloop.counter }}" width="64" height="64" loading="lazy" class="w-full h-full object-cover">
             </button>
           {% endfor %}
         </div>
@@ -71,7 +71,7 @@
     <div class="flex flex-col justify-between">
       <div>
         <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">{{ product.category.name }}</span>
-        <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mt-1 mb-3">
+        <h1 class="font-serif text-2xl sm:text-4xl font-bold text-[#2C1810] mt-1 mb-3 text-balance">
           {{ product.name }}
         </h1>
 
@@ -127,7 +127,7 @@
         </details>
 
         <!-- Add to Cart Form -->
-        <form action="/cart/add/" method="post" class="space-y-6">
+        <form action="/cart/add/" method="post" class="space-y-6" id="pdp-add-form">
           {% csrf_token %}
           <input type="hidden" name="product_id" value="{{ product.id }}">
 
@@ -148,14 +148,15 @@
           {% endif %}
 
           <!-- Quantity Selector -->
-          <div class="flex items-center gap-4">
-            <div class="w-32">
-              <label for="qtyInput" class="text-xs font-bold uppercase tracking-wider text-[#2C1810] block mb-2">Quantity:</label>
+          <div class="flex flex-wrap items-end gap-4">
+            <div class="w-36">
+              <label for="qtyInput" class="text-xs font-bold uppercase tracking-wider text-[#2C1810] block mb-2">Quantity</label>
               <div class="flex items-center border border-[#EADBCE] rounded-xl bg-white overflow-hidden">
                 <button 
                   type="button" 
                   onclick="let q = document.getElementById('qtyInput'); if(q.value > 1) q.value--;"
-                  class="px-3 py-2 text-gray-500 hover:bg-[#FAF7F2] font-bold"
+                  class="px-3 py-3 text-gray-500 hover:bg-[#FAF7F2] font-bold min-w-11 min-h-11"
+                  aria-label="Decrease quantity"
                 >-</button>
                 <input 
                   type="number" 
@@ -164,38 +165,40 @@
                   value="1" 
                   min="1" 
                   max="{{ product.shop_stock }}"
-                  class="w-full text-center text-sm font-semibold focus:outline-none border-none"
+                  inputmode="numeric"
+                  class="w-full text-center text-base font-semibold focus:outline-none border-none py-2.5"
                 >
                 <button 
                   type="button" 
                   onclick="let q = document.getElementById('qtyInput'); q.value++;"
-                  class="px-3 py-2 text-gray-500 hover:bg-[#FAF7F2] font-bold"
+                  class="px-3 py-3 text-gray-500 hover:bg-[#FAF7F2] font-bold min-w-11 min-h-11"
+                  aria-label="Increase quantity"
                 >+</button>
               </div>
             </div>
 
             <!-- Stock status indicator -->
-            <div class="pt-6">
+            <div class="pb-1">
               {% if product.shop_stock > 0 %}
                 <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span> In Stock · Ready to Dispatch
+                  <span class="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true"></span> In Stock
                 </span>
               {% else %}
                 <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-200">
-                  <span class="w-2 h-2 rounded-full bg-rose-500"></span> Out of Stock
+                  <span class="w-2 h-2 rounded-full bg-rose-500" aria-hidden="true"></span> Out of Stock
                 </span>
               {% endif %}
             </div>
           </div>
 
           <!-- Add to Cart CTA -->
-          <div class="pt-2 flex flex-col sm:flex-row gap-3">
+          <div class="pt-2 hidden sm:flex flex-col sm:flex-row gap-3">
             <button 
               type="submit" 
               {% if product.shop_stock <= 0 %}disabled{% endif %}
-              class="flex-1 py-4 px-8 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              class="flex-1 py-4 px-8 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[52px]"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
               </svg>
               <span>Add to Cart</span>
@@ -205,12 +208,36 @@
               href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="py-4 px-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all"
+              class="py-4 px-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all min-h-[52px]"
             >
               <span>Order via WhatsApp</span>
             </a>
           </div>
         </form>
+
+        <!-- Mobile sticky CTA (sits comfortably above floating bottom dock) -->
+        <div class="nest-sticky-cta">
+          <button
+            type="submit"
+            form="pdp-add-form"
+            {% if product.shop_stock <= 0 %}disabled{% endif %}
+            class="nest-button !flex-[2] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Bag · KES {{ product.price|floatformat:"0" }}{% endif %}
+          </button>
+          <a
+            href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="!flex-1 bg-emerald-600 hover:bg-emerald-700 text-white min-h-[46px] rounded-full inline-flex items-center justify-center gap-1.5 text-xs font-bold shadow-sm whitespace-nowrap"
+            aria-label="Order via WhatsApp"
+          >
+            <svg class="w-4 h-4 flex-shrink-0" width="16" height="16" style="width:16px;height:16px;" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.981.534 1.777.828 2.796.828 3.182 0 5.768-2.587 5.768-5.766.001-3.18-2.585-5.765-5.768-5.765zm0-2c4.29 0 7.769 3.477 7.77 7.766 0 4.29-3.479 7.768-7.77 7.768-1.323 0-2.434-.33-3.454-.897l-4.577 1.2 1.221-4.464c-.672-1.09-1.03-2.348-1.03-3.607.001-4.289 3.48-7.766 7.77-7.766z"/>
+            </svg>
+            <span>WhatsApp</span>
+          </a>
+        </div>
 
         <!-- Description -->
         {% if product.description %}

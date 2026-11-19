@@ -126,7 +126,8 @@ class PayPalService:
         usd_amount, currency = self.convert_amount(Decimal(str(order.total)))
 
         frontend_url = os.getenv("FRONTEND_URL", "https://malaikanest.com").rstrip("/")
-        ret_url = return_url or f"{frontend_url}/checkout/success?order={order.receipt_number}&token={order.checkout_token}"
+        api_url = os.getenv("BACKEND_URL", "https://api.malaikanest.com").rstrip("/")
+        ret_url = return_url or f"{api_url}/api/v1/payments/paypal/callback/?order_id={order.id}&receipt={order.receipt_number}&checkout_token={order.checkout_token}"
         can_url = cancel_url or f"{frontend_url}/checkout"
 
         payload = {
@@ -168,6 +169,10 @@ class PayPalService:
         data = resp.json()
         paypal_order_id = data.get("id")
 
+        if paypal_order_id and not payment.paypal_transaction_id:
+            payment.paypal_transaction_id = paypal_order_id
+            payment.save(update_fields=["paypal_transaction_id", "updated_at"])
+
         # Record initiation in PaymentAuditLog
         PaymentAuditLog.objects.create(
             payment=payment,
@@ -196,6 +201,16 @@ class PayPalService:
             "Content-Type": "application/json",
         }
 
+        # Idempotency check: if already completed, return without duplicate side-effects
+        if payment.status == "completed":
+            logger.info("Payment #%s is already completed. Skipping capture call.", payment.id)
+            return {
+                "status": "completed",
+                "paypal_transaction_id": payment.paypal_transaction_id,
+                "order_id": payment.order.id,
+                "receipt_number": payment.order.receipt_number,
+            }
+
         logger.info("Capturing PayPal order %s for Payment #%s", paypal_order_id, payment.id)
         resp = requests.post(url, headers=headers, json={}, timeout=25)
 
@@ -207,9 +222,17 @@ class PayPalService:
         status_val = data.get("status")
 
         if status_val == "COMPLETED":
+            purchase_unit = data.get("purchase_units", [{}])[0]
+            # Validate order / custom_id binding
+            custom_id = purchase_unit.get("custom_id")
+            expected_custom_id = f"MALAIKA_{payment.order.id}"
+            if custom_id and custom_id != expected_custom_id:
+                logger.error("PayPal custom_id mismatch: expected %s, got %s", expected_custom_id, custom_id)
+                raise ValueError("PayPal order does not match local order reference.")
+
             # Extract transaction capture id
             captures = (
-                data.get("purchase_units", [{}])[0]
+                purchase_unit
                 .get("payments", {})
                 .get("captures", [{}])
             )
@@ -217,6 +240,14 @@ class PayPalService:
 
             with transaction.atomic():
                 p = Payment.objects.select_for_update().get(pk=payment.pk)
+                if p.status == "completed":
+                    return {
+                        "status": "completed",
+                        "paypal_transaction_id": p.paypal_transaction_id,
+                        "order_id": p.order.id,
+                        "receipt_number": p.order.receipt_number,
+                    }
+
                 p.status = "completed"
                 p.paypal_transaction_id = capture_id
                 p.completed_at = timezone.now()
@@ -239,11 +270,13 @@ class PayPalService:
 
                 # Transactional outbox event to generate PDF invoice and send email receipt
                 publish_event(
-                    event_type="order.paid",
+                    "order",
+                    str(order.id),
+                    "order.paid",
                     payload={
-                        "order_id": order.id,
+                        "order_id": str(order.id),
                         "receipt_number": order.receipt_number,
-                        "payment_id": p.id,
+                        "payment_id": str(p.id),
                         "payment_method": p.payment_method,
                         "total": str(order.total),
                         "customer_email": order.customer_email or order.guest_email,

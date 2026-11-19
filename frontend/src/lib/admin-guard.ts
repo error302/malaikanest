@@ -114,3 +114,31 @@ export function sanitizeError(e: unknown): string {
     return e.message.replace(/\(.*?[\\/].*?\)/g, '(internal)').slice(0, 200);
   return String(e).slice(0, 200);
 }
+
+/**
+ * Parse `?take=&skip=` for admin list endpoints. take is clamped to 1..200
+ * (default 50); skip is clamped to >= 0.
+ */
+export function parsePagination(req: NextRequest): { take: number; skip: number } {
+  const params = new URL(req.url).searchParams;
+  const take = Math.min(Math.max(parseInt(params.get('take') || '50', 10) || 50, 1), 200);
+  const skip = Math.max(parseInt(params.get('skip') || '0', 10) || 0, 0);
+  return { take, skip };
+}
+
+/**
+ * Wrap an admin route handler with session checking, try/catch, and error sanitization.
+ */
+export async function withAdminGuard(
+  req: NextRequest,
+  handler: () => Promise<NextResponse>
+): Promise<NextResponse> {
+  const guard = await guardAdminRequest(req);
+  if (guard) return guard;
+  try {
+    return await handler();
+  } catch (e: unknown) {
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
+  }
+}
+

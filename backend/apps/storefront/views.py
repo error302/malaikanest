@@ -10,6 +10,7 @@ from apps.products.models import Banner, Category, Product
 from .sizing import filter_size, prepare_product, shopping_queryset
 
 FREE_SHIPPING_THRESHOLD = Decimal("10000.00")
+PUBLIC_STATUS = "published"
 
 
 class HomeView(View):
@@ -17,19 +18,19 @@ class HomeView(View):
         banners = Banner.objects.filter(is_active=True).order_by("position")[:5]
         categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review").order_by("name")
         featured_products = (
-            Product.objects.filter(is_active=True, featured=True)
+            Product.objects.filter(is_active=True, status=PUBLIC_STATUS, featured=True)
             .prefetch_related("images")
             .select_related("category")[:8]
         )
         if not featured_products.exists():
             featured_products = (
-                Product.objects.filter(is_active=True)
+                Product.objects.filter(is_active=True, status=PUBLIC_STATUS)
                 .prefetch_related("images")
                 .select_related("category")[:8]
             )
 
         new_arrivals = (
-            Product.objects.filter(is_active=True)
+            Product.objects.filter(is_active=True, status=PUBLIC_STATUS)
             .prefetch_related("images")
             .select_related("category")
             .order_by("-created_at")[:8]
@@ -45,12 +46,15 @@ class HomeView(View):
             {"label": "4-6 Years", "slug": "4-6y", "image": "/images/ages/4-6y.jpg"},
         ]
 
+        from apps.core.models import SiteSettings
         context = {
             "banners": banners,
+            "active_banner": banners.first() if banners.exists() else None,
             "categories": categories,
             "featured_products": featured_products,
             "new_arrivals": new_arrivals,
             "age_groups": age_groups,
+            "free_shipping_threshold": SiteSettings.get_free_shipping_threshold(),
         }
         return render(request, "storefront/home.html", context)
 
@@ -58,7 +62,7 @@ class HomeView(View):
 class ProductListView(View):
     def get(self, request, category_slug=None):
         queryset = (
-            Product.objects.filter(is_active=True)
+            Product.objects.filter(is_active=True, status=PUBLIC_STATUS)
             .prefetch_related("images")
             .select_related("category")
         )
@@ -66,7 +70,7 @@ class ProductListView(View):
         cat_param = category_slug or request.GET.get("category")
         selected_category = None
         if cat_param:
-            selected_category = Category.objects.filter(slug=cat_param).first()
+            selected_category = Category.resolve_by_path(cat_param)
             if selected_category:
                 # Include subcategories
                 descendant_ids = selected_category.descendant_ids(include_self=True)
@@ -74,9 +78,7 @@ class ProductListView(View):
 
         age_param = request.GET.get("age")
         if age_param:
-            queryset = queryset.filter(
-                Q(age_group=age_param) | Q(age_range__icontains=age_param) | Q(size_label=age_param)
-            )
+            queryset = filter_size(queryset, age_param)
 
         condition_param = request.GET.get("condition")
         if condition_param in ("new", "mtumba"):
@@ -136,15 +138,27 @@ class ProductDetailView(View):
             shopping_queryset(Product.objects.prefetch_related("images").select_related("category")),
             slug=slug,
             is_active=True,
+            status=PUBLIC_STATUS,
         )
 
         prepare_product(product)
         variants = product.shop_variants
+
+        # Related products in same category
         related_products = (
-            Product.objects.filter(category=product.category, is_active=True)
-            .exclude(pk=product.pk)
-            .prefetch_related("images")[:4]
+            shopping_queryset(
+                Product.objects.filter(
+                    category=product.category,
+                    is_active=True,
+                    status=PUBLIC_STATUS,
+                ).exclude(pk=product.pk)
+            )[:4]
         )
+        for rel in related_products:
+            prepare_product(rel)
+
+        from apps.core.models import SiteSettings
+        free_shipping_threshold = SiteSettings.get_free_shipping_threshold()
 
         context = {
             "product": product,
@@ -153,7 +167,7 @@ class ProductDetailView(View):
             "mombasa_fee": get_delivery_fee_for_region("mombasa"),
             "nairobi_fee": get_delivery_fee_for_region("nairobi"),
             "upcountry_fee": get_delivery_fee_for_region("upcountry"),
-            "free_shipping_threshold": FREE_SHIPPING_THRESHOLD,
+            "free_shipping_threshold": free_shipping_threshold,
         }
         return render(request, "storefront/product_detail.html", context)
 
@@ -164,12 +178,13 @@ class StaticPageView(View):
     template_name = None
 
     def get(self, request):
+        from apps.core.models import SiteSettings
         from apps.orders.models import get_delivery_fee_for_region
 
         context = {
             "mombasa_fee": get_delivery_fee_for_region("mombasa"),
             "nairobi_fee": get_delivery_fee_for_region("nairobi"),
             "upcountry_fee": get_delivery_fee_for_region("upcountry"),
-            "free_shipping_threshold": FREE_SHIPPING_THRESHOLD,
+            "free_shipping_threshold": SiteSettings.get_free_shipping_threshold(),
         }
         return render(request, self.template_name, context)

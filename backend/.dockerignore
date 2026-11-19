@@ -11,3 +11,6 @@ staticfiles/
 logs/
 tmp-*.log
 nohup.out
+adminapp/node_modules/
+adminapp/dist/
+.pytest_cache/

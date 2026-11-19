@@ -220,27 +220,49 @@
 <script>
   (function() {
     const pollUrl = "{% url 'storefront:order_status_poll' order.receipt_number %}?token={{ checkout_token }}";
-    let pollInterval = setInterval(checkStatus, 3000);
-
-    function checkStatus() {
-      fetch(pollUrl)
-        .then(res => res.json())
-        .then(data => {
-          if (data.is_paid) {
-            clearInterval(pollInterval);
-            document.getElementById('stkWaitingBox').classList.add('hidden');
-            document.getElementById('tillInstructionsBox').classList.add('hidden');
-            document.getElementById('paidBanner').classList.remove('hidden');
-            document.getElementById('statusBadgeContainer').innerHTML = `
-              <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                PAID · ${data.status_display.toUpperCase()}
-              </span>
-            `;
-          }
-        })
-        .catch(err => console.log('Poll check error:', err));
+    let timer;
+    let stopped = false;
+    let attempts = 0;
+    const feedback = document.createElement("p");
+    feedback.setAttribute("role", "status");
+    feedback.className = "text-sm p-4";
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "Check payment status again";
+    retry.className = "nest-button";
+    retry.hidden = true;
+    document.getElementById("main-content").prepend(feedback, retry);
+    retry.addEventListener("click", function () { attempts = 0; stopped = false; retry.hidden = true; checkStatus(); });
+    async function checkStatus() {
+      if (stopped) return;
+      if (document.hidden || !navigator.onLine) {
+        feedback.textContent = navigator.onLine ? "" : "You are offline. Payment status will refresh when you reconnect.";
+        timer = setTimeout(checkStatus, 5000); return;
+      }
+      try {
+        const response = await fetch(pollUrl, { signal: AbortSignal.timeout(15000), cache: "no-store" });
+        if (!response.ok) throw new Error("Status unavailable");
+        const data = await response.json();
+        if (data.is_paid) {
+          stopped = true;
+          ["stkWaitingBox", "tillInstructionsBox"].forEach(id => document.getElementById(id)?.classList.add("hidden"));
+          document.getElementById("paidBanner")?.classList.remove("hidden");
+          const badge = document.getElementById("statusBadgeContainer");
+          if (badge) badge.textContent = "PAID — " + String(data.status_display || "Paid");
+          feedback.textContent = "Payment confirmed.";
+          return;
+        }
+        feedback.textContent = "Payment has not been confirmed yet. Do not pay again while confirmation is pending.";
+      } catch {
+        feedback.textContent = "We could not refresh payment status. We will retry; check your receipt before paying again.";
+      }
+      attempts++;
+      if (attempts >= 60) { stopped = true; retry.hidden = false; return; }
+      timer = setTimeout(checkStatus, 5000);
     }
+    timer = setTimeout(checkStatus, 3000);
+    window.addEventListener("pagehide", () => { stopped = true; clearTimeout(timer); });
+    window.addEventListener("pageshow", event => { if (event.persisted) { stopped = false; attempts = 0; checkStatus(); } });
   })();
 </script>
 {% endif %}

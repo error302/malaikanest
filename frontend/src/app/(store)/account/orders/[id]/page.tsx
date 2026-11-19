@@ -3,45 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Package, ArrowLeft, Truck, MessageCircle, RefreshCw, MapPin, CreditCard, Calendar } from 'lucide-react';
+import { Package, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import api from '@/lib/api';
-
-interface OrderItem {
-  id: string;
-  product: {
-    id: number;
-    name: string;
-    slug: string;
-    images?: Array<{ url: string; alt?: string }>;
-  };
-  variant: {
-    id: string;
-    color: string;
-    color_label: string;
-    size: string;
-    size_label: string;
-    sku: string;
-  } | null;
-  price: string;
-  quantity: number;
-}
-
-interface Order {
-  id: number;
-  receipt_number: string;
-  status: string;
-  subtotal: string;
-  delivery_fee: string;
-  discount_amount: string;
-  total: string;
-  created_at: string;
-  items: OrderItem[];
-  delivery_region: string;
-  is_gift: boolean;
-  gift_message?: string;
-  mpesa_receipt_number?: string;
-}
+import type { Order } from '@/components/malaika/account/order-detail-types';
+import { OrderItemsList } from '@/components/malaika/account/OrderItemsList';
+import { OrderDeliveryPaymentCards } from '@/components/malaika/account/OrderDeliveryPaymentCards';
+import { OrderTotalSummary } from '@/components/malaika/account/OrderTotalSummary';
+import { OrderActionsBar } from '@/components/malaika/account/OrderActionsBar';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'var(--brand-gold)',
@@ -82,9 +51,7 @@ export default function OrderDetailPage() {
       .get(`/api/v1/orders/${orderId}/`)
       .then((res) => setOrder(res.data))
       .catch((err) => {
-        if (err.response?.status === 404) {
-          setError('Order not found');
-        } else if (err.response?.status === 403) {
+        if (err.response?.status === 404 || err.response?.status === 403) {
           setError('Order not found');
         } else {
           setError('Failed to load order');
@@ -130,7 +97,7 @@ export default function OrderDetailPage() {
           {error || 'Order not found'}
         </h1>
         <p className="text-sm mb-6" style={{ color: 'var(--brand-text-muted)' }}>
-          {error === 'Order not found' ? 'This order may not exist or you don\'t have permission to view it.' : 'Something went wrong. Please try again.'}
+          {error === 'Order not found' ? "This order may not exist or you don't have permission to view it." : 'Something went wrong. Please try again.'}
         </p>
         <Link
           href="/account/orders"
@@ -182,157 +149,18 @@ export default function OrderDetailPage() {
         </span>
       </div>
 
-      <div className="bg-white rounded-2xl border p-5 mb-5" style={{ borderColor: 'var(--brand-border)' }}>
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar size={16} style={{ color: 'var(--brand-text-muted)' }} />
-          <span className="text-sm" style={{ color: 'var(--brand-text-muted)' }}>
-            Ordered on {formattedDate}
-          </span>
-        </div>
+      <OrderItemsList order={order} formattedDate={formattedDate} />
 
-        {order.is_gift && order.gift_message && (
-          <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--brand-bg)' }}>
-            <p className="text-xs font-medium mb-1" style={{ color: 'var(--brand-text-muted)' }}>Gift Message</p>
-            <p className="text-sm italic" style={{ color: 'var(--brand-text)' }}>{order.gift_message}</p>
-          </div>
-        )}
+      <OrderDeliveryPaymentCards order={order} />
 
-        <h2 className="font-medium mb-3" style={{ color: 'var(--brand-text)' }}>Items</h2>
-        <div className="space-y-3">
-          {order.items.map((item) => (
-            <div key={item.id} className="flex gap-3">
-              {item.product.images?.[0] ? (
-                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                  <img
-                    src={item.product.images[0].url}
-                    alt={item.product.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div
-                  className="w-16 h-16 rounded-lg flex-shrink-0 flex items-center justify-center"
-                  style={{ background: 'var(--brand-bg)' }}
-                >
-                  <Package size={24} style={{ color: 'var(--brand-text-muted)' }} />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: 'var(--brand-text)' }}>
-                  {item.product.name}
-                </p>
-                {item.variant && (
-                  <p className="text-xs" style={{ color: 'var(--brand-text-muted)' }}>
-                    {item.variant.color_label || item.variant.color}
-                    {item.variant.size_label ? ` / ${item.variant.size_label}` : ''}
-                  </p>
-                )}
-                <p className="text-xs mt-1" style={{ color: 'var(--brand-text-muted)' }}>
-                  {item.quantity} x KES {parseFloat(item.price).toLocaleString('en-KE')}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
-                  KES {(parseFloat(item.price) * item.quantity).toLocaleString('en-KE')}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <OrderTotalSummary order={order} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-        <div className="bg-white rounded-2xl border p-5" style={{ borderColor: 'var(--brand-border)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <MapPin size={16} style={{ color: 'var(--brand-text-muted)' }} />
-            <h2 className="font-medium" style={{ color: 'var(--brand-text)' }}>Delivery</h2>
-          </div>
-          <p className="text-sm" style={{ color: 'var(--brand-text-muted)' }}>
-            {order.delivery_region
-              ? order.delivery_region.charAt(0).toUpperCase() + order.delivery_region.slice(1)
-              : 'Standard delivery'}
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border p-5" style={{ borderColor: 'var(--brand-border)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <CreditCard size={16} style={{ color: 'var(--brand-text-muted)' }} />
-            <h2 className="font-medium" style={{ color: 'var(--brand-text)' }}>Payment</h2>
-          </div>
-          {order.mpesa_receipt_number ? (
-            <p className="text-sm" style={{ color: 'var(--brand-text-muted)' }}>
-              M-Pesa • {order.mpesa_receipt_number}
-            </p>
-          ) : (
-            <p className="text-sm" style={{ color: 'var(--brand-text-muted)' }}>
-              Payment confirmed
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border p-5 mb-5" style={{ borderColor: 'var(--brand-border)' }}>
-        <h2 className="font-medium mb-3" style={{ color: 'var(--brand-text)' }}>Order Total</h2>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span style={{ color: 'var(--brand-text-muted)' }}>Subtotal</span>
-            <span style={{ color: 'var(--brand-text)' }}>KES {parseFloat(order.subtotal).toLocaleString('en-KE')}</span>
-          </div>
-          {parseFloat(order.discount_amount) > 0 && (
-            <div className="flex justify-between">
-              <span style={{ color: 'var(--brand-text-muted)' }}>Discount</span>
-              <span style={{ color: 'var(--brand-green-light)' }}>-KES {parseFloat(order.discount_amount).toLocaleString('en-KE')}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span style={{ color: 'var(--brand-text-muted)' }}>Delivery</span>
-            <span style={{ color: 'var(--brand-text)' }}>KES {parseFloat(order.delivery_fee).toLocaleString('en-KE')}</span>
-          </div>
-          <div
-            className="flex justify-between pt-2 border-t"
-            style={{ borderColor: 'var(--brand-border)' }}
-          >
-            <span className="font-semibold" style={{ color: 'var(--brand-text)' }}>Total</span>
-            <span className="font-semibold" style={{ color: 'var(--brand-text)' }}>
-              KES {parseFloat(order.total).toLocaleString('en-KE')}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        {order.status === 'shipped' && (
-          <Link
-            href={`/track?order=${order.receipt_number}`}
-            className="flex-1 flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium border transition-colors"
-            style={{ borderColor: 'var(--brand-border)', color: 'var(--brand-text)', background: '#FFFFFF' }}
-          >
-            <Truck size={16} />
-            Track Delivery
-          </Link>
-        )}
-
-        <button
-          onClick={handleReorder}
-          disabled={reordering}
-          className="flex-1 flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-opacity disabled:opacity-50"
-          style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
-        >
-          <RefreshCw size={16} className={reordering ? 'animate-spin' : ''} />
-          {reordering ? 'Adding to cart…' : 'Reorder'}
-        </button>
-
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium border transition-colors"
-          style={{ borderColor: 'var(--brand-green-light)', color: 'var(--brand-green-light)', background: '#FFFFFF' }}
-        >
-          <MessageCircle size={16} />
-          WhatsApp Us
-        </a>
-      </div>
+      <OrderActionsBar
+        order={order}
+        reordering={reordering}
+        whatsappUrl={whatsappUrl}
+        onReorder={handleReorder}
+      />
     </div>
   );
 }

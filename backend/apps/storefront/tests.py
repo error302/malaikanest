@@ -20,6 +20,7 @@ class StorefrontCatalogueViewsTests(TestCase):
             stock=15,
             category=self.category,
             is_active=True,
+            status="published",
             age_group="0-3m",
             description="Super soft organic cotton baby romper.",
         )
@@ -32,6 +33,7 @@ class StorefrontCatalogueViewsTests(TestCase):
             stock=0,
             category=self.category,
             is_active=False,
+            status="published",
             description="Inactive item.",
         )
 
@@ -41,6 +43,61 @@ class StorefrontCatalogueViewsTests(TestCase):
             color="green",
             price_modifier=Decimal("0.00"),
         )
+
+    def test_homepage_excludes_featured_drafts(self):
+        draft = Product.objects.create(
+            name="Unreleased Outfit", category=self.category, price="900.00",
+            is_active=True, featured=True,
+        )
+        self.active_product.featured = True
+        self.active_product.save(update_fields=["featured"])
+        response = self.client.get(reverse("storefront:home"))
+        self.assertEqual(list(response.context["featured_products"]), [self.active_product])
+        self.assertEqual(list(response.context["new_arrivals"]), [self.active_product])
+        self.assertNotContains(response, draft.name)
+        draft.refresh_from_db()
+        self.assertEqual(draft.status, "draft")
+
+    def test_homepage_fallback_excludes_drafts(self):
+        draft = Product.objects.create(
+            name="Unreleased Outfit", category=self.category, price="900.00", is_active=True,
+        )
+        response = self.client.get(reverse("storefront:home"))
+        self.assertEqual(list(response.context["featured_products"]), [self.active_product])
+        self.assertEqual(list(response.context["new_arrivals"]), [self.active_product])
+        self.assertNotContains(response, draft.name)
+
+    def test_catalogue_and_search_exclude_drafts(self):
+        draft = Product.objects.create(
+            name="Unreleased Outfit", category=self.category, price="900.00", is_active=True,
+        )
+        for params in ({}, {"category": self.category.slug}, {"q": "Unreleased"}):
+            with self.subTest(params=params):
+                response = self.client.get(reverse("storefront:product_list"), params)
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn(draft, response.context["products"])
+                self.assertNotContains(response, draft.name)
+
+    def test_product_detail_rejects_active_draft(self):
+        self.active_product.status = "draft"
+        self.active_product.save(update_fields=["status"])
+        response = self.client.get(reverse("storefront:product_detail", args=[self.active_product.slug]))
+        self.assertEqual(response.status_code, 404)
+        self.active_product.refresh_from_db()
+        self.assertEqual(self.active_product.status, "draft")
+
+    def test_related_products_require_active_and_published(self):
+        draft = Product.objects.create(
+            name="Unreleased Outfit", category=self.category, price="900.00", is_active=True,
+        )
+        related = Product.objects.create(
+            name="Published Outfit", category=self.category, price="900.00",
+            is_active=True, status="published",
+        )
+        response = self.client.get(reverse("storefront:product_detail", args=[self.active_product.slug]))
+        self.assertEqual(list(response.context["related_products"]), [related])
+        self.assertNotContains(response, draft.name)
+        self.assertNotContains(response, self.inactive_product.name)
 
     def test_homepage_renders_active_categories_and_products(self):
         """Homepage returns 200, contains active categories and products, and excludes inactive ones."""

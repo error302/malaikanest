@@ -24,11 +24,11 @@ export function CartDrawer() {
   const closeDrawer = useCartDrawer((s) => s.closeDrawer);
   const { items, updateQty, remove, loading } = useCart();
 
-  // Compute subtotal client-side from items. The server-side subtotal lives in
-  // cartContext's internal `cartData` field (not exposed in CartContextType) —
-  // see cart/page.tsx and checkout/page.tsx for the same pattern. Values agree
-  // once the cart hydrates from the API.
-  const subtotal = formatKES(items.reduce((sum, item) => sum + item.price * item.qty, 0));
+  const numericSubtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const FREE_SHIPPING_THRESHOLD = 10000;
+  const progressPct = Math.min(100, Math.round((numericSubtotal / FREE_SHIPPING_THRESHOLD) * 100));
+  const amountRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - numericSubtotal);
+  const subtotal = formatKES(numericSubtotal);
   const itemCount = items.length;
 
   // Lock body scroll while drawer is open
@@ -90,19 +90,53 @@ export function CartDrawer() {
               </button>
             </div>
 
+            {/* Free Shipping Progress in Drawer */}
+            {itemCount > 0 && (
+              <div className="px-6 py-3 border-b border-line bg-paper-alt">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  {numericSubtotal >= FREE_SHIPPING_THRESHOLD ? (
+                    <span className="font-semibold text-emerald-700">✓ Free Kenya delivery unlocked!</span>
+                  ) : (
+                    <span className="text-ink">
+                      Add <strong className="text-accent">KES {amountRemaining.toLocaleString('en-KE')}</strong> for Free Delivery
+                    </span>
+                  )}
+                  <span className="text-[11px] font-bold text-ink-muted">{progressPct}%</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full overflow-hidden bg-line">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${progressPct}%`,
+                      backgroundColor: numericSubtotal >= FREE_SHIPPING_THRESHOLD ? '#10b981' : '#c4904a',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Items */}
             <div className="flex-1 overflow-y-auto p-6">
               {itemCount === 0 ? (
                 <div className="text-center py-16">
                   <ShoppingBag size={48} strokeWidth={1} className="mx-auto text-ink-faint mb-4" />
                   <p className="text-ink-muted mb-6">Your cart is empty</p>
-                  <Link
-                    href="/categories"
-                    onClick={closeDrawer}
-                    className="btn btn-primary"
-                  >
-                    Start Shopping
-                  </Link>
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      href="/categories"
+                      onClick={closeDrawer}
+                      className="btn btn-primary"
+                    >
+                      Start Shopping
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      onClick={closeDrawer}
+                      className="btn btn-ghost text-sm"
+                    >
+                      View Saved Wishlist
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <ul className="space-y-4">
@@ -195,6 +229,13 @@ export function CartDrawer() {
                   className="btn btn-ghost w-full justify-center text-sm"
                 >
                   View full cart
+                </Link>
+                <Link
+                  href="/wishlist"
+                  onClick={closeDrawer}
+                  className="text-xs text-center text-ink-muted hover:text-accent underline transition-colors block pt-1"
+                >
+                  Saved items for later? View Wishlist
                 </Link>
               </div>
             )}

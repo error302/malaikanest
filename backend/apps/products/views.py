@@ -203,24 +203,40 @@ class ProductViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         from urllib.parse import urlencode, parse_qs
 
+        user = getattr(request, "user", None)
+        is_admin = bool(
+            user and user.is_authenticated and (user.is_staff or user.is_superuser)
+        )
+
         params = parse_qs(request.GET.urlencode(), keep_blank_values=True)
         sorted_params = urlencode(sorted(params.items()), doseq=True)
         cache_key = f"products_list_{sorted_params}"
-        cached_data = cache.get(cache_key)
 
-        if cached_data is not None:
-            response = Response(cached_data)
-            patch_cache_control(response, max_age=300, public=True)
-            return response
+        if not is_admin:
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                response = Response(cached_data)
+                patch_cache_control(response, max_age=300, public=True)
+                return response
 
         response = super().list(request, *args, **kwargs)
-        cache.set(cache_key, response.data, timeout=300)
+        if not is_admin:
+            cache.set(cache_key, response.data, timeout=300)
         patch_cache_control(response, max_age=300, public=True)
         return response
 
     def get_queryset(self):
+        user = getattr(self.request, "user", None)
+        is_admin = bool(
+            user
+            and user.is_authenticated
+            and (user.is_staff or user.is_superuser)
+        )
+        base = Product.objects.filter(is_active=True)
+        if not is_admin:
+            base = base.filter(status="published")
         queryset = (
-            Product.objects.filter(is_active=True)
+            base
             .select_related(
                 "category", "category__parent", "category__parent__parent", "brand"
             )

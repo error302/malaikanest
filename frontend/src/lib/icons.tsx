@@ -42,6 +42,10 @@ function wrap(PhComponent: PhIcon, weight: Ph.IconWeight = DEFAULT_WEIGHT) {
   return Comp;
 }
 
+export type LucideIcon = React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<IconProps> & React.RefAttributes<SVGSVGElement>
+> | React.ComponentType<IconProps>;
+
 // ── Name map: lucide name -> Phosphor component ──────────────────────────────
 // Some accents use a specific weight for visual balance.
 export const Home = wrap(Ph.House);
@@ -52,6 +56,8 @@ export const Sparkles = wrap(Ph.Sparkle);
 export const ArrowRight = wrap(Ph.ArrowRight, 'bold');
 export const ArrowLeft = wrap(Ph.ArrowLeft, 'bold');
 export const Mail = wrap(Ph.Envelope);
+export const Bell = wrap(Ph.Bell);
+export const HelpCircle = wrap(Ph.Question);
 export const Check = wrap(Ph.Check, 'bold');
 export const CheckCircle = wrap(Ph.CheckCircle);
 export const Loader2 = wrap(Ph.CircleNotch, 'bold');
@@ -66,6 +72,7 @@ export const ChevronDown = wrap(Ph.CaretDown, 'bold');
 export const ArrowUp = wrap(Ph.ArrowUp, 'bold');
 export const ArrowDown = wrap(Ph.ArrowDown, 'bold');
 export const AlertCircle = wrap(Ph.WarningCircle);
+export const AlertTriangle = wrap(Ph.Warning, 'bold');
 export const Baby = wrap(Ph.Baby);
 export const Heart = wrap(Ph.Heart);
 export const User = wrap(Ph.User);
@@ -94,6 +101,7 @@ export const Minus = wrap(Ph.Minus, 'bold');
 export const SlidersHorizontal = wrap(Ph.SlidersHorizontal);
 export const Truck = wrap(Ph.Truck);
 export const Shield = wrap(Ph.ShieldCheck);
+export const ShieldCheck = Shield;
 export const Leaf = wrap(Ph.Leaf);
 export const RefreshCw = wrap(Ph.ArrowsClockwise, 'bold');
 export const RotateCcw = wrap(Ph.ArrowCounterClockwise, 'bold');
@@ -133,6 +141,8 @@ export const Flame = wrap(Ph.Flame, 'fill');
 export const XCircle = wrap(Ph.XCircle);
 export const Edit2 = wrap(Ph.PencilSimpleLine);
 export const MessageSquareQuote = wrap(Ph.ChatCircleText);
+export const Ruler = wrap(Ph.Ruler);
+export const Info = wrap(Ph.Info);
 
 // ── Additional icons required by shadcn/ui v2 primitives ─────────────────────
 // Newer shadcn/ui (Radix) components import lucide icons with an `Icon` suffix

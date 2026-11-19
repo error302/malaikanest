@@ -11,7 +11,7 @@ import React, {
 
 import { showToast } from '@/lib/toast';
 
-export type WishlistItem = {
+type WishlistItem = {
   id: string;
   productId: number | string;
   name: string;

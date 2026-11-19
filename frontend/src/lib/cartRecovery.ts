@@ -30,18 +30,17 @@ export function trackCartActivity(items: Array<{ id: string; name: string; price
   try {
     const existing = localStorage.getItem(ABANDONED_KEY);
     const now = new Date().toISOString();
-    const cart: AbandonedCart = existing
-      ? { ...JSON.parse(existing), items, total, lastUpdatedAt: now }
+    const previous: AbandonedCart | null = existing ? JSON.parse(existing) : null;
+    // Re-hydrating the same cart on page load is not "activity" — only bump
+    // lastUpdatedAt when the contents actually change.
+    if (previous && JSON.stringify(previous.items) === JSON.stringify(items)) return;
+    const cart: AbandonedCart = previous
+      ? { ...previous, items, total, lastUpdatedAt: now }
       : { items, total, startedAt: now, lastUpdatedAt: now };
     localStorage.setItem(ABANDONED_KEY, JSON.stringify(cart));
   } catch {
     // localStorage may be unavailable
   }
-}
-
-export function clearAbandonedCart() {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(ABANDONED_KEY);
 }
 
 export function getAbandonedCart(): AbandonedCart | null {
@@ -59,12 +58,4 @@ export function getAbandonedCart(): AbandonedCart | null {
   } catch {
     return null;
   }
-}
-
-/**
- * Show a recovery banner if the user has an abandoned cart.
- * Call this on the homepage or any high-traffic page.
- */
-export function shouldShowRecoveryBanner(): boolean {
-  return getAbandonedCart() !== null;
 }

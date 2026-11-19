@@ -39,6 +39,6 @@ export async function PUT(req: NextRequest) {
     invalidateSettingsCache();
     return NextResponse.json({ success: true, updated: body.length });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(e) }, { status: 500 });
   }
 }

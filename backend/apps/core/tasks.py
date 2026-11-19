@@ -28,9 +28,17 @@ def _dispatch_outbox_event(event):
 
     if event.event_type == "order.paid":
         # Reduce inventory, generate invoice, send confirmation email.
-        PaymentService.trigger_post_payment_tasks(event.payload["order_id"])
+        order_id = event.payload.get("order_id")
+        if order_id:
+            PaymentService.trigger_post_payment_tasks(order_id)
+        else:
+            logger.error("Outbox: order.paid event %s missing order_id in payload", event.id)
     elif event.event_type == "order.cancelled":
-        restore_inventory.delay(event.payload["order_id"])
+        order_id = event.payload.get("order_id")
+        if order_id:
+            PaymentService.enqueue_task(restore_inventory, order_id)
+        else:
+            logger.error("Outbox: order.cancelled event %s missing order_id in payload", event.id)
     else:
         logger.warning("Outbox: unknown event_type %s (event %s)", event.event_type, event.id)
 

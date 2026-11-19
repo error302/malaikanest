@@ -7,13 +7,17 @@ const kes = (n: number) =>
 export function Dashboard() {
   const [data, setData] = useState<Analytics | null>(null);
   const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    api.analytics().then(setData).catch((e) => setError(e.message));
-  }, []);
+    let alive = true;
+    setError("");
+    api.analytics().then(value => { if (alive) setData(value); }).catch((e) => { if (alive) setError(e.message); });
+    return () => { alive = false; };
+  }, [attempt]);
 
-  if (error) return <div className="error">{error}</div>;
-  if (!data) return <div className="loading">Loading dashboard…</div>;
+  if (error) return <div className="error" role="alert">{error} <button className="btn ghost" onClick={() => setAttempt(value => value + 1)}>Retry</button></div>;
+  if (!data) return <div className="loading" role="status">Loading dashboard…</div>;
 
   return (
     <>
@@ -49,7 +53,7 @@ export function Dashboard() {
           {data.recent_orders.length === 0 ? (
             <p className="sub">No orders yet.</p>
           ) : (
-            <table>
+            <div className="table-scroll" role="region" aria-label="Dashboard table, scroll horizontally for more columns" tabIndex={0}><table>
               <thead>
                 <tr>
                   <th>Order</th>
@@ -76,7 +80,7 @@ export function Dashboard() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
 
@@ -85,7 +89,7 @@ export function Dashboard() {
           {data.low_stock.length === 0 ? (
             <p className="sub">Nothing running low.</p>
           ) : (
-            <table>
+            <div className="table-scroll" role="region" aria-label="Dashboard table, scroll horizontally for more columns" tabIndex={0}><table>
               <thead>
                 <tr>
                   <th>Product</th>
@@ -100,7 +104,7 @@ export function Dashboard() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

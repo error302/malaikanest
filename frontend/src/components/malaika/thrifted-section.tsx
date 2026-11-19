@@ -7,10 +7,16 @@ import type { ThriftedProduct } from '@/lib/thrifted';
 
 interface ThriftedSectionProps {
   products: ThriftedProduct[];
+  /**
+   * Shown when `products` is empty. Without it the section vanishes silently
+   * (`return null`), leaving the homepage with a bare horizon and no route
+   * into the Mtumba catalogue.
+   */
+  emptyMessage?: string;
 }
 
-export function ThriftedSection({ products }: ThriftedSectionProps) {
-  if (products.length === 0) return null;
+export function ThriftedSection({ products, emptyMessage }: ThriftedSectionProps) {
+  if (products.length === 0 && !emptyMessage) return null;
 
   return (
     <section
@@ -40,8 +46,8 @@ export function ThriftedSection({ products }: ThriftedSectionProps) {
             >
               Pre-loved Treasures
             </h2>
-            <p className="mt-2 text-sm max-w-md" style={{ color: 'var(--brand-text-secondary)' }}>
-              Gently-used premium baby & kids clothing at a fraction of the price. Each item is one-of-a-kind.
+            <p className="mt-2 text-sm max-w-md leading-snug sm:leading-relaxed" style={{ color: 'var(--brand-text-secondary)' }}>
+              Gently-used premium baby &amp; kids clothing at a fraction of the price. Each item is one-of-a-kind.
             </p>
           </div>
           <Link
@@ -53,11 +59,22 @@ export function ThriftedSection({ products }: ThriftedSectionProps) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-          {products.map((p, i) => (
-            <ThriftedCard key={p.id} product={p} index={i} />
-          ))}
-        </div>
+        {products.length === 0 ? (
+          <div
+            className="rounded-2xl border px-6 py-12 text-center"
+            style={{ background: '#FFFFFF', borderColor: 'var(--brand-border)' }}
+          >
+            <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
+              {emptyMessage}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+            {products.map((p, i) => (
+              <ThriftedCard key={p.id} product={p} index={i} />
+            ))}
+          </div>
+        )}
 
         <div className="mt-7 text-center sm:hidden">
           <Link

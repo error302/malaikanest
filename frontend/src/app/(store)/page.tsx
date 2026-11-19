@@ -87,6 +87,7 @@ export default async function HomePage() {
           products={featured}
           columns={4}
           background="white"
+          emptyMessage="New pieces are on their way. Browse everything in the shop, or message us on WhatsApp for personal help choosing a size."
         />
         {/* Below-fold sections skip rendering until scrolled near — free
             main-thread savings on low-end Androids. Intrinsic sizes keep
@@ -106,14 +107,22 @@ export default async function HomePage() {
             products={bestSellers}
             columns={4}
             background="bg-alt"
+            emptyMessage="We're still counting up our most-loved pieces. In the meantime, the full shop is open."
           />
         </div>
         <div className="[content-visibility:auto] [contain-intrinsic-size:auto_620px]">
-          <ThriftedSection products={thrifted} />
+          <ThriftedSection
+            products={thrifted}
+            emptyMessage="Fresh pre-loved finds land every week. Check back soon, or browse the Mtumba collection for what's available now."
+          />
         </div>
         <div className="[content-visibility:auto] [contain-intrinsic-size:auto_420px]">
           <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100" />}>
-            <DynamicTestimonials content={content} testimonials={testimonials} />
+            <DynamicTestimonials
+              content={content}
+              testimonials={testimonials}
+              emptyMessage="We'd love to hear how your order went — reviews from Mombasa families appear here once shared."
+            />
           </Suspense>
         </div>
         <div className="[content-visibility:auto] [contain-intrinsic-size:auto_760px]">
@@ -126,6 +135,7 @@ export default async function HomePage() {
             products={newArrivals}
             columns={4}
             background="white"
+            emptyMessage="The next drop is being unpacked. Follow us on WhatsApp to hear first when it lands."
           />
         </div>
         <div className="[content-visibility:auto] [contain-intrinsic-size:auto_340px]">

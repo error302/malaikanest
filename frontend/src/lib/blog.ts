@@ -107,22 +107,6 @@ export async function getPublishedPosts(limit = 12): Promise<BlogPost[]> {
   return SAMPLE_POSTS.slice(0, limit);
 }
 
-export async function getFeaturedPosts(limit = 3): Promise<BlogPost[]> {
-  try {
-    if (db && db.blogPost) {
-      const rows = await db.blogPost.findMany({
-        where: { isPublished: true, isFeatured: true },
-        orderBy: { publishedAt: 'desc' },
-        take: limit,
-      });
-      if (rows.length > 0) return rows.map(normalize);
-    }
-  } catch {
-    // fall through to sample
-  }
-  return SAMPLE_POSTS.filter((p) => p.isFeatured).slice(0, limit);
-}
-
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
     if (db && db.blogPost) {

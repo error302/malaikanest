@@ -12,6 +12,8 @@ from .views import (
     PaymentStatusByIdView,
     PaymentVerifyView,
     PayPalCallbackView,
+    PayPalCaptureView,
+    PayPalInitiateView,
     PesapalCallbackView,
     PesapalInitiateView,
     PesapalIPNView,
@@ -27,6 +29,8 @@ urlpatterns = [
     # Polling endpoint: frontend polls this every 3s after STK push (2-minute window)
     path('<int:pk>/status/', PaymentStatusByIdView.as_view(), name='payment_status_by_id'),
     path('verify/<str:checkout_request_id>/', PaymentVerifyView.as_view(), name='payment_verify'),
+    path('paypal/initiate/', PayPalInitiateView.as_view(), name='paypal_initiate'),
+    path('paypal/capture/', PayPalCaptureView.as_view(), name='paypal_capture'),
     path('paypal/callback/', PayPalCallbackView.as_view(), name='paypal_callback'),
     path('card/callback/', CardCallbackView.as_view(), name='card_callback'),
     path('pesapal/initiate/', PesapalInitiateView.as_view(), name='pesapal_initiate'),

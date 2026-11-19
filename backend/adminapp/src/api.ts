@@ -2,48 +2,93 @@
 
 const BASE = "/api";
 
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 function setAccessCookie(jwt: string | null) {
   // CookieJWTAuthentication reads `access_token` from cookies; the JWT lives
   // only for the access lifetime and is wiped on logout.
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
   if (jwt) {
-    document.cookie = `access_token=${jwt}; path=/; SameSite=Lax`;
+    document.cookie = `access_token=${jwt}; path=/; SameSite=Lax${secure}`;
   } else {
-    document.cookie = "access_token=; path=/; Max-Age=0";
+    document.cookie = `access_token=; path=/; Max-Age=0${secure}`;
   }
 }
 
-async function refreshAccess(): Promise<boolean> {
+let refreshPending: Promise<boolean> | null = null;
+function refreshAccess(): Promise<boolean> {
+  if (!refreshPending) refreshPending = performRefresh().finally(() => { refreshPending = null; });
+  return refreshPending;
+}
+async function performRefresh(): Promise<boolean> {
   try {
+    const csrf = getCsrfToken();
     const res = await fetch(BASE + "/accounts/token/refresh/", {
       method: "POST",
       credentials: "same-origin",
+      headers: csrf ? { "X-CSRFToken": csrf } : undefined,
+      signal: AbortSignal.timeout(25000),
     });
+    if (res.status >= 500) throw new ApiError("Session check unavailable. Please retry.", res.status);
     if (!res.ok) return false;
-    const data = (await res.json()) as { access?: string };
+    const body = (await res.json()) as { access?: string; data?: { access?: string } };
+    const data = body.data ?? body;
     if (!data.access) return false;
     setAccessCookie(data.access);
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError("Cannot refresh the session. Check your connection and retry.", 0);
   }
 }
 
 async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
-  const res = await fetch(BASE + path, {
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
+  const csrf = getCsrfToken();
+  const method = (init?.method || "GET").toUpperCase();
+  const headers: Record<string, string> = {
+    ...((init?.headers as Record<string, string>) || {}),
+  };
+  if (init?.body && !isFormData && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (csrf && !["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    headers["X-CSRFToken"] = csrf;
+  }
+
+  const hasHeaders = Object.keys(headers).length > 0;
+
+  let res: Response;
+  try {
+  res = await fetch(BASE + path, {
     credentials: "same-origin",
-    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
     ...init,
+    headers: hasHeaders ? headers : undefined,
+    signal: init?.signal ?? AbortSignal.timeout(25000),
   });
-  if (res.status === 401 && !retried && !path.startsWith("/accounts/")) {
+  } catch {
+    throw new ApiError(method === "GET" ? "Cannot reach the store. Check your connection and retry." : "Connection interrupted. The change may have reached the store. Check the saved record before retrying.", 0);
+  }
+  if (res.status === 401 && !retried && !["/accounts/admin/login/", "/accounts/token/refresh/"].includes(path)) {
     if (await refreshAccess()) return request<T>(path, init, true);
     throw new ApiError("Session expired — sign in again", 401);
   }
   if (res.status === 401) throw new ApiError("Not authenticated", 401);
   if (res.status === 204) return undefined as T;
   // DRF responses use the standard envelope {status, data} / {status:"error", error:{message}}.
-  const body = await res.json();
+  const body = await res.json().catch(() => {
+    throw new ApiError(`Unexpected server response (${res.status}). Please retry.`, res.status);
+  });
   if (!res.ok || body.status === "error") {
-    throw new ApiError(body?.error?.message ?? `Request failed (${res.status})`, res.status);
+    const details = body?.error?.details;
+    const message = details && typeof details === "object"
+      ? Object.entries(details).map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(" ") : String(messages)}`).join(" ")
+      : "";
+    throw new ApiError(message || body?.error?.message || body?.detail || `Request failed (${res.status})`, res.status);
   }
   return (body.data ?? body) as T;
 }
@@ -67,11 +112,8 @@ export const api = {
   },
   session: () => request<{ is_staff: boolean; email: string; role: string }>("/accounts/admin/session/"),
   logout: async () => {
-    try {
-      await request<{ detail?: string }>("/accounts/logout/", { method: "POST" });
-    } finally {
-      setAccessCookie(null);
-    }
+    await request<{ detail?: string }>("/accounts/logout/", { method: "POST" });
+    setAccessCookie(null);
   },
   analytics: () => request<Analytics>("/orders/admin/analytics/"),
   products: async (params: string) => asPaged<Product>(await request<unknown>(`/products/admin/products/${params}`)),
@@ -81,9 +123,81 @@ export const api = {
       id ? `/products/admin/products/${id}/` : "/products/admin/products/",
       { method: id ? "PATCH" : "POST", body: JSON.stringify(body) }
     ),
+  /** Multipart save for photo changes: the backend reads image/gallery_images
+   * (FILES) plus delete_image_ids / primary_image_id from request.data. */
+  saveProductMultipart: (id: string, fields: Record<string, string>, files: { key: string; file: File }[]) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    for (const { key, file } of files) fd.append(key, file);
+    return request<Product>(`/products/admin/products/${id}/`, {
+      method: "PATCH",
+      body: fd,
+    });
+  },
+  deleteProductImage: (productId: string, imageId: string) =>
+    request<Product>(`/products/admin/products/${productId}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ delete_image_ids: [imageId] }),
+    }),
+  setPrimaryImage: (productId: string, imageId: string) =>
+    request<Product>(`/products/admin/products/${productId}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ primary_image_id: imageId }),
+    }),
   productVariants: (id: string) =>
-    request<{ variants?: Variant[] }>(`/products/admin/products/${id}/`),
+    request<{ variants?: Variant[]; images?: ProductImage[]; image?: string | null; image_full_url?: string | null }>(
+      `/products/admin/products/${id}/`
+    ),
   categories: () => request<Category[]>("/products/admin/categories/"),
+  saveCategory: (id: string | null, body: Partial<Category>) =>
+    request<Category>(
+      id ? `/products/admin/categories/${id}/` : "/products/admin/categories/",
+      { method: id ? "PATCH" : "POST", body: JSON.stringify(body) }
+    ),
+  saveCategoryMultipart: (id: string, fields: Record<string, string>, file?: File) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    if (file) fd.append("image", file);
+    return request<Category>(`/products/admin/categories/${id}/`, {
+      method: "PATCH",
+      body: fd,
+    });
+  },
+  deleteCategory: (id: string) =>
+    request<void>(`/products/admin/categories/${id}/`, { method: "DELETE" }),
+  banners: () => request<Banner[]>("/products/admin/banners/"),
+  saveBanner: (id: string | null, body: Partial<Banner>) =>
+    request<Banner>(
+      id ? `/products/admin/banners/${id}/` : "/products/admin/banners/",
+      { method: id ? "PATCH" : "POST", body: JSON.stringify(body) }
+    ),
+  saveBannerMultipart: (id: string | null, fields: Record<string, string>, image?: File, mobileImage?: File) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    if (image) fd.append("image", image);
+    if (mobileImage) fd.append("mobile_image", mobileImage);
+    return request<Banner>(id ? `/products/admin/banners/${id}/` : "/products/admin/banners/", {
+      method: id ? "PATCH" : "POST",
+      body: fd,
+    });
+  },
+  deleteBanner: (id: string) =>
+    request<void>(`/products/admin/banners/${id}/`, { method: "DELETE" }),
+  settings: () => request<SiteSettings>("/core/settings/"),
+  saveSettings: (body: Partial<SiteSettings>) =>
+    request<SiteSettings>("/core/settings/", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  saveSettingsMultipart: (fields: Record<string, string>, logoFile?: File) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    if (logoFile) fd.append("logo", logoFile);
+    return request<SiteSettings>("/core/settings/", {
+      method: "PATCH",
+      body: fd,
+    });
+  },
   orders: async (params: string) =>
     asPaged<Order>(await request<unknown>(`/products/admin/orders/${params}`)),
   updateOrderStatus: (id: string, orderStatus: string) =>
@@ -157,6 +271,13 @@ export const COLOR_CHOICES: { value: string; label: string }[] = [
   "purple", "orange", "brown", "beige", "multi",
 ].map((c) => ({ value: c, label: c[0].toUpperCase() + c.slice(1) }));
 
+export interface ProductImage {
+  id: string;
+  url: string;
+  alt_text: string;
+  is_primary: boolean;
+}
+
 export interface Variant {
   id?: string;
   color: string;
@@ -179,7 +300,16 @@ export interface Product {
   featured?: boolean;
   category?: { id: string; name: string; slug: string } | string | null;
   image?: string | null;
+  image_url?: string | null;
+  image_full_url?: string | null;
+  images?: ProductImage[];
+  description?: string;
+  fabric?: string;
+  whats_included?: string;
   size_guide?: string;
+  size_label?: string;
+  status?: "draft" | "published";
+  category_name?: string;
   variants?: Variant[];
   [key: string]: unknown;
 }
@@ -188,8 +318,50 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  parent?: { id: string; name: string } | null;
+  parent?: { id: string; name: string } | string | null;
+  full_slug?: string;
   product_count?: number;
+  description?: string;
+  group?: string;
+  image?: string | null;
+  image_url?: string | null;
+  image_full_url?: string | null;
+  level?: number;
+}
+
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle: string;
+  button_text: string;
+  button_link: string | null;
+  image?: string | null;
+  image_url?: string | null;
+  image_full_url?: string | null;
+  mobile_image?: string | null;
+  mobile_image_url?: string | null;
+  mobile_image_full_url?: string | null;
+  is_active: boolean;
+  position: number;
+  created_at?: string;
+}
+
+export interface SiteSettings {
+  site_name: string;
+  site_description: string;
+  contact_email: string;
+  contact_phone: string;
+  address: string;
+  facebook_url?: string;
+  instagram_url?: string;
+  twitter_url?: string;
+  shipping_fee: string;
+  free_shipping_threshold: string;
+  minimum_order_amount: string;
+  logo?: string | null;
+  logo_url?: string | null;
+  logo_full_url?: string | null;
+  updated_at?: string;
 }
 
 export type OrderStatus =
