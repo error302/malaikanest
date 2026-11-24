@@ -1,20 +1,29 @@
 {% extends "storefront/base.html" %}
-{% load static %}
+{% load static cloudinary_tags %}
 
 {% block title %}Baby & Children's Clothes in Mombasa, Kenya | Malaika Nest{% endblock %}
 {% block meta_description %}Shop baby and children's clothes at Malaika Nest. Browse by size, order for delivery in Kenya or pick up at Tawakal Toto Shop in Likoni, Mombasa.{% endblock %}
 
-{% block extra_head %}<link rel="stylesheet" href="{% static 'nest-home/storefront-home.css' %}">{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'nest-home/storefront-home.css' %}">
+{% if active_banner.get_image_url %}
+<link rel="preload" as="image" href="{{ active_banner.get_image_url|cloudinary_auto }}" fetchpriority="high">
+{% elif active_banner.get_mobile_image_url %}
+<link rel="preload" as="image" href="{{ active_banner.get_mobile_image_url|cloudinary_auto }}" fetchpriority="high" media="(max-width: 640px)">
+{% else %}
+<link rel="preload" as="image" href="{% static 'nest-home/coastal-campaign.webp' %}" fetchpriority="high">
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <section class="boutique-hero" aria-labelledby="shop-intro">
   <picture class="boutique-hero-photo">
     {% if active_banner.get_mobile_image_url %}
-      <source media="(max-width: 640px)" srcset="{{ active_banner.get_mobile_image_url }}">
+      <source media="(max-width: 640px)" srcset="{{ active_banner.get_mobile_image_url|cloudinary_auto }}">
     {% elif not active_banner.get_image_url %}
       <source media="(max-width: 640px)" srcset="{% static 'nest-home/coastal-campaign-mobile.webp' %}">
     {% endif %}
-    <img src="{% if active_banner.get_image_url %}{{ active_banner.get_image_url }}{% else %}{% static 'nest-home/coastal-campaign.webp' %}{% endif %}"
+    <img src="{% if active_banner.get_image_url %}{{ active_banner.get_image_url|cloudinary_auto }}{% else %}{% static 'nest-home/coastal-campaign.webp' %}{% endif %}"
          alt="" width="1280" height="853" fetchpriority="high">
   </picture>
   <div class="boutique-hero-content shop-frame">
@@ -73,9 +82,27 @@
     {% for cat in categories %}
       <a href="{% url 'storefront:category_detail' category_slug=cat.slug %}">
         {% if cat.get_image_url %}
-          <img src="{{ cat.get_image_url }}" alt="" width="64" height="64" loading="lazy" decoding="async">
+          <img src="{{ cat.get_image_url|cloudinary_auto }}" alt="" width="64" height="64" loading="lazy" decoding="async">
+        {% else %}
+          <div class="skeleton skeleton-category" aria-hidden="true"></div>
         {% endif %}
         <span>{{ cat.name }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% else %}
+<section id="categories" class="nest-home-section shop-frame" aria-labelledby="shop-by-category" aria-hidden="true">
+  <div class="nest-section-heading">
+    <h2 id="shop-by-category">Shop by category</h2>
+    <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View the catalogue</a>
+  </div>
+  <div class="nest-category-grid">
+    {% for i in "123456" %}
+      <a href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none;">
+        <div class="skeleton skeleton-category" aria-hidden="true"></div>
+        <span class="skeleton skeleton-text" style="width: 80px; display: block; margin-top: 8px;"></span>
       </a>
     {% endfor %}
   </div>
@@ -93,9 +120,9 @@
       <a class="nest-home-product" href="{% url 'storefront:product_detail' slug=product.slug %}">
         <div class="nest-home-product-photo">
           {% if product.get_image_url %}
-            <img src="{{ product.get_image_url }}" alt="" width="600" height="750" loading="lazy" decoding="async">
+            <img src="{{ product.get_image_url|cloudinary_auto }}" alt="" width="600" height="750" loading="lazy" decoding="async">
           {% elif product.images.first %}
-            <img src="{{ product.images.first.image.url }}" alt="" width="600" height="750" loading="lazy" decoding="async">
+            <img src="{{ product.images.first.image.url|cloudinary_auto }}" alt="" width="600" height="750" loading="lazy" decoding="async">
           {% else %}
             <span>Photo coming soon</span>
           {% endif %}
@@ -112,13 +139,21 @@
   </div>
 </section>
 {% else %}
-<section class="nest-home-section shop-frame" aria-labelledby="shop-stock">
-  <div class="coast-empty">
-    <div>
-      <h2 id="shop-stock">Our online shelves are filling up</h2>
-      <p>Ask us what’s in stock at Tawakal Toto Shop while we add clothes to the online shop.</p>
-    </div>
-    <a href="{{ whatsapp_url }}" class="coast-button">Ask on WhatsApp <span aria-hidden="true">↗</span></a>
+<section class="nest-home-section shop-frame" aria-labelledby="shop-stock" aria-hidden="true">
+  <div class="nest-section-heading">
+    <h2 id="on-the-rails" class="skeleton skeleton-title" aria-hidden="true"></h2>
+    <div class="skeleton skeleton-text" style="width: 40%;" aria-hidden="true"></div>
+  </div>
+  <div class="nest-home-products">
+    {% for i in "1234" %}
+      <a class="nest-home-product" href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none;">
+        <div class="nest-home-product-photo">
+          <div class="skeleton skeleton-image" aria-hidden="true"></div>
+        </div>
+        <h3 class="skeleton skeleton-title" aria-hidden="true"></h3>
+        <p class="skeleton skeleton-text" style="width: 60%;" aria-hidden="true"></p>
+      </a>
+    {% endfor %}
   </div>
 </section>
 {% endif %}

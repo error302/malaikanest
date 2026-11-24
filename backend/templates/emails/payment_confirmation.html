@@ -10,27 +10,27 @@
 
 {% block header_content %}
 <tr>
-  <td style="background:#FDF3EA;padding:40px 40px 32px;text-align:center;">
+  <td style="background:#FDF3EA;padding:48px 40px 40px;text-align:center;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td align="center" style="font-size:0;">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="background:#7A8E6B;border-radius:50%;width:64px;height:64px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="background:#7A8E6B;border-radius:50%;width:80px;height:80px;box-shadow:0 4px 16px rgba(122,142,107,0.3);">
             <tr>
-              <td align="center" valign="middle" style="font-family:Georgia,'Times New Roman',serif;font-size:30px;color:#FFFFFF;">✓</td>
+              <td align="center" valign="middle" style="font-family:Georgia,'Times New Roman',serif;font-size:36px;color:#FFFFFF;">✓</td>
             </tr>
           </table>
         </td>
       </tr>
-      <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr><td style="height:20px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
-        <td style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:700;color:#2D1810;line-height:1.3;">
+        <td style="font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:700;color:#2D1810;line-height:1.3;">
           Payment Confirmed!
         </td>
       </tr>
       <tr><td style="height:8px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
-        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;color:#6B4A3A;line-height:1.5;">
-          Thank you for your purchase. Your order is now being prepared.
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:16px;color:#6B4A3A;line-height:1.6;">
+          Thank you for your purchase. Your order is now being prepared with care.
         </td>
       </tr>
     </table>
@@ -43,24 +43,25 @@
   <td style="padding:32px 40px 8px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
-        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:16px;color:#2D1810;line-height:1.7;">
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:17px;color:#2D1810;line-height:1.7;">
           <p style="margin:0 0 4px;">Hi <strong>{{ customer_name }}</strong>,</p>
-          <p style="margin:0 0 20px;">Your payment was successful and we've attached your invoice below.</p>
+          <p style="margin:0 0 24px;">Your payment was successful and we've attached your official invoice below. Your order <strong>#{{ order.id }}</strong> is now confirmed and being processed.</p>
         </td>
       </tr>
 
+      <!-- Order Summary Card -->
       <tr>
-        <td style="background:#FDF3EA;border-radius:12px;padding:20px 24px;">
+        <td style="background:#FDF3EA;border-radius:14px;padding:24px 28px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B7A6A;padding-bottom:12px;">Order Summary</td>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8B7A6A;padding-bottom:16px;">Order Summary</td>
             </tr>
             <tr>
-              <td style="padding-bottom:8px;">
+              <td>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;">Order Number</td>
-                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;">#{{ order.id }}</td>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:6px 0;width:50%;">Order Number</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding:6px 0;">#{{ order.id }}</td>
                   </tr>
                   {% if invoice %}
                   <tr>
@@ -70,20 +71,20 @@
                   {% endif %}
                   <tr>
                     <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Date</td>
-                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.paid_at|date:"F j, Y"|default:"Today" }}</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.paid_at|date:"l, d F Y"|default:"Today" }}</td>
                   </tr>
                   <tr>
-                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Payment</td>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Payment Method</td>
                     <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.get_payment_method_display|default:"M-Pesa" }}</td>
                   </tr>
                   {% if order.mpesa_receipt_number %}
                   <tr>
                     <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">M-Pesa Receipt</td>
-                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;font-family:monospace;padding-top:6px;">{{ order.mpesa_receipt_number }}</td>
+                    <td align="right" style="font-family:monospace;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.mpesa_receipt_number }}</td>
                   </tr>
                   {% endif %}
                   <tr>
-                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Delivery</td>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding-top:6px;">Delivery Region</td>
                     <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding-top:6px;">{{ order.get_delivery_region_display }}</td>
                   </tr>
                 </table>
@@ -93,71 +94,99 @@
         </td>
       </tr>
 
+      <!-- Items Ordered -->
       <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
         <td>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B7A6A;padding-bottom:8px;">Items Ordered</td>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8B7A6A;padding-bottom:10px;">Items Ordered</td>
             </tr>
-          </table>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr style="border-bottom:2px solid #EDDCC8;">
-              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:600;color:#5C3A21;padding:8px 0;">Item</td>
-              <td align="center" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:600;color:#5C3A21;padding:8px 0;">Qty</td>
-              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;font-weight:600;color:#5C3A21;padding:8px 0;">Price</td>
-            </tr>
-            {% for item in order.items.all %}
-            <tr style="border-bottom:1px solid #EDDCC8;">
-              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:10px 0;">{{ item.product.name }}</td>
-              <td align="center" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:10px 0;">{{ item.quantity }}</td>
-              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:10px 0;">KES {{ item.price }}</td>
-            </tr>
-            {% endfor %}
           </table>
         </td>
       </tr>
+      {% for item in order.items.all %}
+      <tr>
+        <td style="background:#FFFFFF;border:1px solid #EDDCC8;border-radius:12px;padding:16px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              {% if item.product.get_image_url %}
+              <td style="width:64px;padding-right:16px;vertical-align:top;">
+                <img src="{{ item.product.get_image_url }}" alt="{{ item.product.name }}" width="64" height="64" style="width:64px;height:64px;border-radius:10px;object-fit:cover;display:block;border:1px solid #EDDCC8;">
+              </td>
+              {% else %}
+              <td style="width:64px;padding-right:16px;vertical-align:top;">
+                <div style="width:64px;height:64px;border-radius:10px;background:#FDF3EA;border:1px solid #EDDCC8;display:flex;align-items:center;justify-content:center;font-family:Georgia,sans-serif;font-size:18px;font-weight:700;color:#C8956C;">MN</div>
+              </td>
+              {% endif %}
+              <td style="vertical-align:top;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:15px;color:#2D1810;font-weight:600;line-height:1.4;">{{ item.product.name }}</td>
+                  </tr>
+                  {% if item.variant %}
+                  <tr>
+                    <td style="padding-top:4px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#8B7A6A;line-height:1.5;">
+                      {% if item.variant.size %}Size: {{ item.variant.size }}{% endif %}{% if item.variant.color %}{% if item.variant.size %} · {% endif %}Color: {{ item.variant.get_color_display|default:item.variant.color }}{% endif %}
+                    </td>
+                  </tr>
+                  {% endif %}
+                  <tr>
+                    <td style="padding-top:8px;font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;">Qty: <strong style="color:#2D1810;">{{ item.quantity }}</strong> × KES {{ item.price }}</td>
+                  </tr>
+                </table>
+              </td>
+              <td align="right" style="vertical-align:top;padding-left:16px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;color:#2D1810;white-space:nowrap;">KES {{ item.line_total|default:item.total_price|default:item.price|floatformat:0 }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr><td style="height:8px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      {% endfor %}
 
+      <!-- Price Breakdown -->
       <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
-        <td>
+        <td style="background:#FDF3EA;border-radius:14px;padding:20px 28px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
               <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:4px 0;">Subtotal</td>
-              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:4px 0;">KES {{ order.subtotal }}</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:4px 0;">KES {{ order.subtotal|floatformat:0 }}</td>
             </tr>
             {% if order.discount_amount and order.discount_amount != "0.00" %}
             <tr>
               <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#7A8E6B;padding:4px 0;">Discount</td>
-              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#7A8E6B;padding:4px 0;">- KES {{ order.discount_amount }}</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#7A8E6B;padding:4px 0;">- KES {{ order.discount_amount|floatformat:0 }}</td>
             </tr>
             {% endif %}
             <tr>
               <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:4px 0;">Delivery Fee</td>
-              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:4px 0;">KES {{ order.delivery_fee }}</td>
+              <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:4px 0;">KES {{ order.delivery_fee|floatformat:0 }}</td>
             </tr>
             <tr>
-              <td style="padding-top:8px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">Total Paid</td>
-              <td align="right" style="padding-top:8px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">KES {{ order.total }}</td>
+              <td style="padding-top:12px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">Total Paid</td>
+              <td align="right" style="padding-top:12px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">KES {{ order.total|floatformat:0 }}</td>
             </tr>
           </table>
         </td>
       </tr>
 
+      <!-- Shipping Address -->
       {% if order.shipping_address or order.shipping_city %}
       <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
-        <td style="background:#FDF3EA;border-radius:12px;padding:16px 20px;">
+        <td style="background:#FDF3EA;border-radius:14px;padding:20px 24px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#8B7A6A;padding-bottom:8px;">Shipping To</td>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8B7A6A;padding-bottom:10px;">Shipping To</td>
             </tr>
             <tr>
-              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;line-height:1.6;">
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;line-height:1.7;">
                 {{ order.shipping_name }}<br>
                 {% if order.shipping_address %}{{ order.shipping_address }}<br>{% endif %}
-                {% if order.shipping_city %}{{ order.shipping_city }}{% if order.shipping_region %}, {{ order.shipping_region }}{% endif %}{% endif %}
-                {% if order.shipping_phone %}<br>📞 {{ order.shipping_phone }}{% endif %}
+                {% if order.shipping_city %}{{ order.shipping_city }}{% if order.shipping_region %}, {{ order.shipping_region }}{% endif %}{% if order.shipping_postal_code %} {{ order.shipping_postal_code }}{% endif %}<br>{% endif %}
+                {% if order.shipping_country %}{{ order.shipping_country }}<br>{% endif %}
+                {% if order.shipping_phone %}📞 {{ order.shipping_phone }}{% endif %}
               </td>
             </tr>
           </table>
@@ -165,13 +194,14 @@
       </tr>
       {% endif %}
 
+      <!-- CTA Button -->
       <tr><td style="height:28px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
         <td align="center">
           <table role="presentation" cellpadding="0" cellspacing="0">
             <tr>
               <td align="center" style="background:linear-gradient(135deg,#C8956C,#B07D5A);border-radius:50px;padding:0;">
-                <a href="https://malaikanest.com/orders/{{ order.receipt_number }}/?token={{ order.checkout_token }}" target="_blank" style="display:inline-block;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;padding:14px 36px;border-radius:50px;background:transparent;">View My Order</a>
+                <a href="https://malaikanest.com/orders/{{ order.receipt_number }}/?token={{ order.checkout_token }}" target="_blank" style="display:inline-block;font-family:'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:700;color:#FFFFFF;text-decoration:none;padding:16px 44px;border-radius:50px;background:transparent;">View My Order & Track</a>
               </td>
             </tr>
           </table>
@@ -180,16 +210,23 @@
 
       <tr><td style="height:20px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
-        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;line-height:1.6;">
-          We'll send you another email as soon as your order ships. If you have any questions, reply to this email or reach out on WhatsApp.
+        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;line-height:1.6;text-align:center;">
+          We'll send you another email as soon as your order ships.<br>
+          Questions? Reply to this email or <a href="https://wa.me/254726771321" style="color:#C8956C;text-decoration:none;">WhatsApp us</a>
         </td>
       </tr>
 
       {% if invoice %}
-      <tr><td style="height:12px;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <tr><td style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr>
-        <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#8B7A6A;">
-          📎 Your invoice ({{ invoice.invoice_number }}) is attached as a PDF.
+        <td style="background:#FDF3EA;border-radius:10px;padding:14px 20px;text-align:center;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#6B4A3A;">
+                📎 Your official invoice (<strong>{{ invoice.invoice_number }}</strong>) is attached as a PDF for your records.
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
       {% endif %}
@@ -199,7 +236,7 @@
 {% endblock %}
 
 {% block footer_disclaimer %}
-You received this email because you placed an order on Malaika Nest.
+You received this email because you placed order #{{ order.id }} on Malaika Nest.
 {% endblock %}
 
 {% block footer_contacts %}

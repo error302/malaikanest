@@ -1,5 +1,5 @@
 {% extends "storefront/base.html" %}
-{% load static %}
+{% load static cloudinary_tags %}
 
 {% block title %}Saved Items · Malaika Nest{% endblock %}
 {% block meta_description %}The baby and kids clothes you have saved at Malaika Nest. Pick up where you left off.{% endblock %}
@@ -23,9 +23,9 @@
         <div class="nest-product-card bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-lg transition-all flex flex-col group relative">
           <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="block relative aspect-square bg-[#FAF7F2] overflow-hidden">
             {% if product.get_image_url %}
-              <img src="{{ product.get_image_url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              <img src="{{ product.get_image_url|cloudinary_auto }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             {% elif product.images.first %}
-              <img src="{{ product.images.first.get_image_url|default:product.images.first.image.url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              <img src="{{ product.images.first.get_image_url|default:product.images.first.image.url|cloudinary_auto }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             {% else %}
               <div class="w-full h-full flex items-center justify-center font-serif text-3xl font-bold text-[#EADBCE]">MN</div>
             {% endif %}

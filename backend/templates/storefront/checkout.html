@@ -1,5 +1,5 @@
 {% extends "storefront/base.html" %}
-{% load static %}
+{% load static cloudinary_tags %}
 
 {% block title %}Secure Checkout · Malaika Nest{% endblock %}
 
@@ -276,7 +276,24 @@
             </div>
           </label>
 
-          <!-- Option 3: PayPal (Temporarily Disabled for Maintenance) -->
+          <!-- Option 3: Cash on Delivery -->
+          <label class="block border border-[#EADBCE] rounded-2xl p-4 cursor-pointer hover:border-[#8B6914] transition-colors has-[:checked]:border-[#8B6914] has-[:checked]:bg-amber-50/40">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="payment_method" value="cod" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" class="text-[#8B6914] focus:ring-[#8B6914]">
+                <div>
+                  <div class="text-sm font-bold text-[#2C1810] flex items-center gap-2">
+                    <span>Cash on Delivery</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">Pay on Delivery</span>
+                  </div>
+                  <p class="text-xs text-stone-500 mt-0.5">Pay cash or M-Pesa to the delivery rider when your order arrives.</p>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-amber-700">COD</span>
+            </div>
+          </label>
+
+          <!-- Option 4: PayPal (Temporarily Disabled for Maintenance) -->
           <div class="block border border-[#EADBCE] rounded-2xl p-4 bg-stone-50/70 cursor-not-allowed">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
@@ -311,7 +328,7 @@
               <div class="flex items-center gap-3 min-w-0">
                 <div class="w-12 h-12 rounded-xl bg-stone-50 border border-[#EADBCE] overflow-hidden flex-shrink-0">
                   {% if item.product.get_image_url %}
-                    <img src="{{ item.product.get_image_url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                    <img src="{{ item.product.get_image_url|cloudinary_auto }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
                   {% else %}
                     <div class="w-full h-full flex items-center justify-center font-serif text-xs font-bold text-[#EADBCE]">MN</div>
                   {% endif %}
@@ -420,6 +437,14 @@
     var region = select.value;
     var isPickup = region === "mombasa_pickup";
     
+    // Handle payment method selection
+    var paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+    var isMpesa = paymentMethod && paymentMethod.value === "mpesa";
+    var mpesaPhoneInput = document.getElementById('mpesaPhoneInput');
+    if (mpesaPhoneInput) {
+      mpesaPhoneInput.classList.toggle('hidden', !isMpesa);
+    }
+
     if (pickupBox) pickupBox.classList.toggle("hidden", !isPickup);
     if (addrStar) addrStar.style.display = isPickup ? "none" : "inline";
     if (addrInput) {
@@ -448,6 +473,11 @@
     if (totalEl) totalEl.textContent = due;
     if (totalSticky) totalSticky.textContent = due;
   }
+
+  // Initialize payment method listener
+  document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
+    radio.addEventListener('change', update);
+  });
 
   var pickupMap = null;
   function initPickupMap() {

@@ -5,6 +5,7 @@ Provides secure token handling with automatic rotation
 import logging
 from datetime import timedelta
 from django.utils import timezone
+from django.conf import settings
 from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -13,12 +14,25 @@ from rest_framework_simplejwt.settings import api_settings
 logger = logging.getLogger('security')
 
 
+def is_authorized_admin(email: str) -> bool:
+    """Check if an email is authorized for admin access."""
+    authorized = getattr(settings, 'ADMIN_AUTHORIZED_EMAILS', [])
+    if not authorized:
+        # In development, allow all staff if no authorized emails configured
+        return not getattr(settings, 'PRODUCTION', False)
+    return email.lower() in [e.lower() for e in authorized]
+
+
 class StoreStaffSessionAuthentication(SessionAuthentication):
     """Allow the classic staff sign-in to authorize Store Manager API requests."""
 
     def authenticate(self, request):
         user = getattr(request._request, "user", None)
         if not user or not user.is_staff:
+            return None
+        # Check if user's email is authorized for admin access
+        if user.is_staff and not is_authorized_admin(user.email):
+            logger.warning(f"Unauthorized admin access attempt from email: {user.email}")
             return None
         return super().authenticate(request)
 
@@ -96,6 +110,11 @@ class CookieJWTAuthentication(JWTAuthentication):
         if getattr(user, "token_version", 1) != token_version:
             raise InvalidToken("Token has been revoked (password changed or logged out)")
 
+        # Restrict admin access to authorized emails only
+        if user.is_staff and not is_authorized_admin(user.email):
+            logger.warning(f"Unauthorized admin access attempt via JWT from email: {user.email}")
+            raise InvalidToken("Unauthorized admin access")
+
         return user
 
 
@@ -146,6 +165,11 @@ class JWTAuthenticationWithRotation(JWTAuthentication):
         # Check if user is active
         if not user.is_active:
             raise InvalidToken("User account is disabled")
+        
+        # Restrict admin access to authorized emails only
+        if user.is_staff and not is_authorized_admin(user.email):
+            logger.warning(f"Unauthorized admin access attempt via JWT rotation from email: {user.email}")
+            raise InvalidToken("Unauthorized admin access")
         
         return user
 

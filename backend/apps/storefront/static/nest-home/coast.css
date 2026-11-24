@@ -205,3 +205,27 @@ main .coast-catalog-intro h1 { font-size: clamp(2.15rem, 6vw, 4.6rem); }
 @media (prefers-reduced-motion: reduce) {
   .nest-save, .nest-save svg path, .shop-header-saved.is-bumping svg { animation: none !important; transition-duration: .01ms !important; }
 }
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, var(--coast-line) 25%, var(--coast-mint) 50%, var(--coast-line) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.2s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none !important; background: var(--coast-line); }
+}
+
+.skeleton-text { height: 1rem; border-radius: 4px; }
+.skeleton-title { height: 1.5rem; width: 60%; border-radius: 4px; margin-bottom: 0.5rem; }
+.skeleton-image { aspect-ratio: 4/5; border-radius: 14px; }
+.skeleton-category { aspect-ratio: 1; border-radius: 50%; width: 64px; height: 64px; }
+.skeleton-button { height: 44px; width: 100%; border-radius: 999px; }
+.skeleton-card { border-radius: 14px; overflow: hidden; background: white; border: 1px solid var(--coast-line); }
+.skeleton-card-image { aspect-ratio: 1; background: var(--coast-mint); }
+.skeleton-price { height: 1.25rem; width: 50%; border-radius: 4px; }

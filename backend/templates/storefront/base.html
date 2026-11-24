@@ -69,6 +69,30 @@
     .text-brand-gold { color: var(--brand-gold); }
     .text-brand-terra { color: var(--brand-terra); }
     .border-brand { border-color: var(--brand-border); }
+    
+    /* Sticky search on mobile - appears on scroll down */
+    .sticky-search { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      z-index: 90; 
+      transform: translateY(-100%); 
+      opacity: 0; 
+      transition: transform 200ms cubic-bezier(.22, 1, .36, 1), opacity 200ms ease;
+      pointer-events: none;
+      background: rgba(255, 253, 246, 0.98);
+      backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid var(--coast-line);
+    }
+    .sticky-search.visible { 
+      transform: translateY(0); 
+      opacity: 1; 
+      pointer-events: auto; 
+    }
+    @media (min-width: 768px) {
+      .sticky-search { display: none !important; }
+    }
   </style>
   <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
   <link rel="icon" type="image/png" href="{% static 'img/favicon-32x32.png' %}" sizes="32x32">
@@ -207,6 +231,17 @@
     </nav>
   </header>
 
+  <!-- Sticky search on mobile - appears on scroll down -->
+  <form class="sticky-search shop-frame" action="{% url 'storefront:product_list' %}" method="get" role="search" aria-label="Search products">
+    <label for="sticky-shop-search" class="sr-only">Search products</label>
+    <div class="shop-search" style="width: 100%;">
+      <input id="sticky-shop-search" type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Find rompers, dresses and more" enterkeyhint="search" style="width: 100%;">
+      <button type="submit" aria-label="Search">
+        <svg width="19" height="19" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="m16 16 4 4M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
+      </button>
+    </div>
+  </form>
+
   <!-- Flash Messages -->
   {% if messages %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4" role="status" aria-live="polite">
@@ -262,7 +297,7 @@
     <div class="dock-track">
       <!-- Home -->
       <a href="{% url 'storefront:home' %}" class="dock-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h3a1 1 0 001-1v-4h4v4a1 1 0 001 1h3a1 1 0 001-1v-9"/></svg>
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10"/></svg>
         <span>Home</span>
       </a>
 

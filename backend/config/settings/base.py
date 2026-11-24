@@ -40,6 +40,12 @@ SECRET_KEY = get_env_or_crash("SECRET_KEY")
 PASSWORD_RESET_TIMEOUT = 3600
 ADMIN_URL_PREFIX = (os.getenv("ADMIN_URL_PREFIX") or os.getenv("ADMIN_URL_SECRET") or "manage-store").strip("/")
 
+# Authorized admin emails — only these emails can access Django admin / manage-store
+# Comma-separated list. In production, must be set. In dev, defaults to allow all staff.
+ADMIN_AUTHORIZED_EMAILS = [
+    e.strip().lower() for e in os.getenv("ADMIN_AUTHORIZED_EMAILS", "").split(",") if e.strip()
+]
+
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost").split(",") if h.strip()
 ]
@@ -69,6 +75,9 @@ INSTALLED_APPS = [
     # Phase 5 backend hardening
     "drf_spectacular",
     "django_extensions",
+    # TOTP 2FA for Admin
+    "django_otp",
+    "django_otp.plugins.otp_totp",
     "apps.storefront",
 ]
 
@@ -82,6 +91,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.idempotency.IdempotencyMiddleware",
@@ -218,6 +228,12 @@ if production_env_requested and not os.getenv("SIMPLE_JWT_SECRET"):
         "SIMPLE_JWT_SECRET environment variable is strictly required in production. "
         "Reusing SECRET_KEY for JWT signing is rejected."
     )
+
+# TOTP 2FA for Admin (django-otp)
+OTP_TOTP_ISSUER = "Malaika Nest Admin"
+OTP_TOTP_DIGITS = 6
+OTP_TOTP_INTERVAL = 30
+OTP_TOTP_THROTTLE_FACTOR = 1  # Allow 1 attempt per interval
 
 # Optional cookie domain so auth works across www/non-www.
 # Example: ".malaikanest.com"

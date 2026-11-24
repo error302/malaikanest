@@ -33,6 +33,10 @@ jobs:
           git stash push --include-untracked -m "github-actions-predeploy-$(date +%Y%m%d%H%M%S)" || true
           git pull --ff-only origin main
 
+          # Sync Brevo authorized IPs for email delivery
+          echo "Syncing Brevo authorized IPs..."
+          python scripts/ops/sync_brevo_ips.py || echo "Warning: Brevo IP sync failed (non-blocking)"
+
           # Migrations run inside the backend container entrypoint on start.
           docker compose build --pull backend frontend
           docker compose up -d --remove-orphans
