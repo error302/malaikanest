@@ -7,54 +7,55 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ── Self-hosted runner on the VM ─────────────────────────────────────────
+  # The runner process on the VM polls GitHub outbound — no inbound SSH
+  # required. Port 22 can stay locked down behind the GCP firewall allowlist.
+  # Setup: run deployment/setup-gh-runner.sh once on the VM (see that file).
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, malaikanest]
+    timeout-minutes: 20
     steps:
-      - name: Deploy via Docker Compose on VM
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
-          script: |
-            set -euo pipefail
+      - name: Deploy via Docker Compose
+        shell: bash
+        run: |
+          set -euo pipefail
 
-            APP_DIR="$HOME/malaikanest"
-            if [ ! -d "$APP_DIR/.git" ] && [ -d "/opt/malaikanest/.git" ]; then
-              APP_DIR="/opt/malaikanest"
+          APP_DIR="$HOME/malaikanest"
+          if [ ! -d "$APP_DIR/.git" ] && [ -d "/opt/malaikanest/.git" ]; then
+            APP_DIR="/opt/malaikanest"
+          fi
+          if [ ! -d "$APP_DIR/.git" ]; then
+            echo "Expected deployment repo at $APP_DIR but it was not found."
+            exit 1
+          fi
+
+          cd "$APP_DIR"
+          git stash push --include-untracked -m "github-actions-predeploy-$(date +%Y%m%d%H%M%S)" || true
+          git pull --ff-only origin main
+
+          # Migrations run inside the backend container entrypoint on start.
+          docker compose build --pull backend frontend
+          docker compose up -d --remove-orphans
+          docker image prune -f
+
+          # Authoritative health gate: hit the backend directly on its host
+          # binding (same Host-header trick as the compose healthcheck).
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' \
+              -H 'Host: api.malaikanest.com' -H 'X-Forwarded-Proto: https' \
+              http://127.0.0.1:8081/api/health/ || true)
+            if [ "$code" = "200" ]; then
+              echo "Backend healthy (attempt $i)"
+              break
             fi
-            if [ ! -d "$APP_DIR/.git" ]; then
-              echo "Expected deployment repo at $APP_DIR but it was not found."
-              exit 1
-            fi
+            echo "Attempt $i: HTTP $code — retrying in 10s"
+            [ "$i" = "30" ] && { echo "Backend never became healthy."; exit 1; }
+            sleep 10
+          done
 
-            cd "$APP_DIR"
-            git stash push --include-untracked -m "github-actions-predeploy-$(date +%Y%m%d%H%M%S)" || true
-            git pull --ff-only origin main
-
-            # Migrations run inside the backend container entrypoint on start.
-            docker compose build --pull backend frontend
-            docker compose up -d --remove-orphans
-            docker image prune -f
-
-            # Authoritative health gate: hit the backend directly on its host
-            # binding (same Host-header trick as the compose healthcheck).
-            for i in $(seq 1 30); do
-              code=$(curl -s -o /dev/null -w '%{http_code}' \
-                -H 'Host: api.malaikanest.com' -H 'X-Forwarded-Proto: https' \
-                http://127.0.0.1:8081/api/health/ || true)
-              if [ "$code" = "200" ]; then
-                echo "Backend healthy (attempt $i)"
-                break
-              fi
-              echo "Attempt $i: HTTP $code — retrying in 10s"
-              [ "$i" = "30" ] && { echo "Backend never became healthy."; exit 1; }
-              sleep 10
-            done
-
-      - name: Advisory external check (informational only)
+      - name: Advisory external check
         if: always()
+        shell: bash
         run: |
           # Cloudflare bot protection may challenge datacenter IPs (GitHub
           # runners), so a non-200 here is NOT necessarily an outage — the
