@@ -1,0 +1,56 @@
+.coast-hero { padding-top: clamp(16px, 3vw, 35px); }
+.coast-hero-layout {
+  display: grid; grid-template-columns: minmax(0, .93fr) minmax(0, 1.15fr);
+  background: var(--coast-mint); border-radius: 25px; overflow: hidden;
+}
+.coast-hero-copy { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: clamp(24px, 4.4vw, 66px); }
+.coast-hero-location { margin: 0 0 12px; font-weight: 750; font-size: .92rem; color: var(--coast-leaf); }
+.coast-hero h1 { font-size: clamp(2.55rem, 5.1vw, 4.7rem); font-weight: 800; line-height: .98; letter-spacing: -.075em; margin: 0; overflow-wrap: anywhere; }
+.coast-hero-description { font-size: clamp(1rem, 1.45vw, 1.17rem); line-height: 1.5; max-width: 35ch; margin-top: 16px; color: var(--coast-deep); }
+.coast-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 16px; margin-top: 22px; }
+.coast-hero-photo { display: block; min-width: 0; position: relative; min-height: clamp(385px, 38vw, 555px); background: #cce6d9; }
+.coast-hero-photo img { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: center 46%; }
+
+.nest-home-section { padding-top: clamp(22px, 4vw, 53px); }
+.nest-home-section h2 { font-family: var(--coast-heading); font-size: clamp(1.55rem, 3.8vw, 2.85rem); line-height: 1.08; letter-spacing: -.045em; font-weight: 800; margin: 0 0 14px; overflow-wrap: anywhere; scroll-margin-top: 22px; }
+.nest-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.nest-section-heading h2 { margin: 0; }
+.nest-age-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
+.nest-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); gap: 8px; }
+.nest-age-grid a, .nest-category-grid a {
+  display: flex; align-items: center; min-height: 52px; gap: 8px; padding: 9px 12px; border-radius: 10px;
+  background: var(--coast-mint); border: 1px solid transparent; font-size: .92rem; font-weight: 750; overflow-wrap: anywhere;
+}
+.nest-age-grid a:nth-child(5n + 2) { background: #fff0cb; }
+.nest-age-grid a:nth-child(5n + 3) { background: var(--coast-lilac); }
+.nest-age-grid a:nth-child(5n + 4) { background: #e0effb; }
+.nest-age-grid a:nth-child(5n + 5) { background: #ffeadf; }
+.nest-age-grid a { justify-content: space-between; }
+.nest-age-grid a:hover, .nest-category-grid a:hover { border-color: var(--coast-leaf); text-decoration: underline; text-underline-offset: 3px; }
+.nest-category-grid a { background: #fff; border-color: var(--coast-line); }
+.nest-category-grid img { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; }
+.nest-home-products { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 2.5vw, 28px); }
+.nest-home-product { min-width: 0; overflow-wrap: anywhere; padding-bottom: 8px; }
+.nest-home-product:hover h3 { text-decoration: underline; text-underline-offset: 3px; }
+.nest-home-product-photo { display: grid; place-items: center; overflow: hidden; aspect-ratio: 4 / 5; border-radius: 14px; background: var(--coast-mint); font-size: .8rem; }
+.nest-home-product-photo img { width: 100%; height: 100%; object-fit: cover; }
+.nest-home-product h3 { font-size: clamp(.95rem, 2vw, 1.13rem); line-height: 1.4; font-weight: 750; margin: 9px 0 3px; }
+.nest-home-price { font-weight: 700; font-variant-numeric: tabular-nums; }
+.nest-home-stock { font-size: .8rem; color: var(--coast-muted); margin-top: 4px; }
+.nest-home-section .coast-empty h2 { margin-bottom: 7px; }
+.nest-shopping-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.nest-shopping-info a { display: grid; gap: 4px; border-top: 2px solid var(--coast-line); padding: 12px 0; min-height: 48px; }
+.nest-shopping-info a:hover strong { text-decoration: underline; }
+.nest-shopping-info span { font-size: .875rem; color: var(--coast-muted); }
+
+@media (max-width: 740px) {
+  .coast-hero-layout { grid-template-columns: minmax(0, 1fr); border-radius: 19px; }
+  .coast-hero-copy { padding: 21px 19px 18px; }
+  .coast-hero h1 { font-size: clamp(2.5rem, 10.3vw, 4.35rem); }
+  .coast-hero-description { margin-top: 10px; }
+  .coast-hero-location { margin-bottom: 7px; }
+  .coast-hero-actions { margin-top: 12px; }
+  .coast-hero-photo { min-height: 0; aspect-ratio: 1.58; }
+  .coast-hero-photo img { object-position: center top; }
+  .nest-age-grid, .nest-home-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

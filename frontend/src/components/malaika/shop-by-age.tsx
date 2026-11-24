@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { Reveal, RevealGroup } from '@/lib/motion';
 
 const AGES = [
   { name: 'Newborn', nameKey: 'age.newborn', rangeKey: 'age.newbornRange', group: 'baby', image: '/images/ages/newborn.jpg' },
@@ -42,64 +43,67 @@ export function ShopByAge({ content }: ShopByAgeProps) {
       style={{ background: 'var(--brand-bg-alt)' }}
     >
       <div className="container-shell">
-        <div className="flex items-end justify-between gap-4 mb-7 sm:mb-9">
-          <div>
-            <span className="section-label mb-3">{c.label || t('home.shopByAge')}</span>
-            <h2
-              className="font-serif font-semibold tracking-tight mt-3"
-              style={{
-                color: 'var(--brand-text)',
-                fontFamily: 'var(--font-cormorant)',
-                fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
-                lineHeight: 1.15,
-              }}
-            >
-              {c.title || t('home.shopByAge')}
-            </h2>
-            <p
-              className="mt-2 text-sm max-w-md"
-              style={{ color: 'var(--brand-text-secondary)' }}
-            >
-              {c.subtitle || t('home.shopByAgeSub')}
-            </p>
-          </div>
+        <Reveal>
+          <div className="flex items-end justify-between gap-4 mb-7 sm:mb-9">
+            <div>
+              <span className="section-label mb-3">{c.label || t('home.shopByAge')}</span>
+              <h2
+                className="font-serif font-semibold tracking-tight mt-3"
+                style={{
+                  color: 'var(--brand-text)',
+                  fontFamily: 'var(--font-cormorant)',
+                  fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
+                  lineHeight: 1.15,
+                }}
+              >
+                {c.title || t('home.shopByAge')}
+              </h2>
+              <p
+                className="mt-2 text-sm max-w-md"
+                style={{ color: 'var(--brand-text-secondary)' }}
+              >
+                {c.subtitle || t('home.shopByAgeSub')}
+              </p>
+            </div>
 
-          {/* Desktop arrows */}
-          <div className="hidden sm:flex gap-2">
-            <button
-              type="button"
-              onClick={() => scroll('left')}
-              aria-label="Scroll left"
-              className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]"
-              style={{
-                borderColor: 'var(--brand-border)',
-                color: 'var(--brand-brown)',
-              }}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => scroll('right')}
-              aria-label="Scroll right"
-              className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]"
-              style={{
-                borderColor: 'var(--brand-border)',
-                color: 'var(--brand-brown)',
-              }}
-            >
-              <ChevronRight size={18} />
-            </button>
+            {/* Desktop arrows */}
+            <div className="hidden sm:flex gap-2">
+              <button
+                type="button"
+                onClick={() => scroll('left')}
+                aria-label="Scroll left"
+                className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]"
+                style={{
+                  borderColor: 'var(--brand-border)',
+                  color: 'var(--brand-brown)',
+                }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => scroll('right')}
+                aria-label="Scroll right"
+                className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors hover:bg-[var(--brand-warm)]"
+                style={{
+                  borderColor: 'var(--brand-border)',
+                  color: 'var(--brand-brown)',
+                }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
-        </div>
+        </Reveal>
 
-        <div
+        <RevealGroup
+          stagger={0.05}
           ref={scrollerRef}
-          className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 sm:mx-0 sm:px-0 pb-2"
-          role="list"
+          className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 sm:mx-0 sm:px-0 pb-2 scroll-smooth"
         >
           {AGES.map((age) => (
-            <div key={age.nameKey} role="listitem" className="flex-shrink-0">
+            <Reveal key={age.nameKey} variant="windUp" className="flex-shrink-0">
+              <div role="listitem" className="flex-shrink-0">
             <Link
               key={age.nameKey}
               href={`/categories?age=${age.group}`}
@@ -134,8 +138,9 @@ export function ShopByAge({ content }: ShopByAgeProps) {
               </div>
             </Link>
             </div>
+            </Reveal>
           ))}
-        </div>
+        </RevealGroup>
       </div>
     </section>
   );

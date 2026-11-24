@@ -37,6 +37,7 @@ def get_env_or_crash(var_name):
 SECRET_KEY = get_env_or_crash("SECRET_KEY")
 
 # Admin URL prefix (default: /manage-store/). Backwards-compatible with legacy ADMIN_URL_SECRET.
+PASSWORD_RESET_TIMEOUT = 3600
 ADMIN_URL_PREFIX = (os.getenv("ADMIN_URL_PREFIX") or os.getenv("ADMIN_URL_SECRET") or "manage-store").strip("/")
 
 ALLOWED_HOSTS = [
@@ -149,6 +150,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "apps.accounts.authentication.CookieJWTAuthentication",
+        "apps.accounts.authentication.StoreStaffSessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
@@ -159,6 +161,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
+        "mpesa_callback": "120/min",
         "anon": "1200/hour",
         "user": "5000/hour",
         "payments": "10/minute",
@@ -287,6 +290,10 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_TRACK_STARTED = True
 
 CELERY_BEAT_SCHEDULE = {
+    "mpesa-verification-queue": {
+        "task": "apps.payments.tasks.process_mpesa_query_queue",
+        "schedule": timedelta(seconds=10),
+    },
     # Transactional Outbox relay (system-design-101: event-driven / reliable
     # messaging). Polls OutboxEvent rows every 30s and dispatches them to the
     # async workers so payment side effects (reduce inventory, invoice, email,
@@ -345,27 +352,19 @@ _cloud_key = os.getenv("CLOUDINARY_API_KEY") or os.getenv("CLOUDINARY_KEY")
 _cloud_secret = os.getenv("CLOUDINARY_API_SECRET") or os.getenv("CLOUDINARY_SECRET")
 
 if _cloud_name and _cloud_key and _cloud_secret:
-    try:
-        import cloudinary
-
-        cloudinary.config(
-            cloud_name=_cloud_name,
-            api_key=_cloud_key,
-            api_secret=_cloud_secret,
-            secure=True,
-            force_version=False,
-        )
-        STORAGES = {
-            "default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"},
-            "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-        }
-    except Exception:
-        import logging as _log
-        _log.warning("Cloudinary storage setup failed, falling back to FileSystemStorage")
-        STORAGES = {
-            "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-            "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-        }
+    # The Cloudinary SDK reads Django settings at import time. Defer its
+    # import until the configured application or storage backend is loaded.
+    CLOUDINARY = {
+        "cloud_name": _cloud_name,
+        "api_key": _cloud_key,
+        "api_secret": _cloud_secret,
+        "secure": True,
+        "force_version": False,
+    }
+    STORAGES = {
+        "default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
 else:
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},

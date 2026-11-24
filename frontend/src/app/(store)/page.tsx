@@ -81,7 +81,7 @@ export default async function HomePage() {
         <ProductSection
           id="featured"
           label={content.featured?.label || 'Hand-picked'}
-          title={content.featured?.title || 'Featured Products'}
+          title={content.featured?.title || 'Organic Essentials Parents Keep Re-ordering'}
           viewAllHref="/categories"
           viewAllLabel={content.featured?.view_all || 'View All'}
           products={featured}
@@ -101,7 +101,7 @@ export default async function HomePage() {
           <ProductSection
             id="best-sellers"
             label={content.best_sellers?.label || 'Most loved'}
-            title={content.best_sellers?.title || 'Best Sellers'}
+            title={content.best_sellers?.title || 'Loved by Kenyan Families'}
             viewAllHref="/best-sellers"
             viewAllLabel={content.best_sellers?.view_all || 'See More'}
             products={bestSellers}
@@ -129,7 +129,7 @@ export default async function HomePage() {
           <ProductSection
             id="new-arrivals"
             label={content.new_arrivals?.label || 'Just landed'}
-            title={content.new_arrivals?.title || 'New Arrivals'}
+            title={content.new_arrivals?.title || 'Just Landed This Week'}
             viewAllHref="/categories"
             viewAllLabel={content.new_arrivals?.view_all || 'Shop New'}
             products={newArrivals}

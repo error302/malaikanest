@@ -109,7 +109,7 @@ export function Hero({ banners = [] }: HeroProps) {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-[#3D2B1F] h-[360px] sm:h-[420px] lg:h-[480px] xl:h-[500px]"
+      className="relative w-full overflow-hidden bg-[var(--ink-soft,var(--brand-brown-dark))] h-[420px] sm:h-[520px] lg:h-[600px] xl:h-[620px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
@@ -157,7 +157,7 @@ export function Hero({ banners = [] }: HeroProps) {
       />
 
       {/* Content */}
-      <div className="relative z-10 flex items-center h-[360px] sm:h-[420px] lg:h-[480px] xl:h-[500px]">
+      <div className="relative z-10 flex items-center h-[420px] sm:h-[520px] lg:h-[600px] xl:h-[620px]">
         <div className="container-shell w-full py-6 sm:py-8 lg:py-10">
           <div key={current} className="max-w-lg animate-fade-in-up">
             <span
@@ -171,7 +171,7 @@ export function Hero({ banners = [] }: HeroProps) {
               style={{
                 color: '#FFFFFF',
                 fontFamily: 'var(--font-cormorant)',
-                fontSize: 'clamp(1.75rem, 4.5vw, 3rem)',
+                fontSize: 'clamp(2rem, 5.5vw, 3.75rem)',
                 textWrap: 'balance',
               }}
             >
@@ -179,22 +179,20 @@ export function Hero({ banners = [] }: HeroProps) {
             </h1>
             <p
               className="text-xs sm:text-[14px] leading-relaxed mb-5 sm:mb-6 max-w-md line-clamp-2 sm:line-clamp-3"
-              style={{ color: 'rgba(255,255,255,0.92)' }}
+              style={{ color: '#FFFFFF' }}
             >
               {sub}
             </p>
             <Link
               href={s.ctaHref}
-              className="inline-flex items-center gap-2 rounded-full font-medium text-xs sm:text-[13px] uppercase tracking-[0.12em] px-6 py-2.5 sm:px-7 sm:py-3 transition-all duration-300 hover:bg-white hover:text-[var(--brand-brown)] hover:border-white shadow-warm-sm"
+              className="inline-flex items-center gap-2 rounded-full font-semibold text-[13px] sm:text-sm uppercase tracking-[0.12em] px-8 py-3.5 sm:px-10 sm:py-4 transition-all duration-300 shadow-warm-md hover:brightness-110 active:scale-[0.98]"
               style={{
-                background: 'rgba(255,255,255,0.12)',
+                background: 'var(--accent, var(--brand-terra))',
                 color: '#FFFFFF',
-                border: '1px solid rgba(255,255,255,0.7)',
-                backdropFilter: 'blur(4px)',
               }}
             >
               {cta}
-              <ChevronRight size={14} strokeWidth={2} />
+              <ChevronRight size={16} strokeWidth={2.5} />
             </Link>
           </div>
         </div>

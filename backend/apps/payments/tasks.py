@@ -1,16 +1,9 @@
-import base64
 import datetime
-import hashlib
-import json
 import logging
-import os
 
-import requests
-from django.db import transaction
 from django.utils import timezone
-from apps.core.outbox import publish_event
 from apps.core import metrics
-from apps.core.circuit_breaker import call_with_breaker, CircuitOpen
+from apps.core.circuit_breaker import CircuitOpen
 
 logger = logging.getLogger("apps.payments")
 
@@ -28,195 +21,18 @@ except ImportError:
         return decorator
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60, acks_late=True, reject_on_worker_lost=True)
-def verify_mpesa_payment_async(self, payment_id):
-    from apps.orders.models import Order
-    from .models import Payment
-    from .services import PaymentService, audit_log
+@shared_task
+def verify_mpesa_payment_async(payment_id):
+    from .mpesa_verification import verify_payment
 
-    try:
-        payment = Payment.objects.get(pk=payment_id)
-    except Payment.DoesNotExist:
-        logger.warning("verify_mpesa_payment_async: payment %s not found", payment_id)
-        return "not found"
-
-    if payment.payment_method != "mpesa":
-        return "unsupported method"
-
-    if payment.status == "completed":
-        return "already completed"
-
-    if not payment.checkout_request_id:
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"reason": "missing_checkout_request_id", "payment_id": payment.id},
-            notes="Cannot reconcile payment without checkout_request_id",
-            source="celery"
-        )
-        return "no checkout_request_id"
-
-    shortcode = os.getenv("MPESA_SHORTCODE") or os.getenv("MPESA_BUSINESS_SHORT_CODE", "174379")
-    passkey = os.getenv("MPESA_PASSKEY")
-    mpesa_env = (os.getenv("MPESA_ENV", "sandbox") or "sandbox").strip().lower()
-    mpesa_env = "live" if mpesa_env in {"live", "production", "prod"} else "sandbox"
-
-    if not all([shortcode, passkey]):
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"reason": "missing_mpesa_config", "payment_id": payment.id},
-            notes="M-Pesa credentials not fully configured",
-            source="celery"
-        )
-        return "not configured"
-
-    query_url = (
-        "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
-        if mpesa_env == "live"
-        else "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
-    )
-
-    try:
-        from .services import PaymentService
-
-        access_token = PaymentService.get_mpesa_oauth_token()
-    except CircuitOpen as exc:
-        # Breaker open: don't bury the worker in retries against a down Safaricom.
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"stage": "token", "error": str(exc)},
-            checkout_request_id=payment.checkout_request_id,
-            notes="M-Pesa breaker open — skipping token fetch",
-            source="celery"
-        )
-        return "breaker open"
-    except requests.exceptions.RequestException as exc:
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"stage": "token", "error": str(exc)},
-            checkout_request_id=payment.checkout_request_id,
-            notes="Token fetch failed",
-            source="celery"
-        )
-        metrics.incr("payments.failed")
-        raise self.retry(exc=exc)
-    except Exception as exc:
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"stage": "token", "error": str(exc)},
-            checkout_request_id=payment.checkout_request_id,
-            notes="Token fetch failed",
-            source="celery"
-        )
-        metrics.incr("payments.failed")
-        raise self.retry(exc=exc)
-
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    password = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
-
-    payload = {
-        "BusinessShortCode": shortcode,
-        "CheckoutRequestID": payment.checkout_request_id,
-        "Password": password,
-        "Timestamp": timestamp,
-    }
-
-    try:
-        resp = call_with_breaker(
-            "mpesa_api",
-            lambda: requests.post(
-                query_url,
-                json=payload,
-                headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
-                timeout=30,
-            ),
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        result_code = data.get("ResultCode")
-
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"request": {**payload, "Password": "***"}, "response": data},
-            checkout_request_id=payment.checkout_request_id,
-            result_code=str(result_code) if result_code is not None else None,
-            source="celery"
-        )
-
-        if result_code == "0" or result_code == 0:
-            with transaction.atomic():
-                p = Payment.objects.select_for_update().get(pk=payment_id)
-                if p.status == "completed":
-                    return "already completed"
-                p.status = "completed"
-                p.save(update_fields=["status", "updated_at"])
-                order = p.order
-                # Use the state machine so timestamps/hooks run, mirroring the live callback.
-                ok, _err = order.transition_to(Order.STATUS_PAID)
-                if not ok:
-                    order.status = "paid"
-                    if hasattr(order, "paid_at"):
-                        order.paid_at = timezone.now()
-                    order.save(
-                        update_fields=["status", "paid_at", "updated_at"]
-                        if hasattr(order, "paid_at")
-                        else ["status", "updated_at"]
-                    )
-
-                audit_log(
-                    payment=p,
-                    event_type="reconcile_completed",
-                    payload={"payment_id": p.id, "order_id": p.order_id},
-                    checkout_request_id=p.checkout_request_id,
-                    result_code="0",
-                    notes="Recovered payment via STK query reconciliation",
-                    source="celery"
-                )
-            # CRITICAL: a recovered (callback-missed) payment must still fulfill the
-            # order — reduce inventory, generate invoice, send confirmation — exactly
-            # like the live callback path. Otherwise stock leaks and the customer
-            # gets no invoice/email. Emitted via the outbox so it survives crashes.
-            publish_event("order", order.id, "order.paid", {"order_id": str(order.id)})
-            metrics.incr("payments.completed")
-            return "completed"
-
-        raise self.retry()
-
-    except CircuitOpen as exc:
-        # Breaker open: don't pile up retry tasks against a down Safaricom.
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"stage": "query", "error": str(exc)},
-            checkout_request_id=payment.checkout_request_id,
-            notes="M-Pesa breaker open — skipping reconcile",
-            source="celery"
-        )
-        return "breaker open"
-    except requests.exceptions.RequestException as exc:
-        audit_log(
-            payment=payment,
-            event_type="reconcile_query",
-            payload={"stage": "query", "error": str(exc)},
-            checkout_request_id=payment.checkout_request_id,
-            notes="STK query failed",
-            source="celery"
-        )
-        metrics.incr("payments.failed")
-        raise self.retry(exc=exc)
-    except Payment.DoesNotExist:
-        return "not found"
+    return verify_payment(payment_id)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60, acks_late=True, reject_on_worker_lost=True)
 def verify_pesapal_payment_async(self, payment_id):
     from .models import Payment
     from .pesapal import PesapalService, PesapalError
+    from .services import audit_log
 
     try:
         payment = Payment.objects.get(pk=payment_id)
@@ -280,9 +96,17 @@ def verify_pesapal_payment_async(self, payment_id):
 
 
 @shared_task
+def process_mpesa_query_queue():
+    from django.core.management import call_command
+
+    call_command("process_mpesa_queries")
+
+
+@shared_task
 def reconcile_payments_task(stale_minutes=30, limit=200):
     from .models import Payment
     from .services import audit_log
+    from .mpesa_verification import schedule_verification
 
     cutoff = timezone.now() - datetime.timedelta(minutes=stale_minutes)
     payments = (
@@ -297,7 +121,7 @@ def reconcile_payments_task(stale_minutes=30, limit=200):
             if p.payment_method == "pesapal":
                 verify_pesapal_payment_async.delay(p.id)
             else:
-                verify_mpesa_payment_async.delay(p.id)
+                schedule_verification(Payment.objects.filter(pk=p.pk))
             queued += 1
             audit_log(
                 payment=p,

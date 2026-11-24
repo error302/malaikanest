@@ -3,7 +3,7 @@
 {% block title %}Track Order · Malaika Nest{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto px-4 py-10 sm:py-16">
+<div class="coast-lookup mx-auto px-4 py-10 sm:py-16">
   <div class="bg-white rounded-3xl border border-[#EADBCE] p-5 sm:p-8 shadow-sm space-y-6">
     <div class="text-center space-y-2">
       <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-[#8B6914] flex items-center justify-center mx-auto">
@@ -13,7 +13,7 @@
         Track Your Order
       </h1>
       <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
-        Check live processing, delivery, and payment status of your baby clothes package.
+        Enter your order number and the phone number or email you used at checkout.
       </p>
     </div>
 
@@ -28,7 +28,6 @@
           name="order_ref" 
           id="order_ref" 
           required 
-          autofocus 
           autocomplete="off"
           enterkeyhint="next"
           value="{{ order_ref|default:'' }}"

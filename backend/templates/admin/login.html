@@ -8,14 +8,14 @@
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
   <style>
     :root {
-      --bg: #FAF7F2;
+      --bg: #fffdf6;
       --card-bg: #FFFFFF;
-      --border: #EADBCE;
-      --text: #2C1810;
-      --muted: #7A685D;
-      --primary: #2C1810;
-      --primary-hover: #3D2B1F;
-      --gold: #8B6914;
+      --border: #c8d9ce;
+      --text: #133f36;
+      --muted: #4d665e;
+      --primary: #133f36;
+      --primary-hover: #205849;
+      --gold: #25634f;
       --terra: #C96E4B;
       --danger: #B3261E;
       --danger-bg: #FDF2F2;
@@ -23,7 +23,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, #FAF7F2 0%, #EADBCE 100%);
+      background: #ddf0e5;
       color: var(--text);
       min-height: 100vh;
       display: flex;
@@ -46,7 +46,7 @@
       height: 58px;
       border-radius: 16px;
       background: var(--primary);
-      color: #FAF7F2;
+      color: #fffdf6;
       margin: 0 auto 16px;
       display: flex;
       align-items: center;
@@ -83,7 +83,7 @@
       display: block;
       font-size: 12px;
       font-weight: 600;
-      color: #3D2B1F;
+      color: #205849;
       margin-bottom: 6px;
     }
     input[type="text"],
@@ -94,7 +94,7 @@
       border-radius: 10px;
       font-size: 14px;
       color: var(--text);
-      background: #FAF7F2;
+      background: #fffdf6;
       transition: all 0.2s ease;
       outline: none;
     }
@@ -108,7 +108,7 @@
       width: 100%;
       padding: 13px;
       background: var(--primary);
-      color: #FAF7F2;
+      color: #fffdf6;
       border: none;
       border-radius: 10px;
       font-size: 14px;
@@ -209,6 +209,7 @@
       <span>Protected Session</span>
     </div>
 
+    <a href="{% url 'password_reset' %}" class="back-link">Set or reset your password</a>
     <a href="/" class="back-link">← Return to Storefront</a>
   </div>
 </body>

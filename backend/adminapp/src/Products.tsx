@@ -4,6 +4,7 @@ import { productChanges, productForm, SaveIntent, validateVariants } from "./pro
 import { VariantsEditor } from "./VariantsEditor";
 import { trapModalTab } from "./Modal";
 import { PhotosEditor } from "./PhotosEditor";
+import { useUnsavedChanges } from "./useUnsavedChanges";
 
 const PAGE_SIZE = 25;
 
@@ -12,14 +13,14 @@ function categoryName(c: Product["category"]): string {
   return typeof c === "object" && c !== null ? c.name : "—";
 }
 
-export function Products() {
+export function Products({ startNew = false }: { startNew?: boolean }) {
   const [data, setData] = useState<Paged<Product> | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
-  const [editing, setEditing] = useState<Product | null>(null);
+  const [editing, setEditing] = useState<Product | null>(startNew ? {} as Product : null);
   const requestVersion = useRef(0);
   const [loading, setLoading] = useState(true);
 
@@ -64,6 +65,7 @@ export function Products() {
       <div className="toolbar">
         <input
           type="text"
+          aria-label="Search products"
           placeholder="Search products…"
           value={search}
           onChange={(e) => {
@@ -92,45 +94,28 @@ export function Products() {
         </button>
       </div>
 
-      <div className="panel table-scroll" role="region" aria-label="Products table, scroll horizontally for more columns" tabIndex={0} style={{ padding: 0 }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Category</th>
-              <th className="num">Price</th>
-              <th className="num">Stock</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {data?.results.length === 0 && <tr><td colSpan={6}>No products match your filters.</td></tr>}
-            {data?.results.map((p) => (
-              <tr key={p.id}>
-                <td>
-                  <strong>{p.name}</strong>
-                </td>
-                <td>{p.category_name || categories.find((c) => c.id === p.category)?.name || categoryName(p.category)}</td>
-                <td className="num">
-                  KES {Number(p.price).toLocaleString("en-KE", { maximumFractionDigits: 0 })}
-                </td>
-                <td className={`num ${p.stock <= 3 ? "stock-low" : ""}`}>{p.stock}</td>
-                <td>
-                  <span className={`badge ${p.is_active && p.status === "published" ? "on" : "off"}`}>
-                    {p.is_active && p.status === "published" ? "published" : "draft"}
-                  </span>
-                </td>
-                <td>
-                  <button className="btn ghost small" onClick={() => setEditing(p)}>
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {data?.results.length === 0 && <p className="panel">{search || category ? "No products match your filters." : "No products yet. Add your first product to start filling the shop."}</p>}
+      {!!data?.results.length && (
+        <ul className="panel product-list" aria-label="Products">
+          {data.results.map(product => {
+            const published = product.is_active && product.status === "published";
+            return (
+              <li key={product.id}>
+                <div className="product-list-name">
+                  <strong>{product.name}</strong>
+                  <small>{product.category_name || categories.find(item => item.id === product.category)?.name || categoryName(product.category)}</small>
+                </div>
+                <div className="product-list-facts">
+                  <strong>KES {Number(product.price).toLocaleString("en-KE", { maximumFractionDigits: 2 })}</strong>
+                  <small className={product.stock <= 3 ? "stock-low" : ""}>{product.stock} in stock</small>
+                </div>
+                <span className={`badge ${published ? "on" : "off"}`}>{published ? "In shop" : "Hidden"}</span>
+                <button className="btn ghost small" onClick={() => setEditing(product)}>Edit</button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {pages > 1 && (
         <div className="pager">
@@ -154,7 +139,10 @@ export function Products() {
         <EditDrawer
           product={editing}
           categories={categories}
-          onClose={() => setEditing(null)}
+          onClose={() => {
+            setEditing(null);
+            if (startNew) location.hash = "products";
+          }}
           onSaved={load}
         />
       )}
@@ -196,12 +184,7 @@ function EditDrawer({
     return () => { element.close(); document.body.style.overflow = overflow; previous?.focus(); };
   }, []);
 
-  useEffect(() => {
-    if (!dirty && !busy && !photoBusy) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, busy, photoBusy]);
+  useUnsavedChanges(dirty, busy || photoBusy);
 
   useEffect(() => {
     if (!product.id) return;
@@ -261,7 +244,7 @@ function EditDrawer({
       setCurrent(saved);
       setForm(productForm(saved));
       setVariants(saved.variants ?? []);
-      setNotice(isNew ? "Draft created. Add photos, check sizes, then publish when ready." : intent === "publish" ? "Published." : intent === "draft" ? "Saved as a hidden draft." : "Changes saved. Visibility unchanged.");
+      setNotice(isNew ? "Draft saved. Add photos below, then publish when ready." : intent === "publish" ? "Published." : intent === "draft" ? "Saved as a hidden draft." : "Changes saved. Visibility unchanged.");
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
@@ -274,7 +257,7 @@ function EditDrawer({
     <dialog onKeyDown={trapModalTab} ref={dialog} className="product-dialog panel" aria-labelledby="product-editor-title" onCancel={(event) => { event.preventDefault(); close(); }}>
       <form onSubmit={save}>
         <div className="dialog-heading"><h3 id="product-editor-title">{isNew ? "New product" : `Edit — ${current.name}`}</h3><button className="btn ghost" type="button" onClick={close} disabled={busy || photoBusy}>Close</button></div>
-        <p className="variants-hint">{current.is_active ? "Currently visible in the shop." : "Hidden draft."} Saving details does not change visibility.</p>
+        <p className="variants-hint">{isNew ? "Start with the name, price and category. Save a draft to add photos from your phone." : current.is_active ? "Visible in the shop." : "Hidden draft. Add photos and check sizes before publishing."}</p>
         {error && <div className="error" role="alert">{error}</div>}
         {notice && <div className="notice" role="status">{notice}</div>}
         {!loaded && (error ? <button className="btn ghost" type="button" onClick={() => setAttempt((value) => value + 1)}>Retry loading</button> : <p role="status">Loading product details…</p>)}
@@ -283,10 +266,6 @@ function EditDrawer({
           <span>Name</span>
           <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required />
         </label>
-        {isNew && <label className="field">
-          <span>URL slug (optional; generated from name)</span>
-          <input type="text" pattern="[a-zA-Z0-9_-]+" maxLength={300} value={form.slug} onChange={(e) => set("slug", e.target.value)} />
-        </label>}
         <label className="field">
           <span>Price (KES)</span>
           <input
@@ -321,25 +300,8 @@ function EditDrawer({
           </select>
         </label>
         <label className="field">
-          <span>Main Image URL (Cloudinary or Web)</span>
-          <input
-            type="url"
-            placeholder="https://res.cloudinary.com/..."
-            value={form.image_url}
-            onChange={(e) => set("image_url", e.target.value)}
-          />
-        </label>
-        <label className="field">
           <span>Description</span>
           <textarea value={form.description} onChange={(e) => set("description", e.target.value)} />
-        </label>
-        <label className="field">
-          <span>Fabric &amp; care</span>
-          <textarea value={form.fabric} onChange={(e) => set("fabric", e.target.value)} />
-        </label>
-        <label className="field">
-          <span>What's included</span>
-          <textarea value={form.whats_included} onChange={(e) => set("whats_included", e.target.value)} />
         </label>
         <label className="field">
           <span>Single size (when no size rows are active)</span>
@@ -347,6 +309,16 @@ function EditDrawer({
             <option value="">Not specified</option>
             {SIZE_CHOICES.map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
           </select>
+        </label>
+        <details className="editor-details">
+          <summary>Optional product details</summary>
+        <label className="field">
+          <span>Fabric &amp; care</span>
+          <textarea value={form.fabric} onChange={(e) => set("fabric", e.target.value)} />
+        </label>
+        <label className="field">
+          <span>What's included</span>
+          <textarea value={form.whats_included} onChange={(e) => set("whats_included", e.target.value)} />
         </label>
         <p className="variants-hint">Enter verified measurements in cm, stating body or garment measurements. Leave unknown details blank.</p>
         <label className="field">
@@ -357,12 +329,25 @@ function EditDrawer({
             placeholder="e.g. 2y: chest 54 cm, length 38 cm"
           />
         </label>
+        <label className="field">
+          <span>Main Image URL (Cloudinary or Web)</span>
+          <input
+            type="url"
+            placeholder="https://res.cloudinary.com/..."
+            value={form.image_url}
+            onChange={(e) => set("image_url", e.target.value)}
+          />
+        </label>
+        {isNew && <label className="field">
+          <span>URL slug (optional; generated from name)</span>
+          <input type="text" pattern="[a-zA-Z0-9_-]+" maxLength={300} value={form.slug} onChange={(e) => set("slug", e.target.value)} />
+        </label>}
+        </details>
         <VariantsEditor variants={variants} previous={current.variants ?? []} onChange={(rows) => { setVariants(rows); setNotice(""); }} />
         </fieldset>
         {!isNew && loaded && (
           <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
         )}
-        {isNew && <p className="variants-hint">Create a hidden draft first to upload photos. Nothing is published automatically.</p>}
         <div className="editor-actions">
           <button className="btn" disabled={locked} type="submit" value="save">
             {busy ? "Saving…" : isNew ? "Create draft" : "Save changes"}

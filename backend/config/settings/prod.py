@@ -1,6 +1,5 @@
 from .base import *
 import urllib.parse
-import cloudinary
 
 from .guards import enforce_postgresql_only, validate_production_env
 
@@ -86,13 +85,13 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
     # Cloudinary default "force_version" will emit /v1/ when a public_id has no version.
     # Those URLs can 404; disabling version forcing produces stable URLs like:
     #   .../image/upload/media/products/foo.jpg
-    cloudinary.config(
-        cloud_name=CLOUDINARY_CLOUD_NAME,
-        api_key=CLOUDINARY_API_KEY,
-        api_secret=CLOUDINARY_API_SECRET,
-        secure=True,
-        force_version=False,
-    )
+    CLOUDINARY = {
+        "cloud_name": CLOUDINARY_CLOUD_NAME,
+        "api_key": CLOUDINARY_API_KEY,
+        "api_secret": CLOUDINARY_API_SECRET,
+        "secure": True,
+        "force_version": False,
+    }
 
 # Enforce Cloudinary for media storage in production.
 STORAGES = {

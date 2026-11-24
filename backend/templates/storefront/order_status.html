@@ -1,85 +1,46 @@
 {% extends "storefront/base.html" %}
+{% load static %}
 
 {% block title %}Order {{ order.receipt_number }} Status · Malaika Nest{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
   
-  <!-- Header Card -->
-  <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 sm:p-8 shadow-sm mb-8">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EADBCE] pb-6">
-      <div>
-        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Order Confirmation</span>
-        <h1 class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810] mt-1">
-          Order #{{ order.receipt_number }}
-        </h1>
-        <p class="text-xs text-stone-500 mt-1">
-          Placed on {{ order.created_at|date:"F j, Y, g:i a" }}
-        </p>
-      </div>
-
-      <div id="statusBadgeContainer" role="status" aria-live="polite">
-        {% if is_paid %}
-          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            PAID · {{ order.get_status_display|upper }}
-          </span>
-        {% elif order.status == 'cancelled' %}
-          <span class="inline-flex items-center px-4 py-2 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300">
-            CANCELLED
-          </span>
-        {% else %}
-          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
-            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-            PAYMENT PENDING
-          </span>
-        {% endif %}
-      </div>
+  <section class="bg-white rounded-3xl border border-[#EADBCE] p-5 sm:p-8 shadow-sm mb-6">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+      <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810]">Order {{ order.receipt_number }}</h1>
+      <p class="text-lg font-semibold tabular-nums">KSh {{ order.total|floatformat:0 }}</p>
     </div>
-
-    <!-- Live STK Push Waiting Box (Visible when STK is active & not yet paid) -->
-    <div id="stkWaitingBox" role="status" aria-live="polite" class="{% if not show_stk_modal or is_paid %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-amber-50 border border-amber-200">
-      <div class="flex items-start gap-4">
-        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h3 class="font-serif text-lg font-bold text-amber-900">M-Pesa PIN Prompt Sent</h3>
-          <p class="text-xs sm:text-sm text-amber-800 mt-1">
-            Please check your phone screen. An M-Pesa prompt has been sent to enter your PIN for <strong>KES {{ order.total|floatformat:0 }}</strong>.
-          </p>
-          <p class="text-xs text-amber-700 mt-2">
-            This page will automatically update once your payment is confirmed.
-          </p>
-        </div>
-      </div>
+    <div id="payment-update" class="mt-6 border-l-4 border-amber-700 pl-4 py-2" role="status" aria-live="polite" aria-atomic="true">
+      <h2 class="text-lg font-bold text-[#2C1810]" id="payment-heading">
+        {% if is_paid %}Payment confirmed
+        {% elif payment_state == 'pending' %}Check your phone for the M-Pesa prompt
+        {% elif payment_state == 'review' %}We’re checking your payment
+        {% elif payment_state == 'cancelled' %}M-Pesa prompt cancelled
+        {% elif payment_state == 'failed' %}M-Pesa payment failed
+        {% elif payment_state == 'closed' %}This order is closed
+        {% else %}Awaiting payment{% endif %}
+      </h2>
+      <p id="payment-description" class="mt-1 text-sm leading-relaxed text-stone-700">
+        {% if is_paid %}We’ve confirmed your payment and will prepare your order.
+        {% elif payment_state == 'pending' %}Approve the prompt on your phone. This page will update automatically.
+        {% elif payment_state == 'review' %}If M-Pesa debited you, keep your receipt and contact the shop before paying again.
+        {% elif payment_state == 'closed' %}Contact the shop if M-Pesa debited you for this order.
+        {% elif payment_state == 'manual' %}Follow the instructions below to complete your payment.
+        {% else %}Contact the shop if you need help completing payment.{% endif %}
+      </p>
+      <p id="payment-receipt" class="mt-2 text-sm font-semibold" {% if not is_paid or not payment.mpesa_receipt_number %}hidden{% endif %}>{% if is_paid and payment.mpesa_receipt_number %}M-Pesa receipt {{ payment.mpesa_receipt_number }}{% endif %}</p>
     </div>
-
-    <!-- Payment Confirmed Banner (Shows when paid) -->
-    <div id="paidBanner" role="status" aria-live="polite" class="{% if not is_paid %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-emerald-50 border border-emerald-200">
-      <div class="flex items-center gap-4">
-        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
-          <svg class="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-          </svg>
-        </div>
-        <div>
-          <h3 class="font-serif text-lg font-bold text-emerald-900">Payment Received Successfully!</h3>
-          <p class="text-xs sm:text-sm text-emerald-800 mt-1">
-            Thank you! Your order is being packed for dispatch.
-            {% if order.mpesa_receipt_number %}
-              <br><span class="font-mono text-xs font-bold text-emerald-900">M-Pesa Receipt: {{ order.mpesa_receipt_number }}</span>
-            {% endif %}
-          </p>
-        </div>
+    {% if not is_paid and not show_till_instructions %}
+      <div class="mt-4 flex flex-wrap items-center gap-4 text-sm">
+        <button id="payment-refresh" type="button" class="underline underline-offset-4 min-h-11">Check payment status</button>
+        <a href="{{ whatsapp_order_link }}" class="underline underline-offset-4 py-3" rel="noopener noreferrer">Contact the shop</a>
       </div>
-    </div>
+    {% endif %}
+    <p id="payment-connection" class="mt-2 text-sm text-stone-700" role="status"></p>
 
     <!-- Manual Till Instructions (Shown if payment is pending) -->
-    <div id="tillInstructionsBox" class="{% if is_paid %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE] space-y-4">
+    <div id="tillInstructionsBox" class="{% if not show_till_instructions %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE] space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="font-serif text-lg font-bold text-[#2C1810] flex items-center gap-2">
           Pay via Buy Goods Till
@@ -90,7 +51,7 @@
       </div>
 
       <p class="text-xs sm:text-sm text-stone-600">
-        If the prompt did not appear on your phone, you can pay manually using Safaricom M-Pesa:
+        Use these details in the M-Pesa app or SIM menu.
       </p>
 
       <ol class="list-decimal list-inside text-xs sm:text-sm text-stone-700 space-y-1.5 pl-1 font-medium">
@@ -108,7 +69,7 @@
           rel="noopener noreferrer" 
           class="w-full sm:w-auto px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold text-center transition-colors flex items-center justify-center gap-2"
         >
-          <span>Confirm Payment via WhatsApp</span>
+          <span>Send your receipt via WhatsApp</span>
         </a>
         <button 
           type="button" 
@@ -120,7 +81,7 @@
       </div>
     </div>
 
-  </div>
+  </section>
 
   <!-- Order Breakdown Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -215,55 +176,9 @@
   </div>
 </div>
 
-<!-- Polling Script for Live Payment Status -->
-{% if not is_paid %}
-<script>
-  (function() {
-    const pollUrl = "{% url 'storefront:order_status_poll' order.receipt_number %}?token={{ checkout_token }}";
-    let timer;
-    let stopped = false;
-    let attempts = 0;
-    const feedback = document.createElement("p");
-    feedback.setAttribute("role", "status");
-    feedback.className = "text-sm p-4";
-    const retry = document.createElement("button");
-    retry.type = "button";
-    retry.textContent = "Check payment status again";
-    retry.className = "nest-button";
-    retry.hidden = true;
-    document.getElementById("main-content").prepend(feedback, retry);
-    retry.addEventListener("click", function () { attempts = 0; stopped = false; retry.hidden = true; checkStatus(); });
-    async function checkStatus() {
-      if (stopped) return;
-      if (document.hidden || !navigator.onLine) {
-        feedback.textContent = navigator.onLine ? "" : "You are offline. Payment status will refresh when you reconnect.";
-        timer = setTimeout(checkStatus, 5000); return;
-      }
-      try {
-        const response = await fetch(pollUrl, { signal: AbortSignal.timeout(15000), cache: "no-store" });
-        if (!response.ok) throw new Error("Status unavailable");
-        const data = await response.json();
-        if (data.is_paid) {
-          stopped = true;
-          ["stkWaitingBox", "tillInstructionsBox"].forEach(id => document.getElementById(id)?.classList.add("hidden"));
-          document.getElementById("paidBanner")?.classList.remove("hidden");
-          const badge = document.getElementById("statusBadgeContainer");
-          if (badge) badge.textContent = "PAID — " + String(data.status_display || "Paid");
-          feedback.textContent = "Payment confirmed.";
-          return;
-        }
-        feedback.textContent = "Payment has not been confirmed yet. Do not pay again while confirmation is pending.";
-      } catch {
-        feedback.textContent = "We could not refresh payment status. We will retry; check your receipt before paying again.";
-      }
-      attempts++;
-      if (attempts >= 60) { stopped = true; retry.hidden = false; return; }
-      timer = setTimeout(checkStatus, 5000);
-    }
-    timer = setTimeout(checkStatus, 3000);
-    window.addEventListener("pagehide", () => { stopped = true; clearTimeout(timer); });
-    window.addEventListener("pageshow", event => { if (event.persisted) { stopped = false; attempts = 0; checkStatus(); } });
-  })();
-</script>
+{% if not is_paid and payment_state != 'closed' %}
+<script src="{% static 'storefront/payment-status.js' %}" defer
+        data-poll-url="{% url 'storefront:order_status_poll' order.receipt_number %}"
+        data-initial-state="{{ payment_state }}"></script>
 {% endif %}
 {% endblock %}

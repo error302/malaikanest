@@ -1,9 +1,12 @@
 from decimal import Decimal
+from io import StringIO
 
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from apps.products.models import Category, Product, ProductVariant, Inventory
+from apps.core.models import SiteSettings
+from apps.products.models import Banner, Category, Product, ProductVariant, Inventory
 
 
 @override_settings(SECURE_SSL_REDIRECT=False, ALLOWED_HOSTS=['testserver'])
@@ -66,6 +69,50 @@ class StorefrontCatalogueViewsTests(TestCase):
         self.assertEqual(list(response.context["featured_products"]), [self.active_product])
         self.assertEqual(list(response.context["new_arrivals"]), [self.active_product])
         self.assertNotContains(response, draft.name)
+
+    def test_homepage_serves_phone_and_desktop_banner_photos(self):
+        Banner.objects.create(
+            title="New clothes in the shop",
+            image_url="https://example.com/desktop.webp",
+            mobile_image_url="https://example.com/mobile.webp",
+        )
+        response = self.client.get(reverse("storefront:home"))
+        self.assertContains(response, '<source media="(max-width: 640px)" srcset="https://example.com/mobile.webp">', html=True)
+        self.assertContains(response, 'src="https://example.com/desktop.webp"')
+
+    def test_storefront_displays_the_original_logo_until_a_custom_logo_is_set(self):
+        path = reverse("storefront:home")
+        self.assertContains(self.client.get(path), "nest-home/original-malaika-logo.webp")
+
+        settings = SiteSettings.get_solo()
+        settings.logo_url = "https://example.com/shop-logo.webp"
+        settings.save(update_fields=["logo_url"])
+        response = self.client.get(path)
+        self.assertContains(response, 'src="https://example.com/shop-logo.webp"')
+        self.assertNotContains(response, "nest-home/original-malaika-logo.webp")
+
+    def test_demo_cleanup_only_hides_original_seed_and_keeps_records(self):
+        mock = Product.objects.create(
+            name="Organic Ribbed Sleepsuit", slug="organic-ribbed-sleepsuit",
+            category=self.category, price="900.00", is_active=True, status="published",
+            image_url="https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=800&q=80",
+        )
+        replacement = Product.objects.create(
+            name="Newborn Welcome Gift Hamper", slug="newborn-welcome-gift-hamper",
+            category=self.category, price="900.00", is_active=True, status="published",
+            image_url="https://example.com/my-own-photo.webp",
+        )
+        call_command("unpublish_demo_products", stdout=StringIO())
+        mock.refresh_from_db()
+        self.assertTrue(mock.is_active)
+
+        call_command("unpublish_demo_products", "--apply", stdout=StringIO())
+        mock.refresh_from_db()
+        replacement.refresh_from_db()
+        self.assertFalse(mock.is_active)
+        self.assertEqual(mock.status, "draft")
+        self.assertTrue(replacement.is_active)
+        self.assertEqual(self.client.get(reverse("storefront:product_detail", args=[mock.slug])).status_code, 404)
 
     def test_catalogue_and_search_exclude_drafts(self):
         draft = Product.objects.create(

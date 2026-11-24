@@ -1,31 +1,23 @@
 {% extends "storefront/base.html" %}
 
-{% block title %}Shopping Bag · Malaika Nest{% endblock %}
+{% block title %}Shopping bag · Malaika Nest{% endblock %}
 
 {% block content %}
-<div class="nest-cart-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+<div class="nest-cart-page shop-frame coast-page">
   <h1 class="font-serif text-2xl sm:text-4xl font-bold text-[#2C1810] mb-5 sm:mb-8">
-    Shopping Bag
+    Shopping bag
     {% if items %}
       <span class="text-base sm:text-lg font-sans font-normal text-stone-500">({{ items|length }} item{{ items|length|pluralize }})</span>
     {% endif %}
   </h1>
 
   {% if not items %}
-    <!-- Empty Cart State -->
-    <div class="max-w-lg mx-auto py-16 text-center">
-      <div class="w-20 h-20 rounded-full bg-amber-50 text-[#8B6914] flex items-center justify-center mx-auto mb-6">
-        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-        </svg>
+    <div class="coast-empty">
+      <div>
+        <h2>Your bag is empty</h2>
+        <p>Find something for their next size up.</p>
       </div>
-      <h2 class="font-serif text-2xl font-bold text-[#2C1810] mb-3">Your Bag is Empty</h2>
-      <p class="text-stone-600 text-sm mb-8 leading-relaxed">
-        Explore our curated collection of soft baby rompers, toddler outfits, and essentials made with care.
-      </p>
-      <a href="{% url 'storefront:product_list' %}" class="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-[#2C1810] hover:bg-black text-[#F4EBE1] text-sm font-semibold tracking-wide transition-all shadow-sm">
-        Start Shopping
-      </a>
+      <a href="{% url 'storefront:product_list' %}" class="coast-button">Browse clothes</a>
     </div>
   {% else %}
     <!-- Free Shipping Progress Indicator -->

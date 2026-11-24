@@ -47,10 +47,19 @@ def storefront_context(request):
 
     site_settings = SiteSettings.get_solo()
 
+    # Saved items count for the header heart (session or account backed)
+    wishlist_count = 0
+    try:
+        from .views_wishlist import get_wishlist_ids
+        wishlist_count = len(get_wishlist_ids(request))
+    except Exception:
+        logger.warning("Failed to load wishlist count", exc_info=True)
+
     return {
         "nav_categories": categories,
         "cart_count": cart_count,
         "cart": cart,
+        "wishlist_count": wishlist_count,
         "site_settings": site_settings,
         "active_banner": active_banner,
         "whatsapp_phone": "+254726771321",

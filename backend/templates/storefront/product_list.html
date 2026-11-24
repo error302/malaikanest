@@ -5,10 +5,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+<div class="shop-frame coast-catalog">
   
   <!-- Breadcrumbs & Heading -->
-  <div class="mb-5 sm:mb-6">
+  <div class="coast-catalog-intro">
     <div class="text-xs text-gray-500 mb-2 flex items-center gap-1.5 flex-wrap">
       <a href="{% url 'storefront:home' %}" class="hover:text-[#8B6914]">Home</a>
       <span>/</span>
@@ -22,9 +22,9 @@
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
       <div class="nest-catalog-heading sm:!text-left sm:!mb-0">
         <h1 class="font-serif text-2xl sm:text-4xl font-bold text-[#2C1810]">
-          {% if selected_condition == "mtumba" %}Mtumba — Pre-Loved Collection{% elif selected_condition == "new" %}Brand New{% elif selected_category %}{{ selected_category.name }}{% elif search_query %}Search: "{{ search_query }}"{% else %}Find their next favourite{% endif %}
+          {% if selected_condition == "mtumba" %}Pre-loved kidswear{% elif selected_condition == "new" %}Brand New{% elif selected_category %}{{ selected_category.name }}{% elif search_query %}Search: "{{ search_query }}"{% else %}Shop baby &amp; kidswear{% endif %}
         </h1>
-        <p class="text-xs sm:text-sm text-gray-500 mt-1">Showing {{ total_count }} item{{ total_count|pluralize }}</p>
+        <p class="mt-2">{{ total_count }} item{{ total_count|pluralize }}</p>
       </div>
 
       <!-- Sorting -->
@@ -34,7 +34,7 @@
         {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
         {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
         {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-        <label for="sort" class="text-xs text-gray-500 whitespace-nowrap">Sort by:</label>
+        <label for="sort" class="text-sm font-semibold whitespace-nowrap">Sort by</label>
         <select 
           name="sort" 
           id="sort" 
@@ -50,146 +50,167 @@
     </div>
   </div>
 
-  <form method="get" class="nest-size-filter">
-    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
-    {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
-    {% if selected_condition %}<input type="hidden" name="condition" value="{{ selected_condition }}">{% endif %}
-    {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-    <input type="hidden" name="sort" value="{{ selected_sort }}">
-    <fieldset>
-      <legend>Shop by size</legend>
-      <div class="nest-size-options">
-        <button class="nest-size-option" name="size" value="" aria-pressed="{% if not selected_size %}true{% else %}false{% endif %}">All sizes</button>
-        {% for value, label in size_choices %}
-        <button class="nest-size-option" name="size" value="{{ value }}" aria-pressed="{% if selected_size == value %}true{% else %}false{% endif %}">{{ label }}</button>
+  <div class="boutique-catalog-body">
+    <aside class="boutique-filter-panel" aria-label="Product filters">
+      <form method="get" class="nest-size-filter">
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+        {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
+        {% if selected_condition %}<input type="hidden" name="condition" value="{{ selected_condition }}">{% endif %}
+        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+        <input type="hidden" name="sort" value="{{ selected_sort }}">
+        <details{% if selected_size %} open{% endif %}>
+          <summary class="coast-size-toggle">Shop by size</summary>
+          <fieldset aria-label="Choose a size">
+          <div class="nest-size-options">
+            <button class="nest-size-option" name="size" value="" aria-pressed="{% if not selected_size %}true{% else %}false{% endif %}">All sizes</button>
+            {% for value, label in size_choices %}
+            <button class="nest-size-option" name="size" value="{{ value }}" aria-pressed="{% if selected_size == value %}true{% else %}false{% endif %}">{{ label }}</button>
+            {% endfor %}
+          </div>
+          <p class="nest-card-sizes">Choose a size to see items with stock available. Check each item's measurements for the best fit.</p>
+          </fieldset>
+        </details>
+      </form>
+
+      <details class="boutique-category-filter"{% if selected_category %} open{% endif %}>
+        <summary>Shop by category</summary>
+        <div class="boutique-category-list">
+        <a
+          href="{% url 'storefront:product_list' %}"
+          {% if not selected_category %}aria-current="page"{% endif %}
+          class="px-3.5 py-2.5 min-h-[44px] inline-flex items-center rounded-full border whitespace-nowrap font-medium transition-colors {% if not selected_category %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}"
+        >
+          All Categories
+        </a>
+        {% for cat in categories %}
+          <a
+            href="{% url 'storefront:category_detail' category_slug=cat.slug %}"
+            {% if selected_category.slug == cat.slug %}aria-current="page"{% endif %}
+            class="px-3.5 py-2.5 min-h-[44px] inline-flex items-center rounded-full border whitespace-nowrap font-medium transition-colors {% if selected_category.slug == cat.slug %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}"
+          >
+            {{ cat.name }}
+          </a>
+        {% endfor %}
+        </div>
+      </details>
+
+      <form method="get" class="flex flex-wrap items-center gap-2 pb-4 mb-2 text-xs" id="condition-filter">
+        {% if selected_size %}<input type="hidden" name="size" value="{{ selected_size }}">{% endif %}
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
+        {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
+        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+        <input type="hidden" name="sort" value="{{ selected_sort }}">
+        <span class="text-gray-500 font-medium whitespace-nowrap w-full sm:w-auto">Condition:</span>
+        <button type="submit" name="condition" value="" aria-pressed="{% if not selected_condition %}true{% else %}false{% endif %}" class="px-3.5 py-2.5 min-h-[44px] rounded-full border font-medium transition-colors {% if not selected_condition %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">All</button>
+        <button type="submit" name="condition" value="new" aria-pressed="{% if selected_condition == 'new' %}true{% else %}false{% endif %}" class="px-3.5 py-2.5 min-h-[44px] rounded-full border font-medium transition-colors {% if selected_condition == 'new' %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">Brand New</button>
+        <button type="submit" name="condition" value="mtumba" aria-pressed="{% if selected_condition == 'mtumba' %}true{% else %}false{% endif %}" class="px-3.5 py-2.5 min-h-[44px] rounded-full border font-medium transition-colors {% if selected_condition == 'mtumba' %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">Pre-Loved (Mtumba)</button>
+      </form>
+
+    </aside>
+
+    <div class="boutique-catalog-results">
+      {% if selected_condition == 'mtumba' %}
+        <p class="boutique-catalog-note">Browse second-hand clothes by size. Availability varies by item.</p>
+      {% endif %}
+      <div class="boutique-product-grid">
+        {% for product in products %}
+          <div class="nest-product-card bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-lg transition-all flex flex-col group">
+            <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="block relative aspect-square bg-[#FAF7F2] overflow-hidden">
+              {% if product.get_image_url %}
+                <img src="{{ product.get_image_url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              {% elif product.images.first %}
+                <img src="{{ product.images.first.get_image_url|default:product.images.first.image.url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              {% else %}
+                <div class="w-full h-full flex items-center justify-center font-serif text-3xl font-bold text-[#EADBCE]">MN</div>
+              {% endif %}
+
+              {% if product.condition == 'mtumba' %}
+                <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8B6914] text-white">Pre-Loved</span>
+              {% endif %}
+
+              {% if product.shop_stock <= 0 %}
+                <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-800 text-white">Out of stock</span>
+              {% elif product.shop_stock <= 3 %}
+                <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C96E4B] text-white">Low stock</span>
+              {% endif %}
+            </a>
+
+            <form method="post" action="{% url 'storefront:wishlist_toggle' slug=product.slug %}" class="nest-save-form">
+              {% csrf_token %}
+              <button type="submit"
+                      class="nest-save{% if product.pk|stringformat:"s" in wishlist_ids %} is-saved{% endif %}"
+                      aria-label="{% if product.pk|stringformat:"s" in wishlist_ids %}Remove {{ product.name }} from saved items{% else %}Save {{ product.name }} for later{% endif %}"
+                      aria-pressed="{% if product.pk|stringformat:"s" in wishlist_ids %}true{% else %}false{% endif %}"
+                      data-save-toggle>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.5s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 8.2a4.4 4.4 0 0 1 7.5 2.7c0 5-7.5 9.6-7.5 9.6Z"/></svg>
+              </button>
+            </form>
+
+            <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+              <div>
+
+                <h3 class="font-medium text-xs sm:text-sm text-[#2C1810] line-clamp-2 mb-2 group-hover:text-[#8B6914] transition-colors">
+                  <a href="{% url 'storefront:product_detail' slug=product.slug %}">{{ product.name }}</a>
+                </h3>
+                <p class="nest-card-sizes line-clamp-2">{% if product.shop_sizes %}Available sizes: {{ product.shop_sizes|join:", " }}{% elif product.shop_stock > 0 %}Ask us about sizing{% else %}Currently out of stock{% endif %}</p>
+              </div>
+              <div>
+                <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#FAF7F2]">
+                  <div class="min-w-0">
+                    <span class="text-xs sm:text-sm font-bold text-[#2C1810] tabular-nums">KES {{ product.price|floatformat:"0" }}</span>
+                    {% if product.compare_price %}
+                      <span class="text-[10px] text-gray-400 line-through ml-1 tabular-nums">KES {{ product.compare_price|floatformat:"0" }}</span>
+                    {% endif %}
+                  </div>
+                  <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="text-[11px] font-semibold text-[#8B6914] hover:text-[#A37B18] flex-shrink-0 min-h-[44px] inline-flex items-center">
+                    <span>View</span>
+                    <svg class="w-3 h-3 inline-block ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                  </a>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="coast-empty col-span-full">
+            <div>
+              {% if search_query or selected_category or selected_age or selected_size or selected_condition %}
+                <h2>No clothes match these filters</h2>
+                <p>Try another size or browse all clothes.</p>
+              {% else %}
+                <h2>Our online shelves are filling up</h2>
+                <p>Ask us what’s available in Likoni while we add clothes to the online shop.</p>
+              {% endif %}
+            </div>
+            {% if search_query or selected_category or selected_age or selected_size or selected_condition %}
+              <a class="coast-button" href="{% url 'storefront:product_list' %}">Clear filters</a>
+            {% else %}
+              <a class="coast-button" href="{{ whatsapp_url }}">Ask on WhatsApp</a>
+            {% endif %}
+          </div>
         {% endfor %}
       </div>
-      <p class="nest-card-sizes">Choose a size to see items with stock available. Check each item's measurements for the best fit.</p>
-    </fieldset>
-  </form>
 
-  <!-- Category Pills Filter Bar -->
-  <div class="nest-scroll-x pb-4 mb-4 border-b border-[#EADBCE] text-xs -mx-4 px-4 sm:mx-0 sm:px-0">
-    <a
-      href="{% url 'storefront:product_list' %}"
-      class="px-3.5 py-2.5 min-h-[44px] inline-flex items-center rounded-full border whitespace-nowrap font-medium transition-colors {% if not selected_category %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}"
-    >
-      All Categories
-    </a>
-    {% for cat in categories %}
-      <a 
-        href="{% url 'storefront:category_detail' category_slug=cat.slug %}" 
-        class="px-3.5 py-2.5 min-h-[44px] inline-flex items-center rounded-full border whitespace-nowrap font-medium transition-colors {% if selected_category.slug == cat.slug %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}"
-      >
-        {{ cat.name }}
-      </a>
-    {% endfor %}
-  </div>
-
-  <!-- Products Grid -->
-  {% if selected_condition == 'mtumba' %}
-  <div class="mb-6 pb-6 border-b border-[#EADBCE]">
-    <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Pre-Loved Collection</span>
-    <p class="text-xs sm:text-sm text-gray-600 mt-2 max-w-2xl leading-relaxed">
-      Carefully selected second-hand children's clothing, inspected and cleaned before listing. Same quality standards, gentler prices. Every piece is one-of-one — when it's gone, it's gone.
-    </p>
-  </div>
-  {% endif %}
-  <form method="get" class="flex flex-wrap items-center gap-2 pb-4 mb-2 text-xs" id="condition-filter">
-    {% if selected_size %}<input type="hidden" name="size" value="{{ selected_size }}">{% endif %}
-    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
-    {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
-    {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-    <input type="hidden" name="sort" value="{{ selected_sort }}">
-    <span class="text-gray-500 font-medium whitespace-nowrap w-full sm:w-auto">Condition:</span>
-    <button type="submit" name="condition" value="" class="px-3.5 py-2.5 min-h-[44px] rounded-full border font-medium transition-colors {% if not selected_condition %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">All</button>
-    <button type="submit" name="condition" value="new" class="px-3.5 py-2.5 min-h-[44px] rounded-full border font-medium transition-colors {% if selected_condition == 'new' %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">Brand New</button>
-    <button type="submit" name="condition" value="mtumba" class="px-3.5 py-2.5 min-h-[44px] rounded-full border font-medium transition-colors {% if selected_condition == 'mtumba' %}bg-[#8B6914] text-white border-[#8B6914]{% else %}bg-white text-gray-700 border-[#EADBCE] hover:border-[#8B6914]{% endif %}">Pre-Loved (Mtumba)</button>
-  </form>
-
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-    {% for product in products %}
-      <div class="nest-product-card bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-lg transition-all flex flex-col group">
-        <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="block relative aspect-square bg-[#FAF7F2] overflow-hidden">
-          {% if product.get_image_url %}
-            <img src="{{ product.get_image_url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-          {% elif product.images.first %}
-            <img src="{{ product.images.first.get_image_url|default:product.images.first.image.url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-          {% else %}
-            <div class="w-full h-full flex items-center justify-center font-serif text-3xl font-bold text-[#EADBCE]">MN</div>
+      <!-- Pagination -->
+      {% if products.has_other_pages %}
+        <div class="mt-12 flex justify-center items-center gap-2">
+          {% if products.has_previous %}
+            <a href="?page={{ products.previous_page_number }}&{{ pagination_query }}" class="px-3.5 py-2 min-h-[44px] inline-flex items-center gap-1 rounded-full bg-white border border-[#ECE7E1] text-xs font-semibold hover:border-[#8B6914] active:scale-[0.97] transition-all">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              <span>Previous</span>
+            </a>
           {% endif %}
-
-          {% if product.condition == 'mtumba' %}
-            <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8B6914] text-white">Pre-Loved</span>
+          <span class="text-xs text-gray-500 px-3">Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
+          {% if products.has_next %}
+            <a href="?page={{ products.next_page_number }}&{{ pagination_query }}" class="px-3.5 py-2 min-h-[44px] inline-flex items-center gap-1 rounded-full bg-white border border-[#ECE7E1] text-xs font-semibold hover:border-[#8B6914] active:scale-[0.97] transition-all">
+              <span>Next</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
           {% endif %}
-
-          {% if product.shop_stock <= 0 %}
-            <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-800 text-white">Out of stock</span>
-          {% elif product.shop_stock <= 3 %}
-            <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C96E4B] text-white">Low stock</span>
-          {% endif %}
-        </a>
-
-        <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between">
-          <div>
-            <p class="text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1 truncate">{{ product.category.name }}</p>
-            <h3 class="font-medium text-xs sm:text-sm text-[#2C1810] line-clamp-2 mb-2 group-hover:text-[#8B6914] transition-colors">
-              <a href="{% url 'storefront:product_detail' slug=product.slug %}">{{ product.name }}</a>
-            </h3>
-            <p class="nest-card-sizes line-clamp-2">{% if product.shop_sizes %}Available sizes: {{ product.shop_sizes|join:", " }}{% elif product.shop_stock > 0 %}Ask us about sizing{% else %}Currently out of stock{% endif %}</p>
-          </div>
-          <div>
-            <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#FAF7F2]">
-              <div class="min-w-0">
-                <span class="text-xs sm:text-sm font-bold text-[#2C1810]">KES {{ product.price|floatformat:"0" }}</span>
-                {% if product.compare_price %}
-                  <span class="text-[10px] text-gray-400 line-through ml-1">KES {{ product.compare_price|floatformat:"0" }}</span>
-                {% endif %}
-              </div>
-              <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="text-[11px] font-semibold text-[#8B6914] hover:text-[#A37B18] flex-shrink-0 min-h-[44px] inline-flex items-center">
-                <span>View</span>
-                <svg class="w-3 h-3 inline-block ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-              </a>
-            </div>
-            <p class="text-[10px] text-gray-400 mt-1.5 leading-snug">Mombasa same-day · Free over KES 10,000</p>
-          </div>
-        </div>
-      </div>
-    {% empty %}
-      {% if search_query or selected_category or selected_age or selected_size %}
-        <div class="col-span-full bg-white rounded-2xl p-12 text-center border border-[#EADBCE]">
-          <p class="font-serif text-xl text-gray-700 font-semibold mb-2">No products match your search</p>
-          <p class="text-xs text-gray-500 mb-6">Try searching with a different term or browse our categories.</p>
-          <a href="{% url 'storefront:product_list' %}" class="px-6 py-2.5 rounded-full bg-[#8B6914] text-white text-xs font-semibold">View All Products</a>
-        </div>
-      {% else %}
-        <div class="col-span-full bg-white rounded-2xl p-12 text-center border border-[#EADBCE]">
-          <p class="font-serif text-xl font-bold text-[#2C1810] mb-2">New arrivals are being added</p>
-          <p class="text-xs sm:text-sm text-gray-500 mb-6 max-w-md mx-auto leading-relaxed">We're stocking the shelves right now. Chat with us on WhatsApp for today's available stock — we'll happily send photos, sizes, and prices.</p>
-          <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all">Chat on WhatsApp</a>
         </div>
       {% endif %}
-    {% endfor %}
-  </div>
 
-  <!-- Pagination -->
-  {% if products.has_other_pages %}
-    <div class="mt-12 flex justify-center items-center gap-2">
-      {% if products.has_previous %}
-        <a href="?page={{ products.previous_page_number }}&{{ pagination_query }}" class="px-3.5 py-2 min-h-[44px] inline-flex items-center gap-1 rounded-full bg-white border border-[#ECE7E1] text-xs font-semibold hover:border-[#8B6914] active:scale-[0.97] transition-all">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-          <span>Previous</span>
-        </a>
-      {% endif %}
-      <span class="text-xs text-gray-500 px-3">Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
-      {% if products.has_next %}
-        <a href="?page={{ products.next_page_number }}&{{ pagination_query }}" class="px-3.5 py-2 min-h-[44px] inline-flex items-center gap-1 rounded-full bg-white border border-[#ECE7E1] text-xs font-semibold hover:border-[#8B6914] active:scale-[0.97] transition-all">
-          <span>Next</span>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        </a>
-      {% endif %}
     </div>
-  {% endif %}
-
+  </div>
 </div>
 {% endblock %}

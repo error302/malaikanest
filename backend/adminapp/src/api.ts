@@ -101,7 +101,33 @@ export class ApiError extends Error {
   }
 }
 
+export type PaymentState = "pending" | "confirmed" | "failed" | "cancelled" | "unreconciled";
+
+export interface MpesaTransaction {
+  id: string;
+  order: string;
+  order_status: string;
+  amount: string;
+  status: "initiated" | "completed" | "failed" | "cancelled";
+  issue: string;
+  receipt: string | null;
+  reported_receipt: string | null;
+  checkout_id: string | null;
+  destination: string;
+  initiated_at: string;
+  confirmed_at: string | null;
+  statement_verified_at: string | null;
+}
+
+export interface MpesaPayments {
+  counts: Record<PaymentState, number>;
+  has_next: boolean;
+  transactions: MpesaTransaction[];
+}
+
 export const api = {
+  mpesaPayments: (state: PaymentState, page: number, signal: AbortSignal) =>
+    request<MpesaPayments>(`/payments/admin/mpesa/?state=${state}&page=${page}`, { signal }),
   login: async (email: string, password: string) => {
     const data = await request<{ access?: string; user?: { email: string } }>(
       "/accounts/admin/login/",
@@ -115,7 +141,7 @@ export const api = {
     await request<{ detail?: string }>("/accounts/logout/", { method: "POST" });
     setAccessCookie(null);
   },
-  analytics: () => request<Analytics>("/orders/admin/analytics/"),
+  analytics: (days = "30") => request<Analytics>(`/orders/admin/analytics/?payment_days=${encodeURIComponent(days)}`),
   products: async (params: string) => asPaged<Product>(await request<unknown>(`/products/admin/products/${params}`)),
   product: (id: string) => request<Product>(`/products/admin/products/${id}/`),
   saveProduct: (id: string | null, body: Partial<Product>) =>
@@ -208,6 +234,12 @@ export const api = {
 };
 
 export interface Analytics {
+  payments?: {
+    received: string;
+    by_method: { method: string; amount: string; count: number }[];
+    awaiting_payment: number;
+    to_dispatch: number;
+  };
   total_revenue: number;
   total_orders: number;
   pending_orders: number;

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminMpesaPaymentsView,
     AdminReconcileCandidatesView,
     AdminReconcilePaymentsView,
     CardCallbackView,
@@ -36,6 +37,7 @@ urlpatterns = [
     path('pesapal/initiate/', PesapalInitiateView.as_view(), name='pesapal_initiate'),
     path('pesapal/callback/', PesapalCallbackView.as_view(), name='pesapal_callback'),
     path('pesapal/ipn/', PesapalIPNView.as_view(), name='pesapal_ipn'),
+    path('admin/mpesa/', AdminMpesaPaymentsView.as_view(), name='admin_mpesa_payments'),
     path('admin/reconcile/', AdminReconcilePaymentsView.as_view(), name='admin_reconcile_payments'),
     path('admin/reconcile/candidates/', AdminReconcileCandidatesView.as_view(), name='admin_reconcile_candidates'),
 ]

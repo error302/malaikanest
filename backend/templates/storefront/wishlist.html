@@ -1,0 +1,71 @@
+{% extends "storefront/base.html" %}
+{% load static %}
+
+{% block title %}Saved Items · Malaika Nest{% endblock %}
+{% block meta_description %}The baby and kids clothes you have saved at Malaika Nest. Pick up where you left off.{% endblock %}
+
+{% block content %}
+<div class="shop-frame coast-page">
+  <div class="coast-catalog-intro mb-6">
+    <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mt-1">Saved items</h1>
+    <p class="text-xs sm:text-sm text-stone-600 mt-2">
+      {% if products %}
+        {{ products|length }} item{{ products|length|pluralize }} you are keeping an eye on. Saved on this device until you sign in.
+      {% else %}
+        Tap the heart on any item to keep it here while you decide.
+      {% endif %}
+    </p>
+  </div>
+
+  {% if products %}
+    <div class="boutique-product-grid">
+      {% for product in products %}
+        <div class="nest-product-card bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-lg transition-all flex flex-col group relative">
+          <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="block relative aspect-square bg-[#FAF7F2] overflow-hidden">
+            {% if product.get_image_url %}
+              <img src="{{ product.get_image_url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            {% elif product.images.first %}
+              <img src="{{ product.images.first.get_image_url|default:product.images.first.image.url }}" alt="{{ product.name }}" width="600" height="600" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            {% else %}
+              <div class="w-full h-full flex items-center justify-center font-serif text-3xl font-bold text-[#EADBCE]">MN</div>
+            {% endif %}
+          </a>
+
+          <form method="post" action="{% url 'storefront:wishlist_toggle' slug=product.slug %}" class="absolute top-2 right-2">
+            {% csrf_token %}
+            <button type="submit" aria-label="Remove {{ product.name }} from saved items"
+                    class="w-11 h-11 grid place-items-center rounded-full bg-white/95 border border-[#EADBCE] text-[#C96E4B] shadow-sm hover:scale-105 transition-transform">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.5s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 8.2a4.4 4.4 0 0 1 7.5 2.7c0 5-7.5 9.6-7.5 9.6Z"/></svg>
+            </button>
+          </form>
+
+          <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <h2 class="font-medium text-xs sm:text-sm text-[#2C1810] line-clamp-2 mb-2 group-hover:text-[#8B6914] transition-colors">
+                <a href="{% url 'storefront:product_detail' slug=product.slug %}">{{ product.name }}</a>
+              </h2>
+              <p class="nest-card-sizes line-clamp-2">{% if product.shop_sizes %}Available sizes: {{ product.shop_sizes|join:", " }}{% elif product.shop_stock > 0 %}Ask us about sizing{% else %}Currently out of stock{% endif %}</p>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#FAF7F2]">
+              <span class="text-xs sm:text-sm font-bold text-[#2C1810] tabular-nums">KES {{ product.price|floatformat:"0" }}</span>
+              <a href="{% url 'storefront:product_detail' slug=product.slug %}"
+                 class="px-3 py-2 min-h-[44px] inline-flex items-center rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-xs font-bold transition-colors">
+                View
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="bg-white rounded-3xl border border-[#EADBCE] p-8 sm:p-12 text-center">
+      <div class="w-14 h-14 rounded-full bg-[#FAF7F2] grid place-items-center mx-auto mb-4 text-[#C96E4B]">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.5s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 8.2a4.4 4.4 0 0 1 7.5 2.7c0 5-7.5 9.6-7.5 9.6Z"/></svg>
+      </div>
+      <h2 class="font-serif text-xl font-bold text-[#2C1810]">Nothing saved yet</h2>
+      <p class="text-sm text-stone-600 mt-2 max-w-sm mx-auto">Browse the shop and tap the heart on anything you like. It stays here for later.</p>
+      <a href="{% url 'storefront:product_list' %}" class="coast-button coast-button-mango mt-5">Browse clothes</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

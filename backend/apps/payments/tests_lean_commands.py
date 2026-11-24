@@ -1,6 +1,7 @@
 from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch, MagicMock
+import os
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -8,9 +9,10 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.core.email_service import ORDER_CONFIRMATION
-from apps.core.models import EmailLog
+from apps.core.models import EmailLog, OutboxEvent
 from apps.orders.models import Order
 from apps.payments.models import Payment, PaymentAuditLog
+from apps.payments.tasks import verify_mpesa_payment_async
 from apps.products.models import Product, Category
 
 

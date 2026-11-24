@@ -2,6 +2,7 @@
 
 import * as Icons from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { Reveal, RevealGroup } from '@/lib/motion';
 
 interface ValuePropData {
   id: string;
@@ -32,18 +33,16 @@ export function ValueProps({ props }: ValuePropsProps) {
       className="py-10 sm:py-12"
       style={{
         background: 'var(--brand-warm)',
-        borderTop: '1px solid var(--brand-border)',
-        borderBottom: '1px solid var(--brand-border)',
       }}
     >
       <div className="container-shell">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+        <RevealGroup className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6" stagger={0.08}>
           {active.map((p) => {
             const Icon = (Icons as any)[p.icon] || Icons.Shield;
             const title = 'titleKey' in p ? t(p.titleKey) : p.title;
             const subtitle = 'subtitleKey' in p ? t(p.subtitleKey) : p.subtitle;
             return (
-              <div key={p.id} className="flex items-start gap-3 sm:gap-4">
+              <Reveal key={p.id} variant="windUp" className="flex items-start gap-3 sm:gap-4">
                 <div
                   className="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(196, 112, 74, 0.12)' }}
@@ -58,10 +57,10 @@ export function ValueProps({ props }: ValuePropsProps) {
                     {subtitle}
                   </p>
                 </div>
-              </div>
+              </Reveal>
             );
           })}
-        </div>
+        </RevealGroup>
       </div>
     </section>
   );

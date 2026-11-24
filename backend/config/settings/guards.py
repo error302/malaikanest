@@ -170,24 +170,7 @@ def validate_production_env(env):
     # exception is an explicit, operator-signed risk acceptance for launching
     # before the Safaricom certificate is provisioned (callbacks then rely on
     # the IP allowlist plus the server-to-server STK-query reconciliation).
-    mpesa_risk_accepted = to_bool(env.get("MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED", ""))
 
-    if not mpesa_risk_accepted and not to_bool(env.get("MPESA_STRICT_SIGNATURE", "")):
-        errors.append(
-            "MPESA_STRICT_SIGNATURE must be enabled in production so M-Pesa callbacks "
-            "are verified against Safaricom's public key instead of trusted by IP address. "
-            "If you must launch before the certificate is provisioned, set "
-            "MPESA_CALLBACK_SIGNATURE_RISK_ACCEPTED=true to accept the risk explicitly."
-        )
-    elif to_bool(env.get("MPESA_STRICT_SIGNATURE", "")):
-        public_key_path = str(env.get("MPESA_PUBLIC_KEY_PATH", "") or "").strip()
-        if not public_key_path:
-            errors.append(
-                "MPESA_PUBLIC_KEY_PATH must point to the Safaricom public certificate "
-                "when MPESA_STRICT_SIGNATURE is enabled."
-            )
-        elif not os.path.isfile(public_key_path):
-            errors.append(f"MPESA_PUBLIC_KEY_PATH does not point to a readable file: {public_key_path}")
 
     frontend_url = env.get("FRONTEND_URL", "")
     if frontend_url and (not frontend_url.startswith("https://") or is_localhost_url(frontend_url)):

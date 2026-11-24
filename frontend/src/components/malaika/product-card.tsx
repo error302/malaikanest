@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag, Star, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { Pressable, FeedbackPulse } from '@/lib/motion';
 import { useCart } from '@/lib/cartContext';
 import { showToast } from '@/lib/toast';
 import { useWishlist } from '@/lib/wishlistContext';
@@ -136,16 +137,16 @@ interface DetailsProps {
   product: Product;
   discount: number;
   inStock: boolean;
-  hovered: boolean;
   onAdd: (e?: React.MouseEvent | React.KeyboardEvent) => void;
+  addedBeat: number;
 }
 
 function ProductCardDetails({
   product,
   discount,
   inStock,
-  hovered,
   onAdd,
+  addedBeat,
 }: DetailsProps) {
   const { t } = useI18n();
 
@@ -227,14 +228,14 @@ function ProductCardDetails({
 
         <div className="flex items-baseline gap-2 mt-2">
           <span
-            className="text-[14px] sm:text-[15px] font-bold"
+            className="text-[14px] sm:text-[15px] font-bold tabular-nums"
             style={{ color: 'var(--brand-text)' }}
           >
             {formatKES(product.price)}
           </span>
           {product.originalPrice && (
             <span
-              className="text-[12px] line-through"
+              className="text-[12px] line-through tabular-nums"
               style={{ color: 'var(--brand-text-muted)' }}
             >
               {formatKES(product.originalPrice)}
@@ -267,16 +268,16 @@ function ProductCardDetails({
             type="button"
             onClick={onAdd}
             disabled={!inStock}
-            className={`hidden sm:inline-flex items-center justify-center gap-1.5 w-full py-2.5 mt-1 text-[12px] font-medium uppercase tracking-[0.1em] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed ${
-              hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'
-            }`}
+            className="hidden sm:inline-flex items-center justify-center gap-1.5 w-full py-2.5 mt-1 text-[12px] font-semibold uppercase tracking-[0.1em] transition-all duration-300 hover:brightness-110 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: 'var(--brand-brown)',
+              background: 'var(--accent, var(--brand-brown))',
               color: '#FFFFFF',
             }}
             aria-label={`${t('product.addToCart')} ${product.name}`}
           >
-            <ShoppingBag size={13} strokeWidth={1.75} />
+            <FeedbackPulse trigger={addedBeat}>
+              <ShoppingBag size={13} strokeWidth={1.75} />
+            </FeedbackPulse>
             {inStock
               ? (product.variantCount ?? 0) > 1
                 ? t('product.viewDetails')
@@ -295,7 +296,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
   const { add: addToCart } = useCart();
   const { contains, toggle: toggleWishlist } = useWishlist();
   const wished = contains(product.id);
-  const [hovered, setHovered] = useState(false);
+  const [addedBeat, setAddedBeat] = useState(0);
 
   const inStock = product.inStock !== false;
   const discount = product.originalPrice
@@ -320,6 +321,7 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
       qty: 1,
     });
     showToast(t('product.addedToCart') || 'Added to cart', 'success');
+    setAddedBeat((n) => n + 1);
   };
 
   const handleToggleWishlist = () => {
@@ -339,14 +341,10 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
   };
 
   return (
-    <article
+    <Pressable
+      as="div"
+      scale={0.985}
       className="group relative flex flex-col"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={() => setHovered(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false);
-      }}
     >
       <ProductCardThumbnail
         product={product}
@@ -360,10 +358,10 @@ export const ProductCard = React.memo(function ProductCard({ product, index = 0 
         product={product}
         discount={discount}
         inStock={inStock}
-        hovered={hovered}
         onAdd={handleAdd}
+        addedBeat={addedBeat}
       />
-    </article>
+    </Pressable>
   );
 });
 

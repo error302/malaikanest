@@ -3,6 +3,8 @@ from datetime import timedelta
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.db.models import Q
+from apps.payments.mpesa_verification import MAX_ATTEMPTS
 
 from apps.payments.models import Payment, PaymentAuditLog
 from apps.payments.tasks import verify_mpesa_payment_async
@@ -46,9 +48,11 @@ class Command(BaseCommand):
             Payment.objects.filter(
                 payment_method="mpesa",
                 status="initiated",
+                mpesa_query_attempts__lt=MAX_ATTEMPTS,
                 initiated_at__gte=min_created,
                 initiated_at__lte=max_created,
             )
+            .filter(Q(mpesa_next_query_at__isnull=True) | Q(mpesa_next_query_at__lte=now))
             .exclude(mpesa_checkout_request_id__isnull=True)
             .exclude(mpesa_checkout_request_id="")
             .order_by("initiated_at")[:limit]
@@ -70,7 +74,7 @@ class Command(BaseCommand):
 
             processed += 1
             self.stdout.write(
-                f"Reconciling payment={payment.id} order={payment.order_id} checkout_id={payment.checkout_request_id}..."
+                f"Reconciling payment={payment.id} order={payment.order_id}..."
             )
 
             try:
@@ -79,13 +83,13 @@ class Command(BaseCommand):
                 payment.refresh_from_db()
                 if payment.status == "completed":
                     completed += 1
-                    self.stdout.write(self.style.SUCCESS(f"  -> Payment {payment.id} COMPLETED (Order {payment.order_id} marked paid)"))
+                    self.stdout.write(self.style.SUCCESS(f"  -> Payment {payment.id} COMPLETED"))
                 else:
                     self.stdout.write(f"  -> Payment {payment.id} result: {result} (status: {payment.status})")
-            except Exception as exc:
+            except Exception:
                 failed += 1
-                logger.error("Error reconciling payment %s: %s", payment.id, exc, exc_info=True)
-                self.stdout.write(self.style.ERROR(f"  -> Error reconciling payment {payment.id}: {exc}"))
+                logger.error("Error reconciling payment %s", payment.id)
+                self.stdout.write(self.style.ERROR(f"  -> Error reconciling payment {payment.id}"))
 
         self.stdout.write(
             self.style.SUCCESS(

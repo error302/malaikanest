@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import requests
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Count, Q
 from django.http import JsonResponse, HttpResponseRedirect
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -17,6 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.orders.models import Order
 from apps.core.utils import get_client_ip
@@ -27,7 +29,7 @@ from .tasks import reconcile_payments_task, verify_mpesa_payment_async, verify_p
 
 logger = logging.getLogger("apps.payments")
 
-from .services import PaymentService, normalize_phone, is_valid_mpesa_ip, audit_log
+from .services import PaymentService, normalize_phone, audit_log
 
 
 def resolve_order_for_request(request, order_id):
@@ -49,11 +51,11 @@ def resolve_order_for_request(request, order_id):
 
     checkout_token = (request.data.get("checkout_token") or request.query_params.get("checkout_token") or "").strip()
     if checkout_token:
-        return order_qs.filter(checkout_token=checkout_token, user__isnull=True).first()
+        return order_qs.filter(pk=order_id, checkout_token=checkout_token, user__isnull=True).first()
 
     receipt_number = (request.data.get("receipt_number") or request.query_params.get("receipt_number") or "").strip()
     if receipt_number:
-        return order_qs.filter(receipt_number=receipt_number, user__isnull=True).first()
+        return order_qs.filter(pk=order_id, receipt_number=receipt_number, user__isnull=True).first()
 
     return None
 
@@ -113,8 +115,6 @@ class MpesaSTKPushView(APIView):
         if not payment_id or not phone:
             return Response({"detail": "payment_id and phone required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        phone = normalize_phone(phone)
-
         payment = Payment.objects.filter(order__user=request.user, pk=payment_id, payment_method="mpesa").first()
         if not payment:
             return Response({"detail": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -144,7 +144,7 @@ class MpesaInitiateAndPushView(APIView):
         if order.status != "pending":
             return Response({"detail": "Order not in pending state"}, status=status.HTTP_400_BAD_REQUEST)
 
-        phone_norm = normalize_phone(phone)
+        phone_norm = phone
 
         payment, _ = Payment.objects.get_or_create(
             order=order,
@@ -152,10 +152,6 @@ class MpesaInitiateAndPushView(APIView):
         )
         if payment.status == "completed":
             return Response({"detail": "Payment already completed"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if payment.phone != phone_norm:
-            payment.phone = phone_norm
-            payment.save(update_fields=["phone_number", "updated_at"])
 
         try:
             checkout_request_id = PaymentService.initiate_mpesa_stk(payment, phone_norm)
@@ -187,7 +183,7 @@ class MpesaInitiateView(APIView):
         if order.status != "pending":
             return Response({"detail": "Order not in pending state"}, status=status.HTTP_400_BAD_REQUEST)
 
-        phone_norm = normalize_phone(phone)
+        phone_norm = phone
         payment, _ = Payment.objects.get_or_create(
             order=order,
             defaults={
@@ -208,10 +204,6 @@ class MpesaInitiateView(APIView):
         if payment.status == "completed":
             return Response({"detail": "Payment already completed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if payment.phone != phone_norm:
-            payment.phone = phone_norm
-            payment.save(update_fields=["phone_number", "updated_at"])
-
         try:
             checkout_request_id = PaymentService.initiate_mpesa_stk(payment, phone_norm)
             return Response({"checkout_request_id": checkout_request_id, "order_id": order.id})
@@ -231,8 +223,8 @@ class PaymentVerifyView(APIView):
         if request.user.is_authenticated:
             payment = payment_qs.filter(order__user=request.user).first()
         else:
-            guest_email = (request.query_params.get("guest_email") or "").strip().lower()
-            payment = payment_qs.filter(order__guest_email__iexact=guest_email).first() if guest_email else None
+            token = request.query_params.get("checkout_token", "")
+            payment = payment_qs.filter(order__checkout_token=token, order__user__isnull=True).first() if token else None
 
         if not payment:
             return Response({"detail": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -242,8 +234,10 @@ class PaymentVerifyView(APIView):
                 "checkout_request_id": payment.checkout_request_id,
                 "status": payment.status,
                 "order_id": payment.order_id,
+                "order_paid": payment.order.status in {"paid", "processing", "shipped", "delivered"},
                 "mpesa_receipt_number": payment.mpesa_receipt_number,
-            }
+            },
+            headers={"Cache-Control": "private, no-store"},
         )
 
 
@@ -301,57 +295,34 @@ class PaymentStatusByIdView(APIView):
         )
 
 
+class MpesaCallbackThrottle(ScopedRateThrottle):
+    def get_ident(self, request):
+        return get_client_ip(request)
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    authentication_classes = []
+    throttle_classes = [MpesaCallbackThrottle]
+    throttle_scope = "mpesa_callback"
+
     def post(self, request):
-        client_ip = get_client_ip(request)
+        from .mpesa_verification import queue_callback
 
-        is_safaricom = is_valid_mpesa_ip(client_ip)
-        if not is_safaricom:
-            audit_log(event_type="callback_blocked", payload=request.data, request_ip=client_ip, notes="Blocked non-Safaricom callback")
-            return JsonResponse({"ResultCode": 1, "ResultDesc": "Unauthorized"}, status=200)
-
-        raw_payload = request.data
-        # Prefer raw JSON body when present; it's the most faithful representation and
-        # avoids issues where `request.data` is a flattened QueryDict.
+        if request.content_type.split(";", 1)[0] != "application/json":
+            return JsonResponse({"ResultCode": 1}, status=415)
+        body = request.stream.read(16385) if request.stream else b""
+        if len(body) > 16384:
+            return JsonResponse({"ResultCode": 1}, status=413)
         try:
-            body_bytes = getattr(getattr(request, "_request", None), "body", b"") or b""
-            if body_bytes:
-                parsed = json.loads(body_bytes.decode("utf-8"))
-                if isinstance(parsed, dict):
-                    raw_payload = parsed
-        except Exception:
-            logger.debug("Raw callback body parse failed, using request.data")
+            queue_callback(json.loads(body))
+        except (ValueError, RecursionError):
+            return JsonResponse({"ResultCode": 1}, status=400)
+        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
 
-        # P0 Security Check: M-Pesa Signature Verification
-        from apps.payments.services import verify_mpesa_signature
-        signature = request.META.get("HTTP_X_SAFARICOM_CALLBACK_SIGNATURE") or request.META.get("HTTP_X_MAC")
-        
-        is_strict_mode = os.getenv("MPESA_STRICT_SIGNATURE", "true").lower() in ("true", "1", "yes")
-        if signature:
-            if not verify_mpesa_signature(signature, body_bytes):
-                audit_log(event_type="callback_signature_failed", payload=raw_payload, request_ip=client_ip, notes="Blocked due to invalid signature cryptographic verification")
-                return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid Signature"}, status=200)
-        elif is_strict_mode:
-            audit_log(event_type="callback_signature_missing", payload=raw_payload, request_ip=client_ip, notes="Blocked due to missing signature header in strict mode")
-            return JsonResponse({"ResultCode": 1, "ResultDesc": "Missing Signature Required"}, status=200)
 
-        try:
-            response_dict = PaymentService.process_callback(raw_payload, client_ip)
-        except Exception as exc:
-            logger.exception("M-Pesa callback processing failed: %s", exc)
-            audit_log(
-                event_type="callback_failed",
-                payload=raw_payload,
-                request_ip=client_ip,
-                notes=f"Callback processing exception: {exc}",
-            )
-            response_dict = {"ResultCode": 0, "ResultDesc": "Accepted"}
-        return JsonResponse(response_dict, status=200)
-
-@method_decorator(csrf_exempt, name="dispatch")
 class PesapalInitiateView(APIView):
     """
     POST /api/v1/payments/pesapal/initiate/
@@ -537,6 +508,51 @@ def _extract_param(body, key):
     return m.group(1) if m else ""
 
 
+class AdminMpesaPaymentsView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        filters = {
+            "pending": Q(status="initiated", mpesa_issue=""),
+            "confirmed": Q(status="completed"),
+            "failed": Q(status="failed"),
+            "cancelled": Q(status="cancelled"),
+            "unreconciled": ~Q(mpesa_issue=""),
+        }
+        selected = request.query_params.get("state", "unreconciled")
+        if selected not in filters:
+            return Response({"detail": "Unknown payment status."}, status=400)
+        try:
+            page = max(1, min(10000, int(request.query_params.get("page", "1"))))
+        except ValueError:
+            return Response({"detail": "Invalid page."}, status=400)
+        payments = Payment.objects.filter(payment_method="mpesa")
+        counts = payments.aggregate(**{key: Count("pk", filter=value) for key, value in filters.items()})
+        offset = (page - 1) * 30
+        rows = list(payments.filter(filters[selected]).select_related("order").order_by(
+            "-initiated_at", "-pk",
+        )[offset:offset + 31])
+        return Response({
+            "counts": counts,
+            "has_next": len(rows) > 30,
+            "transactions": [{
+                "id": payment.pk,
+                "order": payment.order.receipt_number,
+                "order_status": payment.order.get_status_display(),
+                "amount": str(payment.mpesa_sent_amount or payment.amount),
+                "status": payment.status,
+                "issue": payment.mpesa_issue,
+                "receipt": payment.mpesa_receipt_number,
+                "reported_receipt": payment.mpesa_callback_summary.get("receipt"),
+                "checkout_id": payment.checkout_request_id,
+                "destination": payment.mpesa_destination,
+                "initiated_at": payment.initiated_at,
+                "confirmed_at": payment.completed_at,
+                "statement_verified_at": payment.mpesa_statement_verified_at,
+            } for payment in rows[:30]],
+        }, headers={"Cache-Control": "private, no-store"})
+
+
 class AdminReconcileCandidatesView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
@@ -577,7 +593,7 @@ class AdminReconcilePaymentsView(APIView):
         limit = min(int(request.data.get("limit", 200)), 500)
 
         if payment_id or order_id:
-            from .tasks import verify_mpesa_payment_async, verify_pesapal_payment_async
+            from .mpesa_verification import schedule_verification
 
             payment = None
             if payment_id:
@@ -588,8 +604,10 @@ class AdminReconcilePaymentsView(APIView):
             if not payment:
                 return Response({"detail": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            verify_task = verify_pesapal_payment_async if payment.payment_method == "pesapal" else verify_mpesa_payment_async
-            verify_task.delay(payment.id)
+            if payment.payment_method == "mpesa":
+                schedule_verification(Payment.objects.filter(pk=payment.pk))
+            else:
+                verify_pesapal_payment_async.delay(payment.pk)
             audit_log(
                 event_type="reconcile_queued",
                 payload={"payment_id": payment.id, "trigger": "admin_endpoint"},

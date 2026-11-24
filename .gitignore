@@ -78,3 +78,8 @@ Thumbs.db
 
 # Secrets / keys (never commit)
 *.pem
+
+# npm cache and scratch
+.npm-cache/
+.shop-fix/
+.perch/

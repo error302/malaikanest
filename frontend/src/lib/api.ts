@@ -252,11 +252,14 @@ export const handleApiError = (error: unknown, fallback = 'An error occurred. Pl
 
 export const extractApiError = handleApiError;
 
-export const getPaymentStatusByCheckoutId = async (checkoutRequestId: string): Promise<{
+export const getPaymentStatusByCheckoutId = async (checkoutRequestId: string, checkoutToken?: string): Promise<{
   checkout_request_id: string;
   status: 'initiated' | 'completed' | 'failed' | string;
   mpesa_receipt_number?: string;
+  order_paid?: boolean;
 }> => {
-  const response = await api.get(`/api/v1/payments/verify/${checkoutRequestId}/`);
-  return response.data;
+  const response = await api.get(`/api/v1/payments/verify/${encodeURIComponent(checkoutRequestId)}/`, {
+    params: checkoutToken ? { checkout_token: checkoutToken } : undefined,
+  });
+  return response.data?.data ?? response.data;
 };

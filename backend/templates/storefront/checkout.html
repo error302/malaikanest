@@ -1,15 +1,16 @@
 {% extends "storefront/base.html" %}
+{% load static %}
 
 {% block title %}Secure Checkout · Malaika Nest{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="stylesheet" href="{% static 'storefront/leaflet/leaflet.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="nest-checkout-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+<div class="nest-checkout-page shop-frame coast-page">
   <h1 class="font-serif text-2xl sm:text-4xl font-bold text-[#2C1810] mb-2">Checkout</h1>
-  <p class="text-xs sm:text-sm text-stone-500 mb-6 sm:mb-8">Enter your delivery details and choose your preferred Kenyan payment method.</p>
+  <p class="text-xs sm:text-sm text-stone-500 mb-6 sm:mb-8">Add your contact details, choose delivery or pickup, then select a payment method.</p>
 
   <form action="{% url 'storefront:checkout' %}" method="post" id="checkoutForm" class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
     {% csrf_token %}
@@ -456,9 +457,9 @@
     var lat = -4.0856032;
     var lng = 39.661555;
     pickupMap = L.map("pickupShopMap", { scrollWheelZoom: false }).setView([lat, lng], 16);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(pickupMap);
     var marker = L.marker([lat, lng]).addTo(pickupMap);
     marker.bindPopup(
@@ -489,5 +490,5 @@
   }
 })();
 </script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="{% static 'storefront/leaflet/leaflet.js' %}"></script>
 {% endblock %}

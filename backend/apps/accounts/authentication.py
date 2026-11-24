@@ -5,11 +5,22 @@ Provides secure token handling with automatic rotation
 import logging
 from datetime import timedelta
 from django.utils import timezone
+from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.settings import api_settings
 
 logger = logging.getLogger('security')
+
+
+class StoreStaffSessionAuthentication(SessionAuthentication):
+    """Allow the classic staff sign-in to authorize Store Manager API requests."""
+
+    def authenticate(self, request):
+        user = getattr(request._request, "user", None)
+        if not user or not user.is_staff:
+            return None
+        return super().authenticate(request)
 
 
 class CookieJWTAuthentication(JWTAuthentication):

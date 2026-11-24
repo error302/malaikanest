@@ -1,7 +1,9 @@
 from django.contrib import admin, messages
 
 from .models import Payment, PaymentAuditLog
-from .tasks import verify_mpesa_payment_async, reconcile_payments_task
+from .mpesa_verification import schedule_verification
+from django.utils import timezone
+from datetime import timedelta
 
 
 @admin.register(Payment)
@@ -17,18 +19,17 @@ class PaymentAdmin(admin.ModelAdmin):
         "created_at",
     )
     search_fields = ("mpesa_checkout_request_id", "mpesa_receipt_number", "order__receipt_number")
-    readonly_fields = ("raw_callback_json",)
+    readonly_fields = (
+        "raw_callback_json", "mpesa_merchant_request_id", "mpesa_sent_amount", "mpesa_shortcode",
+        "mpesa_destination", "mpesa_next_query_at", "mpesa_query_attempts", "mpesa_query_lease_until",
+        "mpesa_issue", "mpesa_callback_summary", "mpesa_statement_verified_at",
+    )
     list_filter = ("status", "payment_method", "created_at")
     actions = ("queue_reconcile_selected", "queue_reconcile_stale")
 
     @admin.action(description="Queue reconciliation for selected payments")
     def queue_reconcile_selected(self, request, queryset):
-        queued = 0
-        for payment in queryset:
-            if payment.payment_method != "mpesa":
-                continue
-            verify_mpesa_payment_async.delay(payment.id)
-            queued += 1
+        queued = schedule_verification(queryset)
 
         self.message_user(
             request,
@@ -38,10 +39,11 @@ class PaymentAdmin(admin.ModelAdmin):
 
     @admin.action(description="Queue reconciliation for stale initiated payments")
     def queue_reconcile_stale(self, request, queryset):
-        reconcile_payments_task.delay()
+        cutoff = timezone.now() - timedelta(minutes=10)
+        queued = schedule_verification(Payment.objects.filter(initiated_at__lt=cutoff))
         self.message_user(
             request,
-            "Queued stale-payment reconciliation task.",
+            f"Queued {queued} stale M-Pesa payments.",
             level=messages.SUCCESS,
         )
 

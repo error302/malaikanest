@@ -10,11 +10,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
+from django.utils.cache import add_never_cache_headers
 
 from apps.orders.models import Order, get_delivery_fee_for_region
 from apps.orders.services import OrderService
 from apps.payments.models import Payment
-from apps.payments.services import PaymentService, normalize_phone
+from apps.payments.services import PaymentService, StkInitiationUncertain, normalize_phone
 from .views_cart import get_free_shipping_threshold, get_or_create_cart
 
 logger = logging.getLogger(__name__)
@@ -209,18 +210,12 @@ class CheckoutView(View):
 
             # Try STK Push
             try:
-                checkout_id = PaymentService.initiate_mpesa_stk(payment, norm_phone)
-                payment.mpesa_checkout_request_id = checkout_id
-                payment.save(update_fields=["mpesa_checkout_request_id", "updated_at"])
-                return redirect(f"{status_url}?token={order.checkout_token}&stk=1")
-            except Exception as exc:
-                logger.warning("STK Push initiation could not be triggered for order %s: %s", order.receipt_number, exc)
-                # Fallback to Buy Goods Till instructions so customer can still pay immediately
-                messages.info(
-                    request,
-                    f"Order {order.receipt_number} received! Please complete payment via Buy Goods Till {BUY_GOODS_TILL_NUMBER}."
-                )
-                return redirect(f"{status_url}?token={order.checkout_token}&till=1")
+                PaymentService.initiate_mpesa_stk(payment, norm_phone)
+            except StkInitiationUncertain:
+                return redirect(status_url)
+            except ValueError:
+                messages.info(request, "The M-Pesa prompt could not be started. You can use the Buy Goods Till.")
+            return redirect(status_url)
 
         elif payment_method == "till":
             Payment.objects.get_or_create(
@@ -231,17 +226,17 @@ class CheckoutView(View):
                     "status": "initiated",
                 },
             )
-            return redirect(f"{status_url}?token={order.checkout_token}&till=1")
+            return redirect(status_url)
 
         elif payment_method == "paypal":
             messages.warning(
                 request,
                 "PayPal checkout is currently undergoing scheduled maintenance. Please complete your payment via M-Pesa Buy Goods Till 3370347."
             )
-            return redirect(f"{status_url}?token={order.checkout_token}&till=1")
+            return redirect(status_url)
 
         # Fallback redirect
-        return redirect(f"{status_url}?token={order.checkout_token}")
+        return redirect(status_url)
 
 
 class PayPalReturnView(View):
@@ -328,24 +323,23 @@ class OrderStatusView(View):
 
         payment = Payment.objects.filter(order=order).order_by("-created_at").first()
 
-        is_paid = order.status in ["paid", "processing", "shipped", "delivered"]
-        show_stk_modal = bool(request.GET.get("stk")) and not is_paid
-        show_till_instructions = bool(request.GET.get("till")) or (order.status == "pending" and not is_paid)
+        state = customer_payment_state(order, payment)
 
         context = {
             "order": order,
             "items": order.items.all(),
             "payment": payment,
-            "is_paid": is_paid,
-            "show_stk_modal": show_stk_modal,
-            "show_till_instructions": show_till_instructions,
+            "payment_state": state,
+            "is_paid": state == "confirmed",
+            "show_till_instructions": state == "manual",
             "till_number": BUY_GOODS_TILL_NUMBER,
-            "checkout_token": order.checkout_token,
             "whatsapp_order_link": (
                 f"https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20am%20inquiring%20about%20Order%20{order.receipt_number}"
             ),
         }
-        return render(request, "storefront/order_status.html", context)
+        response = render(request, "storefront/order_status.html", context)
+        add_never_cache_headers(response)
+        return response
 
     def post(self, request, receipt_number):
         order = Order.objects.filter(receipt_number__iexact=receipt_number).first()
@@ -430,26 +424,39 @@ class OrderLookupView(View):
         return render(request, "storefront/order_lookup.html", {"order_ref": order_ref, "contact": contact})
 
 
+def customer_payment_state(order, payment):
+    if order.status in {"paid", "processing", "shipped", "delivered"}:
+        return "confirmed"
+    if order.status in {"cancelled", "refunded"}:
+        return "closed"
+    if payment and payment.payment_method == "mpesa":
+        if payment.mpesa_issue in {"initiation_unknown", "intent_mismatch", "duplicate_receipt", "query_attempts_exhausted"}:
+            return "review"
+        if payment.checkout_request_id and payment.status in {"failed", "cancelled"}:
+            return payment.status
+        if payment.checkout_request_id:
+            return "pending"
+    return "manual"
+
+
 class OrderStatusPollView(View):
-    """
-    Lightweight JSON endpoint for the browser to poll order payment status every 3-5 seconds.
-    """
     def get(self, request, receipt_number):
-        token = request.GET.get("token", "").strip()
         order = Order.objects.filter(receipt_number=receipt_number).first()
-        if not order:
+        session_token = request.session.get(f"order_token_{receipt_number}")
+        if not order or not (
+            (request.user.is_authenticated and (request.user.is_staff or order.user_id == request.user.pk))
+            or (session_token and session_token == order.checkout_token)
+        ):
             return JsonResponse({"error": "Order not found"}, status=404)
-
-        if not authorize_order_access(request, order):
-            return JsonResponse({"error": "Unauthorized"}, status=403)
-
-        payment = Payment.objects.filter(order=order).order_by("-created_at").first()
-
-        is_paid = order.status in ["paid", "processing", "shipped", "delivered"]
-        return JsonResponse({
+        payment = Payment.objects.filter(order=order).first()
+        state = customer_payment_state(order, payment)
+        response = JsonResponse({
             "receipt_number": order.receipt_number,
             "status": order.status,
             "status_display": order.get_status_display(),
-            "is_paid": is_paid,
+            "payment_state": state,
+            "is_paid": state == "confirmed",
             "mpesa_receipt": order.mpesa_receipt_number or (payment.mpesa_receipt_number if payment else ""),
         })
+        add_never_cache_headers(response)
+        return response

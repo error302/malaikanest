@@ -1,8 +1,10 @@
 
 from django.contrib import admin
-from django.urls import path, include
+from django.contrib.auth import views as auth_views
+from django.urls import path, include, reverse_lazy
 from django.conf import settings
 from django.conf.urls.static import static
+from apps.accounts.staff_access import StorePasswordResetConfirmView, StorePasswordResetView
 from apps.core.healthcheck import health_check, readiness_check
 from apps.storefront.admin_spa import AdminDashboardView
 from drf_spectacular.views import (
@@ -48,6 +50,14 @@ urlpatterns = [
     # redirected with ?next= land on a real route.
     path(f'{admin_prefix}/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard-prefixed'),
     path('manage/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
+
+    # Staff-only account setup and recovery.
+    path(f'{admin_prefix}/password-reset/', StorePasswordResetView.as_view(), name='password_reset'),
+    path(f'{admin_prefix}/password-reset/sent/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path(f'{admin_prefix}/password-reset/<uidb64>/<token>/', StorePasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path(f'{admin_prefix}/password-ready/', auth_views.PasswordResetCompleteView.as_view(
+        extra_context={"login_url": reverse_lazy("admin-dashboard")},
+    ), name='password_reset_complete'),
 
     # Admin
     path(f'{admin_prefix}/', admin.site.urls),

@@ -56,41 +56,45 @@ export default function CheckoutPage() {
     if (!paymentPending || !checkoutRequestId) return;
 
     let pollCount = 0;
+    let active = true;
+    let timeoutId: ReturnType<typeof setTimeout>;
     const MAX_POLLS = 40;
     const POLL_INTERVAL = 3000;
 
     const poll = async () => {
       try {
-        const status = await getPaymentStatusByCheckoutId(checkoutRequestId);
-        if (status.status === 'completed' || status.status === 'paid') {
+        const status = await getPaymentStatusByCheckoutId(checkoutRequestId, pendingCheckoutToken ?? undefined);
+        if (!active) return;
+        if ((status.status === 'completed' && status.order_paid !== false) || status.status === 'paid') {
           setPaymentPending(false);
           showToast('Payment confirmed!', 'success');
           router.push(`/checkout/success?order=${pendingReceiptNumber}&status=paid&token=${pendingCheckoutToken}`);
           return;
         }
-        if (status.status === 'failed') {
+        if (['failed', 'cancelled', 'completed'].includes(status.status)) {
           setPaymentPending(false);
-          setPaymentPollingError('Payment failed. Please try again.');
-          showToast('M-Pesa payment failed. Please try again.', 'error');
+          setPaymentPollingError(status.status === 'completed'
+            ? 'Payment received for a closed order. Contact the shop for help.'
+            : 'The M-Pesa prompt was unsuccessful. Contact the shop if you were charged.');
           return;
         }
       } catch {
         // continue polling on error
       }
 
+      if (!active) return;
       pollCount++;
       if (pollCount >= MAX_POLLS) {
         setPaymentPending(false);
-        setPaymentPollingError('Payment timed out. Please check your phone and try again.');
-        showToast('Payment timed out. Please check your phone and try again.', 'error');
+        setPaymentPollingError('Confirmation is still pending. If you approved the prompt, wait before paying again.');
         return;
       }
 
-      setTimeout(poll, POLL_INTERVAL);
+      timeoutId = setTimeout(poll, POLL_INTERVAL);
     };
 
-    const timeoutId = setTimeout(poll, POLL_INTERVAL);
-    return () => clearTimeout(timeoutId);
+    timeoutId = setTimeout(poll, POLL_INTERVAL);
+    return () => { active = false; clearTimeout(timeoutId); };
   }, [paymentPending, checkoutRequestId, router, pendingReceiptNumber, pendingCheckoutToken]);
 
   const handleApplyCoupon = async () => {

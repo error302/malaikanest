@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 from apps.accounts.models import User
 from apps.orders.models import Cart, Invoice, Order, OrderItem
+from apps.payments.models import Payment
 from apps.products.models import Inventory, Product
 
 from .invoice import generate_invoice_pdf, save_invoice_pdf
@@ -28,6 +29,20 @@ class AdminAnalyticsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
+        period = request.query_params.get("payment_days", "30")
+        if period not in {"7", "30", "90", "all"}:
+            return Response({"detail": "Choose 7, 30 or 90 days, or all time."}, status=400)
+        completed = Payment.objects.filter(status="completed")
+        if period != "all":
+            first_day = timezone.localdate() - datetime.timedelta(days=int(period) - 1)
+            start = timezone.make_aware(datetime.datetime.combine(first_day, datetime.time.min))
+            completed = completed.filter(completed_at__gte=start, completed_at__lte=timezone.now())
+        payment_totals = list(
+            completed.values("payment_method").annotate(amount=Sum("amount"), count=Count("pk"))
+            .order_by("payment_method")
+        )
+        total_received = sum(row["amount"] for row in payment_totals)
+        open_orders = Order.objects.filter(status__in=[Order.STATUS_PENDING, Order.STATUS_INITIATED])
         paid_orders = Order.objects.filter(status__in=['paid', 'processing', 'shipped', 'delivered'])
         total_revenue = paid_orders.aggregate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))))["total"]
         total_orders = Order.objects.count()
@@ -52,7 +67,12 @@ class AdminAnalyticsView(APIView):
             for m in monthly
         ]
 
-        low_stock = Inventory.objects.filter(quantity__lte=5).select_related("product")[:50]
+        low_stock = (
+            Inventory.objects.filter(product__is_active=True, product__status="published")
+            .annotate(available_quantity=F("quantity") - F("reserved"))
+            .filter(available_quantity__lte=5).select_related("product")
+            .order_by("available_quantity", "product__name")[:50]
+        )
         low_stock_list = [
             {
                 "product": inv.product.name,
@@ -86,6 +106,15 @@ class AdminAnalyticsView(APIView):
                 "monthly": monthly_data,
                 "low_stock": low_stock_list,
                 "recent_orders": recent_orders_list,
+                "payments": {
+                    "received": f"{total_received:.2f}",
+                    "by_method": [
+                        {"method": row["payment_method"], "amount": f"{row['amount']:.2f}", "count": row["count"]}
+                        for row in payment_totals
+                    ],
+                    "awaiting_payment": open_orders.count(),
+                    "to_dispatch": Order.objects.filter(status__in=[Order.STATUS_PAID, Order.STATUS_PROCESSING]).count(),
+                },
             }
         )
 

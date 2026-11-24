@@ -1,3 +1,8 @@
+import requests
+from django.core.management import call_command
+from django.utils import timezone
+from apps.core.models import OutboxEvent
+from apps.payments.mpesa_verification import verify_payment
 import os
 import threading
 from unittest.mock import patch
@@ -94,12 +99,6 @@ class PaymentIdempotencyTests(TransactionTestCase):
 
 class MpesaCallbackValidationTests(APITestCase):
     def setUp(self):
-        # Disable strict signature verification so tests can POST callbacks
-        # without providing a Safaricom RSA signature.
-        self._orig_strict = os.environ.get("MPESA_STRICT_SIGNATURE")
-        os.environ["MPESA_STRICT_SIGNATURE"] = "false"
-        self.addCleanup(self._restore_strict_signature)
-
         self.user = User.objects.create_user(
             email='pay-user@example.com',
             phone_number='+254700000004',
@@ -122,14 +121,11 @@ class MpesaCallbackValidationTests(APITestCase):
             payment_method='mpesa',
             phone_number='254700000004',
             mpesa_checkout_request_id='ws_co_123',
+            mpesa_merchant_request_id='merchant-001',
+            mpesa_sent_amount=200,
+            mpesa_destination='3370347',
             status='initiated',
         )
-
-    def _restore_strict_signature(self):
-        if self._orig_strict is None:
-            os.environ.pop("MPESA_STRICT_SIGNATURE", None)
-        else:
-            os.environ["MPESA_STRICT_SIGNATURE"] = self._orig_strict
 
     def _callback_payload(self, amount='200.00', phone='254700000004', result_code=0):
         return {
@@ -151,62 +147,161 @@ class MpesaCallbackValidationTests(APITestCase):
             }
         }
 
-    def test_callback_is_idempotent_for_duplicate_success(self):
+    def post_callback(self, payload):
+        return self.client.post('/api/payments/mpesa/callback/', payload, format='json')
+
+    def query_reply(self, **overrides):
+        return {
+            "ResponseCode": "0", "ResultCode": "0", "CheckoutRequestID": "ws_co_123",
+            "MerchantRequestID": "merchant-001", **overrides,
+        }
+
+    def test_forged_success_only_schedules_a_query(self):
+        response = self.post_callback(self._callback_payload())
+        self.assertEqual(response.status_code, 200)
+        self.payment.refresh_from_db()
+        self.order.refresh_from_db()
+        self.assertIsNotNone(self.payment.mpesa_next_query_at)
+        self.assertIsNone(self.payment.mpesa_receipt_number)
+        self.assertEqual(self.payment.status, "initiated")
+        self.assertEqual(self.order.status, "pending")
+        with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply(ResultCode="1032")):
+            self.assertEqual(verify_payment(self.payment.pk), "cancelled")
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, "pending")
+
+    def test_duplicate_callbacks_only_schedule_one_query_and_fulfillment(self):
+        self.post_callback(self._callback_payload())
+        self.payment.refresh_from_db()
+        scheduled = self.payment.mpesa_next_query_at
+        self.post_callback(self._callback_payload())
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.mpesa_next_query_at, scheduled)
+
+        with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply()) as provider:
+            self.assertEqual(verify_payment(self.payment.pk), "completed")
+            self.assertEqual(verify_payment(self.payment.pk), "already completed")
+            provider.assert_called_once()
+        self.payment.refresh_from_db()
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, "paid")
+        self.assertIsNone(self.payment.mpesa_receipt_number)
+        self.assertEqual(self.payment.mpesa_issue, "receipt_unverified")
+        self.assertEqual(OutboxEvent.objects.filter(aggregate_id=str(self.order.pk), event_type="order.paid").count(), 1)
+
+    def test_untrusted_amount_or_phone_mismatch_is_advisory(self):
+        self.post_callback(self._callback_payload(amount="1.00", phone="254799999999"))
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, "initiated")
+        self.assertEqual(self.payment.mpesa_callback_summary["issue"], "callback_metadata_mismatch")
+        self.assertNotIn("receipt", self.payment.mpesa_callback_summary)
+
+    def test_authenticated_amount_mismatch_holds_fulfillment(self):
+        self.post_callback(self._callback_payload())
+        with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply(Amount=1)):
+            self.assertEqual(verify_payment(self.payment.pk), "needs review")
+        self.order.refresh_from_db()
+        self.payment.refresh_from_db()
+        self.assertEqual(self.order.status, "pending")
+        self.assertEqual(self.payment.mpesa_issue, "intent_mismatch")
+
+    def test_forged_merchant_reference_and_malformed_callback(self):
         payload = self._callback_payload()
+        payload["Body"]["stkCallback"]["MerchantRequestID"] = "other-merchant"
+        self.assertEqual(self.post_callback(payload).status_code, 200)
+        self.payment.refresh_from_db()
+        self.assertIsNone(self.payment.mpesa_next_query_at)
+        self.assertEqual(self.post_callback({"Body": []}).status_code, 400)
+        self.assertEqual(self.client.post(
+            "/api/payments/mpesa/callback/", "x" * 16385, content_type="application/json",
+        ).status_code, 413)
 
-        first = self.client.post(
-            '/api/payments/mpesa/callback/',
-            payload,
-            format='json',
-            HTTP_X_FORWARDED_FOR='196.201.214.20',
-        )
-        second = self.client.post(
-            '/api/payments/mpesa/callback/',
-            payload,
-            format='json',
-            HTTP_X_FORWARDED_FOR='196.201.214.20',
-        )
+    def test_network_failure_backs_off_before_delayed_confirmation(self):
+        self.post_callback(self._callback_payload())
+        with patch("apps.payments.mpesa_verification.query_provider", side_effect=requests.Timeout):
+            call_command("process_mpesa_queries")
+            self.assertEqual(verify_payment(self.payment.pk), "waiting for retry")
+        self.payment.refresh_from_db()
+        self.assertGreater(self.payment.mpesa_next_query_at, timezone.now())
+        self.assertEqual(self.payment.mpesa_query_attempts, 1)
+        Payment.objects.filter(pk=self.payment.pk).update(mpesa_next_query_at=timezone.now())
+        with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply()):
+            self.assertEqual(verify_payment(self.payment.pk), "completed")
 
-        self.assertEqual(first.status_code, status.HTTP_200_OK)
-        self.assertEqual(second.status_code, status.HTTP_200_OK)
+    def test_wrong_checkout_id_from_authenticated_query_does_not_complete(self):
+        with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply(CheckoutRequestID="another-checkout")):
+            self.assertEqual(verify_payment(self.payment.pk), "pending")
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, "pending")
 
+    def test_late_money_does_not_reopen_cancelled_order(self):
+        self.order.transition_to(Order.STATUS_CANCELLED)
+        with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply()):
+            self.assertEqual(verify_payment(self.payment.pk), "completed")
         self.payment.refresh_from_db()
         self.order.refresh_from_db()
-        self.assertEqual(self.payment.status, 'completed')
-        self.assertEqual(self.order.status, 'paid')
-        self.assertEqual(PaymentAuditLog.objects.filter(payment=self.payment, event_type='callback_duplicate').count(), 1)
+        self.assertEqual(self.payment.mpesa_issue, "order_closed")
+        self.assertEqual(self.order.status, "cancelled")
+        self.assertFalse(OutboxEvent.objects.filter(aggregate_id=str(self.order.pk), event_type="order.paid").exists())
 
-    def test_callback_rejects_amount_mismatch(self):
-        payload = self._callback_payload(amount='1.00')
-        response = self.client.post(
-            '/api/payments/mpesa/callback/',
-            payload,
-            format='json',
-            HTTP_X_FORWARDED_FOR='196.201.214.20',
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json().get('ResultCode'), 1)
-
+    def test_statement_match_attaches_receipt_to_confirmed_payment_once(self):
+        Payment.objects.filter(pk=self.payment.pk).update(status="completed", mpesa_issue="receipt_unverified")
+        for _ in range(2):
+            call_command(
+                "record_mpesa_statement_match", str(self.payment.pk), receipt="NLJ7RT61SV",
+                amount="200", till="3370347", statement_matched=True,
+            )
         self.payment.refresh_from_db()
-        self.order.refresh_from_db()
-        self.assertEqual(self.payment.status, 'failed')
-        self.assertNotEqual(self.order.status, 'paid')
+        self.assertEqual(self.payment.mpesa_receipt_number, "NLJ7RT61SV")
+        self.assertEqual(self.payment.mpesa_issue, "")
+        self.assertIsNotNone(self.payment.mpesa_statement_verified_at)
 
-    def test_callback_rejects_phone_mismatch(self):
-        payload = self._callback_payload(phone='254799999999')
-        response = self.client.post(
-            '/api/payments/mpesa/callback/',
-            payload,
-            format='json',
-            HTTP_X_FORWARDED_FOR='196.201.214.20',
-        )
+    @patch.dict(os.environ, {
+        "MPESA_ENV": "live", "MPESA_CONSUMER_KEY": "qa-key", "MPESA_CONSUMER_SECRET": "qa-secret",
+        "MPESA_PASSKEY": "qa-pass", "MPESA_CALLBACK_URL": "https://mal-shop.invalid/callback/",
+    })
+    @patch("apps.payments.services.PaymentService.get_mpesa_oauth_token", return_value="qa-token")
+    @patch("apps.payments.services.requests.post")
+    def test_initiation_uses_server_total_and_reuses_active_request(self, post, _oauth):
+        Payment.objects.filter(pk=self.payment.pk).update(mpesa_checkout_request_id=None)
+        post.return_value.status_code = 200
+        post.return_value.json.return_value = {
+            "ResponseCode": "0", "CheckoutRequestID": "new-checkout", "MerchantRequestID": "new-merchant",
+        }
+        self.client.force_authenticate(self.user)
+        for _ in range(2):
+            response = self.client.post("/api/payments/mpesa/initiate/", {
+                "order_id": self.order.pk, "amount": 1, "phone": self.payment.phone_number,
+            }, format="json")
+            self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(post.call_count, 1)
+        self.assertEqual(post.call_args.kwargs["json"]["Amount"], 200)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json().get('ResultCode'), 1)
-
+    @patch.dict(os.environ, {
+        "MPESA_ENV": "live", "MPESA_CONSUMER_KEY": "qa-key", "MPESA_CONSUMER_SECRET": "qa-secret",
+        "MPESA_PASSKEY": "qa-pass", "MPESA_CALLBACK_URL": "https://mal-shop.invalid/callback/",
+    })
+    @patch("apps.payments.services.PaymentService.get_mpesa_oauth_token", return_value="qa-token")
+    @patch("apps.payments.services.requests.post", side_effect=requests.Timeout)
+    def test_unknown_initiation_result_does_not_send_another_prompt(self, post, _oauth):
+        Payment.objects.filter(pk=self.payment.pk).update(mpesa_checkout_request_id=None)
+        self.client.force_authenticate(self.user)
+        for _ in range(2):
+            response = self.client.post("/api/payments/mpesa/initiate/", {
+                "order_id": self.order.pk, "phone": self.payment.phone_number,
+            }, format="json")
+            self.assertEqual(response.status_code, 400)
+        self.assertEqual(post.call_count, 1)
         self.payment.refresh_from_db()
-        self.assertEqual(self.payment.status, 'failed')
+        self.assertEqual(self.payment.mpesa_issue, "initiation_unknown")
+
+    def test_payment_dashboard_is_staff_only(self):
+        self.client.force_authenticate(self.user)
+        self.assertEqual(self.client.get("/api/payments/admin/mpesa/").status_code, 403)
+        self.user.is_staff = True
+        response = self.client.get("/api/payments/admin/mpesa/?state=pending")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.order.receipt_number)
 
     def test_non_admin_cannot_access_admin_reconcile(self):
         self.client.force_authenticate(self.user)

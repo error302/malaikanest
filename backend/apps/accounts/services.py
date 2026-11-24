@@ -4,6 +4,8 @@ from django.utils.crypto import get_random_string
 import logging
 from urllib.parse import urlencode
 
+from rest_framework import serializers as drf_serializers
+
 from .models import User
 from .serializers import RegisterSerializer
 from .security import log_auth_event
@@ -74,7 +76,33 @@ class AuthService:
     @staticmethod
     def register_user(data, ip, user_agent):
         serializer = RegisterSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
+
+        # Anti-enumeration: if the email/phone already exists, do NOT surface a
+        # validation error (that is an account-existence oracle). Instead accept
+        # the request and return the same generic success response as a fresh
+        # signup — the real user simply gets no email. Throttling (2/hour/IP)
+        # plus the captcha gate keep this from being abused as a spam channel.
+        try:
+            serializer.is_valid(raise_exception=True)
+        except drf_serializers.ValidationError as exc:
+            flat = []
+            for v in (exc.detail.values() if hasattr(exc.detail, "values") else [exc.detail]):
+                flat.extend(v if hasattr(v, "__iter__") and not isinstance(v, str) else [v])
+            joined = " ".join(str(v) for v in flat)
+            if "already exists" in joined:
+                log_auth_event(
+                    "register_duplicate_suppressed",
+                    email=data.get("email", ""),
+                    ip=ip,
+                    user_agent=user_agent,
+                )
+                return (
+                    {
+                        "message": "Registration successful. Please check your email to verify your account.",
+                    },
+                    False,
+                )
+            raise
 
         user = serializer.save(is_active=True)
 
@@ -154,7 +182,7 @@ class AuthService:
             raise ValueError("Email is required")
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email=email, is_staff=False)
         except User.DoesNotExist:
             return True
 
@@ -182,7 +210,7 @@ class AuthService:
             raise ValueError("Token and new password are required")
 
         try:
-            user = User.objects.get(password_reset_token=token)
+            user = User.objects.get(password_reset_token=token, is_staff=False)
         except User.DoesNotExist:
             raise ValueError("Invalid token")
 

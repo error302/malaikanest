@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_cart, views_checkout, pwa
+from . import views, views_cart, views_checkout, pwa, views_wishlist
 from .admin_spa import AdminDashboardView
 
 app_name = "storefront"
@@ -22,6 +22,10 @@ urlpatterns = [
     path("cart/coupon/apply/", views_cart.ApplyCouponView.as_view(), name="cart_apply_coupon"),
     path("cart/coupon/remove/", views_cart.RemoveCouponView.as_view(), name="cart_remove_coupon"),
     path("cart/region/", views_cart.UpdateDeliveryRegionView.as_view(), name="cart_region"),
+
+    # Wishlist (saved items)
+    path("saved/", views_wishlist.WishlistView.as_view(), name="wishlist"),
+    path("saved/toggle/<slug:slug>/", views_wishlist.WishlistToggleView.as_view(), name="wishlist_toggle"),
 
     # Checkout & Payment
     path("checkout/", views_checkout.CheckoutView.as_view(), name="checkout"),

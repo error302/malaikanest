@@ -121,10 +121,11 @@ export async function initiatePayment(params: {
     case 'mpesa': {
       const res = await api.post('/api/v1/payments/mpesa/initiate/', {
         order_id: orderId,
+        checkout_token: checkoutToken,
         phone: form.phone,
       });
       const data = res.data?.data ?? res.data;
-      if (data?.checkout_request_id || res.status === 200) {
+      if (data?.checkout_request_id) {
         return {
           type: 'mpesa_prompt',
           checkoutRequestId: data.checkout_request_id,

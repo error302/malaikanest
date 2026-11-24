@@ -308,7 +308,9 @@ class RequestLoggingMiddleware:
             'request_id=%s method=%s path=%s status=%s duration_ms=%s user=%s ip=%s',
             request_id,
             request.method,
-            request.path,
+            "/staff-password-reset/[redacted]" if getattr(
+                request.resolver_match, "url_name", None
+            ) == "password_reset_confirm" else request.path,
             response.status_code,
             duration_ms,
             _email_mask or user,

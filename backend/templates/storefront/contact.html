@@ -1,18 +1,18 @@
 {% extends "storefront/base.html" %}
+{% load static %}
 
 {% block title %}Contact Us &amp; Mombasa Store Location · Malaika Nest{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="stylesheet" href="{% static 'storefront/leaflet/leaflet.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-  <div class="mb-10 text-center sm:text-left">
-    <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Customer Support &amp; Boutique</span>
-    <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mt-1">Get in Touch with Us</h1>
+<div class="shop-frame coast-page coast-support">
+  <div class="coast-catalog-intro mb-8">
+    <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#2C1810] mt-1">Visit us in Likoni</h1>
     <p class="text-xs sm:text-sm text-stone-600 mt-2">
-      We reply fastest on WhatsApp — but phone calls, emails, and shop visits are always warmly welcomed.
+      Ask about sizes, stock or an order, or plan a visit to Tawakal Toto Shop in Mombasa.
     </p>
   </div>
 
@@ -50,7 +50,6 @@
   <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 sm:p-8 shadow-sm space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EADBCE] pb-6">
       <div>
-        <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#8B6914]">Mombasa Physical Boutique</span>
         <h2 class="font-serif text-2xl font-bold text-[#2C1810] mt-1">Visit Tawakal Toto Wear</h2>
         <p class="text-xs sm:text-sm text-stone-600 mt-1">
           Pick up your orders directly or shop baby outfits in person at our Mombasa boutique.
@@ -106,23 +105,68 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="{% static 'storefront/leaflet/leaflet.js' %}"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     var mapStatus = document.getElementById("mapStatus");
-    if (!window.L) { mapStatus.textContent = "The map could not load. Use the address or directions link above."; return; }
+    var mapEl = document.getElementById("shopMap");
+    if (!window.L) {
+      mapStatus.textContent = "The map could not load. Use the address or directions link above.";
+      return;
+    }
+
     var lat = -4.0856032;
     var lng = 39.661555;
-    var map = L.map("shopMap", { scrollWheelZoom: false }).setView([lat, lng], 16);
+    var map = L.map(mapEl, { scrollWheelZoom: false }).setView([lat, lng], 16);
 
-    var tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+    // Tile provider chain. OpenStreetMap's public tile server blocks apps that
+    // do not follow its usage policy (HTTP 403 "Access blocked"), so we start
+    // with providers that allow this use and fall back in order.
+    var providers = [
+      {
+        url: "https://tile.openstreetmap.de/{z}/{x}/{y}.png",
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      },
+      {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+        attribution: "Tiles &copy; Esri"
+      }
+    ];
 
-    tiles.on("tileerror", function () { mapStatus.hidden = false; mapStatus.textContent = "Some map tiles could not load. Use the directions link above."; });
-    tiles.on("load", function () { if (!mapStatus.textContent.includes("could not")) mapStatus.hidden = true; });
-    if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(document.getElementById("shopMap"));
+    var index = 0;
+    var layer = null;
+    var failures = 0;
+
+    function attach() {
+      if (index >= providers.length) {
+        mapStatus.hidden = false;
+        mapStatus.textContent = "The map tiles could not load. The address and directions link above are accurate.";
+        return;
+      }
+      var p = providers[index];
+      layer = L.tileLayer(p.url, { maxZoom: 19, attribution: p.attribution });
+      layer.on("tileerror", function () {
+        failures += 1;
+        if (failures >= 2) {
+          map.removeLayer(layer);
+          index += 1;
+          failures = 0;
+          attach();
+        }
+      });
+      layer.on("load", function () {
+        failures = 0;
+        mapStatus.hidden = true;
+      });
+      layer.addTo(map);
+    }
+
+    attach();
+
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () { map.invalidateSize(); }).observe(mapEl);
+    }
+
     var marker = L.marker([lat, lng], { alt: "Tawakal Toto Wear, Likoni, Mombasa" }).addTo(map);
     marker.bindPopup(
       '<div style="font-family:sans-serif;font-size:12px;padding:4px;">' +

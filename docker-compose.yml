@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-kenya_ecom}
       POSTGRES_USER: ${POSTGRES_USER:-kenya}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     environment:
       PGHOST: db
       PGUSER: ${POSTGRES_USER:-kenya}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env}
       PGDATABASE: postgres
     command:
       - /bin/sh
@@ -159,14 +159,14 @@ services:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
       DEBUG: ${DEBUG:-False}
-      SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
-      SIMPLE_JWT_SECRET: ${SIMPLE_JWT_SECRET:-django-insecure-jwt-dev-secret-key-change-in-prod-32-char-min-aaaa}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY required in .env}
+      SIMPLE_JWT_SECRET: ${SIMPLE_JWT_SECRET:?SIMPLE_JWT_SECRET required in .env}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,backend_replica,frontend,malaikanest.com,www.malaikanest.com,api.malaikanest.com}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://backend:3000,http://backend_replica:3000}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       DB_NAME: ${POSTGRES_DB:-kenya_ecom}
       DB_USER: ${POSTGRES_USER:-kenya}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env}
       DB_HOST: db
       DB_PORT: 5432
       DB_SSLMODE: ${DB_SSLMODE:-disable}
@@ -234,12 +234,12 @@ services:
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DEBUG: ${DEBUG:-False}
-      SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY required in .env}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,frontend}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
       DB_NAME: ${POSTGRES_DB:-kenya_ecom}
       DB_USER: ${POSTGRES_USER:-kenya}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env}
       DB_HOST: db
       DB_PORT: 5432
       DB_SSLMODE: ${DB_SSLMODE:-disable}
@@ -298,10 +298,10 @@ services:
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-dev}
       DEBUG: ${DEBUG:-False}
-      SECRET_KEY: ${SECRET_KEY:-please-change-this-in-production-32chars-min}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY required in .env}
       DB_NAME: ${POSTGRES_DB:-kenya_ecom}
       DB_USER: ${POSTGRES_USER:-kenya}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-kenya_password}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env}
       DB_HOST: db
       DB_PORT: 5432
       DB_SSLMODE: ${DB_SSLMODE:-disable}
@@ -347,7 +347,7 @@ services:
       # loyalty) is stored in its own `malaika_cms` PostgreSQL database on the
       # shared db service (created idempotently by the cms-db-init one-shot
       # service), so admin edits survive container rebuilds/redeploys.
-      DATABASE_URL: postgresql://${POSTGRES_USER:-kenya}:${POSTGRES_PASSWORD:-kenya_password}@db:5432/malaika_cms?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kenya}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env}@db:5432/malaika_cms?schema=public
     depends_on:
       backend:
         condition: service_healthy

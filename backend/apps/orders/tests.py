@@ -1,10 +1,13 @@
 from decimal import Decimal
+from datetime import timedelta
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
 from unittest.mock import patch
 from apps.products.models import Product, Inventory
+from apps.payments.models import Payment
 from apps.orders.models import (
     Cart,
     CartItem,
@@ -14,6 +17,40 @@ from apps.orders.models import (
 )
 
 User = get_user_model()
+
+
+class AdminPaymentSummaryTest(TestCase):
+    def test_reports_completed_payments_in_period_even_after_fulfilment_status_changes(self):
+        staff = User.objects.create_user(
+            email="payments@example.com", phone_number="+254700000047", password="x", is_staff=True,
+        )
+        client = APIClient()
+        client.force_authenticate(staff)
+
+        today = timezone.now()
+        for method, amount, state, order_status, completed_at in (
+            ("mpesa", "1200.55", "completed", Order.STATUS_DELIVERED, today),
+            ("paypal", "250.00", "completed", Order.STATUS_REFUNDED, today),
+            ("mpesa", "55.00", "completed", Order.STATUS_PAID, today - timedelta(days=60)),
+            ("mpesa", "500.00", "initiated", Order.STATUS_INITIATED, None),
+        ):
+            order = Order.objects.create(user=staff, total="3000.00", status=order_status)
+            Payment.objects.create(order=order, amount=amount, payment_method=method, status=state, completed_at=completed_at)
+
+        path = "/api/v1/orders/admin/analytics/"
+        response = client.get(path, {"payment_days": "30"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["payments"], {
+            "received": "1450.55",
+            "by_method": [
+                {"method": "mpesa", "amount": "1200.55", "count": 1},
+                {"method": "paypal", "amount": "250.00", "count": 1},
+            ],
+            "awaiting_payment": 1,
+            "to_dispatch": 1,
+        })
+        self.assertEqual(client.get(path, {"payment_days": "all"}).data["payments"]["received"], "1505.55")
+        self.assertEqual(client.get(path, {"payment_days": "999"}).status_code, 400)
 
 
 class DeliveryZoneTest(TestCase):

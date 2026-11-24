@@ -1,113 +1,128 @@
 import { useEffect, useState } from "react";
-import { api, Analytics } from "./api";
+import { api, Analytics, ORDER_STATUS_LABELS, OrderStatus } from "./api";
 
-const kes = (n: number) =>
-  "KES " + n.toLocaleString("en-KE", { maximumFractionDigits: 0 });
+const money = new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES" });
+const date = new Intl.DateTimeFormat("en-KE", { timeZone: "Africa/Nairobi", day: "numeric", month: "short" });
+const paymentMethods: Record<string, string> = {
+  mpesa: "M-Pesa", paypal: "PayPal", pesapal: "Pesapal", card: "Card",
+};
 
 export function Dashboard() {
   const [data, setData] = useState<Analytics | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [period, setPeriod] = useState("30");
 
   useEffect(() => {
     let alive = true;
-    setError("");
-    api.analytics().then(value => { if (alive) setData(value); }).catch((e) => { if (alive) setError(e.message); });
+    api.analytics(period)
+      .then(value => { if (alive) setData(value); })
+      .catch(error => { if (alive) setError(error.message); });
     return () => { alive = false; };
-  }, [attempt]);
-
-  if (error) return <div className="error" role="alert">{error} <button className="btn ghost" onClick={() => setAttempt(value => value + 1)}>Retry</button></div>;
-  if (!data) return <div className="loading" role="status">Loading dashboard…</div>;
+  }, [attempt, period]);
 
   return (
     <>
-      <h2>Dashboard</h2>
-      <p className="sub">Live numbers from your store</p>
-
-      <div className="kpis">
-        <div className="kpi accent">
-          <div className="label">Revenue (paid)</div>
-          <div className="value">{kes(data.total_revenue)}</div>
-        </div>
-        <div className="kpi">
-          <div className="label">Total orders</div>
-          <div className="value">{data.total_orders}</div>
-        </div>
-        <div className="kpi">
-          <div className="label">Pending orders</div>
-          <div className="value">{data.pending_orders}</div>
-        </div>
-        <div className="kpi">
-          <div className="label">Products</div>
-          <div className="value">{data.total_products}</div>
-        </div>
-        <div className="kpi">
-          <div className="label">Customers</div>
-          <div className="value">{data.total_users}</div>
-        </div>
+      <div className="dashboard-heading">
+        <h2>Store overview</h2>
+        <nav aria-label="Common tasks" className="dashboard-actions">
+          <a className="btn" href="#products/new">Add a product</a>
+          <a className="btn ghost" href="#orders">Manage orders</a>
+          <a className="btn ghost" href="#settings">Change homepage photo</a>
+        </nav>
       </div>
 
-      <div className="cols">
-        <div className="panel">
-          <h3>Recent orders</h3>
-          {data.recent_orders.length === 0 ? (
-            <p className="sub">No orders yet.</p>
+      <div className="dashboard-work">
+        <section className="panel sales-panel" aria-labelledby="sales-title">
+          <div className="section-heading">
+            <h3 id="sales-title">Payments received</h3>
+            <label className="sales-period">
+              <span>Period</span>
+              <select value={period} onChange={(event) => {
+                setData(null);
+                setError("");
+                setPeriod(event.target.value);
+              }}>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="all">All time</option>
+              </select>
+            </label>
+          </div>
+          {error ? (
+            <div role="alert" className="error">
+              {error} <button className="btn ghost" onClick={() => { setError(""); setAttempt(value => value + 1); }}>Retry</button>
+            </div>
+          ) : !data ? (
+            <p role="status">Loading payments…</p>
+          ) : !data.payments ? (
+            <p>Payment details are unavailable.</p>
           ) : (
-            <div className="table-scroll" role="region" aria-label="Dashboard table, scroll horizontally for more columns" tabIndex={0}><table>
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th className="num">Total</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recent_orders.map((o) => (
-                  <tr key={o.id}>
-                    <td>
-                      <strong>{o.order_number}</strong>
-                      <br />
-                      <span style={{ color: "var(--muted)", fontSize: 12 }}>
-                        {new Date(o.created_at).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}
-                      </span>
-                    </td>
-                    <td>{o.customer_name}</td>
-                    <td className="num">{kes(Number(o.total))}</td>
-                    <td>
-                      <span className={`badge ${o.status}`}>{o.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
+            <>
+              <p className="sales-total">{money.format(Number(data.payments.received))}</p>
+              <p className="sales-note">Gross online payments recorded by the shop, before refunds and fees.</p>
+              {data.payments.by_method.length > 0 && (
+                <ul className="dashboard-list">
+                  {data.payments.by_method.map(row => (
+                    <li key={row.method}>
+                      <span>{paymentMethods[row.method] || row.method}<small>{row.count} {row.count === 1 ? "payment" : "payments"}</small></span>
+                      <strong>{money.format(Number(row.amount))}</strong>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
-        </div>
+        </section>
 
-        <div className="panel">
-          <h3>Low stock</h3>
-          {data.low_stock.length === 0 ? (
-            <p className="sub">Nothing running low.</p>
-          ) : (
-            <div className="table-scroll" role="region" aria-label="Dashboard table, scroll horizontally for more columns" tabIndex={0}><table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th className="num">Available</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.low_stock.map((s) => (
-                  <tr key={s.product}>
-                    <td>{s.product}</td>
-                    <td className={`num ${s.available <= 2 ? "stock-low" : ""}`}>{s.available}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
-          )}
-        </div>
+        {data?.payments && (
+          <section className="panel dispatch-panel" aria-labelledby="orders-to-check">
+            <div className="section-heading">
+              <h3 id="orders-to-check">Orders to check</h3>
+              <a href="#orders">View orders</a>
+            </div>
+            <ul className="dashboard-list">
+              <li><span>Ready to prepare or send</span><strong>{data.payments.to_dispatch}</strong></li>
+              <li><span>Awaiting payment</span><strong>{data.payments.awaiting_payment}</strong></li>
+            </ul>
+          </section>
+        )}
       </div>
+
+      {data && (
+        <div className="cols dashboard-columns">
+          <section className="panel" aria-labelledby="recent-orders-title">
+            <div className="section-heading">
+              <h3 id="recent-orders-title">Recent orders</h3>
+              <a href="#orders">View orders</a>
+            </div>
+            {data.recent_orders.length ? (
+              <ul className="dashboard-list">
+                {data.recent_orders.map(order => (
+                  <li key={order.id}>
+                    <span><strong>{order.order_number}</strong><small>{order.customer_name} · {date.format(new Date(order.created_at))}</small></span>
+                    <span>{money.format(Number(order.total))}<small>{ORDER_STATUS_LABELS[order.status as OrderStatus] ?? order.status}</small></span>
+                  </li>
+                ))}
+              </ul>
+            ) : <p>No orders yet.</p>}
+          </section>
+          <section className="panel" aria-labelledby="low-stock-title">
+            <div className="section-heading">
+              <h3 id="low-stock-title">Low stock</h3>
+              <a href="#products">View products</a>
+            </div>
+            {data.low_stock.length ? (
+              <ul className="dashboard-list">
+                {data.low_stock.map((stock, index) => (
+                  <li key={index}><span>{stock.product}</span><strong>{stock.available} left</strong></li>
+                ))}
+              </ul>
+            ) : <p>No low-stock products.</p>}
+          </section>
+        </div>
+      )}
     </>
   );
 }

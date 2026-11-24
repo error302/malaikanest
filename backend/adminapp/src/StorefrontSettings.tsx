@@ -25,16 +25,18 @@ export function StorefrontSettings() {
   const [bannerTitle, setBannerTitle] = useState("");
   const [bannerSubtitle, setBannerSubtitle] = useState("");
   const [bannerBtnText, setBannerBtnText] = useState("");
-  const [bannerBtnLink, setBannerBtnLink] = useState("");
+  const [bannerBtnLink, setBannerBtnLink] = useState("/products/");
   const [bannerImgUrl, setBannerImgUrl] = useState("");
   const [bannerMobileImgUrl, setBannerMobileImgUrl] = useState("");
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [mobileFile, setMobileFile] = useState<File | null>(null);
 
   const identityDirty = !!settings && (siteName !== (settings.site_name || "Malaika Nest") || siteDesc !== (settings.site_description || "") || logoUrl !== (settings.logo_url || "") || phone !== (settings.contact_phone || "") || email !== (settings.contact_email || "") || address !== (settings.address || "") || !!logoFile);
-  const bannerDirty = !loading && (bannerTitle !== (activeBanner?.title || "") || bannerSubtitle !== (activeBanner?.subtitle || "") || bannerBtnText !== (activeBanner?.button_text || "") || bannerBtnLink !== (activeBanner ? activeBanner.button_link || "/products/" : "") || bannerImgUrl !== (activeBanner?.image_url || "") || bannerMobileImgUrl !== (activeBanner?.mobile_image_url || "") || !!bannerFile);
+  const bannerDirty = !loading && (bannerTitle !== (activeBanner?.title || "") || bannerSubtitle !== (activeBanner?.subtitle || "") || bannerBtnText !== (activeBanner?.button_text || "") || bannerBtnLink !== (activeBanner?.button_link || "/products/") || bannerImgUrl !== (activeBanner?.image_url || "") || bannerMobileImgUrl !== (activeBanner?.mobile_image_url || "") || !!bannerFile || !!mobileFile);
   useUnsavedChanges(identityDirty || bannerDirty, busy);
   const logoPreview = useObjectUrl(logoFile);
   const bannerPreview = useObjectUrl(bannerFile);
+  const mobilePreview = useObjectUrl(mobileFile);
 
   async function load() {
     setLoading(true);
@@ -49,7 +51,7 @@ export function StorefrontSettings() {
       setEmail(s.contact_email || "");
       setAddress(s.address || "");
 
-      const active = b.find((item) => item.is_active) || b[0] || null;
+      const active = b.filter(item => item.is_active).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))[0] ?? null;
       setActiveBanner(active);
       if (active) {
         setBannerTitle(active.title || "");
@@ -112,6 +114,19 @@ export function StorefrontSettings() {
     }
   }
 
+  function choosePhoto(event: React.ChangeEvent<HTMLInputElement>, select: (file: File | null) => void) {
+    const input = event.currentTarget;
+    const file = input.files?.[0] ?? null;
+    const problem = file && validatePhotos([file]);
+    if (problem) {
+      input.value = "";
+      setError(problem);
+      return;
+    }
+    select(file);
+    setError("");
+  }
+
   async function handleSaveBanner(e: React.FormEvent) {
     e.preventDefault();
     if (busy || !settings) return;
@@ -120,41 +135,25 @@ export function StorefrontSettings() {
     setMessage("");
 
     try {
-      const bannerPayload = {
+      const fields = {
         title: bannerTitle,
         subtitle: bannerSubtitle,
         button_text: bannerBtnText,
         button_link: bannerBtnLink || "/products/",
-        image_url: bannerImgUrl,
-        mobile_image_url: bannerMobileImgUrl,
-        is_active: activeBanner?.is_active ?? true,
+        image_url: bannerFile ? "" : bannerImgUrl,
+        mobile_image_url: mobileFile ? "" : bannerMobileImgUrl,
       };
-
-      if (bannerFile) {
-        const saved = await api.saveBannerMultipart(
-          activeBanner?.id || null,
-          {
-            title: bannerTitle,
-            subtitle: bannerSubtitle,
-            button_text: bannerBtnText,
-            button_link: bannerBtnLink || "/products/",
-            image_url: bannerImgUrl,
-            mobile_image_url: bannerMobileImgUrl,
-            is_active: String(activeBanner?.is_active ?? true),
-          },
-          bannerFile
-        );
-        setActiveBanner(saved);
-        setBannerBtnLink(saved.button_link || "");
-      } else {
-        const saved = await api.saveBanner(activeBanner?.id || null, bannerPayload);
-        setActiveBanner(saved);
-        setBannerBtnLink(saved.button_link || "");
-      }
-
-      setMessage("Front page hero banner updated successfully!");
+      const id = activeBanner?.id ?? null;
+      const saved = bannerFile || mobileFile
+        ? await api.saveBannerMultipart(id, { ...fields, is_active: "true" }, bannerFile ?? undefined, mobileFile ?? undefined)
+        : await api.saveBanner(id, { ...fields, is_active: true });
+      setActiveBanner(saved);
+      setBannerBtnLink(saved.button_link || "/products/");
+      setBannerImgUrl(saved.image_url || "");
+      setBannerMobileImgUrl(saved.mobile_image_url || "");
       setBannerFile(null);
-
+      setMobileFile(null);
+      setMessage("Homepage updated successfully.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update banner");
     } finally {
@@ -172,6 +171,9 @@ export function StorefrontSettings() {
   const currentBannerImg = bannerFile
     ? bannerPreview
     : bannerImgUrl || activeBanner?.image_full_url || activeBanner?.image;
+  const currentMobileImg = mobileFile
+    ? mobilePreview
+    : bannerMobileImgUrl || activeBanner?.mobile_image_full_url || activeBanner?.mobile_image || currentBannerImg;
 
   return (
     <div style={{ maxWidth: "860px", paddingBottom: "4rem" }}>
@@ -198,10 +200,54 @@ export function StorefrontSettings() {
 
       {error && <div className="error" role="alert" style={{ marginBottom: "1.5rem" }}>{error}</div>}
 
-      {/* 1. BRANDING & LOGO */}
-      <div className="card" style={{ padding: "1.5rem", marginBottom: "2rem" }}>
+      <div className="settings-stack">
+        <section className="panel" aria-labelledby="homepage-title">
+          <h3 id="homepage-title">Homepage photos and text</h3>
+          <form className="product-fields" onSubmit={handleSaveBanner}>
+            <fieldset className="product-fields" disabled={busy}>
+              <div className="form-grid">
+                <div>
+                  {currentBannerImg && <img className="settings-preview" src={currentBannerImg} alt="Main homepage photo preview" />}
+                  <label className="field">
+                    <span>Main homepage photo</span>
+                    <input key={activeBanner?.image_full_url ?? "main"} type="file" accept="image/jpeg,image/png,image/webp"
+                      onChange={event => choosePhoto(event, setBannerFile)} />
+                  </label>
+                </div>
+                <div>
+                  {currentMobileImg && <img className="settings-preview mobile" src={currentMobileImg} alt="Phone homepage photo preview" />}
+                  <label className="field">
+                    <span>Phone photo (optional)</span>
+                    <input key={activeBanner?.mobile_image_full_url ?? "mobile"} type="file" accept="image/jpeg,image/png,image/webp"
+                      onChange={event => choosePhoto(event, setMobileFile)} />
+                  </label>
+                  <p className="variants-hint">If you leave this empty, the main photo is used on phones.</p>
+                </div>
+              </div>
+              <label className="field">
+                <span>Hero Headline</span>
+                <input type="text" value={bannerTitle} onChange={event => setBannerTitle(event.target.value)} />
+              </label>
+              <label className="field">
+                <span>Text under the headline</span>
+                <textarea rows={3} value={bannerSubtitle} onChange={event => setBannerSubtitle(event.target.value)} />
+              </label>
+              <details className="editor-details">
+                <summary>Photo links and shop button</summary>
+                <div className="form-grid">
+                  <label className="field"><span>Main photo web link</span><input type="url" value={bannerImgUrl} onChange={event => { setBannerFile(null); setBannerImgUrl(event.target.value); }} /></label>
+                  <label className="field"><span>Phone photo web link</span><input type="url" value={bannerMobileImgUrl} onChange={event => { setMobileFile(null); setBannerMobileImgUrl(event.target.value); }} /></label>
+                  <label className="field"><span>Button text</span><input type="text" value={bannerBtnText} onChange={event => setBannerBtnText(event.target.value)} /></label>
+                  <label className="field"><span>Button link</span><input type="text" value={bannerBtnLink} onChange={event => setBannerBtnLink(event.target.value)} /></label>
+                </div>
+              </details>
+              <button type="submit" className="btn">{busy ? "Saving…" : "Save homepage"}</button>
+            </fieldset>
+          </form>
+        </section>
+      <div className="card" style={{ padding: "1.25rem" }}>
         <h3 style={{ marginTop: 0, color: "var(--navy)", fontSize: "1.2rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
-          1. Store Identity &amp; Logo
+          Store details and logo
         </h3>
         <p style={{ fontSize: "13px", color: "var(--muted)", marginBottom: "1.25rem" }}>
           Update the logo displayed in the storefront navigation bar, emails, and invoices.
@@ -330,124 +376,6 @@ export function StorefrontSettings() {
         </fieldset></form>
       </div>
 
-      {/* 2. HOMEPAGE HERO BANNER (FRONT PAGE WRITING) */}
-      <div className="card" style={{ padding: "1.5rem" }}>
-        <h3 style={{ marginTop: 0, color: "var(--navy)", fontSize: "1.2rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
-          2. Front Page Hero Copy &amp; Banner
-        </h3>
-        <p style={{ fontSize: "13px", color: "var(--muted)", marginBottom: "1.25rem" }}>
-          Control the prominent headline, writing, call-to-action button, and background image shown on the storefront homepage.
-        </p>
-
-        <form onSubmit={handleSaveBanner}><fieldset className="product-fields" disabled={busy}>
-          <label className="field" style={{ marginBottom: "1rem" }}>
-            <span>Hero Headline (Main Title)</span>
-            <input
-              type="text"
-              required
-              value={bannerTitle}
-              onChange={(e) => setBannerTitle(e.target.value)}
-              placeholder="e.g. Gentle, pure cotton clothing for your little angel"
-            />
-          </label>
-
-          <label className="field" style={{ marginBottom: "1rem" }}>
-            <span>Hero Subtitle (Paragraph Text)</span>
-            <textarea
-              rows={3}
-              value={bannerSubtitle}
-              onChange={(e) => setBannerSubtitle(e.target.value)}
-              placeholder="e.g. Hand-picked babywear, soft sleepsuits, nursery gear, and quality pre-loved mtumba in Mombasa with delivery across Kenya."
-            />
-          </label>
-
-          <div className="form-grid" style={{ marginBottom: "1rem" }}>
-            <label className="field">
-              <span>Button Text</span>
-              <input
-                type="text"
-                value={bannerBtnText}
-                onChange={(e) => setBannerBtnText(e.target.value)}
-                placeholder="e.g. Shop Collection"
-              />
-            </label>
-            <label className="field">
-              <span>Button Link</span>
-              <input
-                type="text"
-                value={bannerBtnLink}
-                onChange={(e) => setBannerBtnLink(e.target.value)}
-                placeholder="/products/"
-              />
-            </label>
-          </div>
-
-          <div style={{ borderTop: "1px dashed var(--border)", paddingTop: "1rem", marginTop: "1rem" }}>
-            <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.95rem", color: "var(--navy)" }}>
-              Banner Background Image
-            </h4>
-
-            {currentBannerImg && (
-              <div style={{ marginBottom: "1rem" }}>
-                <img
-                  src={currentBannerImg}
-                  alt="Banner preview"
-                  style={{
-                    width: "100%",
-                    maxHeight: "180px",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                  }}
-                />
-              </div>
-            )}
-
-            <label className="field" style={{ marginBottom: "0.75rem" }}>
-              <span>Paste Cloudinary / Web Image URL</span>
-              <input
-                type="url"
-                placeholder="https://res.cloudinary.com/..."
-                value={bannerImgUrl}
-                onChange={(e) => {
-                  setBannerImgUrl(e.target.value);
-                  setBannerFile(null);
-                }}
-              />
-            </label>
-
-            <label className="field" style={{ marginBottom: "0.75rem" }}>
-              <span>Mobile Background Image URL (Optional)</span>
-              <input
-                type="url"
-                placeholder="https://res.cloudinary.com/... (optional mobile version)"
-                value={bannerMobileImgUrl}
-                onChange={(e) => setBannerMobileImgUrl(e.target.value)}
-              />
-            </label>
-
-            <label className="field">
-              <span>Or Upload Banner File</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) { const problem = validatePhotos([f]); if (problem) { setError(problem); e.target.value = ""; return; } setBannerFile(f); setBannerImgUrl(""); setError(""); }
-                }}
-              />
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            className="btn"
-            disabled={busy}
-            style={{ marginTop: "1.5rem" }}
-          >
-            {busy ? "Saving…" : "Save Front Page Writing"}
-          </button>
-        </fieldset></form>
       </div>
     </div>
   );

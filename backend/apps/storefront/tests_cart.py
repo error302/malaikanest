@@ -135,7 +135,7 @@ class StorefrontCartTests(TestCase):
         """Visiting empty cart returns 200 and indicates bag is empty."""
         response = self.client.get(reverse("storefront:cart"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Your Bag is Empty")
+        self.assertContains(response, "Your bag is empty")
 
     def test_guest_can_add_product_to_cart(self):
         """Guest user can add a standalone product to their session cart."""
@@ -232,7 +232,7 @@ class StorefrontCartTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(cart.items.count(), 0)
-        self.assertContains(response, "Your Bag is Empty")
+        self.assertContains(response, "Your bag is empty")
 
     def test_coupon_application_and_discount(self):
         """Applying a valid coupon applies discount to cart total."""

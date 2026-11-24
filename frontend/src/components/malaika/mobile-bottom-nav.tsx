@@ -87,8 +87,8 @@ export function MobileBottomNav({ cartCount = 0 }: { cartCount?: number }) {
                 className={cn(
                   'relative flex items-center justify-center h-11 rounded-full text-xs font-semibold transition-colors duration-200 select-none',
                   active
-                    ? 'bg-amber-50 text-amber-900 shadow-sm border border-amber-200/70'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 active:scale-95'
+                    ? 'bg-[var(--brand-warm)] text-[var(--brand-brown-dark)] shadow-sm border border-[var(--brand-border)]'
+                    : 'text-[var(--brand-text-muted)] hover:text-[var(--brand-text)] hover:bg-[var(--brand-warm)] active:scale-95'
                 )}
               >
                 <div className="relative flex items-center justify-center">

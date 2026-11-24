@@ -12,13 +12,15 @@ import { getImageUrl } from '@/lib/media';
  * Reads from localStorage on client mount (avoids SSR mismatch).
  */
 export function RecentlyViewedSection() {
-  // Read on first client render — useState initializer avoids the effect
-  const [items, setItems] = useState<RecentlyViewedItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    return getRecentlyViewed();
-  });
+  // null = not yet measured (SSR + first client paint): render nothing but
+  // stay mounted, so the reveal happens without a hydration mismatch.
+  const [items, setItems] = useState<RecentlyViewedItem[] | null>(null);
 
-  if (items.length === 0) return null;
+  useEffect(() => {
+    setItems(getRecentlyViewed());
+  }, []);
+
+  if (items === null || items.length === 0) return null;
 
   return (
     <section className="py-12 sm:py-16 lg:py-20" style={{ background: 'var(--brand-cream)' }}>
@@ -84,7 +86,7 @@ export function RecentlyViewedSection() {
                 <h3 className="text-xs font-semibold line-clamp-2 mb-1" style={{ color: 'var(--brand-text)' }}>
                   {item.name}
                 </h3>
-                <p className="text-sm font-semibold" style={{ color: 'var(--brand-gold)' }}>
+                <p className="text-sm font-semibold tabular-nums" style={{ color: 'var(--brand-text)' }}>
                   KES {item.price.toLocaleString('en-KE')}
                 </p>
               </div>

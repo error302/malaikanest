@@ -9,7 +9,16 @@ async function mock(page: Page) {
     const url = route.request().url();
     let data: unknown = {};
     if (url.includes("session")) data = { is_staff: true };
-    else if (url.includes("analytics")) data = { total_revenue: 123456789, total_orders: 1, pending_orders: 1, total_products: 1, total_users: 1, recent_orders: [{ id: 1, order_number: "MN-20260927-LONG", customer_name: "Example Customer", total: "1500", status: "pending", created_at: "2026-09-27" }], low_stock: [{ product: product.name, available: 2 }] };
+    else if (url.includes("analytics")) data = {
+      payments: {
+        received: "123456789.55",
+        by_method: [{ method: "mpesa", amount: "123456789.55", count: 1 }],
+        awaiting_payment: 1,
+        to_dispatch: 0,
+      },
+      recent_orders: [{ id: 1, order_number: "MN-20260927-LONG", customer_name: "Example Customer", total: "1500", status: "pending", created_at: "2026-09-27" }],
+      low_stock: [{ product: product.name, available: 2 }],
+    };
     else if (url.includes("categories")) data = route.request().method() === "GET" ? [category] : category;
     else if (url.includes("products/1/")) data = product;
     else if (url.includes("admin/products")) data = { count: 1, results: [product] };
@@ -48,6 +57,21 @@ test("category modal traps focus, closes with Escape and returns focus", async (
   await expect(page.getByRole("dialog")).toBeVisible(); await noOverflow(page); await accessible(page);
   for (let i=0;i<12;i++) { await page.keyboard.press("Tab"); expect(await page.evaluate(() => !!document.activeElement?.closest("dialog"))).toBe(true); }
   await page.keyboard.press("Escape"); await expect(page.getByRole("dialog")).not.toBeVisible(); await expect(opener).toBeFocused();
+});
+
+test("overview opens the new product form and requests the selected payment period", async ({ page }) => {
+  await mock(page);
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto("/static/adminapp/");
+  await expect(page.getByRole("listitem").filter({ hasText: "M-Pesa" })).toBeVisible();
+  const request = page.waitForRequest(request => new URL(request.url()).searchParams.get("payment_days") === "7");
+  await page.getByLabel("Period").selectOption("7");
+  await request;
+  await page.getByRole("link", { name: "Add a product" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create draft" })).toBeEnabled();
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).first().click();
+  await expect(page).toHaveURL(/#products$/);
 });
 test("product editor fits short landscape viewport and retains typed details after failed save", async ({ page }) => {
   await mock(page); await page.setViewportSize({ width: 844, height: 390 });
@@ -109,4 +133,30 @@ test("category upload rejects oversized images before any save", async ({ page }
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.locator('input[type="file"]').setInputFiles({ name: "large.png", mimeType: "image/png", buffer: Buffer.alloc(6 * 1024 * 1024) });
   await expect(page.getByRole("alert")).toContainText("no larger than 5 MB");
+});
+
+test("payments display a long transaction on mobile and switch filters", async ({ page }) => {
+  await mock(page);
+  await page.route("**/api/payments/admin/mpesa/**", async route => {
+    const state = new URL(route.request().url()).searchParams.get("state");
+    await route.fulfill({ json: { data: {
+      counts: { pending: 0, confirmed: 1, failed: 0, cancelled: 0, unreconciled: 1 },
+      has_next: false,
+      transactions: state === "pending" ? [] : [{
+        id: "payment-id", order: "MN-ORDER-123", order_status: "Paid", amount: "100",
+        status: "completed", issue: "receipt_unverified", receipt: null, reported_receipt: "NLJ7RT61SV",
+        checkout_id: "ws_CO_" + "1".repeat(110), destination: "3370347",
+        initiated_at: "2026-11-22T10:00:00Z", confirmed_at: "2026-11-22T10:01:00Z", statement_verified_at: null,
+      }],
+    } } });
+  });
+  await page.setViewportSize({ width: 320, height: 600 });
+  await page.goto("/static/adminapp/#payments");
+  await expect(page.getByRole("heading", { name: "M-Pesa payments" })).toBeVisible();
+  await expect(page.getByText("Match the receipt against your M-Pesa statement.")).toBeVisible();
+  await page.getByText("Transaction details", { exact: true }).click();
+  await noOverflow(page);
+  await accessible(page);
+  await page.getByRole("button", { name: "Pending 0" }).click();
+  await expect(page.getByText("No pending payments found.")).toBeVisible();
 });

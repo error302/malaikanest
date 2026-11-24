@@ -1,59 +1,26 @@
 import base64
-import datetime
+from datetime import timedelta
+from zoneinfo import ZoneInfo
 import hashlib
 import json
 import logging
 import os
-import ipaddress
-from collections.abc import Mapping
 from uuid import uuid4
 
 import requests
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP
 from django.core.cache import cache
 from django.conf import settings
 
 from django.db import transaction
 from django.utils import timezone
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from apps.orders.models import Order
 from apps.core.circuit_breaker import call_with_breaker, CircuitOpen
-from apps.core.outbox import publish_event
-from apps.core import metrics
 from .models import Payment, PaymentAuditLog
-from .tasks import verify_mpesa_payment_async
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 logger = logging.getLogger("apps.payments")
-
-MPESA_SAFARICOM_IPS = {
-    # Safaricom's documented M-Pesa callback egress ranges. Keep these as narrow
-    # /24s only. Do NOT add broad consumer ranges (e.g. 41.86.0.0/16 or
-    # 41.89.0.0/16): they cover millions of subscriber IPs on Safaricom mobile
-    # data and would let any subscriber forge callbacks if signature verification
-    # is not enforced. Confirm the exact egress CIDRs with Safaricom before launch.
-    "196.201.214.0/24",
-    "196.201.213.0/24",
-}
-
-
-def is_valid_mpesa_ip(ip):
-    if not ip:
-        return False
-    # Allow localhost for local development/testing
-    if ip in ("127.0.0.1", "localhost", "::1"):
-        return True
-    for net in MPESA_SAFARICOM_IPS:
-        try:
-            if ipaddress.ip_address(ip) in ipaddress.ip_network(net):
-                return True
-        except ValueError:
-            continue
-    return False
-
 
 def format_mpesa_amount(amount):
     return str(Decimal(amount).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
@@ -62,52 +29,6 @@ def format_mpesa_amount(amount):
 def payload_hash(payload):
     serialized = json.dumps(payload, sort_keys=True, default=str, separators=(",", ":"))
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-
-
-def verify_mpesa_signature(signature_b64: str, body: bytes) -> bool:
-    """
-    Verify Safaricom M-Pesa callback signature using their public certificate.
-
-    The signature is RSA-SHA256 of the raw request body, base64-encoded.
-    The public key is loaded from the PEM file at MPESA_PUBLIC_KEY_PATH.
-
-    Fails CLOSED: if the public key is not configured, cannot be loaded, or no
-    signature is supplied, verification returns False. Production must configure
-    MPESA_PUBLIC_KEY_PATH and run with MPESA_STRICT_SIGNATURE=true so unverifiable
-    callbacks are rejected rather than silently trusted.
-    """
-    key_path = os.getenv("MPESA_PUBLIC_KEY_PATH", "").strip()
-    if not key_path:
-        logger.error(
-            "MPESA_PUBLIC_KEY_PATH not set — refusing to trust unverified M-Pesa callbacks"
-        )
-        return False
-
-    try:
-        with open(key_path, "rb") as f:
-            public_key = load_pem_public_key(f.read())
-    except FileNotFoundError:
-        logger.error("Safaricom public key file not found at %s", key_path)
-        return False
-    except Exception as exc:
-        logger.error("Failed to load Safaricom public key: %s", exc)
-        return False
-
-    if not signature_b64 or not body:
-        return False
-
-    try:
-        signature_bytes = base64.b64decode(signature_b64)
-        public_key.verify(
-            signature_bytes,
-            body if isinstance(body, bytes) else body.encode("utf-8"),
-            padding.PKCS1v15(),
-            hashes.SHA256(),
-        )
-        return True
-    except Exception as exc:
-        logger.warning("M-Pesa signature verification failed: %s", exc)
-        return False
 
 
 def make_json_serializable(payload):
@@ -169,49 +90,11 @@ def normalize_phone(phone):
 
     if not re.match(r'^254[17]\d{8}$', p):
         raise ValueError(
-            f"Invalid Kenyan phone number: {phone}. "
+            "Invalid Kenyan phone number. "
             "Expected format: +2547XXXXXXXX, 07XXXXXXXX, or 7XXXXXXXX."
         )
 
     return p
-
-
-def pick(data, *keys):
-    if not isinstance(data, dict):
-        return None
-    for key in keys:
-        if key in data:
-            return data.get(key)
-    return None
-
-
-def _coerce_json_object(value):
-    """
-    Safaricom callbacks sometimes arrive with nested objects encoded as JSON strings
-    (e.g. from form-encoded payloads). Accept dicts as-is and best-effort parse strings.
-    """
-    if isinstance(value, dict):
-        return value
-    # DRF may provide QueryDict/ReturnDict or other Mapping types.
-    if isinstance(value, Mapping):
-        if hasattr(value, "dict"):
-            try:
-                return value.dict()
-            except (AttributeError, TypeError) as exc:
-                logger.debug("_coerce_json_object: .dict() failed: %s", exc)
-        try:
-            return dict(value)
-        except (TypeError, ValueError) as exc:
-            logger.debug("_coerce_json_object: dict() coercion failed: %s", exc)
-            return {}
-    if isinstance(value, str):
-        try:
-            parsed = json.loads(value)
-        except ValueError as exc:
-            logger.debug("_coerce_json_object: JSON parse failed: %s", exc)
-            return {}
-        return parsed if isinstance(parsed, dict) else {}
-    return {}
 
 
 def is_placeholder_secret(value):
@@ -235,6 +118,10 @@ def is_placeholder_secret(value):
         "test",
     )
     return any(token in normalized for token in placeholder_tokens)
+
+
+class StkInitiationUncertain(ValueError):
+    """Daraja may have accepted a prompt even though its response did not arrive."""
 
 
 class PaymentService:
@@ -298,7 +185,8 @@ class PaymentService:
             lambda: requests.get(
                 PaymentService._mpesa_token_url(),
                 auth=(consumer_key, consumer_secret),
-                timeout=30,
+                timeout=(5, 10),
+                allow_redirects=False,
             ),
         )
         if token_resp.status_code != 200:
@@ -310,32 +198,6 @@ class PaymentService:
         # Safaricom tokens are typically valid for 1 hour; cache for 55 minutes.
         cache.set(cache_key, token, timeout=55 * 60)
         return str(token)
-
-    @staticmethod
-    def _request_with_retries(method, url, *, attempts=3, backoff_seconds=1, **kwargs):
-        last_exc = None
-        for attempt in range(1, attempts + 1):
-            try:
-                # Circuit breaker: fail fast if Safaricom is down/slow so worker
-                # threads aren't tied up; a CircuitOpen is not retried.
-                resp = call_with_breaker(
-                    "mpesa_api",
-                    lambda: requests.request(method, url, timeout=30, **kwargs),
-                )
-                return resp
-            except CircuitOpen:
-                raise
-            except Exception as exc:
-                last_exc = exc
-                if attempt == attempts:
-                    break
-                try:
-                    import time
-
-                    time.sleep(backoff_seconds * (2 ** (attempt - 1)))
-                except OSError as exc:
-                    logger.debug("Retry sleep interrupted: %s", exc)
-        raise last_exc
 
     @staticmethod
     def enqueue_task(task, *args, **kwargs):
@@ -427,261 +289,90 @@ class PaymentService:
         if mpesa_env == "live" and ("localhost" in callback_url or not callback_url.startswith("https://")):
             raise ValueError("M-Pesa callback URL is not valid for production")
 
-        # Idempotency: if an initiated payment already has a CheckoutRequestID for the same phone, reuse it.
-        if payment.status == "initiated" and payment.checkout_request_id and normalize_phone(payment.phone or "") == normalize_phone(phone):
-            return payment.checkout_request_id
+        from .mpesa_verification import code, identifier
+
+        phone = normalize_phone(phone)
+        if not phone or len(phone) != 12 or not phone.startswith(("2547", "2541")) or not phone.isdigit():
+            raise ValueError("Enter a valid M-Pesa phone number.")
+
+        with transaction.atomic():
+            payment = Payment.objects.select_for_update().get(pk=payment.pk)
+            order = Order.objects.select_for_update().get(pk=payment.order_id)
+            if payment.payment_method != "mpesa" or order.status not in (Order.STATUS_PENDING, Order.STATUS_INITIATED):
+                raise ValueError("This order is not awaiting M-Pesa.")
+            if payment.status != "initiated" or payment.amount != order.total:
+                raise ValueError("This order needs a payment review.")
+            if payment.checkout_request_id:
+                if payment.phone_number == phone:
+                    return payment.checkout_request_id
+                raise ValueError("An M-Pesa request is already active for this order.")
+            if payment.mpesa_issue:
+                raise StkInitiationUncertain("An M-Pesa request may already be active.")
+            sent_amount = int(format_mpesa_amount(order.total))
+            if sent_amount < 1:
+                raise ValueError("The order must total at least KSh 1.")
+            payment.phone_number = phone
+            payment.mpesa_sent_amount = sent_amount
+            payment.mpesa_shortcode = shortcode
+            payment.mpesa_destination = party_b
+            # Persist before the non-idempotent provider call. If its response is
+            # lost, do not send a second prompt or offer a second payment.
+            payment.mpesa_issue = "initiation_unknown"
+            payment.initiated_at = timezone.now()
+            payment.save(update_fields=[
+                "phone_number", "mpesa_sent_amount", "mpesa_shortcode", "mpesa_destination",
+                "mpesa_issue", "initiated_at", "updated_at",
+            ])
 
         try:
             access_token = PaymentService.get_mpesa_oauth_token()
-        except Exception as exc:
-            payment.status = "failed"
-            payment.save(update_fields=["status", "updated_at"])
-            logger.error("M-Pesa auth exception: %s", str(exc))
-            raise ValueError("M-Pesa service unavailable")
+        except (requests.RequestException, CircuitOpen, ValueError):
+            Payment.objects.filter(pk=payment.pk).update(mpesa_issue="")
+            raise ValueError("M-Pesa is temporarily unavailable.")
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        timestamp = timezone.now().astimezone(ZoneInfo("Africa/Nairobi")).strftime("%Y%m%d%H%M%S")
         password = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
-        stk_url = PaymentService._mpesa_stk_url()
-
         payload = {
             "BusinessShortCode": shortcode,
             "Password": password,
             "Timestamp": timestamp,
             "TransactionType": transaction_type,
-            "Amount": format_mpesa_amount(payment.amount),
+            "Amount": sent_amount,
             "PartyA": phone,
             "PartyB": party_b,
             "PhoneNumber": phone,
             "CallBackURL": callback_url,
-            "AccountReference": f"MalaikaNest-{payment.order.id}",
-            "TransactionDesc": "Malaika Nest Order Payment",
+            "AccountReference": f"MN{payment.order_id.hex[-10:]}",
+            "TransactionDesc": "Malaika Nest Order",
         }
-
         try:
-            resp = PaymentService._request_with_retries(
-                "POST",
-                stk_url,
-                attempts=3,
-                backoff_seconds=1,
-                json=payload,
-                headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            response = call_with_breaker(
+                "mpesa_api",
+                lambda: requests.post(
+                    PaymentService._mpesa_stk_url(),
+                    json=payload,
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    timeout=(5, 12),
+                    allow_redirects=False,
+                ),
             )
-            result = resp.json()
+            result = response.json()
+        except (requests.RequestException, CircuitOpen, ValueError):
+            raise StkInitiationUncertain("M-Pesa has not confirmed whether the prompt was sent.")
 
-            if resp.status_code == 200 and result.get("ResponseCode") == "0":
-                checkout_request_id = result.get("CheckoutRequestID")
-                payment.checkout_request_id = checkout_request_id
-                payment.phone = phone
-                payment.save(update_fields=["mpesa_checkout_request_id", "phone_number", "updated_at"])
-
-                audit_log(
-                    event_type="stk_initiated",
-                    payload={"request": {**payload, "Password": "***"}, "response": result},
-                    payment=payment,
-                    checkout_request_id=checkout_request_id,
-                    notes="STK push initiated successfully",
+        if isinstance(result, dict) and response.status_code == 200:
+            checkout_id = result.get("CheckoutRequestID")
+            merchant_id = result.get("MerchantRequestID")
+            if code(result.get("ResponseCode")) == "0" and identifier(checkout_id) and identifier(merchant_id):
+                Payment.objects.filter(pk=payment.pk).update(
+                    mpesa_checkout_request_id=checkout_id,
+                    mpesa_merchant_request_id=merchant_id,
+                    mpesa_next_query_at=timezone.now() + timedelta(seconds=75),
+                    mpesa_issue="",
+                    updated_at=timezone.now(),
                 )
-                PaymentService.enqueue_task(verify_mpesa_payment_async, payment.id)
-                return checkout_request_id
-
-            payment.status = "failed"
-            payment.save(update_fields=["status", "updated_at"])
-            audit_log(
-                event_type="stk_failed",
-                payload={"request": {**payload, "Password": "***"}, "response": result},
-                payment=payment,
-                result_code=result.get("ResponseCode"),
-                notes=result.get("ResponseDescription", "STK push failed"),
-            )
-            raise ValueError(result.get("ResponseDescription", "STK push failed"))
-
-        except ValueError:
-            raise
-        except Exception as exc:
-            payment.status = "failed"
-            payment.save(update_fields=["status", "updated_at"])
-            audit_log(
-                event_type="stk_failed",
-                payload={"request": {**payload, "Password": "***"}, "exception": str(exc)},
-                payment=payment,
-                notes="Exception during STK push",
-            )
-            raise ValueError("M-Pesa service error")
-
-    @staticmethod
-    def process_callback(raw, client_ip):
-        raw = _coerce_json_object(raw)
-        body = _coerce_json_object(pick(raw, "Body", "body"))
-        callback_result = _coerce_json_object(pick(body, "stkCallback", "stkcallback", "stk_callback"))
-        checkout_id = pick(callback_result, "CheckoutRequestID", "checkoutRequestID", "checkout_request_id")
-        merchant_request_id = pick(callback_result, "MerchantRequestID", "merchantRequestID", "merchant_request_id")
-        result_code = pick(callback_result, "ResultCode", "resultCode", "result_code")
-
-        audit_log(event_type="callback_received", payload=raw, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
-
-        with transaction.atomic():
-            payment = None
-            if checkout_id:
-                payment = (
-                    Payment.objects.select_for_update()
-                    .select_related("order")
-                    .filter(mpesa_checkout_request_id=checkout_id)
-                    .first()
-                )
-            if not payment and merchant_request_id:
-                payment = (
-                    Payment.objects.select_for_update()
-                    .select_related("order")
-                    .filter(order__receipt_number=merchant_request_id)
-                    .first()
-                )
-
-            if not payment:
-                audit_log(event_type="callback_unmatched", payload=raw, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, notes="No matching payment")
-                return {"ResultCode": 0, "ResultDesc": "Accepted"}
-
-            if payment.status == "completed":
-                payment.raw_callback = raw
-                payment.callback_received_at = timezone.now()
-                payment.save(update_fields=["raw_callback_json", "callback_received_at", "updated_at"])
-                audit_log(event_type="callback_duplicate", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
-                return {"ResultCode": 0, "ResultDesc": "Accepted"}
-
-            payment.raw_callback = raw
-            callback_metadata = _coerce_json_object(pick(callback_result, "CallbackMetadata", "callbackMetadata", "callback_metadata"))
-
-            if str(result_code) == "0":
-                callback_items = pick(callback_metadata, "Item", "item") or []
-                items = {it.get("Name") or it.get("name"): it.get("Value") or it.get("value") for it in callback_items}
-                receipt = items.get("MpesaReceiptNumber")
-                amount = items.get("Amount")
-                callback_phone = items.get("PhoneNumber")
-
-                try:
-                    # M-Pesa only deals in whole KES: the STK push sent a rounded
-                    # integer and the callback returns a rounded integer. Compare
-                    # both sides quantized to whole KES so fractional-cents order
-                    # totals don't cause a false AMOUNT_MISMATCH on a paid order.
-                    callback_amount = Decimal(str(amount))
-                    if callback_amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP) != payment.amount.quantize(
-                        Decimal("1"), rounding=ROUND_HALF_UP
-                    ):
-                        payment.status = "failed"
-                        payment.save(update_fields=["status", "updated_at"])
-                        metrics.incr("payments.failed")
-                        try:
-                            order = payment.order
-                            if hasattr(order, "transition_to") and hasattr(Order, "STATUS_PAYMENT_FAILED"):
-                                order.transition_to(Order.STATUS_PAYMENT_FAILED)
-                            else:
-                                order.status = "payment_failed"
-                                order.save(update_fields=["status", "updated_at"])
-
-                            # Durable side-effect via outbox (restock) instead of
-                            # fire-and-forget on_commit enqueue.
-                            publish_event("order", order.id, "order.cancelled", {"order_id": str(order.id)})
-                        except Exception as exc:
-                            logger.error("Order transition/publish failed (amount mismatch, order=%s): %s", payment.order_id, exc)
-                        audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="AMOUNT_MISMATCH", notes=f"Expected {payment.amount}, got {amount}")
-                        PaymentService._broadcast_payment_update(order.id, "failed")
-                        return {"ResultCode": 1, "ResultDesc": "Amount mismatch"}
-                except (InvalidOperation, TypeError):
-                    payment.status = "failed"
-                    payment.save(update_fields=["status", "updated_at"])
-                    metrics.incr("payments.failed")
-                    audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="INVALID_AMOUNT")
-                    return {"ResultCode": 1, "ResultDesc": "Invalid amount"}
-
-                order_phone = payment.phone or (
-                    payment.order.user.phone_number
-                    if payment.order.user and hasattr(payment.order.user, "phone_number")
-                    else None
-                )
-                if order_phone and callback_phone and normalize_phone(order_phone) != normalize_phone(callback_phone):
-                    payment.status = "failed"
-                    payment.callback_received_at = timezone.now()
-                    payment.save(update_fields=["status", "raw_callback_json", "callback_received_at", "updated_at"])
-                    metrics.incr("payments.failed")
-                    try:
-                        order = payment.order
-                        if hasattr(order, "transition_to") and hasattr(Order, "STATUS_PAYMENT_FAILED"):
-                            order.transition_to(Order.STATUS_PAYMENT_FAILED)
-                        else:
-                            order.status = "payment_failed"
-                            order.save(update_fields=["status", "updated_at"])
-
-                        publish_event("order", order.id, "order.cancelled", {"order_id": str(order.id)})
-                    except Exception as exc:
-                        logger.error("Order transition/publish failed (phone mismatch, order=%s): %s", payment.order_id, exc)
-                    audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code="PHONE_MISMATCH")
-                    PaymentService._broadcast_payment_update(order.id, "failed")
-                    return {"ResultCode": 1, "ResultDesc": "Phone mismatch"}
-
-                if receipt and Payment.objects.filter(mpesa_receipt_number=receipt).exclude(pk=payment.pk).exists():
-                    audit_log(event_type="callback_duplicate_receipt", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes="Receipt already processed")
-                    return {"ResultCode": 0, "ResultDesc": "Accepted"}
-
-                payment.mpesa_receipt_number = receipt
-                payment.phone = callback_phone
-                payment.status = "completed"
-                payment.callback_received_at = timezone.now()
-                payment.completed_at = timezone.now()
-                payment.save(update_fields=["mpesa_receipt_number", "phone_number", "status", "raw_callback_json", "callback_received_at", "completed_at", "updated_at"])
-
-                order = payment.order
-                try:
-                    if hasattr(order, "transition_to") and hasattr(Order, "STATUS_PAID"):
-                        ok, _err = order.transition_to(Order.STATUS_PAID)
-                        if not ok:
-                            order.status = "paid"
-                            if hasattr(order, "paid_at"):
-                                order.paid_at = timezone.now()
-                            order.save(update_fields=["status", "paid_at", "updated_at"] if hasattr(order, "paid_at") else ["status", "updated_at"])
-                    else:
-                        order.status = "paid"
-                        if hasattr(order, "paid_at"):
-                            order.paid_at = timezone.now()
-                            order.save(update_fields=["status", "paid_at", "updated_at"])
-                        else:
-                            order.save(update_fields=["status", "updated_at"])
-                except Exception as e:
-                    logger.error("Order status update failed for order %s: %s", order.id, e)
-
-                # Durable side-effects via the transactional outbox: the order is
-                # now paid, and the relay task will reduce inventory / invoice /
-                # confirm. Survives a worker crash between commit and enqueue.
-                publish_event("order", order.id, "order.paid", {"order_id": str(order.id)})
-                metrics.incr("payments.completed")
-
-                audit_log(event_type="callback_completed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code)
-                PaymentService._broadcast_payment_update(order.id, "completed", receipt)
-                return {"ResultCode": 0, "ResultDesc": "Accepted"}
-
-            result_desc = callback_result.get("ResultDesc", "Unknown error")
-            payment.status = "failed"
-            payment.callback_received_at = timezone.now()
-            payment.save(update_fields=["status", "raw_callback_json", "callback_received_at", "updated_at"])
-            try:
-                order = payment.order
-                if hasattr(order, "transition_to") and hasattr(Order, "STATUS_PAYMENT_FAILED"):
-                    order.transition_to(Order.STATUS_PAYMENT_FAILED)
-                else:
-                    order.status = "payment_failed"
-                    order.save(update_fields=["status", "updated_at"])
-            except Exception as e:
-                logger.error("Order status update failed for order %s: %s", payment.order_id, e)
-
-            metrics.incr("payments.failed")
-            try:
-                publish_event("order", payment.order_id, "order.cancelled", {"order_id": str(payment.order_id)})
-            except Exception as exc:
-                logger.error("Failed to publish order.cancelled event for order %s: %s", payment.order_id, exc)
-            audit_log(event_type="callback_failed", payload=raw, payment=payment, request_ip=client_ip, checkout_request_id=checkout_id, merchant_request_id=merchant_request_id, result_code=result_code, notes=result_desc)
-            PaymentService._broadcast_payment_update(payment.order_id, "failed")
-            return {"ResultCode": 0, "ResultDesc": "Accepted"}
-
-
-
-
-
-
+                return checkout_id
+            if code(result.get("ResponseCode")) not in (None, "0"):
+                Payment.objects.filter(pk=payment.pk).update(mpesa_issue="", status="failed")
+                raise ValueError("Safaricom declined the M-Pesa request.")
+        raise StkInitiationUncertain("M-Pesa has not confirmed whether the prompt was sent.")

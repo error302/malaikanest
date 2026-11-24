@@ -238,8 +238,8 @@ export function CheckoutOrderSummary({
         <button
           type="submit"
           disabled={submitting}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold transition-all disabled:opacity-60"
-          style={{ background: 'var(--brand-gold)', color: '#FFFFFF' }}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+          style={{ background: 'var(--accent, var(--brand-terra))', color: '#FFFFFF' }}
         >
           {submitting ? (
             t('checkout.processing')

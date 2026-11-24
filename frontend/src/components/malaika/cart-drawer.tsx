@@ -108,7 +108,7 @@ export function CartDrawer() {
                     className="h-full rounded-full transition-all duration-300"
                     style={{
                       width: `${progressPct}%`,
-                      backgroundColor: numericSubtotal >= FREE_SHIPPING_THRESHOLD ? '#10b981' : '#c4904a',
+                      backgroundColor: numericSubtotal >= FREE_SHIPPING_THRESHOLD ? 'var(--success, #4A7C59)' : 'var(--brand-gold, #C9A96E)',
                     }}
                   />
                 </div>

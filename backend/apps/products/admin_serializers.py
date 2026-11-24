@@ -346,15 +346,26 @@ class AdminProductSerializer(serializers.ModelSerializer):
         try:
             import requests
             from django.core.files.base import ContentFile
+            from django.conf import settings as dj_settings
             from urllib.parse import urlparse
 
-            response = requests.get(image_url, timeout=10)
+            parsed = urlparse(image_url)
+            # SSRF guard: HTTPS only, allowlisted hosts, no redirects — same
+            # policy as the invoice fetcher in orders/views.py.
+            if parsed.scheme != "https":
+                logger.warning("Rejected non-https image URL: %s", image_url)
+                return None
+            allowed = set(getattr(dj_settings, "INVOICE_URL_ALLOWED_HOSTS", []) or [])
+            if not allowed or parsed.hostname not in allowed:
+                logger.warning("Rejected image URL from non-allowlisted host: %s", image_url)
+                return None
+
+            response = requests.get(image_url, timeout=10, allow_redirects=False)
             if response.status_code == 200:
-                parsed = urlparse(image_url)
                 filename = parsed.path.split("/")[-1] or default_name
                 return ContentFile(response.content, name=filename)
         except Exception:
-            logger.debug("Product image download failed from %s", url)
+            logger.debug("Product image download failed from %s", image_url)
         return None
 
     @staticmethod

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { ProductCard, type Product } from './product-card';
 import { useI18n } from '@/lib/i18n';
+import { Reveal, RevealGroup } from '@/lib/motion';
 
 interface ProductSectionProps {
   id?: string;
@@ -80,69 +81,79 @@ export function ProductSection({
       style={{ background: bgMap[background] ?? bgMap.cream }}
     >
       <div className="container-shell">
-        <div className="flex items-end justify-between gap-4 mb-7 sm:mb-9">
-          <div>
-            <span className="section-label mb-3">{label}</span>
-            <h2
-              className="font-serif font-semibold tracking-tight mt-3"
-              style={{
-                color: 'var(--ink)',
-                fontFamily: 'var(--font-cormorant)',
-                fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
-                lineHeight: 1.15,
-              }}
+        <Reveal>
+          <div className="flex items-end justify-between gap-4 mb-7 sm:mb-9">
+            <div>
+              <span className="section-label mb-3">{label}</span>
+              <h2
+                className="font-serif font-semibold tracking-tight mt-3"
+                style={{
+                  color: 'var(--ink)',
+                  fontFamily: 'var(--font-cormorant)',
+                  fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
+                  lineHeight: 1.15,
+                }}
+              >
+                {title}
+              </h2>
+            </div>
+            <Link
+              href={viewAllHref}
+              className="hidden sm:inline-flex items-center gap-1 text-[13px] font-medium transition-all hover:gap-2 min-h-[44px]"
+              style={{ color: 'var(--accent)' }}
             >
-              {title}
-            </h2>
+              {viewAllText}
+              <ChevronRight size={14} />
+            </Link>
           </div>
-          <Link
-            href={viewAllHref}
-            className="hidden sm:inline-flex items-center gap-1 text-[13px] font-medium transition-all hover:gap-2 min-h-[44px]"
-            style={{ color: 'var(--accent)' }}
-          >
-            {viewAllText}
-            <ChevronRight size={14} />
-          </Link>
-        </div>
+        </Reveal>
 
         {products.length === 0 ? (
-          <div
-            className="rounded-2xl border px-6 py-12 text-center"
-            style={{ background: 'var(--paper-card)', borderColor: 'var(--brand-border)' }}
-          >
-            <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
-              {emptyMessage}
-            </p>
-          </div>
+          <Reveal variant="windUp">
+            <div
+              className="rounded-2xl border px-6 py-12 text-center"
+              style={{ background: 'var(--paper-card)', borderColor: 'var(--brand-border)' }}
+            >
+              <p className="text-sm" style={{ color: 'var(--brand-text-secondary)' }}>
+                {emptyMessage}
+              </p>
+            </div>
+          </Reveal>
         ) : layout === 'masonry' ? (
-          <div className="masonry">
+          <RevealGroup className="masonry" stagger={0.05}>
             {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
+              <Reveal key={p.id} as="div">
+                <ProductCard product={p} index={i} />
+              </Reveal>
             ))}
-          </div>
+          </RevealGroup>
         ) : (
-          <div className={`grid ${colClass} gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8`}>
+          <RevealGroup className={`grid ${colClass} gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8`}>
             {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
+              <Reveal key={p.id} as="div">
+                <ProductCard product={p} index={i} />
+              </Reveal>
             ))}
-          </div>
+          </RevealGroup>
         )}
 
         {/* Mobile view-all — also the only route forward when the section is
             empty, so it renders in both states. */}
-        <div className="mt-7 text-center sm:hidden">
-          <Link
-            href={viewAllHref}
-            className="inline-flex items-center gap-1 text-[13px] font-medium px-6 py-3 rounded-full border"
-            style={{
-              borderColor: 'var(--accent)',
-              color: 'var(--accent)',
-            }}
-          >
-            {viewAllText}
-            <ChevronRight size={14} />
-          </Link>
-        </div>
+        <Reveal>
+          <div className="mt-7 text-center sm:hidden">
+            <Link
+              href={viewAllHref}
+              className="inline-flex items-center gap-1 text-[13px] font-medium px-6 py-3 rounded-full border"
+              style={{
+                borderColor: 'var(--accent)',
+                color: 'var(--accent)',
+              }}
+            >
+              {viewAllText}
+              <ChevronRight size={14} />
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
