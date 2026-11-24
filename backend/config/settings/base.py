@@ -237,6 +237,13 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-no-auth-redirect",
 ]
 
+# Valid redirect hosts for open redirect protection
+VALID_REDIRECT_HOSTS = [
+    "malaikanest.com",
+    "www.malaikanest.com",
+    "api.malaikanest.com",
+]
+
 _csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if _csrf_env:
     CSRF_TRUSTED_ORIGINS = [u.strip() for u in _csrf_env.split(",") if u.strip()]
