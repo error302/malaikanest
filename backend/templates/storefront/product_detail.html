@@ -8,52 +8,48 @@
 <div class="nest-product-detail shop-frame coast-page">
 
   <!-- Breadcrumbs -->
-  <div class="text-xs text-gray-500 mb-4 sm:mb-6 flex items-center gap-1.5 flex-wrap">
-    <a href="{% url 'storefront:home' %}" class="hover:text-[#8B6914]">Home</a>
+  <div style="font-size: .8rem; color: var(--coast-muted); margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+    <a href="{% url 'storefront:home' %}" class="coast-text-link" style="min-height: auto; text-decoration: none;">Home</a>
     <span>/</span>
-    <a href="{% url 'storefront:product_list' %}" class="hover:text-[#8B6914]">Products</a>
+    <a href="{% url 'storefront:product_list' %}" class="coast-text-link" style="min-height: auto; text-decoration: none;">Products</a>
     <span>/</span>
-    <a href="{% url 'storefront:category_detail' category_slug=product.category.slug %}" class="hover:text-[#8B6914]">{{ product.category.name }}</a>
+    <a href="{% url 'storefront:category_detail' category_slug=product.category.slug %}" class="coast-text-link" style="min-height: auto; text-decoration: none;">{{ product.category.name }}</a>
     <span>/</span>
-    <span class="text-[#2C1810] font-medium truncate max-w-[12rem] sm:max-w-xs">{{ product.name }}</span>
+    <span style="font-weight: 600; color: var(--coast-deep); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ product.name }}</span>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+  <div style="display: grid; grid-template-columns: 1fr; gap: 32px;">
     
     <!-- Image Gallery -->
-    <div class="space-y-4">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
       <div class="coast-product-photo relative">
         {% if product.get_image_url %}
-          <img id="mainProductImage" src="{{ product.get_image_url|cloudinary_auto }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
+          <img id="mainProductImage" src="{{ product.get_image_url|cloudinary_auto }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover;">
         {% elif product.images.first %}
-          <img id="mainProductImage" src="{{ product.images.first.get_image_url|default:product.images.first.image.url|cloudinary_auto }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" class="w-full h-full object-cover">
+          <img id="mainProductImage" src="{{ product.images.first.get_image_url|default:product.images.first.image.url|cloudinary_auto }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover;">
         {% else %}
-          <div class="w-full h-full flex items-center justify-center font-serif text-5xl font-bold text-[#EADBCE]">MN</div>
+          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--coast-heading); font-size: 4rem; font-weight: 800; color: var(--coast-line);">MN</div>
         {% endif %}
 
         {% if product.shop_stock <= 0 %}
-          <div class="absolute top-4 right-4 bg-gray-900/90 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur">
-            Out of Stock
-          </div>
+          <div class="badge badge-secondary" style="position: absolute; top: 16px; right: 16px;">Out of Stock</div>
         {% elif product.is_low_stock %}
-          <div class="absolute top-4 right-4 bg-[#C96E4B] text-white text-xs font-bold px-3 py-1 rounded-full">
-            Only {{ product.shop_stock }} left
-          </div>
+          <div class="badge badge-accent" style="position: absolute; top: 16px; right: 16px;">Only {{ product.shop_stock }} left</div>
         {% endif %}
       </div>
 
       <!-- Thumbnails -->
       {% if product.images.all|length > 1 %}
-        <div class="flex gap-2 overflow-x-auto pb-2">
+        <div style="display: flex; gap: 12px; overflow-x-auto; padding-bottom: 8px;">
           {% if product.get_image_url %}
             <button 
               type="button" 
               data-gallery-src="{{ product.get_image_url|cloudinary_auto }}"
               onclick="document.getElementById('mainProductImage').src = this.dataset.gallerySrc"
               aria-label="View main image"
-              class="w-16 h-16 rounded-xl overflow-hidden border-2 border-[#8B6914] flex-shrink-0 bg-white"
+              style="width: 72px; height: 72px; border-radius: var(--radius-md); overflow: hidden; border: 2px solid var(--coast-leaf); flex-shrink: 0; background: white;"
             >
-              <img src="{{ product.get_image_url|cloudinary_auto }}" alt="" width="64" height="64" loading="lazy" class="w-full h-full object-cover">
+              <img src="{{ product.get_image_url|cloudinary_auto }}" alt="" width="64" height="64" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
             </button>
           {% endif %}
           {% for img in product.images.all %}
@@ -61,10 +57,10 @@
               type="button" 
               data-gallery-src="{{ img.get_image_url|default:img.image.url|cloudinary_auto }}"
               onclick="document.getElementById('mainProductImage').src = this.dataset.gallerySrc"
-              class="w-16 h-16 rounded-xl overflow-hidden border border-[#EADBCE] hover:border-[#8B6914] flex-shrink-0 bg-white"
+              style="width: 72px; height: 72px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--coast-line); flex-shrink: 0; background: white; transition: border-color var(--transition-fast);"
               aria-label="View image {{ forloop.counter }}"
             >
-              <img src="{{ img.get_image_url|default:img.image.url|cloudinary_auto }}" alt="{{ product.name }} — view {{ forloop.counter }}" width="64" height="64" loading="lazy" class="w-full h-full object-cover">
+              <img src="{{ img.get_image_url|default:img.image.url|cloudinary_auto }}" alt="{{ product.name }} — view {{ forloop.counter }}" width="64" height="64" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
             </button>
           {% endfor %}
         </div>
@@ -72,140 +68,129 @@
     </div>
 
     <!-- Product Info & Actions -->
-    <div class="coast-product-purchase flex flex-col justify-between">
+    <div class="coast-product-purchase" style="display: flex; flex-direction: column; gap: 24px;">
       <div>
-        <span class="text-sm font-semibold text-[#8B6914]">{{ product.category.name }}</span>
-        <h1 class="font-serif text-2xl sm:text-4xl font-bold text-[#2C1810] mt-1 mb-3 text-balance">
-          {{ product.name }}
-        </h1>
+        <span class="badge badge-primary">{{ product.category.name }}</span>
+        <h1 style="font-family: var(--coast-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: var(--coast-deep); line-height: 1.08; letter-spacing: -.03em; margin-top: 8px;">{{ product.name }}</h1>
 
         <!-- Age / Size / Fit Chips -->
         {% if product.age_range or product.size_label or product.age_group or product.gender != 'unisex' %}
-          <div class="flex flex-wrap gap-2 mb-4">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
             {% if product.age_range %}
-              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">Ages {{ product.age_range }}</span>
+              <span class="badge badge-outline">Ages {{ product.age_range }}</span>
             {% endif %}
             {% if product.size_label %}
-              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">Size {{ product.get_size_label_display }}</span>
+              <span class="badge badge-outline">Size {{ product.get_size_label_display }}</span>
             {% endif %}
             {% if product.condition == 'mtumba' %}
-              <span class="text-[11px] font-semibold text-[#C9A96E] bg-[#2C1810] px-2.5 py-1 rounded-full">Mtumba · Pre-Loved</span>
+              <span class="badge" style="background: var(--coast-deep); color: var(--coast-mango);">Mtumba · Pre-Loved</span>
             {% else %}
-              <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Brand New</span>
+              <span class="badge badge-primary">Brand New</span>
             {% endif %}
             {% if product.age_group %}
-              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">{{ product.get_age_group_display }}</span>
+              <span class="badge badge-outline">{{ product.get_age_group_display }}</span>
             {% endif %}
             {% if product.gender and product.gender != 'unisex' %}
-              <span class="text-[11px] font-semibold text-[#8B6914] bg-[#FAF7F2] border border-[#EADBCE] px-2.5 py-1 rounded-full">{{ product.get_gender_display }}</span>
+              <span class="badge badge-outline">{{ product.get_gender_display }}</span>
             {% endif %}
           </div>
         {% endif %}
 
         <!-- Price Display -->
-        <div class="flex items-baseline gap-3 mb-6">
-          <span class="text-2xl sm:text-3xl font-bold text-[#2C1810] tabular-nums">
-            KES {{ product.price|floatformat:"0" }}
-          </span>
+        <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 20px; flex-wrap: wrap;">
+          <span class="price">KES {{ product.price|floatformat:"0" }}</span>
           {% if product.compare_price %}
-            <span class="text-sm sm:text-base text-gray-400 line-through tabular-nums">
-              KES {{ product.compare_price|floatformat:"0" }}
-            </span>
-            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              Save {{ product.discount_percentage }}%
-            </span>
+            <span style="font-size: 1rem; color: var(--coast-muted); text-decoration: line-through; font-variant-numeric: tabular-nums;">KES {{ product.compare_price|floatformat:"0" }}</span>
+            <span class="badge badge-accent">Save {{ product.discount_percentage }}%</span>
           {% endif %}
         </div>
 
-        <details class="nest-fit" id="size-guide" {% if product.size_guide %}open{% endif %}>
-          <summary>Measurements &amp; fit</summary>
-          <div class="nest-fit-content">
+        <!-- Size Guide -->
+        <details class="nest-fit" id="size-guide" {% if product.size_guide %}open{% endif %} style="margin-top: 24px; background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
+          <summary style="font-weight: 700; color: var(--coast-deep); cursor: pointer; min-height: 48px; display: flex; align-items: center; list-style: none;">Measurements & fit</summary>
+          <div class="nest-fit-content" style="margin-top: 16px;">
             {% if product.size_guide %}
               {{ product.size_guide|linebreaks }}
             {% else %}
-              <p>Measurements for this item haven't been added yet. Ask us for the chest, waist and length measurements in cm before choosing a size.</p>
-              <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="underline">Ask about measurements on WhatsApp</a>
+              <p style="color: var(--coast-muted); line-height: 1.6;">Measurements for this item haven't been added yet. Ask us for the chest, waist and length measurements in cm before choosing a size.</p>
+              <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="coast-text-link" style="margin-top: 12px; display: inline-block;">Ask about measurements on WhatsApp</a>
             {% endif %}
-            <p class="mt-3">Size labels vary between brands. Compare garment measurements with a similar item that fits your child, and check whether the measurement is a flat width or full circumference.</p>
+            <p style="margin-top: 16px; font-size: .85rem; color: var(--coast-muted); line-height: 1.6;">Size labels vary between brands. Compare garment measurements with a similar item that fits your child, and check whether the measurement is a flat width or full circumference.</p>
           </div>
         </details>
 
         <!-- Add to Cart Form -->
-        <form action="/cart/add/" method="post" class="space-y-6" id="pdp-add-form">
+        <form action="/cart/add/" method="post" style="display: flex; flex-direction: column; gap: 24px; margin-top: 24px;" id="pdp-add-form">
           {% csrf_token %}
           <input type="hidden" name="product_id" value="{{ product.id }}">
 
           {% if variants %}
-          <fieldset>
-            <legend class="text-sm font-bold mb-3">Choose size &amp; colour</legend>
-            <div class="nest-size-options">
+          <fieldset style="border: none; padding: 0;">
+            <legend style="font-size: .85rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .04em;">Choose size & colour</legend>
+            <div class="nest-size-options" style="display: flex; flex-wrap: wrap; gap: 8px;">
               {% for v in variants %}
-              <label class="nest-variant">
-                <input type="radio" name="variant_id" value="{{ v.id }}" required {% if v.shop_stock <= 0 %}disabled{% endif %}>
-                <span class="nest-size-option">{{ v.get_size_display|default:"Standard" }}{% if v.color %} · {{ v.get_color_display }}{% endif %}{% if v.price_modifier %} · KES {{ v.shop_price|floatformat:"0" }}{% endif %}{% if v.shop_stock <= 0 %} · Sold out{% endif %}</span>
+              <label class="nest-variant" style="cursor: pointer; display: block;">
+                <input type="radio" name="variant_id" value="{{ v.id }}" required {% if v.shop_stock <= 0 %}disabled{% endif %} style="position: absolute; opacity: 0; pointer-events: none;">
+                <span class="nest-size-option{% if v.shop_stock <= 0 %} disabled{% endif %}" style="display: inline-flex; align-items: center; padding: 10px 18px; border-radius: var(--radius-md); border: 2px solid var(--coast-line); background: white; font-weight: 600; color: var(--coast-deep); transition: all var(--transition-fast); {% if v.shop_stock <= 0 %}opacity: 0.5; cursor: not-allowed;{% endif %}">{{ v.get_size_display|default:"Standard" }}{% if v.color %} · {{ v.get_color_display }}{% endif %}{% if v.price_modifier %} · KES {{ v.shop_price|floatformat:"0" }}{% endif %}{% if v.shop_stock <= 0 %} · Sold out{% endif %}</span>
               </label>
               {% endfor %}
             </div>
           </fieldset>
           {% elif product.size_label %}
-          <p class="text-sm font-semibold">Size: {{ product.get_size_label_display }}</p>
+          <p style="font-size: .9rem; font-weight: 600; color: var(--coast-deep);">Size: {{ product.get_size_label_display }}</p>
           {% endif %}
 
           <!-- Quantity Selector -->
-          <div class="flex flex-wrap items-end gap-4">
-            <div class="w-36">
-              <label for="qtyInput" class="text-xs font-bold uppercase tracking-wider text-[#2C1810] block mb-2">Quantity</label>
-              <div class="flex items-center border border-[#EADBCE] rounded-xl bg-white overflow-hidden">
-                <button 
-                  type="button" 
-                  onclick="let q = document.getElementById('qtyInput'); if(q.value > 1) q.value--;"
-                  class="px-3 py-3 text-gray-500 hover:bg-[#FAF7F2] font-bold min-w-11 min-h-11 active:scale-95 transition-transform duration-75"
-                  aria-label="Decrease quantity"
-                >-</button>
-                <input 
-                  type="number" 
-                  id="qtyInput" 
-                  name="quantity" 
-                  value="1" 
-                  min="1" 
-                  max="{{ product.shop_stock }}"
-                  inputmode="numeric"
-                  class="w-full text-center text-base font-semibold focus:outline-none border-none py-2.5"
-                >
-                <button 
-                  type="button" 
-                  onclick="let q = document.getElementById('qtyInput'); q.value++;"
-                  class="px-3 py-3 text-gray-500 hover:bg-[#FAF7F2] font-bold min-w-11 min-h-11 active:scale-95 transition-transform duration-75"
-                  aria-label="Increase quantity"
-                >+</button>
-              </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;">
+            <div class="quantity-stepper" style="width: 140px;">
+              <button 
+                type="button" 
+                onclick="let q = document.getElementById('qtyInput'); if(q.value > 1) q.value--;"
+                aria-label="Decrease quantity"
+              >-</button>
+              <input 
+                type="number" 
+                id="qtyInput" 
+                name="quantity" 
+                value="1" 
+                min="1" 
+                max="{{ product.shop_stock }}"
+                inputmode="numeric"
+              >
+              <button 
+                type="button" 
+                onclick="let q = document.getElementById('qtyInput'); q.value++;"
+                aria-label="Increase quantity"
+              >+</button>
             </div>
 
             <!-- Stock status indicator -->
-            <div class="pb-1">
+            <div>
               {% if product.shop_stock > 0 %}
-                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true"></span> In Stock
+                <span class="badge badge-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--coast-leaf);"></span> In Stock
                 </span>
               {% else %}
-                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-200">
-                  <span class="w-2 h-2 rounded-full bg-rose-500" aria-hidden="true"></span> Out of Stock
+                <span class="badge" style="background: #fee2e2; color: #991b1b; display: inline-flex; align-items: center; gap: 6px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span> Out of Stock
                 </span>
               {% endif %}
             </div>
           </div>
 
           <!-- Add to Cart CTA -->
-          <div class="pt-2 hidden sm:flex flex-col sm:flex-row gap-3">
+          <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 8px;">
             <button 
               type="submit" 
               {% if product.shop_stock <= 0 %}disabled{% endif %}
-              class="flex-1 py-4 px-8 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[52px]"
+              class="coast-button coast-button-mango"
+              style="width: 100%; min-height: 56px; font-size: 1rem;"
+              disabled={product.shop_stock <= 0}
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; height: 20px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
               </svg>
-              <span>Add to Cart</span>
+              <span>{% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Cart{% endif %}</span>
             </button>
 
             <form method="post" action="{% url 'storefront:wishlist_toggle' slug=product.slug %}" class="nest-save-form nest-save-form--pdp">
@@ -224,8 +209,12 @@
               href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="py-4 px-6 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-all min-h-[52px]"
+              class="coast-button"
+              style="background: #25d366; color: white; width: 100%; min-height: 56px; font-size: 1rem;"
             >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width: 20px; height: 20px;">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.981.534 1.777.828 2.796.828 3.182 0 5.768-2.587 5.768-5.766.001-3.18-2.585-5.765-5.768-5.765zm0-2c4.29 0 7.769 3.477 7.77 7.766 0 4.29-3.479 7.768-7.77 7.768-1.323 0-2.434-.33-3.454-.897l-4.577 1.2 1.221-4.464c-.672-1.09-1.03-2.348-1.03-3.607.001-4.289 3.48-7.766 7.77-7.766z"/>
+              </svg>
               <span>Order via WhatsApp</span>
             </a>
           </div>
@@ -237,7 +226,8 @@
             type="submit"
             form="pdp-add-form"
             {% if product.shop_stock <= 0 %}disabled{% endif %}
-            class="nest-button !flex-[2] disabled:opacity-50 disabled:cursor-not-allowed"
+            class="coast-button coast-button-mango"
+            style="flex: 2; min-height: 52px;"
           >
             {% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Bag · KES {{ product.price|floatformat:"0" }}{% endif %}
           </button>
@@ -245,10 +235,11 @@
             href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}"
             target="_blank"
             rel="noopener noreferrer"
-            class="!flex-1 bg-emerald-600 hover:bg-emerald-700 text-white min-h-[46px] rounded-full inline-flex items-center justify-center gap-1.5 text-xs font-bold shadow-sm whitespace-nowrap"
+            class="coast-button"
+            style="background: #25d366; color: white; flex: 1; min-height: 52px;"
             aria-label="Order via WhatsApp"
           >
-            <svg class="w-4 h-4 flex-shrink-0" width="16" height="16" style="width:16px;height:16px;" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width: 18px; height: 18px;">
               <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.981.534 1.777.828 2.796.828 3.182 0 5.768-2.587 5.768-5.766.001-3.18-2.585-5.765-5.768-5.765zm0-2c4.29 0 7.769 3.477 7.77 7.766 0 4.29-3.479 7.768-7.77 7.768-1.323 0-2.434-.33-3.454-.897l-4.577 1.2 1.221-4.464c-.672-1.09-1.03-2.348-1.03-3.607.001-4.289 3.48-7.766 7.77-7.766z"/>
             </svg>
             <span>WhatsApp</span>
@@ -257,9 +248,9 @@
 
         <!-- Description -->
         {% if product.description %}
-          <div class="mt-6 pt-6 border-t border-[#EADBCE]">
-            <h3 class="font-serif text-lg font-bold text-[#2C1810] mb-2">Product Details</h3>
-            <div class="text-xs sm:text-sm text-gray-600 leading-relaxed space-y-2">
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--coast-line);">
+            <h3 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Product Details</h3>
+            <div style="font-size: .9rem; color: var(--coast-muted); line-height: 1.7;">
               {{ product.description|linebreaks }}
             </div>
           </div>
@@ -267,9 +258,9 @@
 
         <!-- What's Included -->
         {% if product.whats_included %}
-          <div class="mt-6">
-            <h3 class="font-serif text-lg font-bold text-[#2C1810] mb-2">What's Included</h3>
-            <div class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+          <div style="margin-top: 24px;">
+            <h3 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">What's Included</h3>
+            <div style="font-size: .9rem; color: var(--coast-muted); line-height: 1.7;">
               {{ product.whats_included|linebreaks }}
             </div>
           </div>
@@ -277,24 +268,24 @@
 
         <!-- Fabric & Care -->
         {% if product.fabric %}
-          <div class="mt-6">
-            <h3 class="font-serif text-lg font-bold text-[#2C1810] mb-2">Fabric & Care</h3>
-            <div class="text-xs sm:text-sm text-gray-600 leading-relaxed">
+          <div style="margin-top: 24px;">
+            <h3 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Fabric & Care</h3>
+            <div style="font-size: .9rem; color: var(--coast-muted); line-height: 1.7;">
               {{ product.fabric|linebreaks }}
             </div>
           </div>
         {% endif %}
 
         <!-- Kenya Delivery, Returns & Payment -->
-        <div class="mt-8 p-4 rounded-2xl bg-white border border-[#EADBCE] text-xs text-[#2C1810] space-y-2">
-          <p class="font-bold">Kenya Delivery &amp; Returns:</p>
-          <ul class="space-y-1 text-gray-600">
-            <li>• <strong>Mombasa:</strong> Same-day or next-day — KES {{ mombasa_fee|floatformat:"0" }}</li>
-            <li>• <strong>Nairobi:</strong> 1–2 business days — KES {{ nairobi_fee|floatformat:"0" }}</li>
-            <li>• <strong>Upcountry:</strong> 2–3 business days — KES {{ upcountry_fee|floatformat:"0" }}</li>
-            <li>• <strong>Free delivery</strong> on all orders over KES {{ free_shipping_threshold|floatformat:"0" }}</li>
-            <li>• <strong>Returns:</strong> Unused items in original condition within 7 days — message us on WhatsApp to arrange.</li>
-            <li>• <strong>M-Pesa STK Prompt:</strong> Enter your phone at checkout for an instant PIN prompt.</li>
+        <div style="margin-top: 32px; padding: 24px; border-radius: var(--radius-xl); background: white; border: 1px solid var(--coast-line); box-shadow: var(--shadow-xs);">
+          <p style="font-weight: 700; color: var(--coast-deep); font-size: .9rem; margin-bottom: 12px;">Kenya Delivery & Returns:</p>
+          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: .85rem; color: var(--coast-muted); line-height: 1.6;">
+            <li>• <strong style="color: var(--coast-deep);">Mombasa:</strong> Same-day or next-day — KES {{ mombasa_fee|floatformat:"0" }}</li>
+            <li>• <strong style="color: var(--coast-deep);">Nairobi:</strong> 1–2 business days — KES {{ nairobi_fee|floatformat:"0" }}</li>
+            <li>• <strong style="color: var(--coast-deep);">Upcountry:</strong> 2–3 business days — KES {{ upcountry_fee|floatformat:"0" }}</li>
+            <li>• <strong style="color: var(--coast-deep);">Free delivery</strong> on all orders over KES {{ free_shipping_threshold|floatformat:"0" }}</li>
+            <li>• <strong style="color: var(--coast-deep);">Returns:</strong> Unused items in original condition within 7 days — message us on WhatsApp to arrange.</li>
+            <li>• <strong style="color: var(--coast-deep);">M-Pesa STK Prompt:</strong> Enter your phone at checkout for an instant PIN prompt.</li>
           </ul>
         </div>
       </div>
@@ -303,25 +294,25 @@
 
   <!-- Related Products -->
   {% if related_products.exists %}
-    <div class="mt-16 pt-12 border-t border-[#EADBCE]">
-      <h2 class="font-serif text-2xl font-bold text-[#2C1810] mb-6">You May Also Like</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+    <div style="margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--coast-line);">
+      <h2 style="font-family: var(--coast-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: var(--coast-deep); margin-bottom: 24px;">You May Also Like</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px;">
         {% for rel in related_products %}
-          <div class="bg-white rounded-2xl overflow-hidden border border-[#EADBCE] hover:shadow-md transition-all flex flex-col">
-            <a href="{% url 'storefront:product_detail' slug=rel.slug %}" class="aspect-square bg-[#FAF7F2] block overflow-hidden">
+          <article class="card-elevated" style="display: flex; flex-direction: column; overflow: hidden;">
+            <a href="{% url 'storefront:product_detail' slug=rel.slug %}" class="block aspect-square" style="background: var(--coast-mint); overflow: hidden;">
               {% if rel.image %}
-                <img src="{{ rel.image.url }}" alt="{{ rel.name }}" class="w-full h-full object-cover">
+                <img src="{{ rel.image.url }}" alt="{{ rel.name }}" class="skeleton-image" style="width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow);">
               {% else %}
-                <div class="w-full h-full flex items-center justify-center font-serif text-2xl font-bold text-[#EADBCE]">MN</div>
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--coast-heading); font-size: 2rem; font-weight: 800; color: var(--coast-line);">MN</div>
               {% endif %}
             </a>
-            <div class="p-3">
-              <h4 class="font-medium text-xs text-[#2C1810] truncate">
-                <a href="{% url 'storefront:product_detail' slug=rel.slug %}">{{ rel.name }}</a>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+              <h4 style="font-weight: 600; color: var(--coast-deep); font-size: .95rem; line-height: 1.3; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                <a href="{% url 'storefront:product_detail' slug=rel.slug %}" style="color: inherit; text-decoration: none;">{{ rel.name }}</a>
               </h4>
-              <p class="text-xs font-bold text-[#8B6914] mt-1">KES {{ rel.price|floatformat:"0" }}</p>
+              <p style="font-size: 1rem; font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums; margin: 0;">KES {{ rel.price|floatformat:"0" }}</p>
             </div>
-          </div>
+          </article>
         {% endfor %}
       </div>
     </div>

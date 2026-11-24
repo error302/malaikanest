@@ -16,6 +16,7 @@
 {% endblock %}
 
 {% block content %}
+<!-- Hero Section -->
 <section class="boutique-hero" aria-labelledby="shop-intro">
   <picture class="boutique-hero-photo">
     {% if active_banner.get_mobile_image_url %}
@@ -30,7 +31,7 @@
     <div class="boutique-hero-caption">
       <h1 id="shop-intro">{{ active_banner.title|default:"Little clothes. Big days." }}</h1>
       <div class="boutique-hero-summary">
-        <p>{{ active_banner.subtitle|default:"Baby and children’s clothes from our family shop in Likoni, Mombasa." }}</p>
+        <p>{{ active_banner.subtitle|default:"Baby and children's clothes from our family shop in Likoni, Mombasa." }}</p>
         <a class="coast-button coast-button-mango" href="{% if active_banner.button_link %}{{ active_banner.button_link }}{% else %}{% url 'storefront:product_list' %}{% endif %}">
           {{ active_banner.button_text|default:"Shop all clothes" }}
         </a>
@@ -39,133 +40,181 @@
   </div>
 </section>
 
-<section class="nest-home-section shop-frame" aria-labelledby="shop-by-size">
-  <div class="nest-section-heading">
+<!-- Shop by Age -->
+<section class="coast-page shop-frame" aria-labelledby="shop-by-size">
+  <header class="nest-section-heading" style="margin-bottom: 24px;">
     <h2 id="shop-by-size">Shop by age</h2>
     <a href="{{ whatsapp_url }}" class="coast-text-link">Help with sizing</a>
-  </div>
-  <div class="boutique-age-grid">
-    <section class="boutique-age-group" id="first-year">
-      <h3>Baby</h3>
-      <ul>
+  </header>
+  <div class="age-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+    <article class="age-card card-elevated" style="padding: 24px; text-align: center;">
+      <h3 style="font-family: var(--coast-heading); font-size: 1.1rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Baby</h3>
+      <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
         {% for age in age_groups|slice:":4" %}
-          <li><a href="{% url 'storefront:product_list' %}?age={{ age.slug }}">{{ age.label }}</a></li>
+          <li>
+            <a href="{% url 'storefront:product_list' %}?age={{ age.slug }}"
+               style="display: block; padding: 12px 16px; background: var(--coast-mint); border-radius: var(--radius-md); color: var(--coast-deep); font-weight: 600; text-decoration: none; transition: all var(--transition-fast);">
+              {{ age.label }}
+            </a>
+          </li>
         {% endfor %}
       </ul>
-    </section>
-    <section class="boutique-age-group" id="toddler-sizes">
-      <h3>Toddler</h3>
-      <ul>
+    </article>
+    <article class="age-card card-elevated" style="padding: 24px; text-align: center;">
+      <h3 style="font-family: var(--coast-heading); font-size: 1.1rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Toddler</h3>
+      <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
         {% for age in age_groups|slice:"4:6" %}
-          <li><a href="{% url 'storefront:product_list' %}?age={{ age.slug }}">{{ age.label }}</a></li>
+          <li>
+            <a href="{% url 'storefront:product_list' %}?age={{ age.slug }}"
+               style="display: block; padding: 12px 16px; background: var(--coast-mint); border-radius: var(--radius-md); color: var(--coast-deep); font-weight: 600; text-decoration: none; transition: all var(--transition-fast);">
+              {{ age.label }}
+            </a>
+          </li>
         {% endfor %}
       </ul>
-    </section>
-    <section class="boutique-age-group" id="kids-sizes">
-      <h3>Kids</h3>
-      <ul>
+    </article>
+    <article class="age-card card-elevated" style="padding: 24px; text-align: center;">
+      <h3 style="font-family: var(--coast-heading); font-size: 1.1rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Kids</h3>
+      <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
         {% for age in age_groups|slice:"6:" %}
-          <li><a href="{% url 'storefront:product_list' %}?age={{ age.slug }}">{{ age.label }}</a></li>
+          <li>
+            <a href="{% url 'storefront:product_list' %}?age={{ age.slug }}"
+               style="display: block; padding: 12px 16px; background: var(--coast-mint); border-radius: var(--radius-md); color: var(--coast-deep); font-weight: 600; text-decoration: none; transition: all var(--transition-fast);">
+              {{ age.label }}
+            </a>
+          </li>
         {% endfor %}
       </ul>
-    </section>
+    </article>
   </div>
 </section>
 
+<!-- Categories -->
 {% if categories %}
-<section id="categories" class="nest-home-section shop-frame" aria-labelledby="shop-by-category">
-  <div class="nest-section-heading">
+<section id="categories" class="coast-page shop-frame" aria-labelledby="shop-by-category">
+  <header class="nest-section-heading" style="margin-bottom: 24px;">
     <h2 id="shop-by-category">Shop by category</h2>
     <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View the catalogue</a>
-  </div>
-  <div class="nest-category-grid">
+  </header>
+  <div class="nest-category-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px;">
     {% for cat in categories %}
-      <a href="{% url 'storefront:category_detail' category_slug=cat.slug %}">
+      <a href="{% url 'storefront:category_detail' category_slug=cat.slug %}"
+         class="category-card card-elevated"
+         style="display: flex; flex-direction: column; align-items: center; padding: 24px 16px; text-align: center; text-decoration: none; gap: 12px; transition: all var(--transition-base);">
         {% if cat.get_image_url %}
-          <img src="{{ cat.get_image_url|cloudinary_auto }}" alt="" width="64" height="64" loading="lazy" decoding="async">
+          <img src="{{ cat.get_image_url|cloudinary_auto }}"
+               alt=""
+               width="80" height="80"
+               loading="lazy"
+               decoding="async"
+               style="border-radius: 50%; object-fit: cover; border: 2px solid var(--coast-line);">
         {% else %}
           <div class="skeleton skeleton-category" aria-hidden="true"></div>
         {% endif %}
-        <span>{{ cat.name }}</span>
+        <span style="font-weight: 600; color: var(--coast-deep); font-size: .95rem;">{{ cat.name }}</span>
       </a>
     {% endfor %}
   </div>
 </section>
-{% endif %}
 {% else %}
-<section id="categories" class="nest-home-section shop-frame" aria-labelledby="shop-by-category" aria-hidden="true">
-  <div class="nest-section-heading">
-    <h2 id="shop-by-category">Shop by category</h2>
-    <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View the catalogue</a>
-  </div>
-  <div class="nest-category-grid">
+<section id="categories" class="coast-page shop-frame" aria-labelledby="shop-by-category" aria-hidden="true">
+  <header class="nest-section-heading" style="margin-bottom: 24px;">
+    <h2 id="shop-by-category" class="skeleton skeleton-title" aria-hidden="true"></h2>
+    <div class="skeleton skeleton-text" style="width: 40%;" aria-hidden="true"></div>
+  </header>
+  <div class="nest-category-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px;">
     {% for i in "123456" %}
-      <a href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none;">
+      <a href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none;"
+         class="category-card card-elevated"
+         style="display: flex; flex-direction: column; align-items: center; padding: 24px 16px; text-align: center; gap: 12px;">
         <div class="skeleton skeleton-category" aria-hidden="true"></div>
-        <span class="skeleton skeleton-text" style="width: 80px; display: block; margin-top: 8px;"></span>
+        <span class="skeleton skeleton-text" style="width: 80px; display: block;" aria-hidden="true"></span>
       </a>
     {% endfor %}
   </div>
 </section>
 {% endif %}
 
+<!-- Featured Products -->
 {% if featured_products %}
-<section class="nest-home-section shop-frame" aria-labelledby="on-the-rails">
-  <div class="nest-section-heading">
+<section class="coast-page shop-frame" aria-labelledby="on-the-rails">
+  <header class="nest-section-heading" style="margin-bottom: 24px;">
     <h2 id="on-the-rails">From the shop</h2>
     <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View all clothes</a>
-  </div>
-  <div class="nest-home-products">
+  </header>
+  <div class="nest-home-products" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px;">
     {% for product in featured_products %}
-      <a class="nest-home-product" href="{% url 'storefront:product_detail' slug=product.slug %}">
-        <div class="nest-home-product-photo">
+      <a class="nest-home-product card-elevated"
+         href="{% url 'storefront:product_detail' slug=product.slug %}"
+         style="display: flex; flex-direction: column; text-decoration: none; overflow: hidden; border-radius: var(--radius-lg);">
+        <div class="nest-home-product-photo" style="position: relative; overflow: hidden;">
           {% if product.get_image_url %}
-            <img src="{{ product.get_image_url|cloudinary_auto }}" alt="" width="600" height="750" loading="lazy" decoding="async">
+            <img src="{{ product.get_image_url|cloudinary_auto }}"
+                 alt=""
+                 width="480" height="600"
+                 loading="lazy"
+                 decoding="async"
+                 style="width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow);">
           {% elif product.images.first %}
-            <img src="{{ product.images.first.image.url|cloudinary_auto }}" alt="" width="600" height="750" loading="lazy" decoding="async">
+            <img src="{{ product.images.first.image.url|cloudinary_auto }}"
+                 alt=""
+                 width="480" height="600"
+                 loading="lazy"
+                 decoding="async"
+                 style="width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow);">
           {% else %}
-            <span>Photo coming soon</span>
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--coast-mint); color: var(--coast-muted);">Photo coming soon</div>
           {% endif %}
         </div>
-        <h3>{{ product.name }}</h3>
-        <p class="nest-home-price">KES {{ product.price|floatformat:"-2g" }}</p>
-        {% if not product.shop_stock %}
-          <p class="nest-home-stock">Out of stock</p>
-        {% elif product.shop_sizes %}
-          <p class="nest-home-stock">{{ product.shop_sizes|join:", " }}</p>
-        {% endif %}
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
+          <h3 style="font-weight: 700; color: var(--coast-deep); font-size: 1rem; line-height: 1.3; margin: 0;">{{ product.name }}</h3>
+          <p class="nest-home-price" style="font-size: 1.1rem; font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums; margin: 0;">KES {{ product.price|floatformat:"-2g" }}</p>
+          {% if not product.shop_stock %}
+            <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-muted); margin: 0;">Out of stock</p>
+          {% elif product.shop_sizes %}
+            <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-leaf); margin: 0;">{{ product.shop_sizes|join:", " }}</p>
+          {% endif %}
+        </div>
       </a>
     {% endfor %}
   </div>
 </section>
 {% else %}
-<section class="nest-home-section shop-frame" aria-labelledby="shop-stock" aria-hidden="true">
-  <div class="nest-section-heading">
+<section class="coast-page shop-frame" aria-labelledby="shop-stock" aria-hidden="true">
+  <header class="nest-section-heading" style="margin-bottom: 24px;">
     <h2 id="on-the-rails" class="skeleton skeleton-title" aria-hidden="true"></h2>
     <div class="skeleton skeleton-text" style="width: 40%;" aria-hidden="true"></div>
-  </div>
-  <div class="nest-home-products">
+  </header>
+  <div class="nest-home-products" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px;">
     {% for i in "1234" %}
-      <a class="nest-home-product" href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none;">
+      <a class="nest-home-product card-elevated" href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none; display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-lg);">
         <div class="nest-home-product-photo">
-          <div class="skeleton skeleton-image" aria-hidden="true"></div>
+          <div class="skeleton skeleton-image" aria-hidden="true" style="aspect-ratio: 4/5;"></div>
         </div>
-        <h3 class="skeleton skeleton-title" aria-hidden="true"></h3>
-        <p class="skeleton skeleton-text" style="width: 60%;" aria-hidden="true"></p>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+          <h3 class="skeleton skeleton-title" aria-hidden="true"></h3>
+          <p class="skeleton skeleton-text" style="width: 60%;" aria-hidden="true"></p>
+        </div>
       </a>
     {% endfor %}
   </div>
 </section>
 {% endif %}
 
-<section class="nest-home-section shop-frame nest-shopping-info" aria-label="Delivery and pickup">
-  <a href="{% url 'storefront:delivery_returns' %}">
-    <strong>Kenya delivery</strong>
-    <span>Free from KES {{ free_shipping_threshold|floatformat:"-2g" }}</span>
+<!-- Shopping Info -->
+<section class="coast-page shop-frame nest-shopping-info" aria-label="Delivery and pickup"
+         style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 32px;">
+  <a href="{% url 'storefront:delivery_returns' %}"
+     class="card-elevated"
+     style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px; text-decoration: none; gap: 8px; transition: all var(--transition-base);">
+    <strong style="font-size: 1.1rem; color: var(--coast-deep);">Kenya delivery</strong>
+    <span style="font-size: .95rem; color: var(--coast-muted);">Free from KES {{ free_shipping_threshold|floatformat:"-2g" }}</span>
   </a>
-  <a href="{% url 'storefront:contact' %}">
-    <strong>Pick up in Likoni</strong>
-    <span>Tawakal Toto Shop, Mombasa</span>
+  <a href="{% url 'storefront:contact' %}"
+     class="card-elevated"
+     style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px; text-decoration: none; gap: 8px; transition: all var(--transition-base);">
+    <strong style="font-size: 1.1rem; color: var(--coast-deep);">Pick up in Likoni</strong>
+    <span style="font-size: .95rem; color: var(--coast-muted);">Tawakal Toto Shop, Mombasa</span>
   </a>
 </section>
 {% endblock %}

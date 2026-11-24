@@ -9,27 +9,25 @@
 
 {% block content %}
 <div class="nest-checkout-page shop-frame coast-page">
-  <h1 class="font-serif text-2xl sm:text-4xl font-bold text-[#2C1810] mb-2">Checkout</h1>
-  <p class="text-xs sm:text-sm text-stone-500 mb-6 sm:mb-8">Add your contact details, choose delivery or pickup, then select a payment method.</p>
+  <h1 style="font-family: var(--coast-heading); font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; color: var(--coast-deep); line-height: 1.05; margin-bottom: 8px;">Checkout</h1>
+  <p style="font-size: .9rem; color: var(--coast-muted); margin-bottom: 32px;">Add your contact details, choose delivery or pickup, then select a payment method.</p>
 
-  <form action="{% url 'storefront:checkout' %}" method="post" id="checkoutForm" class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+  <form action="{% url 'storefront:checkout' %}" method="post" id="checkoutForm" style="display: grid; grid-template-columns: 1fr; gap: 32px;">
     {% csrf_token %}
 
-    <!-- Checkout Form (Col 7) -->
-    <div class="lg:col-span-7 space-y-5 sm:space-y-6">
+    <!-- Checkout Form -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
 
       <!-- 1. Customer & Contact Details -->
-      <div class="bg-white rounded-2xl sm:rounded-3xl border border-[#EADBCE] p-4 sm:p-6 shadow-sm space-y-4">
-        <h2 class="font-serif text-lg sm:text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-[#8B6914] text-white text-xs flex items-center justify-center font-sans flex-shrink-0">1</span>
-          Customer &amp; Contact Details
+      <section class="card-elevated" style="padding: 24px;">
+        <h2 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); border-bottom: 1px solid var(--coast-line); padding-bottom: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+          <span style="width: 32px; height: 32px; border-radius: 50%; background: var(--coast-deep); color: white; font-size: .75rem; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">1</span>
+          Customer & Contact Details
         </h2>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <div>
-            <label for="shipping_name" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-              Full Name <span class="text-red-500">*</span>
-            </label>
+            <label for="shipping_name" class="form-label">Full Name <span style="color: #ef4444;">*</span></label>
             <input 
               type="text" 
               name="shipping_name" 
@@ -38,14 +36,12 @@
               autocomplete="name"
               placeholder="e.g. Amina Mohamed" 
               value="{{ user.full_name|default:'' }}"
-              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+              class="form-input"
             >
           </div>
 
           <div>
-            <label for="shipping_phone" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-              Phone Number <span class="text-red-500">*</span>
-            </label>
+            <label for="shipping_phone" class="form-label">Phone Number <span style="color: #ef4444;">*</span></label>
             <input 
               type="tel" 
               name="shipping_phone" 
@@ -54,15 +50,13 @@
               autocomplete="tel"
               placeholder="07XX XXX XXX or +254..." 
               value="{{ user.phone_number|default:'' }}"
-              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+              class="form-input"
             >
           </div>
         </div>
 
         <div>
-          <label for="guest_email" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-            Email Address {% if not user.is_authenticated %}<span class="text-red-500">*</span>{% endif %}
-          </label>
+          <label for="guest_email" class="form-label">Email Address {% if not user.is_authenticated %}<span style="color: #ef4444;">*</span>{% endif %}</label>
           <input 
             type="email" 
             name="guest_email" 
@@ -71,22 +65,20 @@
             autocomplete="email"
             placeholder="For order receipt and tracking updates" 
             value="{{ user.email|default:'' }}"
-            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+            class="form-input"
           >
         </div>
-      </div>
+      </section>
 
       <!-- 2. Delivery Address -->
-      <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-4">
-        <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-[#8B6914] text-white text-xs flex items-center justify-center font-sans">2</span>
+      <section class="card-elevated" style="padding: 24px;">
+        <h2 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); border-bottom: 1px solid var(--coast-line); padding-bottom: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+          <span style="width: 32px; height: 32px; border-radius: 50%; background: var(--coast-deep); color: white; font-size: .75rem; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">2</span>
           Delivery Address
         </h2>
 
         <div>
-          <label for="delivery_region" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-            Delivery Option <span class="text-red-500">*</span>
-          </label>
+          <label for="delivery_region" class="form-label">Delivery Option <span style="color: #ef4444;">*</span></label>
           <select 
             name="delivery_region" 
             id="delivery_region" 
@@ -94,7 +86,8 @@
             data-discount="{{ discount }}"
             data-threshold="{{ free_shipping_threshold }}"
             data-region-fees='{"mombasa_pickup": "{{ region_fees.mombasa_pickup|default:"0" }}", "mombasa": "{{ region_fees.mombasa }}", "nairobi": "{{ region_fees.nairobi }}", "upcountry": "{{ region_fees.upcountry }}"}'
-            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+            class="form-input"
+            style="appearance: none; background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a6b5c' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 48px;"
           >
             <option value="mombasa_pickup" {% if default_region == 'mombasa_pickup' %}selected{% endif %}>Store Pick-up (Tawakal Toto Wear, Likoni) — FREE</option>
             <option value="mombasa" {% if default_region == 'mombasa' %}selected{% endif %}>Mombasa Delivery (Same Day Dispatch)</option>
@@ -103,42 +96,38 @@
           </select>
 
           <!-- Store Pickup Information Box -->
-          <div id="pickupInfoBox" class="{% if default_region != 'mombasa_pickup' %}hidden{% endif %} mt-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-stone-700 space-y-2">
-            <div class="flex items-center gap-2 font-bold text-amber-900">
+          <div id="pickupInfoBox" class="card-elevated" style="margin-top: 16px; padding: 20px; background: #fffdf6; border-color: var(--coast-mango); {% if default_region != 'mombasa_pickup' %}display: none;{% endif %}">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--coast-ink); margin-bottom: 8px;">
               <span>Shop Pickup — Tawakal Toto Wear</span>
             </div>
-            <p class="text-stone-600">
-              Pick up your package for free from our Mombasa shop once order is confirmed:
-            </p>
-            <p class="font-medium text-[#2C1810]">
-              Tawakal Toto Wear, Likoni, Mombasa (near Palma Gardens · Postal Code: 80100)<br>
-              <span class="text-stone-500 font-normal">Opening Hours: Mon–Fri 08:00–18:00, Sat 08:00–16:00</span>
-            </p>
-            <div class="pt-1 flex flex-wrap items-center gap-3">
+            <p style="color: var(--coast-muted); font-size: .9rem; line-height: 1.6;">Pick up your package for free from our Mombasa shop once order is confirmed:</p>
+            <p style="font-weight: 600; color: var(--coast-deep); font-size: .9rem; line-height: 1.6;">Tawakal Toto Wear, Likoni, Mombasa (near Palma Gardens · Postal Code: 80100)<br>
+            <span style="font-weight: 400; color: var(--coast-muted);">Opening Hours: Mon–Fri 08:00–18:00, Sat 08:00–16:00</span></p>
+            <div style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
               <a 
                 href="https://maps.app.goo.gl/AHTa75obHAyjB3xZ8" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                class="inline-flex items-center gap-1 font-bold text-[#8B6914] hover:underline min-h-[44px]"
+                class="coast-text-link" style="min-height: auto; text-decoration: none; padding: 8px 12px; border-radius: var(--radius-full); background: var(--coast-mint);"
               >
-                <span>View on Google Maps →</span>
+                View on Google Maps →
               </a>
               <a 
                 href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20am%20asking%20about%20store%20pickup%20at%20Tawakal%20Toto%20Wear" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                class="inline-flex items-center gap-1 font-bold text-emerald-700 hover:underline min-h-[44px]"
+                class="coast-text-link" style="min-height: auto; text-decoration: none; padding: 8px 12px; border-radius: var(--radius-full); background: var(--coast-mint); color: var(--coast-leaf);"
               >
-                <span>WhatsApp Us</span>
+                WhatsApp Us
               </a>
             </div>
 
             <!-- Leaflet Shop Map -->
-            <div class="pt-2">
-              <div id="pickupShopMap" class="w-full h-44 rounded-xl overflow-hidden border border-amber-200 shadow-inner z-0"></div>
-              <p class="text-[10px] text-stone-500 mt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+            <div style="margin-top: 16px;">
+              <div id="pickupShopMap" style="width: 100%; height: 176px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--coast-line);"></div>
+              <p style="font-size: .7rem; color: var(--coast-muted); margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;">
                 <span>Tawakal Toto Wear, Likoni, Mombasa</span>
-                <a href="https://maps.app.goo.gl/AHTa75obHAyjB3xZ8" target="_blank" rel="noopener noreferrer" class="text-[#8B6914] font-semibold hover:underline">Google Maps Directions →</a>
+                <a href="https://maps.app.goo.gl/AHTa75obHAyjB3xZ8" target="_blank" rel="noopener noreferrer" class="coast-text-link" style="min-height: auto; font-size: .7rem; text-decoration: none;">Google Maps Directions →</a>
               </p>
             </div>
           </div>
@@ -146,221 +135,221 @@
 
         <div id="addressFieldsContainer">
           <div>
-            <label for="shipping_address" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-              Delivery Address / Estate / Apartment <span id="addressRequiredStar" class="text-red-500">*</span>
-            </label>
+            <label for="shipping_address" class="form-label">Delivery Address / Estate / Apartment <span id="addressRequiredStar" style="color: #ef4444;">*</span></label>
             <textarea 
               name="shipping_address" 
               id="shipping_address" 
-              rows="2" 
+              rows="3" 
               autocomplete="street-address"
               placeholder="e.g. Nyali Links Rd, Palm Heights Apt 4B, or Westlands, Mpaka Rd"
-              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914] focus:ring-1 focus:ring-[#8B6914]"
+              class="form-input"
+              style="resize: vertical; min-height: 100px;"
             ></textarea>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
             <div>
-              <label for="shipping_city" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-                City / Town
-              </label>
+              <label for="shipping_city" class="form-label">City / Town</label>
               <input 
                 type="text" 
                 name="shipping_city" 
                 id="shipping_city" 
                 autocomplete="address-level2"
                 placeholder="e.g. Mombasa, Nairobi, Nakuru" 
-                class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+                class="form-input"
               >
             </div>
             <div>
-              <label for="shipping_county" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-                County
-              </label>
+              <label for="shipping_county" class="form-label">County</label>
               <input 
                 type="text" 
                 name="shipping_county" 
                 id="shipping_county" 
                 autocomplete="address-level1"
                 placeholder="e.g. Mombasa, Nairobi, Kiambu" 
-                class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+                class="form-input"
               >
             </div>
           </div>
         </div>
 
-        <div>
-          <label for="notes" class="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1">
-            Delivery Notes (Optional)
-          </label>
+        <div style="margin-top: 16px;">
+          <label for="notes" class="form-label">Delivery Notes (Optional)</label>
           <input 
             type="text" 
             name="notes" 
             id="notes" 
             placeholder="Special delivery instructions or gate codes" 
-            class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+            class="form-input"
           >
         </div>
 
         <!-- Gift Order Toggle -->
-        <div class="pt-2 border-t border-[#EADBCE]">
-          <label class="flex items-center gap-2 cursor-pointer text-xs sm:text-sm font-medium text-stone-700">
-            <input type="checkbox" name="is_gift" id="is_gift" onchange="document.getElementById('giftMessageContainer').classList.toggle('hidden', !this.checked)" class="rounded text-[#8B6914] focus:ring-[#8B6914]">
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--coast-line);">
+          <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: .9rem; font-weight: 500; color: var(--coast-deep);">
+            <input type="checkbox" name="is_gift" id="is_gift" onchange="document.getElementById('giftMessageContainer').classList.toggle('hidden', !this.checked)" style="width: 20px; height: 20px; accent-color: var(--coast-leaf); margin-top: 2px; flex-shrink: 0;">
             <span>This is a baby gift (include personalized handwritten note)</span>
           </label>
-          <div id="giftMessageContainer" class="hidden mt-3">
+          <div id="giftMessageContainer" class="hidden" style="margin-top: 16px;">
             <textarea 
               name="gift_message"
               aria-label="Gift message" 
-              rows="2" 
+              rows="3" 
               placeholder="Write your loving message for the new parents or baby..." 
-              class="w-full bg-[#FAF7F2] border border-[#EADBCE] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+              class="form-input"
+              style="resize: vertical; min-height: 100px;"
             ></textarea>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- 3. Payment Method -->
-      <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-4">
-        <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3 flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-[#8B6914] text-white text-xs flex items-center justify-center font-sans">3</span>
+      <section class="card-elevated" style="padding: 24px;">
+        <h2 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); border-bottom: 1px solid var(--coast-line); padding-bottom: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+          <span style="width: 32px; height: 32px; border-radius: 50%; background: var(--coast-deep); color: white; font-size: .75rem; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">3</span>
           Payment Method
         </h2>
 
-        <div class="space-y-3">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
           <!-- Option 1: M-Pesa STK Push -->
-          <div class="block border border-[#EADBCE] rounded-2xl p-4 cursor-pointer hover:border-[#8B6914] transition-colors has-[:checked]:border-[#8B6914] has-[:checked]:bg-amber-50/40">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <input type="radio" name="payment_method" value="mpesa" aria-label="M-Pesa STK Push" checked onchange="document.getElementById('mpesaPhoneInput').classList.remove('hidden')" class="text-[#8B6914] focus:ring-[#8B6914]">
+          <label class="card-elevated" style="padding: 20px; cursor: pointer; display: flex; flex-direction: column; gap: 12px; transition: all var(--transition-base);"
+                 onmouseover="this.style.borderColor='var(--coast-leaf)'; this.style.boxShadow='var(--shadow-md)'"
+                 onmouseout="this.style.borderColor='var(--coast-line)'; this.style.boxShadow='var(--shadow-sm)'">
+            <input type="radio" name="payment_method" value="mpesa" aria-label="M-Pesa STK Push" checked onchange="document.getElementById('mpesaPhoneInput').classList.remove('hidden')" style="position: absolute; opacity: 0; pointer-events: none;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <div style="width: 24px; height: 24px; border: 2px solid var(--coast-leaf); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--coast-leaf); opacity: 0; transition: opacity var(--transition-fast);"></div>
+                </div>
                 <div>
-                  <div class="text-sm font-bold text-[#2C1810] flex items-center gap-2">
+                  <div style="font-size: .95rem; font-weight: 700; color: var(--coast-deep); display: flex; align-items: center; gap: 8px;">
                     <span>M-Pesa STK Push</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">Instant PIN Prompt</span>
+                    <span class="badge badge-primary">Instant PIN Prompt</span>
                   </div>
-                  <p class="text-xs text-stone-500 mt-0.5">We will send an instant payment prompt directly to your Safaricom phone.</p>
+                  <p style="font-size: .8rem; color: var(--coast-muted); margin-top: 4px; line-height: 1.5;">We will send an instant payment prompt directly to your Safaricom phone.</p>
                 </div>
               </div>
-              <span class="text-xs font-bold text-emerald-700">M-PESA</span>
+              <span class="badge badge-accent" style="font-size: .65rem;">M-PESA</span>
             </div>
 
-            <div id="mpesaPhoneInput" class="mt-3 pt-3 border-t border-amber-200/60 pl-6">
-              <label for="mpesa_phone" class="block text-[11px] font-bold uppercase tracking-wider text-stone-700 mb-1">
-                M-Pesa Phone Number for PIN Prompt:
-              </label>
+            <div id="mpesaPhoneInput" style="padding-top: 12px; border-top: 1px solid var(--coast-line); display: flex; flex-direction: column; gap: 8px;">
+              <label for="mpesa_phone" class="form-label" style="font-size: .75rem; margin-bottom: 6px;">M-Pesa Phone Number for PIN Prompt:</label>
               <input 
                 type="tel" 
                 name="mpesa_phone" 
                 id="mpesa_phone" 
                 autocomplete="tel"
                 placeholder="07XX XXX XXX or 01XX XXX XXX" 
-                class="w-full sm:w-72 bg-white border border-[#EADBCE] rounded-xl px-3 py-1.5 text-sm text-[#2C1810] focus:outline-none focus:border-[#8B6914]"
+                class="form-input"
+                style="width: 100%; max-width: 280px;"
               >
-              <p class="text-[11px] text-stone-500 mt-1">Leave empty to use your contact phone number entered above.</p>
+              <p style="font-size: .75rem; color: var(--coast-muted);">Leave empty to use your contact phone number entered above.</p>
             </div>
-          </div>
+          </label>
 
           <!-- Option 2: Buy Goods Till -->
-          <label class="block border border-[#EADBCE] rounded-2xl p-4 cursor-pointer hover:border-[#8B6914] transition-colors has-[:checked]:border-[#8B6914] has-[:checked]:bg-amber-50/40">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <input type="radio" name="payment_method" value="till" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" class="text-[#8B6914] focus:ring-[#8B6914]">
+          <label class="card-elevated" style="padding: 20px; cursor: pointer; transition: all var(--transition-base);"
+                 onmouseover="this.style.borderColor='var(--coast-leaf)'; this.style.boxShadow='var(--shadow-md)'"
+                 onmouseout="this.style.borderColor='var(--coast-line)'; this.style.boxShadow='var(--shadow-sm)'">
+            <input type="radio" name="payment_method" value="till" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" style="position: absolute; opacity: 0; pointer-events: none;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <div style="width: 24px; height: 24px; border: 2px solid var(--coast-line); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--coast-leaf); opacity: 0; transition: opacity var(--transition-fast);"></div>
+                </div>
                 <div>
-                  <div class="text-sm font-bold text-[#2C1810]">
-                    Lipa na M-Pesa — Buy Goods Till <strong class="text-[#8B6914]">{{ till_number }}</strong>
+                  <div style="font-size: .95rem; font-weight: 700; color: var(--coast-deep);">
+                    Lipa na M-Pesa — Buy Goods Till <strong style="color: var(--coast-leaf);">{{ till_number }}</strong>
                   </div>
-                  <p class="text-xs text-stone-500 mt-0.5">Pay manually via Safaricom Sim Toolkit or M-Pesa App.</p>
+                  <p style="font-size: .8rem; color: var(--coast-muted); margin-top: 4px; line-height: 1.5;">Pay manually via Safaricom Sim Toolkit or M-Pesa App.</p>
                 </div>
               </div>
-              <span class="text-xs font-bold text-amber-700">TILL</span>
+              <span class="badge badge-accent" style="font-size: .65rem;">TILL</span>
             </div>
           </label>
 
           <!-- Option 3: Cash on Delivery -->
-          <label class="block border border-[#EADBCE] rounded-2xl p-4 cursor-pointer hover:border-[#8B6914] transition-colors has-[:checked]:border-[#8B6914] has-[:checked]:bg-amber-50/40">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <input type="radio" name="payment_method" value="cod" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" class="text-[#8B6914] focus:ring-[#8B6914]">
+          <label class="card-elevated" style="padding: 20px; cursor: pointer; transition: all var(--transition-base);"
+                 onmouseover="this.style.borderColor='var(--coast-leaf)'; this.style.boxShadow='var(--shadow-md)'"
+                 onmouseout="this.style.borderColor='var(--coast-line)'; this.style.boxShadow='var(--shadow-sm)'">
+            <input type="radio" name="payment_method" value="cod" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" style="position: absolute; opacity: 0; pointer-events: none;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <div style="width: 24px; height: 24px; border: 2px solid var(--coast-line); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--coast-leaf); opacity: 0; transition: opacity var(--transition-fast);"></div>
+                </div>
                 <div>
-                  <div class="text-sm font-bold text-[#2C1810] flex items-center gap-2">
+                  <div style="font-size: .95rem; font-weight: 700; color: var(--coast-deep); display: flex; align-items: center; gap: 8px;">
                     <span>Cash on Delivery</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">Pay on Delivery</span>
+                    <span class="badge badge-accent">Pay on Delivery</span>
                   </div>
-                  <p class="text-xs text-stone-500 mt-0.5">Pay cash or M-Pesa to the delivery rider when your order arrives.</p>
+                  <p style="font-size: .8rem; color: var(--coast-muted); margin-top: 4px; line-height: 1.5;">Pay cash or M-Pesa to the delivery rider when your order arrives.</p>
                 </div>
               </div>
-              <span class="text-xs font-bold text-amber-700">COD</span>
+              <span class="badge" style="background: var(--coast-mango); color: var(--coast-ink); font-size: .65rem;">COD</span>
             </div>
           </label>
 
           <!-- Option 4: PayPal (Temporarily Disabled for Maintenance) -->
-          <div class="block border border-[#EADBCE] rounded-2xl p-4 bg-stone-50/70 cursor-not-allowed">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <input type="radio" name="payment_method" value="paypal" aria-label="PayPal currently unavailable" disabled class="text-stone-400">
+          <div class="card-elevated" style="padding: 20px; background: #fafcf9; border-color: var(--coast-line); opacity: 0.6; cursor: not-allowed;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <div style="width: 24px; height: 24px; border: 2px solid var(--coast-line); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.4;">
+                </div>
                 <div>
-                  <div class="text-sm font-bold text-stone-500 flex items-center gap-2">
+                  <div style="font-size: .95rem; font-weight: 700; color: var(--coast-muted); display: flex; align-items: center; gap: 8px;">
                     <span>PayPal / International Cards</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">Maintenance</span>
+                    <span class="badge" style="background: var(--coast-mango); color: var(--coast-ink);">Maintenance</span>
                   </div>
-                  <p class="text-xs text-stone-400 mt-0.5">Undergoing scheduled maintenance. Please checkout via M-Pesa.</p>
+                  <p style="font-size: .8rem; color: var(--coast-muted); margin-top: 4px; line-height: 1.5;">Undergoing scheduled maintenance. Please checkout via M-Pesa.</p>
                 </div>
               </div>
-              <span class="text-xs font-bold text-stone-400">PAYPAL</span>
+              <span class="badge badge-outline" style="font-size: .65rem; opacity: 0.6;">PAYPAL</span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
     </div>
 
-    <!-- Order Summary Recap (Col 5) -->
-    <div class="lg:col-span-5 space-y-6">
-      <div class="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-sm space-y-6">
-        <h2 class="font-serif text-xl font-bold text-[#2C1810] border-b border-[#EADBCE] pb-3">
-          Your Order
-        </h2>
+    <!-- Order Summary Recap -->
+    <aside style="position: sticky; top: 100px; align-self: start;">
+      <section class="card-elevated" style="padding: 24px;">
+        <h2 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); border-bottom: 1px solid var(--coast-line); padding-bottom: 16px; margin-bottom: 20px;">Your Order</h2>
 
         <!-- Items Mini List -->
-        <ul class="divide-y divide-[#EADBCE] max-h-72 overflow-y-auto pr-1">
+        <ul style="list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--coast-line); max-height: 300px; overflow-y: auto;">
           {% for item in items %}
-            <li class="py-3 flex items-center justify-between gap-3 text-xs sm:text-sm">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="w-12 h-12 rounded-xl bg-stone-50 border border-[#EADBCE] overflow-hidden flex-shrink-0">
-                  {% if item.product.get_image_url %}
-                    <img src="{{ item.product.get_image_url|cloudinary_auto }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
-                  {% else %}
-                    <div class="w-full h-full flex items-center justify-center font-serif text-xs font-bold text-[#EADBCE]">MN</div>
-                  {% endif %}
-                </div>
-                <div class="min-w-0">
-                  <p class="font-medium text-[#2C1810] truncate">{{ item.product.name }}</p>
-                  <p class="text-stone-500 text-[11px]">
-                    Qty: {{ item.quantity }}
-                    {% if item.variant %} · {{ item.variant.size }}{% endif %}
-                  </p>
-                </div>
+            <li style="padding: 16px 0; border-bottom: 1px solid var(--coast-line); display: flex; align-items: center; gap: 12px; font-size: .85rem;">
+              <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: var(--coast-mint); border: 1px solid var(--coast-line); overflow: hidden; flex-shrink: 0;">
+                {% if item.product.get_image_url %}
+                  <img src="{{ item.product.get_image_url|cloudinary_auto }}" alt="{{ item.product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                  <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--coast-heading); font-size: .75rem; font-weight: 800; color: var(--coast-line);">MN</div>
+                {% endif %}
               </div>
-              <span class="font-semibold text-[#2C1810] flex-shrink-0">
-                KES {{ item.unit_price|floatformat:0 }}
-              </span>
+              <div style="min-width: 0; flex: 1;">
+                <p style="font-weight: 600; color: var(--coast-deep); margin: 0 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.product.name }}</p>
+                <p style="font-size: .75rem; color: var(--coast-muted); margin: 0;">Qty: {{ item.quantity }}{% if item.variant %} · {{ item.variant.size }}{% endif %}</p>
+              </div>
+              <span style="font-weight: 700; color: var(--coast-deep); font-variant-numeric: tabular-nums; white-space: nowrap;">KES {{ item.unit_price|floatformat:0 }}</span>
             </li>
           {% endfor %}
         </ul>
 
         <!-- Price Breakdown -->
-        <div class="space-y-2 pt-3 border-t border-[#EADBCE] text-sm">
-          <div class="flex justify-between text-stone-600">
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--coast-line); display: flex; flex-direction: column; gap: 10px; font-size: .9rem;">
+          <div style="display: flex; justify-content: space-between; color: var(--coast-muted);">
             <span>Subtotal</span>
-            <span class="font-medium text-[#2C1810]">KES {{ subtotal|floatformat:0 }}</span>
+            <span style="font-weight: 600; color: var(--coast-deep); font-variant-numeric: tabular-nums;">KES {{ subtotal|floatformat:0 }}</span>
           </div>
           
-          <div class="flex justify-between text-stone-600">
+          <div style="display: flex; justify-content: space-between; color: var(--coast-muted);">
             <span>Estimated Delivery</span>
-            <span class="font-medium text-[#2C1810]">
+            <span style="font-weight: 600; color: var(--coast-deep); font-variant-numeric: tabular-nums;">
               <span id="delivery-fee-value">
                 {% if free_shipping_qualified or delivery_fee == 0 %}
-                  <span class="text-emerald-700 font-bold">FREE</span>
+                  <span style="color: var(--coast-leaf); font-weight: 700;">FREE</span>
                 {% else %}
                   KES {{ delivery_fee|floatformat:0 }}
                 {% endif %}
@@ -369,7 +358,7 @@
           </div>
 
           {% if discount > 0 %}
-            <div class="flex justify-between text-emerald-700 font-medium">
+            <div style="display: flex; justify-content: space-between; color: var(--coast-leaf); font-weight: 600;">
               <span>Coupon Discount</span>
               <span>-KES {{ discount|floatformat:0 }}</span>
             </div>
@@ -377,41 +366,38 @@
         </div>
 
         <!-- Grand Total -->
-        <div class="pt-4 border-t-2 border-[#EADBCE] flex items-baseline justify-between">
-          <span class="font-serif text-lg font-bold text-[#2C1810]">Total Due</span>
-          <div class="text-right">
-            <span id="order-total-value" class="font-serif text-2xl sm:text-3xl font-bold text-[#2C1810]">
-              KES {{ total|floatformat:0 }}
-            </span>
-          </div>
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--coast-line); display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 800; color: var(--coast-deep);">Total Due</span>
+          <span id="order-total-value" style="font-family: var(--coast-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums;">KES {{ total|floatformat:0 }}</span>
         </div>
 
         <!-- Submit Button (desktop) -->
         <button 
           type="submit" 
-          class="hidden sm:block w-full py-4 px-6 rounded-full bg-[#8B6914] hover:bg-[#A37B18] text-white text-center text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all min-h-[52px]"
+          class="coast-button coast-button-mango"
+          style="width: 100%; margin-top: 20px; min-height: 56px; font-size: 1rem;"
         >
-          Place Order &amp; Pay
+          Place Order & Pay
         </button>
 
         <!-- Trust Note -->
-        <div class="text-center text-[11px] text-stone-500 space-y-1">
+        <div style="margin-top: 20px; text-align: center; font-size: .75rem; color: var(--coast-muted); line-height: 1.8;">
           <p>256-Bit Encrypted Secure Checkout</p>
-          <p>Questions? Call / WhatsApp: <strong class="text-stone-700">+254 726 771 321</strong></p>
+          <p>Questions? Call / WhatsApp: <strong style="color: var(--coast-deep);">+254 726 771 321</strong></p>
         </div>
-      </div>
-    </div>
+      </section>
+    </aside>
 
   </form>
 
   <!-- Mobile sticky place-order bar -->
   <div class="nest-sticky-cta">
-    <div class="flex flex-col justify-center pr-2 min-w-0">
-      <span class="text-[10px] uppercase tracking-wider text-stone-500 font-semibold">Total due</span>
-      <span id="order-total-sticky" class="text-sm font-bold text-[#2C1810] truncate">KES {{ total|floatformat:0 }}</span>
+    <div style="display: flex; flex-direction: column; justify-content: center; padding-right: 16px; min-width: 0;">
+      <span style="font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--coast-muted);">Total due</span>
+      <span id="order-total-sticky" style="font-size: .9rem; font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">KES {{ total|floatformat:0 }}</span>
     </div>
-    <button type="submit" form="checkoutForm" class="nest-button !flex-[2]">
-      Place Order &amp; Pay
+    <button type="submit" form="checkoutForm" class="coast-button coast-button-mango" style="flex: 2; min-height: 52px; font-size: .95rem;">
+      Place Order & Pay
     </button>
   </div>
 </div>
@@ -462,7 +448,7 @@
       feeEl.textContent = "";
       if (fee === 0) {
         var free = document.createElement("span");
-        free.className = "text-emerald-700 font-bold";
+        free.style.cssText = "color: var(--coast-leaf); font-weight: 700;";
         free.textContent = "FREE";
         feeEl.appendChild(free);
       } else {
@@ -477,6 +463,23 @@
   // Initialize payment method listener
   document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
     radio.addEventListener('change', update);
+  });
+
+  // Radio button visual state
+  document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('input[name="payment_method"]').forEach(function(r) {
+        var card = r.closest('.card-elevated');
+        if (card) {
+          var circle = card.querySelector('div[style*="border-radius: 50%"]');
+          if (circle) {
+            var dot = circle.querySelector('div');
+            if (dot) dot.style.opacity = r.checked ? '1' : '0';
+            circle.style.borderColor = r.checked ? 'var(--coast-leaf)' : 'var(--coast-line)';
+          }
+        }
+      });
+    });
   });
 
   var pickupMap = null;
@@ -494,9 +497,9 @@
     var marker = L.marker([lat, lng]).addTo(pickupMap);
     marker.bindPopup(
       '<div style="font-family:sans-serif;font-size:12px;padding:2px;">' +
-      '<strong style="color:#2C1810;">Tawakal Toto Wear</strong><br>' +
-      '<span style="color:#8B6914;font-size:11px;">Malaika Nest Storefront</span><br>' +
-      '<span style="color:#666;font-size:11px;">Likoni, Mombasa</span>' +
+      '<strong style="color:var(--coast-deep);">Tawakal Toto Wear</strong><br>' +
+      '<span style="color:var(--coast-leaf);font-size:11px;">Malaika Nest Storefront</span><br>' +
+      '<span style="color:var(--coast-muted);font-size:11px;">Likoni, Mombasa</span>' +
       '</div>'
     ).openPopup();
   }
