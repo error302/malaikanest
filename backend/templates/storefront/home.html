@@ -40,53 +40,25 @@
   </div>
 </section>
 
-<!-- Shop by Age -->
-<section class="coast-page shop-frame" aria-labelledby="shop-by-size">
-  <header class="nest-section-heading" style="margin-bottom: 24px;">
+<!-- Shop by Age (compact) -->
+<section class="coast-page shop-frame coast-age-bar" aria-labelledby="shop-by-size">
+  <header class="nest-section-heading" style="margin-bottom: 12px;">
     <h2 id="shop-by-size">Shop by age</h2>
     <a href="{{ whatsapp_url }}" class="coast-text-link">Help with sizing</a>
   </header>
-  <div class="age-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-    <article class="age-card card-elevated" style="padding: 24px; text-align: center;">
-      <h3 style="font-family: var(--coast-heading); font-size: 1.1rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Baby</h3>
-      <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
-        {% for age in age_groups|slice:":4" %}
-          <li>
-            <a href="{% url 'storefront:product_list' %}?age={{ age.slug }}"
-               style="display: block; padding: 12px 16px; background: var(--coast-mint); border-radius: var(--radius-md); color: var(--coast-deep); font-weight: 600; text-decoration: none; transition: all var(--transition-fast);">
-              {{ age.label }}
-            </a>
-          </li>
+  <form class="coast-age-form" action="{% url 'storefront:product_list' %}" method="get">
+    <label class="coast-age-label" for="age-select">Pick an age — we'll take you straight to those sizes</label>
+    <div class="coast-age-controls">
+      <select id="age-select" name="age" class="coast-age-select"
+              onchange="if(this.value){window.location.href='{% url 'storefront:product_list' %}?age='+encodeURIComponent(this.value)}">
+        <option value="" selected disabled>Choose an age…</option>
+        {% for age in age_groups %}
+          <option value="{{ age.slug }}">{{ age.label }}</option>
         {% endfor %}
-      </ul>
-    </article>
-    <article class="age-card card-elevated" style="padding: 24px; text-align: center;">
-      <h3 style="font-family: var(--coast-heading); font-size: 1.1rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Toddler</h3>
-      <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
-        {% for age in age_groups|slice:"4:6" %}
-          <li>
-            <a href="{% url 'storefront:product_list' %}?age={{ age.slug }}"
-               style="display: block; padding: 12px 16px; background: var(--coast-mint); border-radius: var(--radius-md); color: var(--coast-deep); font-weight: 600; text-decoration: none; transition: all var(--transition-fast);">
-              {{ age.label }}
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    </article>
-    <article class="age-card card-elevated" style="padding: 24px; text-align: center;">
-      <h3 style="font-family: var(--coast-heading); font-size: 1.1rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Kids</h3>
-      <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
-        {% for age in age_groups|slice:"6:" %}
-          <li>
-            <a href="{% url 'storefront:product_list' %}?age={{ age.slug }}"
-               style="display: block; padding: 12px 16px; background: var(--coast-mint); border-radius: var(--radius-md); color: var(--coast-deep); font-weight: 600; text-decoration: none; transition: all var(--transition-fast);">
-              {{ age.label }}
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    </article>
-  </div>
+      </select>
+      <noscript><button type="submit" class="coast-button coast-button-outline">Go</button></noscript>
+    </div>
+  </form>
 </section>
 
 <!-- Categories -->
@@ -142,9 +114,9 @@
     <h2 id="on-the-rails">From the shop</h2>
     <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View all clothes</a>
   </header>
-  <div class="nest-home-products" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px;">
+  <div class="nest-home-products coast-hscroll" role="list">
     {% for product in featured_products %}
-      <a class="nest-home-product card-elevated"
+      <a class="nest-home-product card-elevated" role="listitem"
          href="{% url 'storefront:product_detail' slug=product.slug %}"
          style="display: flex; flex-direction: column; text-decoration: none; overflow: hidden; border-radius: var(--radius-lg);">
         <div class="nest-home-product-photo" style="position: relative; overflow: hidden;">
@@ -185,7 +157,7 @@
     <h2 id="on-the-rails" class="skeleton skeleton-title" aria-hidden="true"></h2>
     <div class="skeleton skeleton-text" style="width: 40%;" aria-hidden="true"></div>
   </header>
-  <div class="nest-home-products" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px;">
+  <div class="nest-home-products coast-hscroll">
     {% for i in "1234" %}
       <a class="nest-home-product card-elevated" href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none; display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-lg);">
         <div class="nest-home-product-photo">

@@ -23,7 +23,7 @@ class HomeView(View):
             .prefetch_related("images").select_related("category")
             .order_by("-featured", "-created_at", "pk")
         )
-        featured_products = [prepare_product(product) for product in products[:8]]
+        featured_products = [prepare_product(product) for product in products[:12]]
 
         age_groups = [
             {"label": "Newborn", "slug": "newborn"},
@@ -43,7 +43,7 @@ class HomeView(View):
             "active_banner": banner,
             "categories": categories,
             "featured_products": featured_products,
-            "new_arrivals": products.order_by("-created_at", "pk")[:8],
+            "new_arrivals": products.order_by("-created_at", "pk")[:12],
             "age_groups": age_groups,
             "free_shipping_threshold": SiteSettings.get_free_shipping_threshold(),
         }

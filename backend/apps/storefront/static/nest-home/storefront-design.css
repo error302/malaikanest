@@ -173,3 +173,136 @@ main :is([class~="border-[#EADBCE]"],[class~="border-[#8B6914]"]) { border-color
   padding-inline: 0;
 }
 .nest-checkout-page input[type="radio"] { accent-color: var(--shop-ink-dark); }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Shared design tokens — aliases
+   Templates reference --coast-* names; they resolve to the shop palette here
+   so inline-styled sections render consistently without a second stylesheet.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --coast-deep: var(--shop-ink-dark);
+  --coast-muted: var(--shop-muted);
+  --coast-mint: var(--shop-blue);
+  --coast-line: var(--shop-border);
+  --coast-paper: var(--shop-paper);
+  --coast-heading: var(--shop-heading);
+  --coast-leaf: #3d7a4e;
+  --coast-mango: #f2a03d;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --transition-fast: 140ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 420ms ease;
+}
+
+/* Button variants (base .coast-button lives above) */
+.coast-button-primary { background: var(--shop-ink-dark); color: #fff; }
+.coast-button-primary:hover { background: #16263c; }
+.coast-button-outline { background: transparent; color: var(--shop-ink-dark); border: 1.5px solid var(--shop-ink-dark); }
+.coast-button-outline:hover { background: var(--shop-blue); }
+.coast-button-mango { background: var(--coast-mango); color: var(--shop-ink-dark); }
+.coast-button-mango:hover { background: #e5942f; }
+
+/* ── Horizontal scrolling product rows (home) ─────────────────────────────── */
+.nest-home-products.coast-hscroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: max(16px, env(safe-area-inset-left));
+  padding: 4px 4px 18px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--shop-border) transparent;
+}
+.coast-hscroll > .nest-home-product {
+  flex: 0 0 auto;
+  width: clamp(196px, 60vw, 260px);
+  scroll-snap-align: start;
+}
+.coast-hscroll > .nest-home-product .nest-home-product-photo { aspect-ratio: 4 / 5; }
+.coast-hscroll::-webkit-scrollbar { height: 8px; }
+.coast-hscroll::-webkit-scrollbar-thumb { background: var(--shop-border); border-radius: 999px; }
+
+/* ── Shop-by-age compact bar ──────────────────────────────────────────────── */
+.coast-age-form { display: flex; flex-direction: column; gap: 10px; }
+.coast-age-label { font-size: .95rem; color: var(--shop-muted); }
+.coast-age-controls { display: flex; gap: 12px; align-items: center; }
+.coast-age-select {
+  flex: 1;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid var(--shop-border);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+  color: var(--shop-ink);
+  cursor: pointer;
+}
+.coast-age-select:focus-visible { outline: 2px solid var(--shop-ink-dark); outline-offset: 2px; }
+
+/* ── Customer account: sign in / sign up / account ────────────────────────── */
+.coast-auth-page { display: flex; justify-content: center; padding: 40px 0 64px; }
+.coast-auth-panel {
+  width: min(440px, 100%);
+  background: #fff;
+  border: 1px solid var(--shop-border);
+  border-radius: 16px;
+  padding: 32px 28px;
+}
+.coast-auth-panel h1 {
+  font-family: var(--shop-heading);
+  font-weight: 600;
+  font-size: 1.7rem;
+  color: var(--shop-ink-dark);
+  margin: 0 0 6px;
+}
+.coast-auth-sub { color: var(--shop-muted); font-size: .95rem; margin: 0 0 24px; }
+.coast-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.coast-field label { font-weight: 600; font-size: .9rem; color: var(--shop-ink-dark); }
+.coast-input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--shop-border);
+  border-radius: 10px;
+  font: inherit;
+  color: var(--shop-ink);
+  background: #fff;
+}
+.coast-input:focus-visible { outline: 2px solid var(--shop-ink-dark); outline-offset: 1px; }
+.coast-field-error { color: #8a2020; font-size: .85rem; margin: 2px 0 0; }
+.coast-form-errors {
+  background: #fdecec;
+  border: 1px solid #f3c1c1;
+  color: #8a2020;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.coast-form-errors p { margin: 2px 0; font-size: .9rem; }
+.coast-auth-submit { width: 100%; margin-top: 8px; }
+.coast-auth-alt { font-size: .92rem; color: var(--shop-muted); margin: 14px 0 0; }
+.coast-auth-alt a { color: var(--shop-ink-dark); font-weight: 600; }
+.coast-account-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--shop-border);
+}
+.coast-account-details dt { color: var(--shop-muted); font-size: .9rem; }
+.coast-account-details dd { margin: 0; font-weight: 600; color: var(--shop-ink-dark); overflow-wrap: anywhere; }
+.coast-account-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+
+/* Header account icon (matches saved/bag icon buttons) */
+.shop-header-account {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 999px;
+  color: inherit;
+}
+.shop-header-account:hover { background: var(--shop-blue); }

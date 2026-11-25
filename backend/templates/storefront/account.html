@@ -1,0 +1,24 @@
+{% extends "storefront/base.html" %}
+{% load static %}
+
+{% block title %}My account | Malaika Nest{% endblock %}
+
+{% block content %}
+<section class="coast-page shop-frame coast-auth-page" aria-labelledby="account-title">
+  <div class="coast-auth-panel">
+    <h1 id="account-title">My account</h1>
+    <p class="coast-auth-sub">Your details on file — we use these for receipts and delivery updates.</p>
+
+    <dl class="coast-account-details">
+      <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+      {% if user.phone_number %}<div><dt>Phone</dt><dd>{{ user.phone_number }}</dd></div>{% endif %}
+      <div><dt>Member since</dt><dd>{{ user.date_joined|date:"j M Y" }}</dd></div>
+    </dl>
+
+    <div class="coast-account-actions">
+      <a class="coast-button coast-button-primary" href="{% url 'storefront:product_list' %}">Continue shopping</a>
+      <a class="coast-button coast-button-outline" href="{% url 'storefront:order_lookup' %}">Track an order</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

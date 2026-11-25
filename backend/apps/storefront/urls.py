@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views, views_cart, views_checkout, pwa, views_wishlist
 from .admin_spa import AdminDashboardView
+from apps.accounts import storefront_auth
 
 app_name = "storefront"
 
@@ -26,6 +27,12 @@ urlpatterns = [
     # Wishlist (saved items)
     path("saved/", views_wishlist.WishlistView.as_view(), name="wishlist"),
     path("saved/toggle/<slug:slug>/", views_wishlist.WishlistToggleView.as_view(), name="wishlist_toggle"),
+
+    # Customer account (session-based, server-rendered)
+    path("account/", storefront_auth.AccountHomeView.as_view(), name="account"),
+    path("account/signin/", storefront_auth.SignInView.as_view(), name="signin"),
+    path("account/signup/", storefront_auth.SignUpView.as_view(), name="signup"),
+    path("account/signout/", storefront_auth.SignOutView.as_view(), name="signout"),
 
     # Checkout & Payment
     path("checkout/", views_checkout.CheckoutView.as_view(), name="checkout"),
