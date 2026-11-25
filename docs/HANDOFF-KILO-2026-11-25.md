@@ -35,12 +35,35 @@ Consequences:
   not the Next.js app. The Next.js frontend container is not part of production.
 - `cloudflared` routes ALL hostnames (`malaikanest.com`, `www.`, `api.`) to `http://web:8000`.
 
-## 3. ⚠️ There is NO GitHub Actions runner on this VM
+## 3. Deploys: runner IS installed (as of 2026-11-25) — push to main = auto-deploy
 
-`.github/workflows/deploy.yml` targets `[self-hosted, malaikanest]`, but no runner service
-exists on the Oracle VM (checked: no systemd unit, no `~/actions-runner`). **Pushing to main
-does NOT deploy to the Oracle VM.** `scripts/ops/deploy-to-vm.{sh,ps1}` target the *old GCP VM*
-(stopped) — they are not for Oracle either.
+A GitHub Actions self-hosted runner now runs on the Oracle VM:
+
+- Service: `actions.runner.error302-malaikanest.malaikanest-vm` (systemd, `~/actions-runner`)
+- Labels: `self-hosted, malaikanest` · runner v2.338.2 (auto-updates)
+- **Pushing to `main` deploys automatically** via `.github/workflows/deploy.yml`, which is
+  lean-stack-aware: it pulls, re-applies the cloudflared pin (§4), tags a rollback image
+  (`malaikanest-web:before-deploy-<ts>`), runs `docker compose -f docker-compose.lean.yml
+  build web && up -d web`, and gates on the container healthcheck. Verified end-to-end
+  (run 45608813050, success in 2m6s).
+- Registration tokens expire in ~1h; to re-register:
+  `gh api -X POST repos/error302/malaikanest/actions/runners/registration-token --jq .token`
+  then `GH_TOKEN=<token> bash deployment/setup-gh-runner.sh` on the VM.
+- The runner idles at ~100–150 MB — the 4 GB swapfile on the VM absorbs build spikes.
+  **Keep the VM's swap.** Don't run memory-heavy jobs on this runner.
+- Manual deploy still works (and is the fallback if the runner is down):
+
+```bash
+ssh malaikanest-oracle
+cd ~/malaikanest
+git pull --ff-only origin main
+docker tag malaikanest-web:latest malaikanest-web:before-<change>-$(date +%Y%m%d)
+docker compose -f docker-compose.lean.yml build web
+docker compose -f docker-compose.lean.yml up -d web
+docker compose -f docker-compose.lean.yml ps   # wait for healthy
+```
+
+`scripts/ops/deploy-to-vm.{sh,ps1}` target the *old GCP VM* (stopped) — not for Oracle.
 
 **The actual deploy procedure (manual, proven 2026-11-25):**
 
@@ -76,11 +99,12 @@ stack's service is named `web`, so on the VM this file is kept at the **old** ve
 - The running `cloudflared` container binds `~/malaikanest/cloudflared/` into the container and
   reads the file **at startup**. If the file says `backend:8000` and cloudflared ever restarts
   (VM reboot, `docker compose restart`), the whole site 502s.
-- **Do not** run `git checkout -- cloudflared/config.yml` or `git pull` + restart cloudflared
-  without fixing the service name first.
+- The deploy workflow re-applies the pin automatically after every pull
+  (`sed backend:8000 → web:8000`), so this stays safe across auto-deploys. Still: **do not**
+  hand-edit the repo copy expecting it to survive, and **do not** remove the sed line from
+  `deploy.yml`.
 - Proper long-term fix (needs a decision): template the service name per stack, or have
-  `docker-compose.lean.yml` override the ingress file. Until then: after every `git pull` on
-  the VM, verify `grep service: cloudflared/config.yml` still says `web:8000`.
+  `docker-compose.lean.yml` override the ingress file.
 
 ## 5. Env & secrets on the VM
 
@@ -148,18 +172,19 @@ docker compose -f docker-compose.lean.yml up -d web
 Pre-deploy tags exist for every recent change (`before-daraja-20261124`,
 `before-staff-access-20261124`, `before-sync-github-20261125`, …). Keep the convention.
 
-## 9. State after the 2026-11-25 sync (this handoff's starting point)
+## 9. State after the 2026-11-25 sync + runner install
 
-- VM repo: `d0f42d44` = `origin/main` (the 6 commits incl. premium visual overhaul + hardening).
-- `web` image rebuilt from that commit; service healthy; site + API 200 externally.
-- `cloudflared` untouched (running 4+ weeks, in-memory config = `web:8000`; on-disk file restored to match).
-- `ADMIN_AUTHORIZED_EMAILS` added to `backend/.env` (see §6).
-- Known dirty file on VM: `cloudflared/config.yml` (intentional, §4).
+- VM repo: `3412633e` = `origin/main` (kilo's 6 commits + lean deploy.yml fix).
+- `web` image rebuilt from that commit via the runner pipeline; healthy; site + API 200 externally.
+- `ADMIN_AUTHORIZED_EMAILS` set in `backend/.env` (see §6); TOTP migrations applied.
+- Runner: registered, systemd service active, first deploy run succeeded (2m6s).
+- Known dirty file on VM: `cloudflared/config.yml` (intentional, auto-maintained by deploy, §4).
 
 ## 10. Do NOT do these on the Oracle VM
 
 1. `docker compose up -d` (no `-f` flag) — starts the full 9-service stack → OOM (956 MB RAM).
 2. Restart `cloudflared` while `config.yml` points to `backend:8000`.
-3. Trust `.github/workflows/deploy.yml` to deploy for you — no runner exists.
+3. Change `deploy.yml` back to the full stack commands, or remove the cloudflared re-pin sed.
 4. Run `scripts/ops/deploy-to-vm.*` — they target the old GCP box.
 5. Remove the lucide→Phosphor icon shim or "fix" `docker-compose.lean.yml` service names to match docs.
+6. Delete the VM's swapfile — builds and the runner depend on it.

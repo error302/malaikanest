@@ -23,7 +23,7 @@ REPO="error302/malaikanest"
 RUNNER_NAME="${RUNNER_NAME:-malaikanest-vm}"
 RUNNER_LABELS="${RUNNER_LABELS:-self-hosted,malaikanest}"
 RUNNER_DIR="${RUNNER_DIR:-$HOME/actions-runner}"
-RUNNER_VERSION="2.321.0"   # update if GitHub releases a newer version
+RUNNER_VERSION="2.338.2"   # GitHub enforces a minimum runner version (2.329+ as of 2026-02)
 
 GH_TOKEN="${GH_TOKEN:-}"
 if [ -z "$GH_TOKEN" ]; then
