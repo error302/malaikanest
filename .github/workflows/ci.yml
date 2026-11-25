@@ -61,6 +61,12 @@ jobs:
       DB_PORT: "5432"
       SECRET_KEY: ci-test-secret-key-not-for-production
       REDIS_URL: redis://localhost:6379/0
+      # Settings-validation tests import config.settings.prod, which requires
+      # Cloudinary to be configured at import time. Dummy values satisfy the
+      # import; no real media operations happen in CI.
+      CLOUDINARY_CLOUD_NAME: ci-dummy-cloud
+      CLOUDINARY_API_KEY: ci-dummy-key
+      CLOUDINARY_API_SECRET: ci-dummy-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
