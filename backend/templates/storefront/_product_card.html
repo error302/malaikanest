@@ -1,3 +1,4 @@
+{% load cloudinary_tags %}
 <a class="nest-home-product card-elevated{% if not product.shop_stock %} is-soldout{% endif %}" role="listitem"
    href="{% url 'storefront:product_detail' slug=product.slug %}"
    style="display: flex; flex-direction: column; text-decoration: none; overflow: hidden; border-radius: var(--radius-lg);">
