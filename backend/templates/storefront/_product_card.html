@@ -1,4 +1,4 @@
-<a class="nest-home-product card-elevated" role="listitem"
+<a class="nest-home-product card-elevated{% if not product.shop_stock %} is-soldout{% endif %}" role="listitem"
    href="{% url 'storefront:product_detail' slug=product.slug %}"
    style="display: flex; flex-direction: column; text-decoration: none; overflow: hidden; border-radius: var(--radius-lg);">
   <div class="nest-home-product-photo" style="position: relative; overflow: hidden;">
@@ -19,12 +19,15 @@
     {% else %}
       <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--coast-mint); color: var(--coast-muted);">Photo coming soon</div>
     {% endif %}
+    {% if not product.shop_stock %}
+      <span class="coast-soldout-badge">Out of stock</span>
+    {% endif %}
   </div>
   <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
     <h3 style="font-weight: 700; color: var(--coast-deep); font-size: 1rem; line-height: 1.3; margin: 0;">{{ product.name }}</h3>
     <p class="nest-home-price" style="font-size: 1.1rem; font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums; margin: 0;">KES {{ product.price|floatformat:"-2g" }}</p>
     {% if not product.shop_stock %}
-      <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-muted); margin: 0;">Out of stock</p>
+      <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-muted); margin: 0;">Currently unavailable — check back soon</p>
     {% elif product.shop_sizes %}
       <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-leaf); margin: 0;">{{ product.shop_sizes|join:", " }}</p>
     {% endif %}

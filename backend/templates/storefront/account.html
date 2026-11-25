@@ -10,10 +10,29 @@
     <p class="coast-auth-sub">Your details on file — we use these for receipts and delivery updates.</p>
 
     <dl class="coast-account-details">
-      <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
-      {% if user.phone_number %}<div><dt>Phone</dt><dd>{{ user.phone_number }}</dd></div>{% endif %}
-      <div><dt>Member since</dt><dd>{{ user.date_joined|date:"j M Y" }}</dd></div>
+      <div>
+        <dt>Email</dt>
+        <dd>{{ user.email }} <span class="coast-muted-note">· sign-in ID (contact us to change)</span></dd>
+      </div>
+      <div>
+        <dt>Member since</dt>
+        <dd>{{ user.date_joined|date:"j M Y" }}</dd>
+      </div>
     </dl>
+
+    <form method="post" action="{% url 'storefront:account' %}" class="coast-phone-form" novalidate>
+      {% csrf_token %}
+      <label for="{{ phone_form.phone_number.id_for_label }}">{{ phone_form.phone_number.label }}</label>
+      <div class="coast-phone-row">
+        {{ phone_form.phone_number }}
+        <button type="submit" class="coast-button coast-button-outline coast-phone-save">Save</button>
+      </div>
+      {% if phone_form.phone_number.errors %}
+        <p class="coast-field-error" role="alert">{{ phone_form.phone_number.errors.0 }}</p>
+      {% else %}
+        <p class="coast-muted-note">Kenyan format — 07…, 2547… or +2547… · used for M-Pesa receipts and delivery updates.</p>
+      {% endif %}
+    </form>
 
     <div class="coast-account-actions">
       <a class="coast-button coast-button-primary" href="{% url 'storefront:product_list' %}">Continue shopping</a>

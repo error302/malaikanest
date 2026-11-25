@@ -25,6 +25,7 @@ import logging
 
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import forms as auth_forms
@@ -35,7 +36,7 @@ from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.views import View
 
-from apps.accounts.models import User, normalize_kenyan_phone
+from apps.accounts.models import KENYAN_PHONE_VALIDATOR, User, normalize_kenyan_phone
 
 logger = logging.getLogger("security")
 
@@ -233,10 +234,51 @@ class SignOutView(LogoutView):
     """POST-only sign-out (Django 5 enforces this for CSRF safety)."""
 
 
+class AccountPhoneForm(forms.Form):
+    """Self-service phone update. Email is the sign-in ID, so it stays
+    support-managed; the phone (receipt / M-Pesa number) is editable."""
+
+    phone_number = forms.CharField(
+        label="Phone (M-Pesa number)",
+        max_length=20,
+        widget=forms.TextInput(attrs={"class": _INPUT_CLASS, "inputmode": "tel", "autocomplete": "tel"}),
+    )
+
+    def clean_phone_number(self):
+        raw = self.cleaned_data.get("phone_number") or ""
+        normalized = normalize_kenyan_phone(raw)
+        # Reuse the exact model validation (Kenyan format) — a form-level
+        # duplicate of the rule would drift out of sync.
+        KENYAN_PHONE_VALIDATOR(normalized)
+        return normalized
+
+
 class AccountHomeView(LoginRequiredMixin, View):
-    """Minimal signed-in landing: who you are + where to go next."""
+    """Signed-in landing: account details + phone self-service edit."""
 
     template_name = "storefront/account.html"
 
     def get(self, request):
-        return render(request, self.template_name)
+        return render(
+            request,
+            self.template_name,
+            {"phone_form": AccountPhoneForm(initial={"phone_number": request.user.phone_number})},
+        )
+
+    def post(self, request):
+        form = AccountPhoneForm(request.POST)
+        if form.is_valid():
+            new_phone = form.cleaned_data["phone_number"]
+            if User.objects.exclude(pk=request.user.pk).filter(phone_number__iexact=new_phone).exists():
+                form.add_error("phone_number", "That phone number is already used by another account.")
+            else:
+                request.user.phone_number = new_phone
+                request.user.save(update_fields=["phone_number"])
+                messages.success(request, "Phone number updated.")
+                return redirect("storefront:account")
+        return render(
+            request,
+            self.template_name,
+            {"phone_form": form},
+            status=400 if form.errors else 200,
+        )
