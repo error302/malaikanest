@@ -27,6 +27,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import views as auth_views
+from django.contrib.auth import forms as auth_forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView
@@ -75,22 +76,23 @@ def _register_failure(identifier: str, ip: str) -> int:
 _INPUT_CLASS = "coast-input"
 
 
-class SignInForm(forms.Form):
-    username = forms.EmailField(
-        label="Email",
-        max_length=254,
-        widget=forms.EmailInput(attrs={"class": _INPUT_CLASS, "autocomplete": "email"}),
-    )
-    password = forms.CharField(
-        label="Password",
-        strip=False,
-        widget=forms.PasswordInput(attrs={"class": _INPUT_CLASS, "autocomplete": "current-password"}),
-    )
+class SignInForm(auth_forms.AuthenticationForm):
+    """Login form — must subclass AuthenticationForm because LoginView passes
+    `request` into the form kwargs (its __init__ signature accepts it)."""
 
     error_messages = {
         "invalid_login": "Invalid email or password.",
         "inactive": "This account has been deactivated.",
     }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update(
+            {"class": _INPUT_CLASS, "autocomplete": "email", "inputmode": "email"}
+        )
+        self.fields["password"].widget.attrs.update(
+            {"class": _INPUT_CLASS, "autocomplete": "current-password"}
+        )
 
 
 class SignUpForm(forms.Form):
