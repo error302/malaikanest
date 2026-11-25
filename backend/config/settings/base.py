@@ -136,6 +136,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Auth redirects — the Django defaults (/accounts/login/) don't exist on this
+# site; without these, login-required redirects 404.
+LOGIN_URL = "/account/signin/"
+LOGIN_REDIRECT_URL = "/account/"
+LOGOUT_REDIRECT_URL = "/"
+
 AUTH_USER_MODEL = "accounts.User"
 
 # Custom authentication backend for email-based login
