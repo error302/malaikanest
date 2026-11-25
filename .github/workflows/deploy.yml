@@ -7,15 +7,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ── Self-hosted runner on the VM ─────────────────────────────────────────
-  # The runner process on the VM polls GitHub outbound — no inbound SSH
-  # required. Port 22 can stay locked down behind the GCP firewall allowlist.
+  # ─────────────────────────────────────────────────────────────────────────
+  # Self-hosted runner on the Oracle VM. The runner polls GitHub outbound —
+  # no inbound SSH required.
+  #
+  # PRODUCTION RUNS docker-compose.lean.yml (web / db / cloudflared), NOT the
+  # full docker-compose.yml stack — the VM has 956 MB RAM and the full stack
+  # would OOM it. See docs/HANDOFF-KILO-*.md before changing this job.
   # Setup: run deployment/setup-gh-runner.sh once on the VM (see that file).
+  # ─────────────────────────────────────────────────────────────────────────
   deploy:
     runs-on: [self-hosted, malaikanest]
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
-      - name: Deploy via Docker Compose
+      - name: Deploy via Docker Compose (lean stack)
         shell: bash
         run: |
           set -euo pipefail
@@ -30,30 +35,52 @@ jobs:
           fi
 
           cd "$APP_DIR"
-          git stash push --include-untracked -m "github-actions-predeploy-$(date +%Y%m%d%H%M%S)" || true
+
+          # cloudflared/config.yml is intentionally pinned to the lean stack's
+          # service name (web:8000) on this VM — the repo version points at
+          # backend:8000, which only exists in the full (non-production) stack.
+          # Discard the local pin so the pull cannot conflict, then re-apply it.
+          git checkout -- cloudflared/config.yml 2>/dev/null || true
           git pull --ff-only origin main
+          sed -i 's#http://backend:8000#http://web:8000#g' cloudflared/config.yml
+          echo "Ingress after lean-stack pin:"
+          grep 'service:' cloudflared/config.yml
 
-          # Sync Brevo authorized IPs for email delivery
+          # Rollback point before replacing the running image.
+          docker tag malaikanest-web:latest \
+            "malaikanest-web:before-deploy-$(date +%Y%m%d%H%M%S)" || true
+
+          # Sync Brevo authorized IPs for email delivery. The API key lives in
+          # backend/.env (never printed). Non-blocking on failure.
           echo "Syncing Brevo authorized IPs..."
-          python scripts/ops/sync_brevo_ips.py || echo "Warning: Brevo IP sync failed (non-blocking)"
+          key=$(grep -E '^BREVO_API_KEY=' backend/.env 2>/dev/null | cut -d= -f2- || true)
+          if [ -n "$key" ]; then
+            BREVO_API_KEY="$key" python3 scripts/ops/sync_brevo_ips.py \
+              || echo "Warning: Brevo IP sync failed (non-blocking)"
+          else
+            echo "No BREVO_API_KEY in backend/.env — skipping (non-blocking)"
+          fi
 
-          # Migrations run inside the backend container entrypoint on start.
-          docker compose build --pull backend frontend
-          docker compose up -d --remove-orphans
+          # Migrations + collectstatic run inside the container via
+          # backend/deploy/start-web.sh on every start — no manual step needed.
+          docker compose -f docker-compose.lean.yml build web
+          docker compose -f docker-compose.lean.yml up -d web
           docker image prune -f
 
-          # Authoritative health gate: hit the backend directly on its host
-          # binding (same Host-header trick as the compose healthcheck).
+          # Authoritative health gate: the container's own healthcheck (same
+          # Host-header trick as the compose healthcheck, from inside).
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' \
-              -H 'Host: api.malaikanest.com' -H 'X-Forwarded-Proto: https' \
-              http://127.0.0.1:8081/api/health/ || true)
-            if [ "$code" = "200" ]; then
-              echo "Backend healthy (attempt $i)"
+            status=$(docker inspect --format '{{.State.Health.Status}}' malaikanest-web-1 2>/dev/null || echo "unknown")
+            if [ "$status" = "healthy" ]; then
+              echo "web healthy (attempt $i)"
               break
             fi
-            echo "Attempt $i: HTTP $code — retrying in 10s"
-            [ "$i" = "30" ] && { echo "Backend never became healthy."; exit 1; }
+            echo "Attempt $i: health=$status — retrying in 10s"
+            if [ "$i" = "30" ]; then
+              docker logs --tail 50 malaikanest-web-1 || true
+              echo "web never became healthy."
+              exit 1
+            fi
             sleep 10
           done
 
