@@ -266,5 +266,8 @@ def invalidate_all_user_tokens(user):
         # Refresh to avoid lost updates and ensure we bump the latest value.
         user = type(user).objects.select_for_update().get(pk=user.pk)
         user.token_version += 1
-        user.save(update_fields=["token_version", "updated_at"])
+        # NOTE: User has no `updated_at` field (it extends AbstractBaseUser, not
+        # BaseModel) — naming it in update_fields raises ValueError and, inside
+        # the password-reset atomic block, silently rolls the password change back.
+        user.save(update_fields=["token_version"])
         logger.warning(f"All tokens invalidated for user {user.email}")
