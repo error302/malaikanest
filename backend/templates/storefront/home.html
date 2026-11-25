@@ -40,27 +40,6 @@
   </div>
 </section>
 
-<!-- Shop by Age (compact) -->
-<section class="coast-page shop-frame coast-age-bar" aria-labelledby="shop-by-size">
-  <header class="nest-section-heading" style="margin-bottom: 12px;">
-    <h2 id="shop-by-size">Shop by age</h2>
-    <a href="{{ whatsapp_url }}" class="coast-text-link">Help with sizing</a>
-  </header>
-  <form class="coast-age-form" action="{% url 'storefront:product_list' %}" method="get">
-    <label class="coast-age-label" for="age-select">Pick an age — we'll take you straight to those sizes</label>
-    <div class="coast-age-controls">
-      <select id="age-select" name="age" class="coast-age-select"
-              onchange="if(this.value){window.location.href='{% url 'storefront:product_list' %}?age='+encodeURIComponent(this.value)}">
-        <option value="" selected disabled>Choose an age…</option>
-        {% for age in age_groups %}
-          <option value="{{ age.slug }}">{{ age.label }}</option>
-        {% endfor %}
-      </select>
-      <noscript><button type="submit" class="coast-button coast-button-outline">Go</button></noscript>
-    </div>
-  </form>
-</section>
-
 <!-- Categories -->
 {% if categories %}
 <section id="categories" class="coast-page shop-frame" aria-labelledby="shop-by-category">

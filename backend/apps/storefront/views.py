@@ -25,26 +25,15 @@ class HomeView(View):
         )
         featured_products = [prepare_product(product) for product in products[:12]]
 
-        age_groups = [
-            {"label": "Newborn", "slug": "newborn"},
-            {"label": "0–3 months", "slug": "0-3m"},
-            {"label": "3–6 months", "slug": "3-6m"},
-            {"label": "6–12 months", "slug": "6-12m"},
-            {"label": "1–2 years", "slug": "1-2y"},
-            {"label": "2–4 years", "slug": "2-4y"},
-            {"label": "4–6 years", "slug": "4-6y"},
-            {"label": "6–8 years", "slug": "6-8y"},
-            {"label": "8–10 years", "slug": "8-10y"},
-            {"label": "10–12 years", "slug": "10-12y"},
-        ]
-
         from apps.core.models import SiteSettings
+        from .context_processors import AGE_GROUPS
+
         context = {
             "active_banner": banner,
             "categories": categories,
             "featured_products": featured_products,
             "new_arrivals": products.order_by("-created_at", "pk")[:12],
-            "age_groups": age_groups,
+            "age_groups": AGE_GROUPS,
             "free_shipping_threshold": SiteSettings.get_free_shipping_threshold(),
         }
         return render(request, "storefront/home.html", context)

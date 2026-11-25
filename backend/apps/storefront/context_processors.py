@@ -11,6 +11,20 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
+# Shared age-size taxonomy (slugs are consumed by ProductListView ?age= filter).
+AGE_GROUPS = [
+    {"label": "Newborn", "slug": "newborn"},
+    {"label": "0–3 months", "slug": "0-3m"},
+    {"label": "3–6 months", "slug": "3-6m"},
+    {"label": "6–12 months", "slug": "6-12m"},
+    {"label": "1–2 years", "slug": "1-2y"},
+    {"label": "2–4 years", "slug": "2-4y"},
+    {"label": "4–6 years", "slug": "4-6y"},
+    {"label": "6–8 years", "slug": "6-8y"},
+    {"label": "8–10 years", "slug": "8-10y"},
+    {"label": "10–12 years", "slug": "10-12y"},
+]
+
 
 def storefront_context(request):
     """Global context for Malaika Nest storefront templates."""
@@ -57,6 +71,7 @@ def storefront_context(request):
 
     return {
         "nav_categories": categories,
+        "age_groups": AGE_GROUPS,
         "cart_count": cart_count,
         "cart": cart,
         "wishlist_count": wishlist_count,

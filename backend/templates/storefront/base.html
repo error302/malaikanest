@@ -179,7 +179,7 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast2">
+  <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast3">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
@@ -228,9 +228,11 @@
 
     <nav class="shop-header-nav shop-frame" aria-label="Main navigation">
       <a href="{% url 'storefront:product_list' %}">Shop all</a>
-      <a href="{% url 'storefront:product_list' %}?age=0-3m">Baby</a>
-      <a href="{% url 'storefront:product_list' %}?age=1-2y">Toddler</a>
-      <a href="{% url 'storefront:product_list' %}?age=4-6y">Kids</a>
+      <select class="coast-age-nav" aria-label="Shop by age"
+              onchange="if(this.value){window.location.href='{% url 'storefront:product_list' %}?age='+encodeURIComponent(this.value)}">
+        <option value="" selected disabled>Shop by age</option>
+        {% for age in age_groups %}<option value="{{ age.slug }}">{{ age.label }}</option>{% endfor %}
+      </select>
       <a href="{% url 'storefront:product_list' %}?condition=mtumba">Pre-loved</a>
     </nav>
   </header>

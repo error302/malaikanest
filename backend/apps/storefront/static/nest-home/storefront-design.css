@@ -224,23 +224,22 @@ main :is([class~="border-[#EADBCE]"],[class~="border-[#8B6914]"]) { border-color
 .coast-hscroll::-webkit-scrollbar { height: 8px; }
 .coast-hscroll::-webkit-scrollbar-thumb { background: var(--shop-border); border-radius: 999px; }
 
-/* ── Shop-by-age compact bar ──────────────────────────────────────────────── */
-.coast-age-form { display: flex; flex-direction: column; gap: 10px; }
-.coast-age-label { font-size: .95rem; color: var(--shop-muted); }
-.coast-age-controls { display: flex; gap: 12px; align-items: center; }
-.coast-age-select {
-  flex: 1;
-  min-height: 52px;
-  padding: 0 18px;
+/* ── Shop-by-age compact selector (navbar) ────────────────────────────────── */
+.coast-age-nav {
+  min-height: 40px;
+  padding: 0 14px;
   border: 1px solid var(--shop-border);
   border-radius: 999px;
   background: #fff;
   font: inherit;
+  font-size: .92rem;
   font-weight: 600;
   color: var(--shop-ink);
+  max-width: 180px;
   cursor: pointer;
 }
-.coast-age-select:focus-visible { outline: 2px solid var(--shop-ink-dark); outline-offset: 2px; }
+.coast-age-nav:focus-visible { outline: 2px solid var(--shop-ink-dark); outline-offset: 2px; }
+.coast-age-nav:hover { border-color: var(--shop-ink); }
 
 /* ── Customer account: sign in / sign up / account ────────────────────────── */
 .coast-auth-page { display: flex; justify-content: center; padding: 40px 0 64px; }
