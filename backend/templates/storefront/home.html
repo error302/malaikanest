@@ -95,42 +95,27 @@
   </header>
   <div class="nest-home-products coast-hscroll" role="list">
     {% for product in featured_products %}
-      <a class="nest-home-product card-elevated" role="listitem"
-         href="{% url 'storefront:product_detail' slug=product.slug %}"
-         style="display: flex; flex-direction: column; text-decoration: none; overflow: hidden; border-radius: var(--radius-lg);">
-        <div class="nest-home-product-photo" style="position: relative; overflow: hidden;">
-          {% if product.get_image_url %}
-            <img src="{{ product.get_image_url|cloudinary_auto }}"
-                 alt=""
-                 width="480" height="600"
-                 loading="lazy"
-                 decoding="async"
-                 style="width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow);">
-          {% elif product.images.first %}
-            <img src="{{ product.images.first.image.url|cloudinary_auto }}"
-                 alt=""
-                 width="480" height="600"
-                 loading="lazy"
-                 decoding="async"
-                 style="width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow);">
-          {% else %}
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--coast-mint); color: var(--coast-muted);">Photo coming soon</div>
-          {% endif %}
-        </div>
-        <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
-          <h3 style="font-weight: 700; color: var(--coast-deep); font-size: 1rem; line-height: 1.3; margin: 0;">{{ product.name }}</h3>
-          <p class="nest-home-price" style="font-size: 1.1rem; font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums; margin: 0;">KES {{ product.price|floatformat:"-2g" }}</p>
-          {% if not product.shop_stock %}
-            <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-muted); margin: 0;">Out of stock</p>
-          {% elif product.shop_sizes %}
-            <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-leaf); margin: 0;">{{ product.shop_sizes|join:", " }}</p>
-          {% endif %}
-        </div>
-      </a>
+      {% include "storefront/_product_card.html" with product=product %}
     {% endfor %}
   </div>
 </section>
-{% else %}
+{% endif %}
+
+<!-- One scrollable row per category that has products -->
+{% for row in category_rows %}
+<section class="coast-page shop-frame" aria-labelledby="row-{{ row.category.slug }}">
+  <header class="nest-section-heading" style="margin-bottom: 16px;">
+    <h2 id="row-{{ row.category.slug }}">{{ row.category.name }}</h2>
+    <a class="coast-text-link" href="{% url 'storefront:category_detail' category_slug=row.category.slug %}">View all</a>
+  </header>
+  <div class="nest-home-products coast-hscroll" role="list">
+    {% for product in row.products %}
+      {% include "storefront/_product_card.html" with product=product %}
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% if not featured_products and not category_rows %}
 <section class="coast-page shop-frame" aria-labelledby="shop-stock" aria-hidden="true">
   <header class="nest-section-heading" style="margin-bottom: 24px;">
     <h2 id="on-the-rails" class="skeleton skeleton-title" aria-hidden="true"></h2>

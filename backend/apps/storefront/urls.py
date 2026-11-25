@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views, views_cart, views_checkout, pwa, views_wishlist
+from . import seo
 from .admin_spa import AdminDashboardView
 from apps.accounts import storefront_auth
 
@@ -8,6 +9,9 @@ app_name = "storefront"
 urlpatterns = [
     path("manifest.webmanifest", pwa.manifest, name="manifest"),
     path("sw.js", pwa.service_worker, name="service_worker"),
+    # SEO
+    path("robots.txt", seo.robots_txt, name="robots"),
+    path("sitemap.xml", seo.sitemap_xml, name="sitemap"),
     # Catalogue
     path("", views.HomeView.as_view(), name="home"),
     path("products/", views.ProductListView.as_view(), name="product_list"),

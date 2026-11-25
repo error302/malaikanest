@@ -1,0 +1,32 @@
+<a class="nest-home-product card-elevated" role="listitem"
+   href="{% url 'storefront:product_detail' slug=product.slug %}"
+   style="display: flex; flex-direction: column; text-decoration: none; overflow: hidden; border-radius: var(--radius-lg);">
+  <div class="nest-home-product-photo" style="position: relative; overflow: hidden;">
+    {% if product.get_image_url %}
+      <img src="{{ product.get_image_url|cloudinary_auto }}"
+           alt=""
+           width="480" height="600"
+           loading="lazy"
+           decoding="async"
+           style="width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow);">
+    {% elif product.images.first %}
+      <img src="{{ product.images.first.image.url|cloudinary_auto }}"
+           alt=""
+           width="480" height="600"
+           loading="lazy"
+           decoding="async"
+           style="width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-slow);">
+    {% else %}
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--coast-mint); color: var(--coast-muted);">Photo coming soon</div>
+    {% endif %}
+  </div>
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
+    <h3 style="font-weight: 700; color: var(--coast-deep); font-size: 1rem; line-height: 1.3; margin: 0;">{{ product.name }}</h3>
+    <p class="nest-home-price" style="font-size: 1.1rem; font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums; margin: 0;">KES {{ product.price|floatformat:"-2g" }}</p>
+    {% if not product.shop_stock %}
+      <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-muted); margin: 0;">Out of stock</p>
+    {% elif product.shop_sizes %}
+      <p class="nest-home-stock" style="font-size: .85rem; color: var(--coast-leaf); margin: 0;">{{ product.shop_sizes|join:", " }}</p>
+    {% endif %}
+  </div>
+</a>

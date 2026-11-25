@@ -28,10 +28,30 @@ class HomeView(View):
         from apps.core.models import SiteSettings
         from .context_processors import AGE_GROUPS
 
+        # One scrollable row per top-level category that has products.
+        # Subcategory products roll up into their root row.
+        root_of = {
+            cat.id: cat.parent_id
+            for cat in Category.objects.filter(parent__isnull=False).only("id", "parent_id")
+        }
+        products_by_root = {}
+        for product in products[:120]:
+            root_id = root_of.get(product.category_id, product.category_id)
+            products_by_root.setdefault(root_id, []).append(product)
+
+        category_rows = []
+        for cat in categories:
+            items = products_by_root.get(cat.id, [])[:12]
+            if items:
+                category_rows.append(
+                    {"category": cat, "products": [prepare_product(p) for p in items]}
+                )
+
         context = {
             "active_banner": banner,
             "categories": categories,
             "featured_products": featured_products,
+            "category_rows": category_rows,
             "new_arrivals": products.order_by("-created_at", "pk")[:12],
             "age_groups": AGE_GROUPS,
             "free_shipping_threshold": SiteSettings.get_free_shipping_threshold(),
