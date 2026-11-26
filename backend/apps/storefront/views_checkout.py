@@ -108,6 +108,10 @@ class CheckoutView(View):
             },
             "default_region": cart.delivery_region or "nairobi",
             "till_number": BUY_GOODS_TILL_NUMBER,
+            # Values typed before a failed validation, so the customer never
+            # has to retype the whole form after one mistake.
+            "form": request.session.pop("checkout_form", None) or {},
+            "form_errors": request.session.pop("checkout_form_errors", None) or {},
         }
         return render(request, "storefront/checkout.html", context)
 
@@ -129,12 +133,34 @@ class CheckoutView(View):
         # Django choices are not enforced at the DB layer — reject anything
         # outside the two methods we actually support before an order exists.
         if payment_method not in {"mpesa", "till"}:
-            messages.error(request, "Choose M-Pesa STK or M-Pesa Till as your payment method.")
-            return redirect("storefront:checkout")
+            return fail("payment_method", "Choose M-Pesa STK or M-Pesa Till as your payment method.")
         mpesa_phone = (request.POST.get("mpesa_phone") or shipping_phone).strip()
         notes = request.POST.get("notes", "").strip()
         is_gift = bool(request.POST.get("is_gift"))
         gift_message = request.POST.get("gift_message", "").strip()
+
+        # Snapshot of everything typed, kept in the session so a validation
+        # mistake never makes the customer retype the whole form.
+        form_values = {
+            "shipping_name": shipping_name,
+            "shipping_phone": shipping_phone,
+            "guest_email": guest_email,
+            "shipping_address": shipping_address,
+            "shipping_city": shipping_city,
+            "shipping_county": shipping_county,
+            "delivery_region": delivery_region,
+            "payment_method": payment_method,
+            "mpesa_phone": request.POST.get("mpesa_phone", "").strip(),
+            "notes": notes,
+            "is_gift": "1" if is_gift else "",
+            "gift_message": gift_message,
+        }
+
+        def fail(field, message):
+            request.session["checkout_form"] = form_values
+            request.session["checkout_form_errors"] = {field: message}
+            messages.error(request, message)
+            return redirect("storefront:checkout")
 
         is_store_pickup = delivery_region == "mombasa_pickup"
         if is_store_pickup:
@@ -147,17 +173,14 @@ class CheckoutView(View):
 
         # Validation
         if not shipping_name:
-            messages.error(request, "Please provide your full name.")
-            return redirect("storefront:checkout")
+            return fail("shipping_name", "Please provide your full name.")
 
         if not shipping_phone:
-            messages.error(request, "Please provide a valid contact phone number.")
-            return redirect("storefront:checkout")
+            return fail("shipping_phone", "Please provide a valid contact phone number.")
         try:
             shipping_phone = normalize_phone(shipping_phone)
         except ValueError:
-            messages.error(request, "That phone number looks wrong. Use 07XXXXXXXX or +2547XXXXXXXX.")
-            return redirect("storefront:checkout")
+            return fail("shipping_phone", "That phone number looks wrong. Use 07XXXXXXXX or +2547XXXXXXXX.")
 
         # An invalid STK override must never beat a valid contact number.
         override_phone = request.POST.get("mpesa_phone", "").strip()
@@ -170,12 +193,10 @@ class CheckoutView(View):
             mpesa_phone = shipping_phone
 
         if not request.user.is_authenticated and not guest_email:
-            messages.error(request, "Please provide an email address for order confirmation and receipts.")
-            return redirect("storefront:checkout")
+            return fail("guest_email", "Please provide an email address for order confirmation and receipts.")
 
         if not is_store_pickup and not shipping_address:
-            messages.error(request, "Please provide your delivery address or building / estate.")
-            return redirect("storefront:checkout")
+            return fail("shipping_address", "Please provide your delivery address or building / estate.")
 
         user = request.user if request.user.is_authenticated else None
         user_email = user.email if user else guest_email
@@ -204,6 +225,8 @@ class CheckoutView(View):
 
         except ValueError as exc:
             logger.warning("Checkout failed for cart #%s: %s", cart.id, str(exc))
+            request.session["checkout_form"] = form_values
+            request.session["checkout_form_errors"] = {"__all__": str(exc)}
             messages.error(request, f"Unable to place order: {exc}")
             return redirect("storefront:checkout")
         except Exception as exc:

@@ -10,7 +10,10 @@
 {% block content %}
 <div class="nest-checkout-page shop-frame coast-page">
   <h1 style="font-family: var(--coast-heading); font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; color: var(--coast-deep); line-height: 1.05; margin-bottom: 8px;">Checkout</h1>
-  <p style="font-size: .9rem; color: var(--coast-muted); margin-bottom: 32px;">Add your contact details, choose delivery or pickup, then select a payment method.</p>
+  <p style="font-size: .9rem; color: var(--coast-muted); margin-bottom: 24px;">Add your contact details, choose delivery or pickup, then select a payment method.</p>
+  {% if form_errors.__all__ %}
+  <div class="field-error" style="margin-bottom: 16px;" role="alert">{{ form_errors.__all__ }}</div>
+  {% endif %}
 
   <form action="{% url 'storefront:checkout' %}" method="post" id="checkoutForm" style="display: grid; grid-template-columns: 1fr; gap: 32px;">
     {% csrf_token %}
@@ -35,9 +38,11 @@
               required
               autocomplete="name"
               placeholder="e.g. Amina Mohamed" 
-              value="{{ user.full_name|default:'' }}"
-              class="form-input"
+              value="{{ form.shipping_name|default:user.full_name }}"
+              class="form-input{% if form_errors.shipping_name %} field-invalid{% endif %}"
+              aria-invalid="{% if form_errors.shipping_name %}true{% else %}false{% endif %}"
             >
+            {% if form_errors.shipping_name %}<p class="field-error">{{ form_errors.shipping_name }}</p>{% endif %}
           </div>
 
           <div>
@@ -49,9 +54,11 @@
               required
               autocomplete="tel"
               placeholder="07XX XXX XXX or +254..." 
-              value="{{ user.phone_number|default:'' }}"
-              class="form-input"
+              value="{{ form.shipping_phone|default:user.phone_number }}"
+              class="form-input{% if form_errors.shipping_phone %} field-invalid{% endif %}"
+              aria-invalid="{% if form_errors.shipping_phone %}true{% else %}false{% endif %}"
             >
+            {% if form_errors.shipping_phone %}<p class="field-error">{{ form_errors.shipping_phone }}</p>{% endif %}
           </div>
         </div>
 
@@ -64,9 +71,11 @@
             {% if not user.is_authenticated %}required{% endif %}
             autocomplete="email"
             placeholder="For order receipt and tracking updates" 
-            value="{{ user.email|default:'' }}"
-            class="form-input"
+            value="{{ form.guest_email|default:user.email }}"
+            class="form-input{% if form_errors.guest_email %} field-invalid{% endif %}"
+            aria-invalid="{% if form_errors.guest_email %}true{% else %}false{% endif %}"
           >
+          {% if form_errors.guest_email %}<p class="field-error">{{ form_errors.guest_email }}</p>{% endif %}
         </div>
       </section>
 
@@ -241,6 +250,7 @@
                 id="mpesa_phone" 
                 autocomplete="tel"
                 placeholder="07XX XXX XXX or 01XX XXX XXX" 
+                value="{{ form.mpesa_phone }}"
                 class="form-input"
                 style="width: 100%; max-width: 280px;"
               >
@@ -371,6 +381,8 @@
 
   </form>
 
+  {{ form|json_script:"checkout-form-values" }}
+
   <!-- Mobile sticky place-order bar -->
   <div class="nest-sticky-cta">
     <div style="display: flex; flex-direction: column; justify-content: center; padding-right: 16px; min-width: 0;">
@@ -384,6 +396,29 @@
 </div>
 <script>
 (function () {
+  // Restore everything the customer typed before a failed validation, so one
+  // mistake never costs them the whole form.
+  try {
+    var raw = document.getElementById("checkout-form-values");
+    var saved = raw ? JSON.parse(raw.textContent) : {};
+    if (saved && Object.keys(saved).length) {
+      var regionSel = document.getElementById("delivery_region");
+      if (saved.delivery_region && regionSel) regionSel.value = saved.delivery_region;
+      var pay = document.querySelector('input[name="payment_method"][value="' + (saved.payment_method || "mpesa") + '"]');
+      if (pay) { pay.checked = true; pay.dispatchEvent(new Event("change", { bubbles: true })); }
+      var gift = document.getElementById("is_gift");
+      if (gift && saved.is_gift === "1") {
+        gift.checked = true;
+        var gm = document.getElementById("giftMessageContainer");
+        if (gm) gm.classList.remove("hidden");
+      }
+      if (saved.gift_message) {
+        var ta = document.querySelector('textarea[name="gift_message"]');
+        if (ta) ta.value = saved.gift_message;
+      }
+    }
+  } catch (e) { /* restore is best-effort */ }
+
   var select = document.getElementById("delivery_region");
   if (!select) return;
   var fees = {};

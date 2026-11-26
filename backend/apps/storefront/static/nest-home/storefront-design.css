@@ -72,8 +72,20 @@ main h1:where(.font-serif) { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1
 .shop-footer a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .shop-footer-bottom { border-top: 1px solid #aabaad; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; margin-top: 18px; padding-top: 16px; color: var(--shop-muted); font-size: .84rem; }
 
+/* coast.css styles the footer for a dark background; the design layer swapped
+   the background to light blue. Re-anchor its text colours so nothing renders
+   white-on-light-blue (the "faint wording" on the front page). */
+.shop-footer-grid strong { color: var(--shop-ink-dark); }
+.shop-footer-grid :is(nav, .shop-footer-pickup) a { color: var(--shop-ink-dark); }
+.shop-footer-grid p { color: #3e5069; }
+.shop-footer-bottom { border-top-color: #a9bcd2; }
+
 /* Custom radio dots hide the native input; show focus on the visible dot. */
 main input[type="radio"]:focus-visible + div { outline: 3px solid #48668c; outline-offset: 3px; border-radius: 999px; }
+
+/* Inline checkout validation errors */
+.field-error { color: #b3261e; font-size: .8rem; font-weight: 600; margin-top: 6px; line-height: 1.45; }
+.form-input.field-invalid, input.field-invalid { border-color: #b3261e !important; }
 
 .coast-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 8px 24px; background: var(--shop-ink-dark); color: white; border-radius: 999px; font-weight: 750; text-align: center; transition: background-color 160ms ease, transform 160ms ease; }
 .coast-button:hover { background: #354f70; }
