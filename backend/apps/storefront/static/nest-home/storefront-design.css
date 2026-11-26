@@ -228,8 +228,9 @@ a.nest-home-product.is-soldout .nest-home-price,
   .shop-strip a { min-height: 44px; display: inline-flex; align-items: center; }
   /* Footer wordmark link */
   .shop-footer a[href="/"] { min-height: 44px; display: inline-flex; align-items: center; }
-  /* Catalog breadcrumbs + sort select were 21-22px tall */
-  .coast-catalog-intro a { min-height: 44px; display: inline-flex; align-items: center; }
+  /* Catalog breadcrumbs + sort select were 21-22px tall.
+     The breadcrumb links carry inline min-height:auto, so they need !important. */
+  .coast-catalog-intro a { min-height: 44px !important; display: inline-flex; align-items: center; }
   .coast-catalog select[name="sort"] { min-height: 44px; }
 }
 
