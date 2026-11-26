@@ -165,10 +165,6 @@ main :is([class~="border-[#EADBCE]"],[class~="border-[#8B6914]"]) { border-color
   .shop-search { width: 100%; }
   .shop-header-nav { justify-content: space-between; gap: 5px; }
   .shop-header-nav a { font-size: .82rem; }
-  /* Age menu: panel spans the nav row instead of a native full-screen list */
-  .coast-age-menu { position: static; }
-  .coast-age-list { left: 0; right: 0; min-width: 0; max-height: 52vh; }
-  .coast-age-menu > summary { min-height: 44px; }
   .shop-footer { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
   .shop-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .coast-empty { flex-wrap: wrap; }
@@ -382,6 +378,14 @@ a.nest-home-product.is-soldout .nest-home-price,
   border-radius: 8px; font-size: .9rem; font-weight: 600; color: var(--shop-ink-dark);
 }
 .coast-age-list a:hover, .coast-age-list a:focus-visible { background: var(--shop-blue); text-decoration: none; }
+
+/* Must come after the base .coast-age-list rules to win the cascade. */
+@media (max-width: 767px) {
+  .coast-age-menu { position: static; }
+  .coast-age-list { left: 0; right: 0; min-width: 0; max-height: 52vh; }
+  .coast-age-menu > summary { min-height: 44px; }
+  .coast-age-list a { min-height: 44px; }
+}
 
 /* ── Customer account: sign in / sign up / account ────────────────────────── */
 .coast-auth-page { display: flex; justify-content: center; padding: 40px 0 64px; }
