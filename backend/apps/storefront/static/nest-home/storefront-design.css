@@ -215,12 +215,27 @@ a.nest-home-product.is-soldout .nest-home-price,
 .coast-muted-note { display: block; font-size: 11px; color: var(--shop-muted); margin-top: 6px; }
 .coast-account-details { margin-bottom: 18px; }
 
+/* ── Mobile tap-target fixes (audit on Galaxy S22, 360px viewport) ───────── */
+@media (max-width: 767px) {
+  /* Auth pages: text links were 17px tall — give them a full tap area */
+  .coast-auth-alt a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 6px 2px;
+  }
+  /* Top strip links were 36px tall */
+  .shop-strip a { min-height: 44px; display: inline-flex; align-items: center; }
+  /* Footer wordmark link */
+  .shop-footer a[href="/"] { min-height: 44px; display: inline-flex; align-items: center; }
+}
+
 /* ── Password visibility toggle (static/storefront/pw-toggle.js) ─────────── */
 .pw-wrap { position: relative; display: block; }
 .pw-wrap .coast-input { padding-right: 46px; }
 .pw-toggle {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;
   border: 0; background: transparent; color: var(--shop-muted); cursor: pointer; border-radius: 8px;
 }
 .pw-toggle:hover { color: var(--shop-ink-dark); background: var(--shop-blue); }
