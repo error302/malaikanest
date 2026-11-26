@@ -212,7 +212,8 @@
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
           <!-- Option 1: M-Pesa STK Push -->
-          <label class="card-elevated" style="padding: 20px; cursor: pointer; display: flex; flex-direction: column; gap: 12px; transition: all var(--transition-base);"
+          <div class="card-elevated" style="padding: 20px; cursor: pointer; display: flex; flex-direction: column; gap: 12px; transition: all var(--transition-base);"
+                 onclick="var r=this.querySelector('input[type=radio]'); if(!r.checked){r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true}));}"
                  onmouseover="this.style.borderColor='var(--coast-leaf)'; this.style.boxShadow='var(--shadow-md)'"
                  onmouseout="this.style.borderColor='var(--coast-line)'; this.style.boxShadow='var(--shadow-sm)'">
             <input type="radio" name="payment_method" value="mpesa" aria-label="M-Pesa STK Push" checked onchange="document.getElementById('mpesaPhoneInput').classList.remove('hidden')" style="position: absolute; opacity: 0; pointer-events: none;">
@@ -245,7 +246,7 @@
               >
               <p style="font-size: .75rem; color: var(--coast-muted);">Leave empty to use your contact phone number entered above.</p>
             </div>
-          </label>
+          </div>
 
           <!-- Option 2: Buy Goods Till -->
           <label class="card-elevated" style="padding: 20px; cursor: pointer; transition: all var(--transition-base);"
@@ -268,27 +269,7 @@
             </div>
           </label>
 
-          <!-- Option 3: Cash on Delivery -->
-          <label class="card-elevated" style="padding: 20px; cursor: pointer; transition: all var(--transition-base);"
-                 onmouseover="this.style.borderColor='var(--coast-leaf)'; this.style.boxShadow='var(--shadow-md)'"
-                 onmouseout="this.style.borderColor='var(--coast-line)'; this.style.boxShadow='var(--shadow-sm)'">
-            <input type="radio" name="payment_method" value="cod" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" style="position: absolute; opacity: 0; pointer-events: none;">
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
-              <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                <div style="width: 24px; height: 24px; border: 2px solid var(--coast-line); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;">
-                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--coast-leaf); opacity: 0; transition: opacity var(--transition-fast);"></div>
-                </div>
-                <div>
-                  <div style="font-size: .95rem; font-weight: 700; color: var(--coast-deep); display: flex; align-items: center; gap: 8px;">
-                    <span>Cash on Delivery</span>
-                    <span class="badge badge-accent">Pay on Delivery</span>
-                  </div>
-                  <p style="font-size: .8rem; color: var(--coast-muted); margin-top: 4px; line-height: 1.5;">Pay cash or M-Pesa to the delivery rider when your order arrives.</p>
-                </div>
-              </div>
-              <span class="badge" style="background: var(--coast-mango); color: var(--coast-ink); font-size: .65rem;">COD</span>
-            </div>
-          </label>
+          <!-- Cash on Delivery is intentionally NOT offered: pay first, then dispatch. -->
 
           <!-- Option 4: PayPal (Temporarily Disabled for Maintenance) -->
           <div class="card-elevated" style="padding: 20px; background: #fafcf9; border-color: var(--coast-line); opacity: 0.6; cursor: not-allowed;">
@@ -465,22 +446,22 @@
     radio.addEventListener('change', update);
   });
 
-  // Radio button visual state
-  document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
-    radio.addEventListener('change', function() {
-      document.querySelectorAll('input[name="payment_method"]').forEach(function(r) {
-        var card = r.closest('.card-elevated');
-        if (card) {
-          var circle = card.querySelector('div[style*="border-radius: 50%"]');
-          if (circle) {
-            var dot = circle.querySelector('div');
-            if (dot) dot.style.opacity = r.checked ? '1' : '0';
-            circle.style.borderColor = r.checked ? 'var(--coast-leaf)' : 'var(--coast-line)';
-          }
-        }
-      });
+  // Radio button visual state — including the method that is checked on load.
+  function syncPaymentVisual() {
+    document.querySelectorAll('input[name="payment_method"]').forEach(function (r) {
+      var card = r.closest('.card-elevated');
+      if (!card) return;
+      var circle = card.querySelector('div[style*="border-radius: 50%"]');
+      if (!circle) return;
+      var dot = circle.querySelector('div');
+      if (dot) dot.style.opacity = r.checked ? '1' : '0';
+      circle.style.borderColor = r.checked ? 'var(--coast-leaf)' : 'var(--coast-line)';
     });
+  }
+  document.querySelectorAll('input[name="payment_method"]').forEach(function (radio) {
+    radio.addEventListener('change', syncPaymentVisual);
   });
+  syncPaymentVisual();
 
   var pickupMap = null;
   function initPickupMap() {

@@ -173,22 +173,42 @@
             </div>
           </article>
         {% empty %}
-          <div class="coast-empty" style="grid-column: 1 / -1;">
-            <div>
+          {% if no_search_matches %}
+            <div class="coast-empty" style="grid-column: 1 / -1;">
+              <div>
+                <h2>No items match “{{ search_query }}”</h2>
+                <p>Here are the closest pieces we have. Try a shorter search like “romper” or “dress”.</p>
+              </div>
+              <a class="coast-button coast-button-outline" href="{% url 'storefront:product_list' %}">See all clothes</a>
+            </div>
+            {% if search_suggestions %}
+              <div style="grid-column: 1 / -1; margin-top: 8px;">
+                <h3 style="font-family: var(--shop-heading); font-size: 1.25rem; margin: 0 0 12px;">You might like these</h3>
+                <div class="boutique-product-grid">
+                  {% for product in search_suggestions %}
+                    {% include "storefront/_product_card.html" with product=product %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          {% else %}
+            <div class="coast-empty" style="grid-column: 1 / -1;">
+              <div>
+                {% if search_query or selected_category or selected_age or selected_size or selected_condition %}
+                  <h2>No clothes match these filters</h2>
+                  <p>Try another size or browse all clothes.</p>
+                {% else %}
+                  <h2>Our online shelves are filling up</h2>
+                  <p>Ask us what's available in Likoni while we add clothes to the online shop.</p>
+                {% endif %}
+              </div>
               {% if search_query or selected_category or selected_age or selected_size or selected_condition %}
-                <h2>No clothes match these filters</h2>
-                <p>Try another size or browse all clothes.</p>
+                <a class="coast-button" href="{% url 'storefront:product_list' %}">Clear filters</a>
               {% else %}
-                <h2>Our online shelves are filling up</h2>
-                <p>Ask us what's available in Likoni while we add clothes to the online shop.</p>
+                <a class="coast-button coast-button-mango" href="{{ whatsapp_url }}">Ask on WhatsApp</a>
               {% endif %}
             </div>
-            {% if search_query or selected_category or selected_age or selected_size or selected_condition %}
-              <a class="coast-button" href="{% url 'storefront:product_list' %}">Clear filters</a>
-            {% else %}
-              <a class="coast-button coast-button-mango" href="{{ whatsapp_url }}">Ask on WhatsApp</a>
-            {% endif %}
-          </div>
+          {% endif %}
         {% endfor %}
       </div>
 

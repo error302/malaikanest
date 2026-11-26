@@ -1,7 +1,8 @@
 
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path, include, reverse_lazy
+from django.urls import path, include, reverse_lazy, re_path
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from apps.accounts.staff_access import StorePasswordResetConfirmView, StorePasswordResetView
@@ -58,6 +59,12 @@ urlpatterns = [
     path(f'{admin_prefix}/password-ready/', auth_views.PasswordResetCompleteView.as_view(
         extra_context={"login_url": reverse_lazy("admin-dashboard")},
     ), name='password_reset_complete'),
+
+    # ONE visible dashboard. The classic admin root redirects to the SPA;
+    # its /login/, /password-reset/... and model URLs stay reachable as the
+    # staff auth provider and emergency fallback (do not prefix-redirect them).
+    re_path(rf'^{admin_prefix}/$', RedirectView.as_view(url='/manage/dashboard/', permanent=False),
+            name='classic-admin-root'),
 
     # Admin
     path(f'{admin_prefix}/', admin.site.urls),

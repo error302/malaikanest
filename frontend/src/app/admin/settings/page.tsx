@@ -22,7 +22,7 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      showToast('Settings are managed via Django admin (/manage-store/) and .env — this page is a preview only.', 'info');
+      showToast('Settings and hero banners are managed in the store manager: /manage/dashboard/#settings — this page is a preview only.', 'info');
       await new Promise((r) => setTimeout(r, 400));
     } catch {
       showToast('Failed to save settings', 'error');

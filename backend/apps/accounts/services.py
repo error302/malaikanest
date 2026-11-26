@@ -216,9 +216,8 @@ class AuthService:
         if not token or not new_password:
             raise ValueError("Token and new password are required")
 
-        try:
-            user = User.objects.get(password_reset_token=token, is_staff=False)
-        except User.DoesNotExist:
+        user = User.objects.filter(password_reset_token=token, is_staff=False).order_by('pk').first()
+        if user is None:
             raise ValueError("Invalid token")
 
         expires_at = _ensure_aware(user.password_reset_expires)

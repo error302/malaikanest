@@ -155,11 +155,12 @@
                 value="1" 
                 min="1" 
                 max="{{ product.shop_stock }}"
+                aria-label="Quantity"
                 inputmode="numeric"
               >
               <button 
                 type="button" 
-                onclick="let q = document.getElementById('qtyInput'); q.value++;"
+                onclick="let q = document.getElementById('qtyInput'); if (Number(q.value) < Number(q.max)) q.value++;"
                 aria-label="Increase quantity"
               >+</button>
             </div>
@@ -178,7 +179,9 @@
             </div>
           </div>
 
-          <!-- Add to Cart CTA -->
+        </form>
+
+          <!-- Add to Cart CTA (outside the form; buttons use form="pdp-add-form") -->
           <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 8px;">
             <button 
               type="submit" 
@@ -217,7 +220,6 @@
               <span>Order via WhatsApp</span>
             </a>
           </div>
-        </form>
 
         <!-- Mobile sticky CTA (sits comfortably above floating bottom dock) -->
         <div class="nest-sticky-cta">

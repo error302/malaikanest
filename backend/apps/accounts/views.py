@@ -260,6 +260,12 @@ class RegisterView(generics.CreateAPIView):
 
         user, email_sent = AuthService.register_user(request.data, ip, ua)
 
+        # Duplicate signup is deliberately suppressed (anti-enumeration): the
+        # service returns a message dict instead of a User. Return the same
+        # generic 201 rather than dereferencing .id and throwing a 500.
+        if isinstance(user, dict):
+            return Response(user, status=status.HTTP_201_CREATED)
+
         response_data = {
             "message": "Registration successful. Please check your email to verify your account.",
             "user_id": user.id,
@@ -551,6 +557,12 @@ def google_auth_view(request):
             log_auth_event("google_login", email=google_email)
 
         refresh = RefreshToken.for_user(user)
+        # Match the claims the normal login/rotation path sets, otherwise the
+        # token_version check revokes Google sessions after any reset.
+        refresh['token_version'] = user.token_version
+        refresh['email'] = user.email
+        refresh['role'] = user.role
+        refresh['is_admin'] = user.is_staff
         access = str(refresh.access_token)
 
         resp = Response({"access": access, "user": UserSerializer(user).data})

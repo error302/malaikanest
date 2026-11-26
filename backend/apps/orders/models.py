@@ -297,7 +297,6 @@ class Order(BaseModel):
         ('pesapal', 'Pesapal'),
         ('card', 'Credit/Debit Card'),
         ('bank', 'Bank Transfer'),
-        ('cash', 'Cash on Delivery'),
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)

@@ -67,23 +67,6 @@
     {% endfor %}
   </div>
 </section>
-{% else %}
-<section id="categories" class="coast-page shop-frame" aria-labelledby="shop-by-category" aria-hidden="true">
-  <header class="nest-section-heading" style="margin-bottom: 24px;">
-    <h2 id="shop-by-category" class="skeleton skeleton-title" aria-hidden="true"></h2>
-    <div class="skeleton skeleton-text" style="width: 40%;" aria-hidden="true"></div>
-  </header>
-  <div class="nest-category-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px;">
-    {% for i in "123456" %}
-      <a href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none;"
-         class="category-card card-elevated"
-         style="display: flex; flex-direction: column; align-items: center; padding: 24px 16px; text-align: center; gap: 12px;">
-        <div class="skeleton skeleton-category" aria-hidden="true"></div>
-        <span class="skeleton skeleton-text" style="width: 80px; display: block;" aria-hidden="true"></span>
-      </a>
-    {% endfor %}
-  </div>
-</section>
 {% endif %}
 
 <!-- Featured Products -->

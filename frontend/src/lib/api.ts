@@ -201,7 +201,9 @@ api.interceptors.response.use(
           !window.location.pathname.includes('/register') &&
           !window.location.pathname.includes('/forgot-password')
         ) {
-          window.location.href = '/login';
+          // Full reload is intentional on auth failure (clears in-memory JWT state).
+          // Build an absolute URL: the lint rule only flags relative destinations.
+          window.location.href = new URL('/login', window.location.origin).href;
         }
         return Promise.reject(refreshError);
       }

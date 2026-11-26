@@ -187,6 +187,11 @@ REST_FRAMEWORK = {
         # The class also pins rate="10/hour", but keep the scope defined so the
         # throttle can never raise ImproperlyConfigured.
         "password_reset_confirm": "10/hour",
+        # Each of these throttles also pins its rate in code; keep the scopes
+        # declared here so a future refactor can't raise ImproperlyConfigured.
+        "register": "2/hour",
+        "resend_verification": "3/hour",
+        "contact_form": "5/hour",
         "data_export": "1/day",
         "cart": "60/minute",  # Cart operations
         "order": "20/minute",  # Order operations

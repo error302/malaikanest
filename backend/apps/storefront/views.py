@@ -1,5 +1,10 @@
+import re
+from difflib import SequenceMatcher
+from functools import reduce
+from operator import and_, or_
+
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 
@@ -12,6 +17,56 @@ from .views_wishlist import get_wishlist_ids
 
 FREE_SHIPPING_THRESHOLD = Decimal("10000.00")
 PUBLIC_STATUS = "published"
+
+
+def _query_tokens(query):
+    return [t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) > 1]
+
+
+def search_products(queryset, all_products, query):
+    """Rank direct matches; if there are none, return close alternatives.
+
+    Returns (matched_queryset, exact_hits, suggestions). The template shows a
+    clear "no items match" message plus the suggestions instead of a dead end.
+    """
+    tokens = _query_tokens(query)
+    if not tokens:
+        return queryset, True, []
+
+    name_any = reduce(or_, (Q(name__icontains=t) for t in tokens))
+    name_all = reduce(and_, (Q(name__icontains=t) for t in tokens))
+    text_any = reduce(
+        or_,
+        (Q(name__icontains=t) | Q(description__icontains=t)
+         | Q(category__name__icontains=t) | Q(category__slug__icontains=t)
+         for t in tokens),
+    )
+    rank = Case(
+        When(name__iexact=query, then=Value(5)),
+        When(name_all, then=Value(4)),
+        When(name__icontains=query, then=Value(3)),
+        When(name_any, then=Value(2)),
+        default=Value(1),
+        output_field=IntegerField(),
+    )
+    matches = queryset.filter(text_any).annotate(_search_rank=rank)
+    if matches.exists():
+        return matches, True, []
+
+    # No direct hit: score a bounded slice of the full catalogue by name
+    # similarity + shared tokens, so the customer still gets useful results.
+    needle = query.lower()
+    scored = []
+    for product in all_products.select_related('category').only(
+        'id', 'name', 'slug', 'category__name'
+    )[:400]:
+        label = f"{product.name} {product.category.name if product.category_id else ''}".lower()
+        score = SequenceMatcher(None, needle, label).ratio()
+        score += 0.12 * sum(1 for t in tokens if t in label)
+        if score >= 0.28:
+            scored.append((score, product))
+    scored.sort(key=lambda item: (-item[0], item[1].name))
+    return queryset.none(), False, [product for _, product in scored[:8]]
 
 
 class HomeView(View):
@@ -61,9 +116,9 @@ class HomeView(View):
 
 class ProductListView(View):
     def get(self, request, category_slug=None):
+        all_products = Product.objects.filter(is_active=True, status=PUBLIC_STATUS)
         queryset = (
-            Product.objects.filter(is_active=True, status=PUBLIC_STATUS)
-            .prefetch_related("images")
+            all_products.prefetch_related("images")
             .select_related("category")
         )
 
@@ -85,12 +140,13 @@ class ProductListView(View):
             queryset = queryset.filter(condition=condition_param)
 
         query = request.GET.get("q", "").strip()
+        search_suggestions = []
+        exact_search_hits = True
         if query:
-            queryset = queryset.filter(
-                Q(name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(category__name__icontains=query)
+            queryset, exact_search_hits, suggestions = search_products(
+                queryset, all_products, query
             )
+            search_suggestions = [prepare_product(p) for p in suggestions]
 
         sort = request.GET.get("sort", "-created_at")
         size_param = request.GET.get('size', '').strip()
@@ -98,13 +154,16 @@ class ProductListView(View):
             queryset = filter_size(queryset, size_param)
         queryset = shopping_queryset(queryset)
         if sort == "price_asc":
-            queryset = queryset.order_by("price")
+            ordering = ["price"]
         elif sort == "price_desc":
-            queryset = queryset.order_by("-price")
+            ordering = ["-price"]
         elif sort == "name":
-            queryset = queryset.order_by("name")
+            ordering = ["name"]
         else:
-            queryset = queryset.order_by("-created_at")
+            ordering = ["-created_at"]
+        if query and exact_search_hits:
+            ordering.insert(0, "-_search_rank")
+        queryset = queryset.order_by(*ordering)
 
         paginator = Paginator(queryset, 16)
         page_number = request.GET.get("page", 1)
@@ -122,6 +181,8 @@ class ProductListView(View):
             "selected_category": selected_category,
             "categories": categories,
             "search_query": query,
+            "no_search_matches": bool(query) and not exact_search_hits,
+            "search_suggestions": search_suggestions,
             "selected_age": age_param,
             "selected_sort": sort,
             "selected_condition": condition_param,

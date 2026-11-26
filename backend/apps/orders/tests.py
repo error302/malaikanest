@@ -140,6 +140,8 @@ class OrderServiceCancelTest(TestCase):
             price=Decimal("50"),
             category=self.cat,
             description="x",
+            status="published",
+            is_active=True,
         )
         Inventory.objects.create(product=self.product, quantity=10)
         self.cart = Cart.objects.create(user=self.user)

@@ -18,8 +18,12 @@ def is_authorized_admin(email: str) -> bool:
     """Check if an email is authorized for admin access."""
     authorized = getattr(settings, 'ADMIN_AUTHORIZED_EMAILS', [])
     if not authorized:
-        # In development, allow all staff if no authorized emails configured
-        return not getattr(settings, 'PRODUCTION', False)
+        # No allowlist configured: allow staff, but say so loudly. The old code
+        # checked settings.PRODUCTION, which is never defined — that silently
+        # took the "development" branch in production too. Set
+        # ADMIN_AUTHORIZED_EMAILS to actually enforce a second gate.
+        logger.warning("ADMIN_AUTHORIZED_EMAILS is not configured; staff access is allowed without the email allowlist")
+        return True
     return email.lower() in [e.lower() for e in authorized]
 
 
