@@ -52,7 +52,7 @@
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start;">
+  <div class="boutique-catalog-body">
     <aside class="boutique-filter-panel" aria-label="Product filters" style="position: sticky; top: 100px;">
       <form method="get" class="nest-size-filter">
         {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
@@ -117,7 +117,7 @@
       {% if selected_condition == 'mtumba' %}
         <p style="margin-bottom: 20px; font-size: .9rem; color: var(--coast-muted); padding: 12px 16px; background: var(--coast-lilac); border-radius: var(--radius-md); border: 1px solid var(--coast-line);">Browse second-hand clothes by size. Availability varies by item.</p>
       {% endif %}
-      <div class="boutique-product-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px;">
+      <div class="boutique-product-grid">
         {% for product in products %}
           <article class="nest-product-card card-elevated{% if product.shop_stock <= 0 %} is-soldout{% endif %}" style="display: flex; flex-direction: column; overflow: hidden;">
             <a href="{% url 'storefront:product_detail' slug=product.slug %}" class="block relative aspect-square overflow-hidden" style="background: var(--coast-mint);">
