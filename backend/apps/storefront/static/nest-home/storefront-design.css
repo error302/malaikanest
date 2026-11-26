@@ -147,7 +147,7 @@ main :is([class~="border-[#EADBCE]"],[class~="border-[#8B6914]"]) { border-color
 .dock-item.active { color: var(--shop-ink-dark) !important; background: transparent !important; box-shadow: none !important; text-decoration: underline; text-underline-offset: 3px; }
 .dock-item:focus-visible { outline: 3px solid #48668c; outline-offset: -3px; }
 /* Four items, evenly spread (Help was removed as redundant with the footer/WhatsApp links). */
-.dock-track { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; align-items: center; }
+.dock-track { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: center; }
 .dock-item { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 44px; padding: 4px 2px; }
 
 @media (max-width: 960px) {
