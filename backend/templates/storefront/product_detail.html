@@ -106,7 +106,7 @@
         </div>
 
         <!-- Size Guide -->
-        <details class="nest-fit" id="size-guide" {% if product.size_guide %}open{% endif %} style="margin-top: 24px; background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
+        <details class="nest-fit nest-pdp-block" id="size-guide" {% if product.size_guide %}open{% endif %} style="background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
           <summary style="font-weight: 700; color: var(--coast-deep); cursor: pointer; min-height: 48px; display: flex; align-items: center; list-style: none;">Measurements & fit</summary>
           <div class="nest-fit-content" style="margin-top: 16px;">
             {% if product.size_guide %}
@@ -120,7 +120,7 @@
         </details>
 
         <!-- Add to Cart Form -->
-        <form action="/cart/add/" method="post" style="display: flex; flex-direction: column; gap: 24px; margin-top: 24px;" id="pdp-add-form">
+        <form action="/cart/add/" method="post" class="nest-pdp-form" style="display: flex; flex-direction: column; gap: 24px;" id="pdp-add-form">
           {% csrf_token %}
           <input type="hidden" name="product_id" value="{{ product.id }}">
 
@@ -182,10 +182,10 @@
           <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 8px;">
             <button 
               type="submit" 
+              form="pdp-add-form"
               {% if product.shop_stock <= 0 %}disabled{% endif %}
               class="coast-button coast-button-mango"
-              style="width: 100%; min-height: 56px; font-size: 1rem;"
-              disabled={product.shop_stock <= 0}
+              style="width: 100%; min-height: 50px; font-size: 1rem;"
             >
               <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; height: 20px;">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
@@ -209,8 +209,7 @@
               href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="coast-button"
-              style="background: #25d366; color: white; width: 100%; min-height: 56px; font-size: 1rem;"
+              class="coast-button nest-pdp-wa"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width: 20px; height: 20px;">
                 <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.981.534 1.777.828 2.796.828 3.182 0 5.768-2.587 5.768-5.766.001-3.18-2.585-5.765-5.768-5.765zm0-2c4.29 0 7.769 3.477 7.77 7.766 0 4.29-3.479 7.768-7.77 7.768-1.323 0-2.434-.33-3.454-.897l-4.577 1.2 1.221-4.464c-.672-1.09-1.03-2.348-1.03-3.607.001-4.289 3.48-7.766 7.77-7.766z"/>
@@ -227,7 +226,7 @@
             form="pdp-add-form"
             {% if product.shop_stock <= 0 %}disabled{% endif %}
             class="coast-button coast-button-mango"
-            style="flex: 2; min-height: 52px;"
+            style="flex: 2; min-height: 44px;"
           >
             {% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Bag · KES {{ product.price|floatformat:"0" }}{% endif %}
           </button>
@@ -236,7 +235,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="coast-button"
-            style="background: #25d366; color: white; flex: 1; min-height: 52px;"
+            style="background: #25d366; color: white; flex: 1; min-height: 44px;"
             aria-label="Order via WhatsApp"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width: 18px; height: 18px;">
@@ -248,7 +247,7 @@
 
         <!-- Description -->
         {% if product.description %}
-          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--coast-line);">
+          <div class="nest-pdp-section">
             <h3 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Product Details</h3>
             <div style="font-size: .9rem; color: var(--coast-muted); line-height: 1.7;">
               {{ product.description|linebreaks }}
@@ -258,7 +257,7 @@
 
         <!-- What's Included -->
         {% if product.whats_included %}
-          <div style="margin-top: 24px;">
+          <div class="nest-pdp-section">
             <h3 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">What's Included</h3>
             <div style="font-size: .9rem; color: var(--coast-muted); line-height: 1.7;">
               {{ product.whats_included|linebreaks }}
@@ -268,7 +267,7 @@
 
         <!-- Fabric & Care -->
         {% if product.fabric %}
-          <div style="margin-top: 24px;">
+          <div class="nest-pdp-section">
             <h3 style="font-family: var(--coast-heading); font-size: 1.25rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px;">Fabric & Care</h3>
             <div style="font-size: .9rem; color: var(--coast-muted); line-height: 1.7;">
               {{ product.fabric|linebreaks }}
@@ -277,9 +276,9 @@
         {% endif %}
 
         <!-- Kenya Delivery, Returns & Payment -->
-        <div style="margin-top: 32px; padding: 24px; border-radius: var(--radius-xl); background: white; border: 1px solid var(--coast-line); box-shadow: var(--shadow-xs);">
-          <p style="font-weight: 700; color: var(--coast-deep); font-size: .9rem; margin-bottom: 12px;">Kenya Delivery & Returns:</p>
-          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: .85rem; color: var(--coast-muted); line-height: 1.6;">
+        <div class="nest-pdp-shipping">
+          <p style="font-weight: 700; color: var(--coast-deep); font-size: .9rem; margin-bottom: 10px;">Kenya Delivery & Returns:</p>
+          <ul>
             <li>• <strong style="color: var(--coast-deep);">Mombasa:</strong> Same-day or next-day — KES {{ mombasa_fee|floatformat:"0" }}</li>
             <li>• <strong style="color: var(--coast-deep);">Nairobi:</strong> 1–2 business days — KES {{ nairobi_fee|floatformat:"0" }}</li>
             <li>• <strong style="color: var(--coast-deep);">Upcountry:</strong> 2–3 business days — KES {{ upcountry_fee|floatformat:"0" }}</li>
@@ -294,7 +293,7 @@
 
   <!-- Related Products -->
   {% if related_products.exists %}
-    <div style="margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--coast-line);">
+    <div class="nest-pdp-related">
       <h2 style="font-family: var(--coast-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: var(--coast-deep); margin-bottom: 24px;">You May Also Like</h2>
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px;">
         {% for rel in related_products %}

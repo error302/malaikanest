@@ -23,7 +23,7 @@ class HomeView(View):
             .prefetch_related("images").select_related("category")
             .order_by("-featured", "-created_at", "pk")
         )
-        featured_products = [prepare_product(product) for product in products[:12]]
+        featured_products = [prepare_product(product) for product in products[:8]]
 
         from apps.core.models import SiteSettings
         from .context_processors import AGE_GROUPS
@@ -41,7 +41,7 @@ class HomeView(View):
 
         category_rows = []
         for cat in categories:
-            items = products_by_root.get(cat.id, [])[:12]
+            items = products_by_root.get(cat.id, [])[:6]
             if items:
                 category_rows.append(
                     {"category": cat, "products": [prepare_product(p) for p in items]}

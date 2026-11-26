@@ -93,7 +93,7 @@
     <h2 id="on-the-rails">From the shop</h2>
     <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View all clothes</a>
   </header>
-  <div class="nest-home-products coast-hscroll" role="list">
+  <div class="nest-home-products" role="list">
     {% for product in featured_products %}
       {% include "storefront/_product_card.html" with product=product %}
     {% endfor %}
@@ -108,7 +108,7 @@
     <h2 id="row-{{ row.category.slug }}">{{ row.category.name }}</h2>
     <a class="coast-text-link" href="{% url 'storefront:category_detail' category_slug=row.category.slug %}">View all</a>
   </header>
-  <div class="nest-home-products coast-hscroll" role="list">
+  <div class="nest-home-products" role="list">
     {% for product in row.products %}
       {% include "storefront/_product_card.html" with product=product %}
     {% endfor %}
@@ -116,23 +116,16 @@
 </section>
 {% endfor %}
 {% if not featured_products and not category_rows %}
-<section class="coast-page shop-frame" aria-labelledby="shop-stock" aria-hidden="true">
-  <header class="nest-section-heading" style="margin-bottom: 24px;">
-    <h2 id="on-the-rails" class="skeleton skeleton-title" aria-hidden="true"></h2>
-    <div class="skeleton skeleton-text" style="width: 40%;" aria-hidden="true"></div>
+<section class="coast-page shop-frame" aria-labelledby="shop-stock">
+  <header class="nest-section-heading">
+    <h2 id="shop-stock">From the shop</h2>
   </header>
-  <div class="nest-home-products coast-hscroll">
-    {% for i in "1234" %}
-      <a class="nest-home-product card-elevated" href="#" aria-hidden="true" tabindex="-1" style="pointer-events: none; display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-lg);">
-        <div class="nest-home-product-photo">
-          <div class="skeleton skeleton-image" aria-hidden="true" style="aspect-ratio: 4/5;"></div>
-        </div>
-        <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
-          <h3 class="skeleton skeleton-title" aria-hidden="true"></h3>
-          <p class="skeleton skeleton-text" style="width: 60%;" aria-hidden="true"></p>
-        </div>
-      </a>
-    {% endfor %}
+  <div class="coast-empty nest-home-empty">
+    <div>
+      <h2>Fresh pieces are on their way</h2>
+      <p>Our rails are being restocked. Message us on WhatsApp and we'll help you pick the right size while you wait.</p>
+      <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="coast-button coast-button-mango">Ask us what's arriving</a>
+    </div>
   </div>
 </section>
 {% endif %}
