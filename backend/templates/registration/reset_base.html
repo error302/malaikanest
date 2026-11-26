@@ -149,6 +149,15 @@
       font-weight: 600;
     }
     .back-link:hover { text-decoration: underline; }
+    .pw-wrap { position: relative; display: block; }
+    .pw-wrap input { padding-right: 46px !important; }
+    .pw-toggle {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+      border: 0; background: transparent; color: var(--muted); cursor: pointer; border-radius: 8px;
+    }
+    .pw-toggle:hover { color: var(--primary); background: #e8f0eb; }
+    .pw-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .security-badge {
       margin-top: 26px;
       padding-top: 18px;
@@ -173,12 +182,7 @@
     {% block body %}{% endblock %}
 
     {% block footer_links %}{% endblock %}
-
-    <div class="security-badge">
-      <span>🔒 TLS 1.3 256-bit Encrypted</span>
-      <span>•</span>
-      <span>Protected Session</span>
-    </div>
   </div>
+  <script src="{% static 'storefront/pw-toggle.js' %}" defer></script>
 </body>
 </html>

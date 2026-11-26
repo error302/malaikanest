@@ -53,7 +53,7 @@ class AuthService:
     @staticmethod
     def _enqueue_verification_email(email, token, first_name):
         """Dispatch the verification email via Celery, falling back to synchronous."""
-        verify_url = _build_frontend_url("verify-email", token=token, email=email)
+        verify_url = _build_frontend_url("verify-email/", token=token, email=email)
 
         try:
             from .tasks import send_verification_email_task
@@ -194,7 +194,9 @@ class AuthService:
         user.password_reset_expires = timezone.now() + timezone.timedelta(minutes=15)
         user.save()
 
-        reset_url = _build_frontend_url("reset-password", token=token)
+        # Server-rendered reset page (the Next.js route this used to point at
+        # is not part of the lean production deployment).
+        reset_url = _build_frontend_url("account/reset/", token=token)
 
         from apps.core.email_service import EmailService
         ok, msg = EmailService.send_password_reset(email, reset_url, code=token)

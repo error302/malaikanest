@@ -33,7 +33,8 @@
     </form>
 
     <p class="coast-auth-alt">New here? <a href="{% url 'storefront:signup' %}">Create an account</a></p>
-    <p class="coast-auth-alt">Forgot your password? <a href="{{ whatsapp_url }}">WhatsApp us</a> and we'll reset it.</p>
+    <p class="coast-auth-alt">Forgot your password? <a href="{% url 'storefront:forgot_password' %}">Reset it yourself — no need to contact us</a></p>
   </div>
 </section>
+<script src="{% static 'storefront/pw-toggle.js' %}" defer></script>
 {% endblock %}

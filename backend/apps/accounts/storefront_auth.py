@@ -282,3 +282,138 @@ class AccountHomeView(LoginRequiredMixin, View):
             {"phone_form": form},
             status=400 if form.errors else 200,
         )
+
+
+# ── Customer self-service password reset ────────────────────────────────────
+# Customers reset their own password with the emailed 6-digit code or link —
+# no support contact needed. Backed by the same AuthService the API uses
+# (6-digit code, 15-minute expiry, single use), with cache-based throttles so
+# the short code can't be brute-forced from these pages either.
+
+
+def _throttled(request, bucket: str, limit: int, seconds: int) -> bool:
+    """True when this client IP has exhausted `limit` hits in the window."""
+    from apps.core.utils import get_client_ip
+
+    key = f"{bucket}:" + hashlib.sha256(get_client_ip(request).encode()).hexdigest()
+    cache.add(key, 0, seconds)
+    return cache.incr(key) > limit
+
+
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField(
+        label="Email",
+        max_length=254,
+        widget=forms.EmailInput(attrs={"class": _INPUT_CLASS, "autocomplete": "email", "inputmode": "email"}),
+    )
+
+
+class ForgotPasswordView(View):
+    """Ask for a reset email. Generic success path (no account enumeration)."""
+
+    template_name = "storefront/forgot_password.html"
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect("storefront:account")
+        return render(request, self.template_name, {"form": ForgotPasswordForm()})
+
+    def post(self, request):
+        if _throttled(request, "customer-pwreset", limit=5, seconds=3600):
+            return render(
+                request,
+                self.template_name,
+                {"form": ForgotPasswordForm(), "throttled": True},
+                status=429,
+            )
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            from .services import AuthService
+
+            try:
+                AuthService.request_password_reset(form.cleaned_data["email"])
+            except RuntimeError as exc:
+                form.add_error(None, str(exc))
+            else:
+                return render(request, self.template_name, {"sent": True, "email": form.cleaned_data["email"]})
+        return render(request, self.template_name, {"form": form}, status=400)
+
+
+class ResetPasswordForm(forms.Form):
+    token = forms.CharField(widget=forms.HiddenInput())
+    new_password1 = forms.CharField(
+        label="New password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"class": _INPUT_CLASS, "autocomplete": "new-password"}),
+    )
+    new_password2 = forms.CharField(
+        label="Confirm new password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"class": _INPUT_CLASS, "autocomplete": "new-password"}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        pw1 = cleaned.get("new_password1") or ""
+        pw2 = cleaned.get("new_password2") or ""
+        if pw1 and pw2 and pw1 != pw2:
+            self.add_error("new_password2", "Passwords do not match.")
+        elif pw1 and len(pw1) < 8:
+            self.add_error("new_password1", "Password must be at least 8 characters long.")
+        return cleaned
+
+
+class ResetPasswordView(View):
+    """Set a new password using the emailed 6-digit code (or emailed link)."""
+
+    template_name = "storefront/reset_password.html"
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect("storefront:account")
+        return render(request, self.template_name, {"form": ResetPasswordForm(initial={"token": request.GET.get("token", "")})})
+
+    def post(self, request):
+        if _throttled(request, "customer-pwconfirm", limit=10, seconds=3600):
+            return render(
+                request,
+                self.template_name,
+                {"form": ResetPasswordForm(request.POST), "throttled": True},
+                status=429,
+            )
+        form = ResetPasswordForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {"form": form}, status=400)
+
+        from .services import AuthService
+
+        try:
+            AuthService.confirm_password_reset(form.cleaned_data["token"], form.cleaned_data["new_password1"])
+        except ValueError as exc:
+            form.add_error("token", str(exc))
+            return render(request, self.template_name, {"form": form}, status=400)
+
+        messages.success(request, "Password updated. Sign in with your new password.")
+        return redirect("storefront:signin")
+
+
+class VerifyEmailView(View):
+    """Landing page for the verification link in welcome emails."""
+
+    template_name = "storefront/verify_email.html"
+
+    def get(self, request):
+        token = request.GET.get("token", "")
+        verified = False
+        error = None
+        if token:
+            from .services import AuthService
+
+            try:
+                AuthService.verify_email(token)
+                verified = True
+            except ValueError as exc:
+                error = str(exc)
+        else:
+            error = "This verification link is missing its token."
+        return render(request, self.template_name, {"verified": verified, "error": error})

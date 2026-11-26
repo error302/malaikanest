@@ -1,44 +1,54 @@
-<style>
+{% load static %}<style>
+/* Malaika Nest admin theme — mirrors the storefront design system:
+   ivory paper (#fffdfa), deep navy ink (#1b304a), blue tint (#e5edf6),
+   butter accents (#fcf0d9), mango focus (#f2a03d), Fraunces headings. */
+@font-face {
+  font-family: 'Fraunces';
+  src: url("{% static 'nest-home/fraunces-latin.woff2' %}") format('woff2');
+  font-weight: 300 900;
+  font-display: swap;
+}
 :root, html[data-theme="light"] {
   color-scheme:light;
-  --primary:#28594f; --secondary:#234b43; --accent:#f2d6c5;
-  --primary-fg:#fff; --body-fg:#30251f; --body-bg:#fcfaf5;
-  --body-quiet-color:#645e57; --body-loud-color:#30251f;
-  --header-color:#fff; --header-branding-color:#fff; --header-bg:#28594f;
-  --header-link-color:#fff; --breadcrumbs-bg:#e8f0eb; --breadcrumbs-fg:#30251f;
-  --breadcrumbs-link-fg:#28594f; --link-fg:#28594f; --link-hover-color:#183d35;
-  --link-selected-fg:#183d35; --hairline-color:#e3e5dd; --border-color:#d2d9d0;
-  --darkened-bg:#f0f3ed; --selected-bg:#e8f0eb; --selected-row:#eff5ec;
-  --button-bg:#28594f; --button-hover-bg:#183d35;
-  --default-button-bg:#28594f; --default-button-hover-bg:#183d35;
-  --close-button-bg:#645e57; --close-button-hover-bg:#30251f;
+  --primary:#253c59; --secondary:#1b304a; --accent:#fcf0d9;
+  --primary-fg:#fff; --body-fg:#253c59; --body-bg:#fffdfa;
+  --body-quiet-color:#526579; --body-loud-color:#1b304a;
+  --header-color:#fff; --header-branding-color:#fff; --header-bg:#1b304a;
+  --header-link-color:#fff; --breadcrumbs-bg:#e5edf6; --breadcrumbs-fg:#253c59;
+  --breadcrumbs-link-fg:#253c59; --link-fg:#253c59; --link-hover-color:#1b304a;
+  --link-selected-fg:#1b304a; --hairline-color:#e0e7ef; --border-color:#d4dce6;
+  --darkened-bg:#f3f6f9; --selected-bg:#e5edf6; --selected-row:#eef4fa;
+  --button-bg:#1b304a; --button-hover-bg:#16263c;
+  --default-button-bg:#1b304a; --default-button-hover-bg:#16263c;
+  --close-button-bg:#526579; --close-button-hover-bg:#1b304a;
   --font-family-primary:system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 html[data-theme="dark"] {
-  color-scheme:dark; --primary:#8ebeb0; --secondary:#254c43; --header-bg:#254c43;
-  --primary-fg:#172823; --body-bg:#172823; --body-fg:#eaf1eb;
-  --body-quiet-color:#bccbc0; --body-loud-color:#fff;
-  --darkened-bg:#21392f; --selected-bg:#304d41; --selected-row:#304d41;
-  --border-color:#52685b; --hairline-color:#3f5749;
-  --link-fg:#b5d7c3; --link-hover-color:#fff; --link-selected-fg:#eaf1eb;
-  --button-bg:#b5d7c3; --button-hover-bg:#daecdf;
-  --default-button-bg:#b5d7c3; --default-button-hover-bg:#daecdf;
-  --breadcrumbs-bg:#21392f; --breadcrumbs-fg:#eaf1eb; --breadcrumbs-link-fg:#b5d7c3;
+  color-scheme:dark; --primary:#9db8d4; --secondary:#1b304a; --header-bg:#16263c;
+  --primary-fg:#12203a; --body-bg:#16263c; --body-fg:#e6ecf5;
+  --body-quiet-color:#b6c4d6; --body-loud-color:#fff;
+  --darkened-bg:#1d3250; --selected-bg:#253c59; --selected-row:#253c59;
+  --border-color:#3d5578; --hairline-color:#2f4666;
+  --link-fg:#b9cde4; --link-hover-color:#fff; --link-selected-fg:#e6ecf5;
+  --button-bg:#b9cde4; --button-hover-bg:#d7e3f1;
+  --default-button-bg:#b9cde4; --default-button-hover-bg:#d7e3f1;
+  --breadcrumbs-bg:#1d3250; --breadcrumbs-fg:#e6ecf5; --breadcrumbs-link-fg:#b9cde4;
 }
 #header { padding:22px 32px; }
 .nest-brand { display:flex; gap:12px; align-items:center; }
 .nest-brand img { border-radius:12px; background:#fff; }
-.nest-brand a { font-size:23px; font-weight:750; letter-spacing:-.6px; }
-.nest-brand span { display:block; font-size:9px; letter-spacing:1.8px; margin-top:5px; color:#e8f0eb; }
+.nest-brand a { font-family:'Fraunces',Georgia,serif; font-size:23px; font-weight:650; letter-spacing:-.4px; }
+.nest-brand span { display:block; font-family:var(--font-family-primary); font-size:9px; letter-spacing:1.8px; margin-top:5px; color:#c9d8ea; }
 div.breadcrumbs { padding:14px 32px; }
 #content { padding:32px; }
+h1, .module h2, .module caption { font-family:'Fraunces',Georgia,serif; letter-spacing:-.2px; }
 .module { border:1px solid var(--border-color); border-radius:12px; overflow:hidden; margin-bottom:24px; }
 .module h2, .module caption { padding:13px 16px; font-weight:650; font-size:14px; }
 td, th { padding:12px; }
 input, textarea, select { border-radius:7px; }
 input[type=text], input[type=password], input[type=email], input[type=number], select { min-height:38px; box-sizing:border-box; }
 .button, input[type=submit], input[type=button], .submit-row input, a.button { border-radius:8px; padding:12px 18px; }
-a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid #cb784f; outline-offset:3px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid #f2a03d; outline-offset:3px; }
 #nav-sidebar { padding:14px 8px; }
 #nav-sidebar .module { border:0; }
 #nav-sidebar th, #nav-sidebar td { padding:10px; }
@@ -48,7 +58,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .nest-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; }
 .nest-actions a { display:inline-block; padding:12px 17px; background:var(--button-bg); color:var(--primary-fg); border-radius:8px; font-weight:600; }
 body.login { background:var(--body-bg); }
-body.login #container { width:min(440px,calc(100% - 32px)); margin:9vh auto; border:1px solid var(--border-color); border-radius:18px; overflow:hidden; box-shadow:0 20px 65px #28594f14; }
+body.login #container { width:min(440px,calc(100% - 32px)); margin:9vh auto; border:1px solid var(--border-color); border-radius:18px; overflow:hidden; box-shadow:0 20px 65px rgba(27,48,74,.10); }
 body.login #header { padding:26px; }
 body.login #content { padding:26px; }
 body.login #content h1 { font-size:24px; }

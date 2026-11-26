@@ -37,6 +37,10 @@ urlpatterns = [
     path("account/signin/", storefront_auth.SignInView.as_view(), name="signin"),
     path("account/signup/", storefront_auth.SignUpView.as_view(), name="signup"),
     path("account/signout/", storefront_auth.SignOutView.as_view(), name="signout"),
+    # Customer self-service password reset + email verification
+    path("account/forgot/", storefront_auth.ForgotPasswordView.as_view(), name="forgot_password"),
+    path("account/reset/", storefront_auth.ResetPasswordView.as_view(), name="reset_password"),
+    path("verify-email/", storefront_auth.VerifyEmailView.as_view(), name="verify_email"),
 
     # Checkout & Payment
     path("checkout/", views_checkout.CheckoutView.as_view(), name="checkout"),

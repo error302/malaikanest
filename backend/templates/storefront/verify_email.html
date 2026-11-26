@@ -1,0 +1,21 @@
+{% extends "storefront/base.html" %}
+{% load static %}
+
+{% block title %}Email verification | Malaika Nest{% endblock %}
+
+{% block content %}
+<section class="coast-page shop-frame coast-auth-page" aria-labelledby="verify-title">
+  <div class="coast-auth-panel">
+    <h1 id="verify-title">{% if verified %}Email verified{% else %}Verification problem{% endif %}</h1>
+    {% if verified %}
+      <p class="coast-auth-sub">Your email address is confirmed. Your account is fully active — happy shopping!</p>
+      <a class="coast-button coast-button-primary coast-auth-submit" href="{% url 'storefront:product_list' %}">Start shopping</a>
+      <p class="coast-auth-alt"><a href="{% url 'storefront:account' %}">Go to my account</a></p>
+    {% else %}
+      <p class="coast-auth-sub">{{ error }}</p>
+      <p class="coast-auth-sub">Verification links expire after 24 hours. Sign up again or contact us for a fresh one.</p>
+      <a class="coast-button coast-button-outline coast-auth-submit" href="{% url 'storefront:signup' %}">Create an account</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

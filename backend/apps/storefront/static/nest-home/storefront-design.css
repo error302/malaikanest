@@ -215,6 +215,17 @@ a.nest-home-product.is-soldout .nest-home-price,
 .coast-muted-note { display: block; font-size: 11px; color: var(--shop-muted); margin-top: 6px; }
 .coast-account-details { margin-bottom: 18px; }
 
+/* ── Password visibility toggle (static/storefront/pw-toggle.js) ─────────── */
+.pw-wrap { position: relative; display: block; }
+.pw-wrap .coast-input { padding-right: 46px; }
+.pw-toggle {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; color: var(--shop-muted); cursor: pointer; border-radius: 8px;
+}
+.pw-toggle:hover { color: var(--shop-ink-dark); background: var(--shop-blue); }
+.pw-toggle:focus-visible { outline: 2px solid var(--shop-ink-dark); outline-offset: 2px; }
+
 /* ───────────────────────────────────────────────────────────────────────────
    Shared design tokens — aliases
    Templates reference --coast-* names; they resolve to the shop palette here

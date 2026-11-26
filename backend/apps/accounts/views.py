@@ -221,6 +221,13 @@ class PasswordResetThrottle(AnonRateThrottle):
     scope = "password_reset"
 
 
+class PasswordResetConfirmThrottle(AnonRateThrottle):
+    """The reset code is 6 digits — without a throttle the confirm endpoint
+    would be brute-forceable inside the 15-minute validity window."""
+    rate = "10/hour"
+    scope = "password_reset_confirm"
+
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
@@ -362,6 +369,7 @@ def password_reset_request_view(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([PasswordResetConfirmThrottle])
 def password_reset_confirm_view(request):
     token = request.data.get("token")
     new_password = request.data.get("new_password")
