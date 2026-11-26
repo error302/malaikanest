@@ -87,6 +87,10 @@ main input[type="radio"]:focus-visible + div { outline: 3px solid #48668c; outli
 .field-error { color: #b3261e; font-size: .8rem; font-weight: 600; margin-top: 6px; line-height: 1.45; }
 .form-input.field-invalid, input.field-invalid { border-color: #b3261e !important; }
 
+/* Map attribution: required by OpenStreetMap, but keep it legible. */
+.leaflet-control-attribution { background: rgba(255, 255, 255, .92) !important; color: #3e5069; }
+.leaflet-control-attribution a { color: #0b5394; }
+
 .coast-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 8px 24px; background: var(--shop-ink-dark); color: white; border-radius: 999px; font-weight: 750; text-align: center; transition: background-color 160ms ease, transform 160ms ease; }
 .coast-button:hover { background: #354f70; }
 .coast-button:active { transform: translateY(1px); }
