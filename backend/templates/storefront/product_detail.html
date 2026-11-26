@@ -4,6 +4,28 @@
 {% block title %}{{ product.name }} — Malaika Nest{% endblock %}
 {% block meta_description %}{{ product.description|striptags|truncatewords:25 }}{% endblock %}
 
+{% block extra_head %}
+{{ block.super }}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "{{ product.name|escapejs }}",
+  "description": "{{ product.description|striptags|truncatewords:30|escapejs }}",
+  "image": "{{ product.get_image_url|default:''|escapejs }}",
+  "sku": "{{ product.sku|default:product.id|stringformat:'s'|escapejs }}",
+  "brand": { "@type": "Brand", "name": "Malaika Nest" },
+  "offers": {
+    "@type": "Offer",
+    "url": "https://malaikanest.com/products/{{ product.slug }}/",
+    "priceCurrency": "KES",
+    "price": "{{ product.price|floatformat:2 }}",
+    "availability": "{% if product.shop_stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}"
+  }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="nest-product-detail shop-frame coast-page">
 
@@ -237,7 +259,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="coast-button"
-            style="background: #25d366; color: white; flex: 1; min-height: 44px;"
+            style="background: #25d366; color: #0b3d24; flex: 1; min-height: 44px;"
             aria-label="Order via WhatsApp"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width: 18px; height: 18px;">

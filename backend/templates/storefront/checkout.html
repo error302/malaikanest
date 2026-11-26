@@ -186,8 +186,8 @@
 
         <!-- Gift Order Toggle -->
         <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--coast-line);">
-          <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: .9rem; font-weight: 500; color: var(--coast-deep);">
-            <input type="checkbox" name="is_gift" id="is_gift" onchange="document.getElementById('giftMessageContainer').classList.toggle('hidden', !this.checked)" style="width: 20px; height: 20px; accent-color: var(--coast-leaf); margin-top: 2px; flex-shrink: 0;">
+          <label for="is_gift" style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: .9rem; font-weight: 500; color: var(--coast-deep); min-height: 44px;">
+            <input type="checkbox" name="is_gift" id="is_gift" onchange="document.getElementById('giftMessageContainer').classList.toggle('hidden', !this.checked)" style="width: 20px; height: 20px; accent-color: var(--coast-leaf); flex-shrink: 0;">
             <span>This is a baby gift (include personalized handwritten note)</span>
           </label>
           <div id="giftMessageContainer" class="hidden" style="margin-top: 16px;">
@@ -352,10 +352,10 @@
           <span id="order-total-value" style="font-family: var(--coast-heading); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums;">KES {{ total|floatformat:0 }}</span>
         </div>
 
-        <!-- Submit Button (desktop) -->
+        <!-- Submit Button (desktop) — hidden on phones where the sticky bar takes over -->
         <button 
           type="submit" 
-          class="coast-button coast-button-mango"
+          class="coast-button coast-button-mango checkout-submit-desktop"
           style="width: 100%; margin-top: 20px; min-height: 56px; font-size: 1rem;"
         >
           Place Order & Pay
@@ -377,7 +377,7 @@
       <span style="font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--coast-muted);">Total due</span>
       <span id="order-total-sticky" style="font-size: .9rem; font-weight: 800; color: var(--coast-deep); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">KES {{ total|floatformat:0 }}</span>
     </div>
-    <button type="submit" form="checkoutForm" class="coast-button coast-button-mango" style="flex: 2; min-height: 52px; font-size: .95rem;">
+    <button type="submit" form="checkoutForm" class="coast-button coast-button-mango" style="flex: 2; min-height: 48px; font-size: .95rem;">
       Place Order & Pay
     </button>
   </div>
@@ -424,7 +424,8 @@
       }
     }
 
-    var fee = (subtotal > 0 && subtotal >= threshold) ? 0 : (parseFloat(fees[region] || "0") || 0);
+    // Mirror the backend rule: free delivery only when threshold > 0 is reached.
+    var fee = (threshold > 0 && subtotal >= threshold) ? 0 : (parseFloat(fees[region] || "0") || 0);
     if (feeEl) {
       feeEl.textContent = "";
       if (fee === 0) {

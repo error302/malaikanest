@@ -1,6 +1,6 @@
 import logging
 import re
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
 from django.contrib import messages
@@ -86,7 +86,10 @@ class CheckoutView(View):
             delivery_fee = get_delivery_fee_for_region(cart.delivery_region)
             free_shipping_qualified = False
 
-        total = max(Decimal("0.00"), subtotal - discount) + delivery_fee
+        # Round to whole KES so the displayed total equals the STK charge.
+        total = (max(Decimal("0.00"), subtotal - discount) + delivery_fee).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
 
         context = {
             "cart": cart,
@@ -123,6 +126,11 @@ class CheckoutView(View):
         shipping_county = request.POST.get("shipping_county", "").strip()
         delivery_region = request.POST.get("delivery_region", "nairobi").strip()
         payment_method = request.POST.get("payment_method", "mpesa").strip()
+        # Django choices are not enforced at the DB layer — reject anything
+        # outside the two methods we actually support before an order exists.
+        if payment_method not in {"mpesa", "till"}:
+            messages.error(request, "Choose M-Pesa STK or M-Pesa Till as your payment method.")
+            return redirect("storefront:checkout")
         mpesa_phone = (request.POST.get("mpesa_phone") or shipping_phone).strip()
         notes = request.POST.get("notes", "").strip()
         is_gift = bool(request.POST.get("is_gift"))
@@ -145,6 +153,21 @@ class CheckoutView(View):
         if not shipping_phone:
             messages.error(request, "Please provide a valid contact phone number.")
             return redirect("storefront:checkout")
+        try:
+            shipping_phone = normalize_phone(shipping_phone)
+        except ValueError:
+            messages.error(request, "That phone number looks wrong. Use 07XXXXXXXX or +2547XXXXXXXX.")
+            return redirect("storefront:checkout")
+
+        # An invalid STK override must never beat a valid contact number.
+        override_phone = request.POST.get("mpesa_phone", "").strip()
+        if override_phone:
+            try:
+                mpesa_phone = normalize_phone(override_phone)
+            except ValueError:
+                mpesa_phone = shipping_phone
+        else:
+            mpesa_phone = shipping_phone
 
         if not request.user.is_authenticated and not guest_email:
             messages.error(request, "Please provide an email address for order confirmation and receipts.")

@@ -3,9 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>{% block title %}Baby & Children's Clothing Store in Mombasa, Kenya | Malaika Nest{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Shop premium baby & kids clothes, newborn hampers, rompers, and toddler wear in Mombasa & Nairobi. Fast delivery across Kenya or pick up at Tawakal Toto Shop, Mombasa. Pay securely by M-Pesa, Pesapal or card — we dispatch after payment.{% endblock %}">
-  <meta name="keywords" content="baby clothes kenya, baby shop mombasa, kids clothing nairobi, newborn essentials mombasa, tawakal toto shop, baby boutique kenya, baby rompers, toddler dresses kenya, nila baby alternative kenya, baby clothes near me mombasa, baby shop kenya online">
+  <title>{% block title %}Baby & Kids Clothes in Kenya — Rompers, Dresses & Hampers | Malaika Nest Mombasa{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Shop baby clothes and kids wear online in Kenya: newborn outfits, rompers, onesies, dresses and gift hampers. Same-day Mombasa delivery, nationwide delivery and free Likoni store pickup. Pay with M-Pesa STK.{% endblock %}">
+  <meta name="keywords" content="baby clothes Kenya, baby shop Kenya, online baby shop Kenya, baby clothes Mombasa, baby shop Mombasa, kids clothes Kenya, kids wear Nairobi, newborn clothes Kenya, newborn outfits Kenya, baby rompers Kenya, baby onesies Kenya, baby dresses Kenya, toddler clothes Kenya, children's clothing Kenya, baby clothes online Kenya, baby wear Kenya, baby outfits Mombasa, baby hamper Kenya, newborn gift set Kenya, baby shower gifts Kenya, mtumba baby clothes Kenya, pre-loved kids clothes Kenya, second hand baby clothes Mombasa, affordable baby clothes Kenya, cheap baby clothes Kenya, designer baby clothes Kenya, baby clothing store Mombasa, kids boutique Kenya, baby clothes delivery Kenya, M-Pesa baby shop, Tawakal Toto Shop Likoni, Likoni baby shop, Mombasa kids clothes, Kenyan baby boutique">
+
+  <!-- Local store + site search structured data (helps Google and AI answers). -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Store",
+        "@id": "https://malaikanest.com/#store",
+        "name": "Malaika Nest",
+        "url": "https://malaikanest.com",
+        "telephone": "+254726771321",
+        "email": "orders@malaikanest.com",
+        "priceRange": "KES",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Tawakal Toto Wear, Likoni",
+          "addressLocality": "Mombasa",
+          "addressRegion": "Coast",
+          "postalCode": "80100",
+          "addressCountry": "KE"
+        },
+        "geo": { "@type": "GeoCoordinates", "latitude": -4.0856032, "longitude": 39.661555 },
+        "openingHoursSpecification": [
+          { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "08:00", "closes": "18:00" },
+          { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "08:00", "closes": "16:00" }
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://malaikanest.com/#website",
+        "url": "https://malaikanest.com",
+        "name": "Malaika Nest",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": { "@type": "EntryPoint", "urlTemplate": "https://malaikanest.com/products/?q={search_term_string}" },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
   
   <meta name="theme-color" content="#fffdf6">
   <link rel="manifest" href="{% url 'storefront:manifest' %}">
@@ -123,7 +165,7 @@
         "email": "orders@malaikanest.com",
         "priceRange": "KES 200 - KES 15,000",
         "currenciesAccepted": "KES",
-        "paymentAccepted": "Cash, M-Pesa, Lipa na M-Pesa Till 3370347, PayPal, Visa, Mastercard",
+        "paymentAccepted": "M-Pesa STK push, Lipa na M-Pesa Till 3370347",
         "hasMap": "https://maps.app.goo.gl/AHTa75obHAyjB3xZ8",
         "address": {
           "@type": "PostalAddress",
@@ -182,7 +224,7 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast12">
+  <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast13">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">

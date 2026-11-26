@@ -700,7 +700,7 @@ main .coast-catalog-intro h1 {
   text-transform: uppercase;
   letter-spacing: .04em;
 }
-.badge-primary { background: var(--coast-mint); color: var(--coast-leaf); }
+.badge-primary { background: var(--coast-mint); color: #2f6641; }
 .badge-secondary { background: var(--coast-lilac); color: var(--coast-deep); }
 .badge-accent { background: var(--coast-mango); color: var(--coast-ink); }
 .badge-outline { background: transparent; border: 1px solid var(--coast-line); color: var(--coast-deep); }

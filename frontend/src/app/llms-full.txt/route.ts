@@ -158,7 +158,7 @@ const FAQ = [
   { q: 'Do you deliver outside Mombasa?',
     a: 'Yes — we deliver to Nairobi (1-2 days, KES 300) and upcountry (2-3 days, KES 500). Free delivery countrywide on orders over KES 10,000, plus a KES 0 same-day pick-up option at our shop.' },
   { q: 'How do I pay?',
-    a: 'Pay first, then we dispatch — by M-Pesa (Till 3370347), Pesapal (cards & mobile money), or card. We do not offer cash on delivery to avoid fraud. All payments are SSL-secured.' },
+    a: 'Pay first, then we dispatch — by M-Pesa STK push or M-Pesa Till 3370347. We do not offer cash on delivery to avoid fraud. All payments are secure.' },
   { q: 'Are the products organic?',
     a: 'Yes — our clothing line uses 100% organic cotton, OEKO-TEX certified.' },
   { q: 'What ages do you cover?',

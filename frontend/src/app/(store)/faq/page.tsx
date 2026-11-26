@@ -19,7 +19,7 @@ const faqJsonLd = {
     {
       '@type': 'Question',
       name: 'What payment methods do you accept?',
-      acceptedAnswer: { '@type': 'Answer', text: 'We accept M-Pesa (Till 3370347 & instant STK push), PayPal, credit/debit cards (Visa & Mastercard), and Pesapal. Pay securely online or via M-Pesa Till before dispatch. All transactions are protected with 256-bit SSL encryption.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'We accept M-Pesa: instant STK push and Till 3370347. Pay securely before we dispatch your order.' },
     },
     {
       '@type': 'Question',
@@ -61,7 +61,7 @@ const FAQS = [
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept M-Pesa (Till 3370347 & instant STK push), PayPal, credit/debit cards (Visa & Mastercard), and Pesapal. Pay securely online or via M-Pesa Till before dispatch. All transactions are protected with 256-bit SSL encryption.',
+    a: 'We accept M-Pesa: instant STK push and Till 3370347. Pay securely before we dispatch your order.',
   },
   {
     q: 'Is delivery really free?',

@@ -124,7 +124,7 @@ main .boutique-filter-panel #condition-filter button {
 .nest-pdp-shipping { margin-top: 28px; padding: 20px; border-radius: var(--radius-xl); background: #fff; border: 1px solid var(--coast-line); }
 .nest-pdp-shipping ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 7px; font-size: .84rem; line-height: 1.55; color: var(--coast-muted); }
 .nest-pdp-related { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--coast-line); }
-.nest-pdp-wa { width: 100%; min-height: 50px; font-size: .95rem; background: #25d366; color: #fff; }
+.nest-pdp-wa { width: 100%; min-height: 50px; font-size: .95rem; background: #25d366; color: #0b3d24; }
 .coast-lookup { max-width: 520px; }
 .coast-lookup > div { border: 0; background: transparent; box-shadow: none; padding-inline: 0; }
 .coast-support { max-width: 1100px; }
@@ -173,6 +173,10 @@ main :is([class~="border-[#EADBCE]"],[class~="border-[#8B6914]"]) { border-color
   .coast-empty { flex-wrap: wrap; }
   .coast-empty .coast-button { flex-shrink: 1; }
   .boutique-catalog-body { grid-template-columns: 1fr; gap: 14px; }
+  /* Products first, filters below — a shopper should not scroll past three
+     filter groups before seeing a single item. */
+  .boutique-catalog-body > .boutique-filter-panel { order: 2; }
+  .boutique-catalog-body > .boutique-catalog-results { order: 1; }
   /* The filter panel carries an inline `position: sticky; top: 100px` which made it
      float over the product grid once the layout stacks on mobile. */
   .boutique-catalog-body > .boutique-filter-panel { position: static !important; }
@@ -193,6 +197,10 @@ main :is([class~="border-[#EADBCE]"],[class~="border-[#8B6914]"]) { border-color
   .nest-shopping-info { margin-top: 20px !important; gap: 10px !important; }
   .nest-pdp-block { margin-top: 16px; }
   .nest-pdp-form { margin-top: 16px; gap: 16px; }
+  /* The sticky bar owns the place-order action on phones; two identical
+     buttons in view invite double submissions. */
+  .nest-checkout-page .checkout-submit-desktop { display: none; }
+  .nest-sticky-cta .coast-button[form="checkoutForm"] { min-height: 48px; }
   .nest-pdp-section { margin-top: 18px; padding-top: 14px; }
   .nest-pdp-shipping { margin-top: 18px; padding: 14px 16px; }
   .nest-pdp-shipping ul { gap: 4px; font-size: .8rem; }

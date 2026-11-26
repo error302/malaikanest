@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
 from django.db import transaction
@@ -173,7 +173,11 @@ class OrderService:
                 delivery_fee = Decimal("0.00")
             else:
                 delivery_fee = get_delivery_fee_for_region(delivery_region)
-            total = max(subtotal - discount_amount, 0) + delivery_fee
+            # M-Pesa STK accepts whole KES only, so the charged amount must be
+            # the authoritative order total — not a rounded version of it.
+            total = (max(subtotal - discount_amount, 0) + delivery_fee).quantize(
+                Decimal("1"), rounding=ROUND_HALF_UP
+            )
 
             from .models import Order, OrderItem
 

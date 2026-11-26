@@ -286,6 +286,7 @@ class Order(BaseModel):
     
     DELIVERY_CHOICES = [
         ('mombasa', 'Mombasa (Same Day)'),
+        ('mombasa_pickup', 'Store Pick-up (FREE)'),
         ('nairobi', 'Nairobi (1-2 Days)'),
         ('upcountry', 'Upcountry (2-3 Days)')
     ]
