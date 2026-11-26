@@ -183,6 +183,10 @@ REST_FRAMEWORK = {
         "payments": "10/minute",
         "login": "5/minute",
         "password_reset": "5/hour",
+        # Referenced by PasswordResetConfirmThrottle (apps/accounts/views.py).
+        # The class also pins rate="10/hour", but keep the scope defined so the
+        # throttle can never raise ImproperlyConfigured.
+        "password_reset_confirm": "10/hour",
         "data_export": "1/day",
         "cart": "60/minute",  # Cart operations
         "order": "20/minute",  # Order operations
