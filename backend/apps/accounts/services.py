@@ -9,6 +9,7 @@ from rest_framework import serializers as drf_serializers
 from .models import User
 from .serializers import RegisterSerializer
 from .security import log_auth_event
+from .authentication import invalidate_all_user_tokens
 
 logger = logging.getLogger("apps.accounts")
 
@@ -33,6 +34,10 @@ def _get_frontend_origin():
     for candidate in candidates:
         value = (candidate or "").strip().rstrip("/")
         if not value:
+            continue
+        # Never email links to a dev machine — a localhost CORS entry used to
+        # win the candidate order and every emailed link 404'd for customers.
+        if "localhost" in value or "127.0.0.1" in value or "0.0.0.0" in value:
             continue
         if value.startswith(("http://", "https://")):
             return value
