@@ -70,10 +70,10 @@
                   <div class="text-xs text-stone-500 mt-1 flex flex-wrap gap-2 items-center">
                     {% if item.variant %}
                       {% if item.variant.size %}
-                        <span class="px-2 py-0.5 rounded bg-stone-100 font-medium text-stone-700">Size: {{ item.variant.size }}</span>
+                        <span class="px-2 py-0.5 rounded bg-stone-100 font-medium text-stone-700">Size: {{ item.variant.get_size_display }}</span>
                       {% endif %}
                       {% if item.variant.color %}
-                        <span class="px-2 py-0.5 rounded bg-stone-100 font-medium text-stone-700">Color: {{ item.variant.get_color_display|default:item.variant.color }}</span>
+                        <span class="px-2 py-0.5 rounded bg-stone-100 font-medium text-stone-700">Colour: {{ item.variant.get_color_display|default:item.variant.color }}</span>
                       {% endif %}
                     {% endif %}
                   </div>

@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 from django.db.models import Max
@@ -145,12 +146,14 @@ class AdminProductSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if data["variants"]:
-            data["available_stock"] = sum(
-                variant["available_stock"] for variant in data["variants"] if variant["is_active"]
-            )
+            variants = [variant for variant in data["variants"] if variant["is_active"]]
+            available = sum(variant["available_stock"] for variant in variants)
+            data["available_stock"] = available
+            data["reserved_stock"] = sum(variant["stock"] for variant in variants) - available
         else:
             inventory = getattr(instance, "inventory", None)
             data["available_stock"] = inventory.available() if inventory else instance.stock
+            data["reserved_stock"] = inventory.reserved if inventory else 0
         return data
 
     def to_internal_value(self, data):
@@ -460,7 +463,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 )
 
             try:
-                color = serializers.ChoiceField(choices=ProductVariant.COLOR_CHOICES).run_validation(item.get("color"))
+                color = serializers.ChoiceField(choices=ProductVariant.COLOR_CHOICES, allow_null=True, allow_blank=True).run_validation(item.get("color")) or None
                 size = serializers.ChoiceField(choices=ProductVariant.SIZE_CHOICES, allow_null=True, allow_blank=True).run_validation(item.get("size")) or None
                 stock_value = serializers.IntegerField(min_value=0).run_validation(item.get("stock", 0))
                 active = serializers.BooleanField().run_validation(item.get("is_active", True))
@@ -524,6 +527,9 @@ class AdminProductSerializer(serializers.ModelSerializer):
     def _sync_variants(self, product, variants_payload):
         if variants_payload is None:
             return
+        base_price = Decimal(str(product.price))
+        if any(base_price + variant["price_modifier"] < 0 for variant in variants_payload):
+            raise serializers.ValidationError({"variants": ["A variant price cannot be less than KES 0."]})
 
         seen_variant_ids = []
         for index, item in enumerate(variants_payload):

@@ -13,9 +13,10 @@ from django.test import TransactionTestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.orders.models import Cart, CartItem, Order, create_order_from_cart
+from apps.orders.models import Cart, CartItem, Order, OrderItem, create_order_from_cart
+from apps.orders.services import OrderService
 from apps.payments.models import Payment, PaymentAuditLog
-from apps.products.models import Category, Inventory, Product
+from apps.products.models import Category, Inventory, Product, ProductVariant, VariantInventory
 
 
 User = get_user_model()
@@ -168,7 +169,35 @@ class MpesaCallbackValidationTests(APITestCase):
         with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply(ResultCode="1032")):
             self.assertEqual(verify_payment(self.payment.pk), "cancelled")
         self.order.refresh_from_db()
-        self.assertEqual(self.order.status, "pending")
+        self.assertEqual(self.order.status, "cancelled")
+
+    def test_verified_no_response_releases_only_the_orders_variant_reservation(self):
+        category = Category.objects.create(name="Test clothes")
+        product = Product.objects.create(name="Test dress", category=category, price="200.00")
+        variant = ProductVariant.objects.create(product=product, size="9y", color="pink")
+        inventory, _ = VariantInventory.objects.update_or_create(
+            variant=variant, defaults={"quantity": 2, "reserved": 2},
+        )
+        OrderItem.objects.create(
+            order=self.order, product=product, variant_reference=str(variant.pk), price="200.00", quantity=1,
+        )
+        with patch("apps.payments.mpesa_verification.query_provider", return_value=self.query_reply(ResultCode="1038")):
+            self.assertEqual(verify_payment(self.payment.pk), "failed")
+            self.assertEqual(verify_payment(self.payment.pk), "failed")
+
+        self.order.refresh_from_db()
+        inventory.refresh_from_db()
+        self.assertEqual(self.order.status, "cancelled")
+        self.assertTrue(self.order.inventory_restored)
+        self.assertIsNone(self.order.paid_at)
+        self.assertEqual((inventory.quantity, inventory.reserved), (2, 1))
+        self.assertFalse(OutboxEvent.objects.filter(aggregate_id=str(self.order.pk), event_type="order.paid").exists())
+
+    def test_open_stk_prompt_blocks_manual_order_cancellation(self):
+        with self.assertRaisesMessage(ValueError, "Confirm the M-Pesa payment outcome"):
+            OrderService.cancel_order(self.order)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_PENDING)
 
     def test_duplicate_callbacks_only_schedule_one_query_and_fulfillment(self):
         self.post_callback(self._callback_payload())

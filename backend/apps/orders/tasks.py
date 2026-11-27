@@ -9,11 +9,12 @@ except ImportError:
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-from apps.orders.models import Order, Cart, Coupon
+from apps.orders.models import Order, Cart
+from apps.orders.services import OrderService
 from apps.products.models import Inventory, VariantInventory, sync_product_stock
 from apps.core.email_service import EmailService
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 import logging
 
 logger = logging.getLogger("apps.orders")
@@ -236,32 +237,21 @@ def cancel_stale_pending_orders():
     stale_orders = Order.objects.filter(
         status='pending',
         created_at__lt=cutoff_time
-    ).prefetch_related('items')
+    ).exclude(
+        Q(payment__payment_method="mpesa", payment__status="initiated")
+        & (
+            Q(payment__mpesa_checkout_request_id__gt="")
+            | Q(payment__mpesa_issue="initiation_unknown")
+        )
+    )
 
     cancelled_count = 0
-    for order in stale_orders:
-        success, error_msg = order.transition_to(Order.STATUS_CANCELLED, save=True)
-        if success:
-            with transaction.atomic():
-                for item in order.items.all():
-                    if item.variant_reference:
-                        VariantInventory.objects.filter(
-                            variant_id=item.variant_reference,
-                            reserved__gte=item.quantity,
-                        ).update(reserved=F('reserved') - item.quantity)
-                        sync_product_stock(item.product_id)
-                    else:
-                        Inventory.objects.filter(
-                            product_id=item.product_id,
-                            reserved__gte=item.quantity,
-                        ).update(reserved=F('reserved') - item.quantity)
-                if order.coupon_id:
-                    Coupon.objects.filter(pk=order.coupon_id, used_count__gt=0).update(
-                        used_count=F('used_count') - 1
-                    )
-                cancelled_count += 1
-        else:
-            logger.error(f"Failed to cancel stale order {order.id}: {error_msg}")
+    for order in stale_orders.iterator():
+        try:
+            OrderService.cancel_order(order)
+            cancelled_count += 1
+        except ValueError as exc:
+            logger.info("Skipped stale order %s: %s", order.pk, exc)
 
     if cancelled_count > 0:
         logger.info(f"Cancelled {cancelled_count} stale pending orders and restored inventory.")

@@ -175,6 +175,7 @@ export function Products({ startNew = false }: { startNew?: boolean }) {
                 <div className="product-list-facts">
                   <strong>KES {Number(product.price).toLocaleString("en-KE", { maximumFractionDigits: 2 })}</strong>
                   <small className={available <= 3 ? "stock-low" : ""}>{available} available</small>
+                  {(product.reserved_stock ?? 0) > 0 && <small>{product.reserved_stock} reserved</small>}
                 </div>
                 <span className={`badge ${published ? "on" : "off"}`}>{published ? "In shop" : "Hidden"}</span>
                 <div className="product-list-actions">
@@ -356,29 +357,12 @@ function EditDrawer({
     <dialog onKeyDown={trapModalTab} ref={dialog} className="product-dialog panel" aria-labelledby="product-editor-title" onCancel={(event) => { event.preventDefault(); close(); }}>
       <form onSubmit={save}>
         <div className="dialog-heading"><h3 id="product-editor-title">{isNew ? "New product" : `Edit — ${current.name}`}</h3><button className="btn ghost" type="button" onClick={close} disabled={busy || photoBusy}>Close</button></div>
-        <p className="variants-hint">{isNew ? "Add your product details and choose a cover from your files." : current.is_active ? "Visible in the shop." : "Hidden draft. Add photos and check sizes before publishing."}</p>
+        <p className="variants-hint">{isNew ? "Enter the name, category and price. Then add stock and any size or colour options." : current.is_active ? "Visible in the shop." : "Hidden draft. Add photos and check sizes before publishing."}</p>
         {error && <div className="error" role="alert">{error}</div>}
         {notice && <div className="notice" role="status">{notice}</div>}
         {!loaded && (error ? <button className="btn ghost" type="button" onClick={() => setAttempt((value) => value + 1)}>Retry loading</button> : <p role="status">Loading product details…</p>)}
-        {isNew && <div className="product-cover product-cover-draft">
-          {coverPreview && <img src={coverPreview} alt="Cover preview" />}
-          <label className="field file-picker">
-            <span>Choose cover from files (optional)</span>
-            <input type="file" disabled={locked} accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                   onChange={event => {
-                     const file = event.target.files?.[0];
-                     const problem = file ? validatePhotos([file]) : "";
-                     setError(problem);
-                     setCover(problem ? null : file ?? null);
-                     if (problem) event.target.value = "";
-                   }} />
-            <small>JPG, PNG or WebP, up to 5 MB. The cover uploads when you create the draft.</small>
-          </label>
-        </div>}
-        {!isNew && loaded && (
-          <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
-        )}
         <fieldset disabled={locked} className="product-fields">
+        <div className="product-basics">
         <label className="field">
           <span>Name</span>
           <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required />
@@ -395,17 +379,6 @@ function EditDrawer({
           />
         </label>
         <label className="field">
-          <span>Stock</span>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            disabled={variants.length > 0}
-            value={variants.length ? variants.filter((v) => v.is_active).reduce((total, v) => total + v.stock, 0) : form.stock}
-            onChange={(e) => set("stock", Number(e.target.value))}
-          />
-        </label>
-        <label className="field">
           <span>Category</span>
           <select required value={form.category} onChange={(e) => set("category", e.target.value)}>
             <option value="">—</option>
@@ -416,16 +389,29 @@ function EditDrawer({
             ))}
           </select>
         </label>
+        </div>
+        <section className="product-inventory" aria-labelledby="product-inventory-title">
+          <h4 id="product-inventory-title">Stock</h4>
+          {variants.length === 0 && <div className="product-basics">
+          <label className="field">
+            <span>Stock</span>
+            <input type="number" min="0" step="1" value={form.stock} onChange={event => set("stock", Number(event.target.value))} />
+          </label>
         <label className="field">
-          <span>Description</span>
-          <textarea value={form.description} onChange={(e) => set("description", e.target.value)} />
-        </label>
-        <label className="field">
-          <span>Single size (when no size rows are active)</span>
-          <select value={form.size_label} onChange={(e) => set("size_label", e.target.value)} disabled={variants.some((v) => v.is_active)}>
+          <span>Single size (optional)</span>
+          <select value={form.size_label} onChange={(e) => set("size_label", e.target.value)}>
             <option value="">Not specified</option>
             {(options.sizes.length ? options.sizes : SIZE_CHOICES).map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
           </select>
+        </label>
+          </div>}
+        <VariantsEditor variants={variants} previous={current.variants ?? []} onChange={(rows) => { setVariants(rows); setNotice(""); }} />
+        </section>
+        <details className="editor-details">
+          <summary>Description and catalogue details</summary>
+        <label className="field">
+          <span>Description</span>
+          <textarea value={form.description} onChange={(e) => set("description", e.target.value)} />
         </label>
         <label className="field">
           <span>Age group (broad)</span>
@@ -469,8 +455,9 @@ function EditDrawer({
             onChange={(e) => set("compare_price", e.target.value)}
           />
         </label>
+        </details>
         <details className="editor-details">
-          <summary>Optional product details</summary>
+          <summary>Measurements, fabric and care</summary>
         <label className="field">
           <span>Fabric &amp; care</span>
           <textarea value={form.fabric} onChange={(e) => set("fabric", e.target.value)} />
@@ -493,8 +480,28 @@ function EditDrawer({
           <input type="text" pattern="[a-zA-Z0-9_-]+" maxLength={300} value={form.slug} onChange={(e) => set("slug", e.target.value)} />
         </label>}
         </details>
-        <VariantsEditor variants={variants} previous={current.variants ?? []} onChange={(rows) => { setVariants(rows); setNotice(""); }} />
         </fieldset>
+        {isNew && <div className="product-cover product-cover-draft">
+          {coverPreview && <img src={coverPreview} alt="Cover preview" />}
+          <label className="field file-picker">
+            <span>Choose cover from files (optional)</span>
+            <input type="file" disabled={locked} accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                   onChange={event => {
+                     const file = event.target.files?.[0];
+                     const problem = file ? validatePhotos([file]) : "";
+                     setError(problem);
+                     setCover(problem ? null : file ?? null);
+                     if (problem) event.target.value = "";
+                   }} />
+            <small>JPG, PNG or WebP, up to 5 MB. The cover uploads when you create the draft.</small>
+          </label>
+        </div>}
+        {!isNew && loaded && (
+          <details className="editor-details">
+            <summary>Product photos</summary>
+            <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
+          </details>
+        )}
         <div className="editor-actions">
           <button className="btn" disabled={locked} type="submit" value="save">
             {busy ? "Saving…" : isNew ? "Create draft" : "Save changes"}

@@ -517,7 +517,11 @@ class OrderLookupView(View):
 def customer_payment_state(order, payment):
     if order.status in {"paid", "processing", "shipped", "delivered"}:
         return "confirmed"
-    if order.status in {"cancelled", "refunded"}:
+    if order.status == "refunded":
+        return "closed"
+    if order.status == "cancelled":
+        if payment and payment.payment_method == "mpesa" and payment.status in {"cancelled", "failed"}:
+            return payment.status
         return "closed"
     if order.payment_method == "till":
         return "manual"
