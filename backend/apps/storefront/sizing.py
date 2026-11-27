@@ -28,16 +28,15 @@ AGE_INTERVAL_MAP = {
 }
 
 
-AGE_RANGE_MATCHES = {
-    "0-3m": ["0-3 months"],
-    "3-6m": ["3-6 months"],
-    "6-12m": ["6-12 months"],
-    "1-2y": ["1-2 years"],
+OLDER_AGE_RANGE_MATCHES = {
     "2-4y": ["2-3 years", "3-5 years"],
     "4-6y": ["3-5 years"],
-    "6-8y": ["6-8 years"],
     "8-10y": ["9-12 years"],
     "10-12y": ["9-12 years"],
+}
+AGE_RANGE_MATCHES = {
+    value: [label.replace("–", "-"), *OLDER_AGE_RANGE_MATCHES.get(value, ())]
+    for value, label in Product.AGE_SIZE_CHOICES
 }
 
 

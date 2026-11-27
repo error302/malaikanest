@@ -22,6 +22,16 @@ class SizeShoppingTests(TestCase):
         empty = self.client.get(reverse('storefront:product_list'), {'size': '3y'})
         self.assertEqual(list(empty.context['products']), [])
 
+    def test_shop_age_range_matches_range_and_existing_exact_year_sizes(self):
+        self.variant.size = '9y'
+        self.variant.save(update_fields=['size'])
+        self.other.size_label = '8-10y'
+        self.other.save(update_fields=['size_label'])
+        for filter_name in ('age', 'size'):
+            response = self.client.get(reverse('storefront:product_list'), {filter_name: '8-10y'})
+            self.assertEqual({product.pk for product in response.context['products']}, {self.product.pk, self.other.pk})
+            self.assertContains(response, '8–10 years')
+
     def test_product_detail_preselects_the_only_available_option(self):
         url = reverse('storefront:product_detail', args=[self.product.slug])
         response = self.client.get(url)

@@ -93,6 +93,17 @@ class AdminProductApiTests(TestCase):
         self.assertTrue(product.image.name.endswith("new-cover.png"))
         self.assertTrue(response.json()["data"]["image_full_url"].endswith("new-cover.png"))
 
+    def test_draft_accepts_cloudinary_cover_and_storefront_size_range(self):
+        cover_url = "https://res.cloudinary.com/example/image/upload/dress.webp"
+        product_id = self.create_product(image_url=cover_url, variants=[
+            {"size": "8-10y", "color": "pink", "stock": 1, "is_active": True},
+        ])
+        response = self.client.get(f"/api/products/admin/products/{product_id}/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()["data"]
+        self.assertEqual(data["image_full_url"], cover_url)
+        self.assertEqual(data["variants"][0]["size_label"], "8–10 years")
+
     def test_owner_data_survives_a_description_only_save(self):
         product_id = self.create_product(size_guide="Owner guide", fabric="Owner fabric", whats_included="Owner contents")
         response = self.client.patch(

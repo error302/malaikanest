@@ -101,7 +101,7 @@
         {% if product.age_range or product.size_label or product.age_group or product.gender != 'unisex' %}
           <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
             {% if product.age_range %}
-              <span class="badge badge-outline">Ages {{ product.age_range }}</span>
+              <span class="badge badge-outline">Ages {{ product.get_age_range_display }}</span>
             {% endif %}
             {% if product.size_label and not variants %}
               <span class="badge badge-outline">Size {{ product.get_size_label_display }}</span>
@@ -143,7 +143,7 @@
                     <input type="radio" name="variant_id" value="{{ variant.id }}" required {% if variant.shop_stock <= 0 %}disabled{% elif variant == default_variant %}checked{% endif %}
                            data-stock="{{ variant.shop_stock }}" data-price="KES {{ variant.shop_price|floatformat:'-2g' }}">
                     <span class="product-option-card">
-                      <strong>{% if variant.size or not variant.color %}{{ variant.get_size_display|default:"Standard" }}{% endif %}{% if variant.color %}<span>{{ variant.get_color_display }}</span>{% endif %}</strong>
+                      <strong>{% if variant.size or not variant.color %}{{ variant.get_size_display|default:"Standard" }}{% endif %}{% if variant.color %} <span>{{ variant.get_color_display }}</span>{% endif %}</strong>
                       <small>{% if variant.shop_stock <= 0 %}Sold out{% else %}KES {{ variant.shop_price|floatformat:"-2g" }}{% endif %}</small>
                     </span>
                   </label>

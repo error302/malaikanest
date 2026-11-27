@@ -120,6 +120,17 @@ export function PhotosEditor({
         </div>
       </div>
 
+      <div className="photo-url-box">
+        <label className="field">
+          <span>Cloudinary image URL</span>
+          <input type="url" inputMode="url" placeholder="https://res.cloudinary.com/…" value={urlInput} onChange={e => setUrlInput(e.target.value)} disabled={busy || disabled} />
+        </label>
+        <div className="photo-actions">
+          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlAsMain}>Set as cover</button>
+          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlToGallery}>Add to gallery</button>
+        </div>
+      </div>
+
       <label className="field file-picker">
         <span>Add gallery photos from files</span>
         <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple disabled={busy || disabled} onChange={onGalleryPicked} />
@@ -161,17 +172,6 @@ export function PhotosEditor({
         </div>
       )}
 
-      <details className="editor-details">
-        <summary>Use an image link instead</summary>
-        <label className="field">
-          <span>Photo URL</span>
-          <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} disabled={busy || disabled} />
-        </label>
-        <div className="photo-actions">
-          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlAsMain}>Set as cover</button>
-          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlToGallery}>Add to gallery</button>
-        </div>
-      </details>
     </section>
   );
 }

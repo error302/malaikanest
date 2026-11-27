@@ -336,21 +336,28 @@ class Product(BaseModel):
         ("toddler", "Toddler (2-5 years)"),
         ("kids", "Kids (6-12 years)"),
     ]
+    AGE_SIZE_CHOICES = [
+        ("newborn", "Newborn"),
+        ("0-3m", "0–3 months"),
+        ("3-6m", "3–6 months"),
+        ("6-12m", "6–12 months"),
+        ("1-2y", "1–2 years"),
+        ("2-4y", "2–4 years"),
+        ("4-6y", "4–6 years"),
+        ("6-8y", "6–8 years"),
+        ("8-10y", "8–10 years"),
+        ("10-12y", "10–12 years"),
+    ]
+    SHOP_SIZE_CHOICES = [*AGE_SIZE_CHOICES, ("one-size", "One size")]
+    SHOP_AGE_RANGE_CHOICES = [(label.replace("–", "-"), label) for _, label in AGE_SIZE_CHOICES]
     AGE_RANGE_CHOICES = [
-        ("0-3 months", "0-3 months"),
-        ("3-6 months", "3-6 months"),
-        ("6-12 months", "6-12 months"),
-        ("1-2 years", "1-2 years"),
+        *SHOP_AGE_RANGE_CHOICES,
         ("2-3 years", "2-3 years"),
         ("3-5 years", "3-5 years"),
-        ("6-8 years", "6-8 years"),
         ("9-12 years", "9-12 years"),
     ]
     SIZE_CHOICES = [
-        ("newborn", "Newborn"),
-        ("0-3m", "0-3M"),
-        ("3-6m", "3-6M"),
-        ("6-12m", "6-12M"),
+        *SHOP_SIZE_CHOICES,
         ("1y", "1Y"),
         ("2y", "2Y"),
         ("3y", "3Y"),
@@ -363,7 +370,6 @@ class Product(BaseModel):
         ("10y", "10Y"),
         ("11y", "11Y"),
         ("12y", "12Y"),
-        ("one-size", "One Size"),
     ]
     STATUS_CHOICES = [
         ("draft", "Draft"),
