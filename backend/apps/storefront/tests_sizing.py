@@ -94,6 +94,9 @@ class SizeShoppingTests(TestCase):
         photos = {item["id"]: item["photos"] for item in response.context["gallery_variants"]}
         self.assertEqual([item["label"] for item in photos[str(self.variant.pk)]], ["Packaged blanket", "Fabric close-up"])
         self.assertEqual(photos[str(self.empty.pk)], [])
+        by_id = {item.pk: item for item in response.context["variants"]}
+        self.assertEqual(by_id[self.variant.pk].option_photo, "https://example.test/brown.webp")
+        self.assertEqual(by_id[self.empty.pk].option_photo, "")
         self.assertContains(response, 'data-colour="pink"')
         self.assertContains(response, "Ask us for the blanket dimensions")
         self.assertNotContains(response, "unavailable-blue.webp")

@@ -325,7 +325,11 @@ function EditDrawer({
 
   function jumpToSection(event: React.MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
-    const heading = document.getElementById(event.currentTarget.hash.slice(1));
+    focusSection(event.currentTarget.hash.slice(1));
+  }
+
+  function focusSection(id: string) {
+    const heading = document.getElementById(id);
     heading?.focus({ preventScroll: true });
     heading?.scrollIntoView({ block: "start" });
   }
@@ -488,7 +492,9 @@ function EditDrawer({
                 </label>
               </div>
             </>}
-            <VariantsEditor sizeOptions={options.sizes} variants={variants} previous={current.variants ?? []} onChange={rows => { setVariants(rows); setNotice(""); }} />
+            <VariantsEditor sizeOptions={options.sizes} variants={variants} previous={current.variants ?? []}
+                            photos={current.images ?? []} onPhotos={() => focusSection("editor-photos")}
+                            onChange={rows => { setVariants(rows); setNotice(""); }} />
           </section>
 
           <section className="product-editor-section" aria-labelledby="editor-photos">

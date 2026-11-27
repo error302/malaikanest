@@ -160,6 +160,15 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Versioned static assets can be cached for a year (we bump ?v= on every change).
 WHITENOISE_MAX_AGE = 31536000
+
+
+def storefront_static_headers(headers, path, url):
+    # The dashboard document references hashed Vite assets and must revalidate.
+    if url == "/static/adminapp/index.html":
+        headers["Cache-Control"] = "no-store"
+
+
+WHITENOISE_ADD_HEADERS_FUNCTION = storefront_static_headers
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

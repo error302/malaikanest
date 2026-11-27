@@ -283,6 +283,8 @@ textarea { min-height: 90px; resize: vertical; width: 100%; }
 .variant-size-picker label:has(:disabled) { opacity: .55; cursor: default; }
 .variant-rows { list-style: none; margin: 0; padding: 0; }
 .variant-row { border-top: 1px solid var(--border); padding-block: 10px 0; }
+.variant-photo-preview { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.variant-photo-preview img { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
 .variant-row-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(52px, .64fr); gap: 8px; }
 .variant-row-fields .field, .variant-row-actions .check { margin: 0; min-width: 0; }
 .variant-row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0 10px; }

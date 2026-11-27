@@ -303,6 +303,7 @@ export interface Variant {
   color_label?: string;
   size?: string | null;
   size_label?: string;
+  image?: string | null;
   sku?: string | null;
   price_modifier?: string;
   stock: number;

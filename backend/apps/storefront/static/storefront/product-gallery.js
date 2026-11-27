@@ -14,6 +14,22 @@
   const whatsappBase = whatsapp ? new URL(whatsapp.href) : null;
   let currentVariant;
 
+  form?.addEventListener("click", event => {
+    const step = event.target.closest("[data-quantity-step]");
+    if (!step || !quantity || quantity.disabled) return;
+    const next = (Number(quantity.value) || 1) + Number(step.dataset.quantityStep);
+    quantity.value = String(Math.max(1, Math.min(next, Number(quantity.max))));
+  });
+
+  const mainButton = document.querySelector(".pdp-purchase-actions .pdp-add-button");
+  const mobileCart = document.querySelector(".pdp-mobile-cart");
+  if (mobileCart && mainButton && !mainButton.disabled && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(([entry]) => {
+      mobileCart.hidden = entry.isIntersecting || entry.boundingClientRect.bottom > 0;
+    });
+    observer.observe(mainButton);
+  }
+
   function setPhoto(url, label) {
     if (!image || !noPhoto) return;
     image.hidden = !url;
