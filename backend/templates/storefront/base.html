@@ -76,9 +76,22 @@
   <meta name="twitter:image" content="https://malaikanest.com{% static 'nest-home/coastal-campaign.webp' %}">
   
   <!-- Tailwind CSS & Fonts -->
+  <!-- Critical above-the-fold CSS, inlined so the hero paints without waiting
+       for the (async) stylesheets below. -->
+  <style>
+    body { background: #fffdfa; color: #1b304a; }
+    .shop-header { background: #fffdfa; border-bottom: 1px solid #d4dce6; }
+    .shop-header-grid { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 18px; min-height: 112px; }
+    .shop-wordmark img { width: 104px; height: 96px; object-fit: contain; }
+    .boutique-hero-photo { height: clamp(325px, 36vw, 495px); overflow: hidden; background: #e7efd9; }
+    .boutique-hero h1 { font-size: clamp(2.95rem, 5.6vw, 5.35rem); line-height: .99; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+    .floating-bottom-dock { position: fixed; bottom: 0; left: 0; right: 0; background: #fffdfa; border-top: 1px solid #d4dce6; padding: 4px 12px calc(4px + env(safe-area-inset-bottom, 0px)); }
+    .dock-track { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+    .dock-item { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; }
+  </style>
   <link rel="stylesheet" href="{% static 'css/storefront.css' %}?v=coast">
-  <link rel="preload" as="style" href="{% static 'nest-home/coast.css' %}?v=coast1" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="{% static 'nest-home/coast.css' %}?v=coast1"></noscript>
+  <link rel="preload" as="style" href="{% static 'nest-home/coast.css' %}?v=coast19" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{% static 'nest-home/coast.css' %}?v=coast19"></noscript
 
   <style>
     :root {
@@ -225,7 +238,8 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast17">
+  <link rel="preload" as="style" href="{% static 'nest-home/storefront-design.css' %}?v=coast199" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast199"></noscript>
   <link rel="preload" as="image" href="{% static 'nest-home/coastal-campaign-mobile.webp' %}" fetchpriority="high" media="(max-width: 640px)">
   {% block extra_head %}{% endblock %}
 </head>
