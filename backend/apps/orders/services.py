@@ -12,7 +12,7 @@ from apps.products.models import (
     VariantInventory,
     sync_product_stock,
 )
-from .models import Coupon, get_delivery_fee_for_region
+from .models import Coupon, Order, get_delivery_fee_for_region
 
 
 class OrderService:
@@ -262,13 +262,27 @@ class OrderService:
         """
         Cancels an order and atomically releases reserved inventory.
         """
-        if order.status in ["paid", "initiated", "processing", "shipped"]:
-            raise ValueError("Cannot cancel this order in its current state")
-
-        if order.status == "cancelled":
-            raise ValueError("Order is already cancelled")
-
         with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+            if order.status == Order.STATUS_CANCELLED:
+                raise ValueError("Order is already cancelled")
+            if order.paid_at or order.status not in {
+                Order.STATUS_PENDING, Order.STATUS_INITIATED, Order.STATUS_PAYMENT_FAILED,
+            }:
+                raise ValueError("Cannot cancel this order in its current state")
+
+            payment = getattr(order, "payment", None)
+            if payment and payment.status == "completed":
+                raise ValueError("This order has a confirmed payment.")
+            if payment and payment.payment_method == "mpesa" and payment.status == "initiated" and (
+                payment.checkout_request_id or payment.mpesa_issue == "initiation_unknown"
+            ):
+                raise ValueError("Confirm the M-Pesa payment outcome before cancelling this order.")
+
+            if order.inventory_restored:
+                order.transition_to(Order.STATUS_CANCELLED, publish=False)
+                return order
+
             for item in order.items.select_related("product").all():
                 if item.variant_reference:
                     variant_inventory = OrderService._get_locked_variant_inventory_by_reference(item.variant_reference)
@@ -305,8 +319,9 @@ class OrderService:
                 Coupon.objects.filter(pk=order.coupon_id, used_count__gt=0).update(
                     used_count=F("used_count") - 1
                 )
-            order.status = "cancelled"
-            order.save(update_fields=["status"])
+            order.transition_to(Order.STATUS_CANCELLED, publish=False)
+            order.inventory_restored = True
+            order.save(update_fields=["inventory_restored", "updated_at"])
 
         return order
 

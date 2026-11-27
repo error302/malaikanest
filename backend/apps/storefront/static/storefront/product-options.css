@@ -1,0 +1,13 @@
+.product-options { min-width: 0; margin: 0; padding: 0; border: 0; }
+.product-options legend { margin-bottom: 8px; padding: 0; font-size: .95rem; font-weight: 750; }
+.product-option-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.product-option { position: relative; flex: 0 1 auto; max-width: 100%; }
+.product-option input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.product-option-card { display: grid; gap: 2px; padding: 7px 11px; min-height: 44px; border: 1px solid #aebccc; border-radius: 7px; background: #fff; color: #1b304a; cursor: pointer; overflow-wrap: anywhere; }
+.product-option-card strong { font-size: .88rem; }
+.product-option-card strong span { margin-left: 3px; font-weight: 500; }
+.product-option-card small { font-size: .78rem; color: #405671; }
+.product-option input:checked + span { border-color: #1b304a; background: #eef3fa; box-shadow: inset 0 0 0 1px #1b304a; }
+.product-option input:focus-visible + span { outline: 2px solid #1b304a; outline-offset: 2px; }
+.product-option input:disabled + span { color: #526579; background: #f3f4f5; cursor: not-allowed; }
+.pdp-availability { align-self: center; margin: 0; color: #405671; font-size: .85rem; }

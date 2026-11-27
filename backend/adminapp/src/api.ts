@@ -319,7 +319,7 @@ export interface ProductImage {
 
 export interface Variant {
   id?: string;
-  color: string;
+  color: string | null;
   size?: string | null;
   sku?: string | null;
   price_modifier?: string;
@@ -336,6 +336,7 @@ export interface Product {
   compare_price?: string | null;
   stock: number;
   available_stock?: number;
+  reserved_stock?: number;
   is_active: boolean;
   featured?: boolean;
   category?: { id: string; name: string; slug: string } | string | null;

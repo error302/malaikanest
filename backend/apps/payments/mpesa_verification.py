@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from apps.core.circuit_breaker import CircuitOpen, call_with_breaker
 from apps.orders.models import Order
+from apps.orders.services import OrderService
 from apps.core.outbox import publish_event
 from .models import Payment
 from .services import PaymentService, format_mpesa_amount, normalize_phone
@@ -19,7 +20,7 @@ MAX_ATTEMPTS = 12
 IDENTIFIER = re.compile(r"[A-Za-z0-9_-]{1,128}")
 RECEIPT = re.compile(r"[A-Z0-9]{8,20}")
 RESULT_CODE = re.compile(r"[0-9]{1,8}")
-FAILURE_CODES = {"1", "2001"}
+FAILURE_CODES = {"1", "1037", "1038", "2001"}
 CANCEL_CODE = "1032"
 
 
@@ -208,6 +209,11 @@ def verify_payment(payment_id):
                 current.save(update_fields=[
                     "status", "mpesa_issue", "mpesa_query_lease_until", "mpesa_next_query_at", "updated_at",
                 ])
+                order = Order.objects.select_for_update().get(pk=current.order_id)
+                if not order.paid_at and order.status in {
+                    Order.STATUS_PENDING, Order.STATUS_INITIATED, Order.STATUS_PAYMENT_FAILED,
+                }:
+                    OrderService.cancel_order(order)
                 return current.status
 
         current.mpesa_query_lease_until = None

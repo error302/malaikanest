@@ -27,6 +27,7 @@ class AdminLimitOffsetPagination(LimitOffsetPagination):
 
 from apps.accounts.models import User
 from apps.orders.models import CartItem, OrderItem, Order
+from apps.orders.services import OrderService
 from apps.products.models import Banner, Category, Product
 from apps.storefront.context_processors import AGE_GROUPS
 from apps.storefront.sizing import filter_size
@@ -258,6 +259,15 @@ class AdminOrderViewSet(viewsets.ModelViewSet):
             )
 
         old_status = order.status
+        if new_status == Order.STATUS_CANCELLED and old_status in {
+            Order.STATUS_PENDING, Order.STATUS_INITIATED, Order.STATUS_PAYMENT_FAILED,
+        }:
+            try:
+                order = OrderService.cancel_order(order)
+            except ValueError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(self.get_serializer(order).data)
+
         # Use the state machine so the timestamp fields (paid_at, shipped_at,
         # etc.) are set automatically. Direct assignment skips those fields
         # and leaves the order in a half-updated state.

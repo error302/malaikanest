@@ -45,12 +45,11 @@ export function validateVariants(variants: Variant[], previous: Variant[] = []):
   const seen = new Set<string>();
   for (const [index, variant] of variants.entries()) {
     const label = `Size row ${index + 1}`;
-    if (!variant.color) return `${label}: choose a colour.`;
     if (!Number.isInteger(variant.stock) || variant.stock < 0) return `${label}: stock must be a non-negative whole number.`;
     const original = previous.find((row) => row.id && row.id === variant.id);
     const reserved = original ? Math.max(0, original.stock - (original.available_stock ?? original.stock)) : 0;
     if (variant.stock < reserved) return `${label}: ${reserved} units are reserved; stock cannot be lower.`;
-    const key = `${variant.size || ""}:${variant.color}`;
+    const key = `${variant.size || ""}:${variant.color || ""}`;
     if (seen.has(key)) return `${label}: duplicate size and colour. Reactivate or edit the existing row.`;
     seen.add(key);
   }

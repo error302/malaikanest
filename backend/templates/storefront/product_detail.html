@@ -1,11 +1,13 @@
 {% extends "storefront/base.html" %}
-{% load cloudinary_tags %}
+{% load cloudinary_tags static %}
 
 {% block title %}{{ product.name }} — Malaika Nest{% endblock %}
 {% block meta_description %}{{ product.description|striptags|truncatewords:25 }}{% endblock %}
 
 {% block extra_head %}
 {{ block.super }}
+<link rel="stylesheet" href="{% static 'storefront/product-options.css' %}">
+<script src="{% static 'storefront/product-options.js' %}" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -101,7 +103,7 @@
             {% if product.age_range %}
               <span class="badge badge-outline">Ages {{ product.age_range }}</span>
             {% endif %}
-            {% if product.size_label %}
+            {% if product.size_label and not variants %}
               <span class="badge badge-outline">Size {{ product.get_size_label_display }}</span>
             {% endif %}
             {% if product.condition == 'mtumba' %}
@@ -127,39 +129,27 @@
           {% endif %}
         </div>
 
-        <!-- Size Guide -->
-        <details class="nest-fit nest-pdp-block" id="size-guide" style="background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
-          <summary style="font-weight: 700; color: var(--coast-deep); cursor: pointer; min-height: 48px; display: flex; align-items: center; list-style: none;">Measurements & fit</summary>
-          <div class="nest-fit-content" style="margin-top: 16px;">
-            {% if product.size_guide %}
-              {{ product.size_guide|linebreaks }}
-            {% else %}
-              <p style="color: var(--coast-muted); line-height: 1.6;">Measurements for this item haven't been added yet. Ask us for the chest, waist and length measurements in cm before choosing a size.</p>
-              <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="coast-text-link" style="margin-top: 12px; display: inline-block;">Ask about measurements on WhatsApp</a>
-            {% endif %}
-            <p style="margin-top: 16px; font-size: .85rem; color: var(--coast-muted); line-height: 1.6;">Size labels vary between brands. Compare garment measurements with a similar item that fits your child, and check whether the measurement is a flat width or full circumference.</p>
-          </div>
-        </details>
-
         <!-- Add to Cart Form -->
         <form action="{% url 'storefront:cart_add' %}" method="post" class="nest-pdp-form" style="display: flex; flex-direction: column; gap: 24px;" id="pdp-add-form">
           {% csrf_token %}
           <input type="hidden" name="product_id" value="{{ product.id }}">
 
           {% if variants %}
-          <fieldset style="border: none; padding: 0;">
-            <legend style="font-size: .85rem; font-weight: 700; color: var(--coast-deep); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .04em;">Choose size & colour</legend>
-            <div class="nest-size-options" style="display: flex; flex-wrap: wrap; gap: 8px;">
-              {% for v in variants %}
-              <label class="nest-variant" style="cursor: pointer; display: block;">
-                <input type="radio" name="variant_id" value="{{ v.id }}" required {% if v.shop_stock <= 0 %}disabled{% elif v == default_variant %}checked{% endif %} style="position: absolute; opacity: 0; pointer-events: none;">
-                <span class="nest-size-option{% if v.shop_stock <= 0 %} disabled{% endif %}" style="display: inline-flex; align-items: center; padding: 10px 18px; border-radius: var(--radius-md); border: 2px solid var(--coast-line); background: white; font-weight: 600; color: var(--coast-deep); transition: all var(--transition-fast); {% if v.shop_stock <= 0 %}opacity: 0.5; cursor: not-allowed;{% endif %}">{{ v.get_size_display|default:"Standard" }}{% if v.color %} · {{ v.get_color_display }}{% endif %}{% if v.price_modifier %} · KES {{ v.shop_price|floatformat:"0" }}{% endif %}{% if v.shop_stock <= 0 %} · Sold out{% endif %}</span>
-              </label>
-              {% endfor %}
-            </div>
-          </fieldset>
-          {% elif product.size_label %}
-          <p style="font-size: .9rem; font-weight: 600; color: var(--coast-deep);">Size: {{ product.get_size_label_display }}</p>
+            <fieldset class="product-options">
+              <legend>Choose an option</legend>
+              <div class="product-option-grid">
+                {% for variant in variants %}
+                  <label class="product-option">
+                    <input type="radio" name="variant_id" value="{{ variant.id }}" required {% if variant.shop_stock <= 0 %}disabled{% elif variant == default_variant %}checked{% endif %}
+                           data-stock="{{ variant.shop_stock }}" data-price="KES {{ variant.shop_price|floatformat:'-2g' }}">
+                    <span class="product-option-card">
+                      <strong>{% if variant.size or not variant.color %}{{ variant.get_size_display|default:"Standard" }}{% endif %}{% if variant.color %}<span>{{ variant.get_color_display }}</span>{% endif %}</strong>
+                      <small>{% if variant.shop_stock <= 0 %}Sold out{% else %}KES {{ variant.shop_price|floatformat:"-2g" }}{% endif %}</small>
+                    </span>
+                  </label>
+                {% endfor %}
+              </div>
+            </fieldset>
           {% endif %}
 
           <!-- Quantity Selector -->
@@ -175,8 +165,9 @@
                 id="qtyInput" 
                 name="quantity" 
                 value="1" 
-                min="1" 
-                max="{{ product.shop_stock }}"
+                min="1"
+                max="{% if default_variant %}{{ default_variant.shop_stock }}{% elif product.shop_stock > 0 %}{{ product.shop_stock }}{% else %}1{% endif %}"
+                {% if product.shop_stock <= 0 %}disabled{% endif %}
                 aria-label="Quantity"
                 inputmode="numeric"
               >
@@ -187,18 +178,9 @@
               >+</button>
             </div>
 
-            <!-- Stock status indicator -->
-            <div>
-              {% if product.shop_stock > 0 %}
-                <span class="badge badge-primary" style="display: inline-flex; align-items: center; gap: 6px;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--coast-leaf);"></span> In Stock
-                </span>
-              {% else %}
-                <span class="badge" style="background: #fee2e2; color: #991b1b; display: inline-flex; align-items: center; gap: 6px;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span> Out of Stock
-                </span>
-              {% endif %}
-            </div>
+            <p class="pdp-availability" id="pdp-availability" aria-live="polite">
+              {% if product.shop_stock <= 0 %}Out of stock{% elif default_variant %}{{ default_variant.shop_stock }} available{% elif variants %}Select an option{% else %}In stock{% endif %}
+            </p>
           </div>
 
         </form>
@@ -252,7 +234,7 @@
             class="coast-button coast-button-mango"
             style="flex: 2; min-height: 44px;"
           >
-            {% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Bag · KES {{ product.price|floatformat:"0" }}{% endif %}
+            <span id="pdp-bag-label">{% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Bag{% if default_variant %} · KES {{ default_variant.shop_price|floatformat:"-2g" }}{% elif not variants %} · KES {{ product.price|floatformat:"-2g" }}{% endif %}{% endif %}</span>
           </button>
           <a
             href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}"
@@ -268,6 +250,20 @@
             <span>WhatsApp</span>
           </a>
         </div>
+
+        <!-- Size Guide -->
+        <details class="nest-fit nest-pdp-block" id="size-guide" style="background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
+          <summary style="font-weight: 700; color: var(--coast-deep); cursor: pointer; min-height: 48px; display: flex; align-items: center; list-style: none;">Measurements & fit</summary>
+          <div class="nest-fit-content" style="margin-top: 16px;">
+            {% if product.size_guide %}
+              {{ product.size_guide|linebreaks }}
+            {% else %}
+              <p style="color: var(--coast-muted); line-height: 1.6;">Measurements for this item haven't been added yet. Ask us for the chest, waist and length measurements in cm before choosing a size.</p>
+              <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="coast-text-link" style="margin-top: 12px; display: inline-block;">Ask about measurements on WhatsApp</a>
+            {% endif %}
+            <p style="margin-top: 16px; font-size: .85rem; color: var(--coast-muted); line-height: 1.6;">Size labels vary between brands. Compare garment measurements with a similar item that fits your child, and check whether the measurement is a flat width or full circumference.</p>
+          </div>
+        </details>
 
         <!-- Description -->
         {% if product.description %}
