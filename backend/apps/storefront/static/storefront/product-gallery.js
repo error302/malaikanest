@@ -21,8 +21,10 @@
     .map(button => ({url: button.dataset.gallerySrc, label: button.dataset.galleryLabel}));
   let currentPhoto = 0;
   let touchStart;
+  let swiped = false;
 
   imageOpen?.addEventListener("click", () => {
+    if (swiped) { swiped = false; return; }
     if (!image?.src || !imageDialog || !largeImage) return;
     largeImage.src = image.src;
     largeImage.alt = image.alt;
@@ -40,6 +42,7 @@
     const vertical = event.changedTouches[0].clientY - touchStart.y;
     touchStart = null;
     if (Math.abs(delta) < 50 || Math.abs(delta) <= Math.abs(vertical)) return;
+    swiped = true;
     const next = Math.max(0, Math.min(currentPhotos.length - 1, currentPhoto + (delta < 0 ? 1 : -1)));
     thumbnails.querySelectorAll("button")[next]?.click();
   }, {passive: true});
@@ -75,6 +78,7 @@
       image.alt = productName + " — " + label;
     } else {
       image.removeAttribute("src");
+      noPhoto.textContent = "Photo unavailable for this option";
     }
   }
 
