@@ -341,7 +341,6 @@ function EditDrawer({
     const intent = (submitter?.value || "save") as SaveIntent;
     const variantError = validateVariants(variants, current.variants ?? []);
     if (variantError) { setError(variantError); return; }
-    if (intent === "publish" && !window.confirm("Publish this product and make it visible in the shop?")) return;
     if (intent === "draft" && !window.confirm("Unpublish this product and move it to drafts?")) return;
     const body = productChanges(current, form, intent);
     const [cover, ...gallery] = staged;

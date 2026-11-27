@@ -3,13 +3,16 @@
 
 {% block extra_head %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'storefront/account-access.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'storefront/account-access.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
 <section class="shop-frame account-access" aria-labelledby="account-access-title">
   <div class="account-access-frame">
     <div class="account-access-content">
+      <a class="account-access-brand" href="{% url 'storefront:home' %}" aria-label="Malaika Nest home">
+        <img src="{% if site_settings.get_logo_url %}{{ site_settings.get_logo_url }}{% else %}{% static 'nest-home/original-malaika-logo.webp' %}{% endif %}" alt="Malaika Nest" width="105" height="74">
+      </a>
       <header class="account-access-header">
         <h1 id="account-access-title">{% block access_title %}{% endblock %}</h1>
         <p>{% block access_description %}{% endblock %}</p>
@@ -24,7 +27,7 @@
       <p class="account-access-switch">{% block access_switch %}{% endblock %}</p>
     </div>
     <div class="account-access-art" aria-hidden="true">
-      {% block access_art %}<img class="account-access-photo" src="{% static 'nest-home/coastal-campaign-mobile.webp' %}" alt="" width="720" height="480">{% endblock %}
+      {% block access_art %}<img class="account-access-photo" src="{% static 'nest-home/signup-malaika.webp' %}" alt="" width="1024" height="1536">{% endblock %}
     </div>
   </div>
 </section>

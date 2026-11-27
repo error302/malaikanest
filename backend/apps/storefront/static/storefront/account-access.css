@@ -24,6 +24,8 @@
   color: var(--account-ink);
 }
 .account-access-header { margin-bottom: 23px; }
+.account-access-brand { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 12px; }
+.account-access-brand img { display: block; width: 86px; max-height: 66px; object-fit: contain; }
 .account-access-header h1 {
   margin: 0 0 9px;
   color: var(--account-ink);
@@ -41,7 +43,8 @@
   font-size: .95rem;
   line-height: 1.55;
 }
-.account-access-art { display: none; }
+.account-access-art { display: block; position: relative; grid-row: 1; height: 180px; overflow: hidden; background: #d6d9bf; }
+.account-access-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
 .account-access-form { display: grid; gap: 13px; margin: 0; }
 .account-access-field { display: grid; min-width: 0; gap: 5px; }
 .account-access-field label { font-size: .88rem; font-weight: 650; }
@@ -135,6 +138,7 @@
     display: block;
     position: relative;
     min-height: 490px;
+    height: auto;
     margin: 10px;
     overflow: hidden;
     border-radius: 11px;
