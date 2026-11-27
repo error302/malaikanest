@@ -43,6 +43,11 @@ def sitemap_xml(request):
     base = request.build_absolute_uri("/").rstrip("/")
     urls = [(f"{base}{reverse('storefront:home')}", None)]
 
+    # Core catalogue and info pages — these were missing from the sitemap, so
+    # Google discovered most of the site only by crawling links.
+    for name in ("product_list", "contact", "delivery_returns", "order_lookup"):
+        urls.append((f"{base}{reverse(f'storefront:{name}')}", None))
+
     products = (
         Product.objects.filter(is_active=True, status=PUBLIC_STATUS)
         .prefetch_related("category")
@@ -56,7 +61,11 @@ def sitemap_xml(request):
     categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review")
     for category in categories:
         loc = f"{base}{reverse('storefront:category_detail', args=[category.slug])}"
-        urls.append((loc, None))
+        lastmod = getattr(category, "updated_at", None)
+        urls.append((loc, lastmod))
+
+    for name in ("privacy_policy", "terms_of_service"):
+        urls.append((f"{base}{reverse(f'storefront:{name}')}", None))
 
     body = [
         '<?xml version="1.0" encoding="UTF-8"?>',

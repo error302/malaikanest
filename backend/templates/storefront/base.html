@@ -224,7 +224,7 @@
     ]
   }
   </script>
-  <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast15">
+  <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast16">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
@@ -341,6 +341,10 @@
       </div>
       <div class="shop-footer-bottom">
         <span>© {% now "Y" %} Malaika Nest</span>
+        <span style="display: inline-flex; gap: 16px;">
+          <a href="{% url 'storefront:privacy_policy' %}">Privacy</a>
+          <a href="{% url 'storefront:terms_of_service' %}">Terms</a>
+        </span>
       </div>
     </div>
   </footer>

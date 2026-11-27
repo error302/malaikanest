@@ -172,6 +172,8 @@ class ProductListView(View):
             prepare_product(product)
         pagination_params = request.GET.copy()
         pagination_params.pop('page', None)
+        sort_params = pagination_params.copy()
+        sort_params.pop('sort', None)
 
         categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review").order_by("name")
 
@@ -190,6 +192,7 @@ class ProductListView(View):
             "selected_size": size_param,
             "size_choices": Product.SIZE_CHOICES,
             "pagination_query": pagination_params.urlencode(),
+            "sort_query": sort_params.urlencode(),
         }
         return render(request, "storefront/product_list.html", context)
 

@@ -28,32 +28,29 @@
         <p style="margin-top: 8px; color: var(--coast-muted); font-size: .95rem;">{{ total_count }} item{{ total_count|pluralize }}</p>
       </div>
 
-      <!-- Sorting -->
-      <form method="get" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        {% if selected_size %}<input type="hidden" name="size" value="{{ selected_size }}">{% endif %}
-        {% if selected_condition %}<input type="hidden" name="condition" value="{{ selected_condition }}">{% endif %}
-        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
-        {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
-        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-        <label for="sort" style="font-size: .85rem; font-weight: 600; color: var(--coast-deep); white-space: nowrap;">Sort by</label>
-        <select 
-          name="sort" 
-          id="sort" 
-          onchange="this.form.submit()" 
-          class="form-input"
-          style="width: auto; min-width: 200px; padding-right: 40px; background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a6b5c' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\"); background-repeat: no-repeat; background-position: right 12px center; appearance: none;"
-        >
-          <option value="-created_at" {% if selected_sort == "-created_at" %}selected{% endif %}>Newest</option>
-          <option value="price_asc" {% if selected_sort == "price_asc" %}selected{% endif %}>Price: Low to High</option>
-          <option value="price_desc" {% if selected_sort == "price_desc" %}selected{% endif %}>Price: High to Low</option>
-          <option value="name" {% if selected_sort == "name" %}selected{% endif %}>Name (A-Z)</option>
-        </select>
-      </form>
+      <!-- Sorting: link menu, not a native <select> (whose option list covered the phone screen) -->
+      <details class="coast-sort-menu">
+        <summary class="coast-age-nav coast-sort-trigger">
+          Sort: {% if selected_sort == "price_asc" %}Price low–high{% elif selected_sort == "price_desc" %}Price high–low{% elif selected_sort == "name" %}Name A–Z{% else %}Newest{% endif %}
+        </summary>
+        <ul class="coast-age-list">
+          <li><a href="?{% if sort_query %}{{ sort_query }}&amp;{% endif %}sort=-created_at" {% if selected_sort == "-created_at" %}aria-current="true"{% endif %}>Newest first</a></li>
+          <li><a href="?{% if sort_query %}{{ sort_query }}&amp;{% endif %}sort=price_asc" {% if selected_sort == "price_asc" %}aria-current="true"{% endif %}>Price: low to high</a></li>
+          <li><a href="?{% if sort_query %}{{ sort_query }}&amp;{% endif %}sort=price_desc" {% if selected_sort == "price_desc" %}aria-current="true"{% endif %}>Price: high to low</a></li>
+          <li><a href="?{% if sort_query %}{{ sort_query }}&amp;{% endif %}sort=name" {% if selected_sort == "name" %}aria-current="true"{% endif %}>Name (A–Z)</a></li>
+        </ul>
+      </details>
     </div>
   </div>
 
   <div class="boutique-catalog-body">
     <aside class="boutique-filter-panel" aria-label="Product filters" style="position: sticky; top: 100px;">
+      <details class="boutique-filters" open>
+        <summary class="boutique-filters-summary">
+          Filters
+          {% if selected_size or selected_category or selected_age or selected_condition %}<span class="boutique-filters-count">on</span>{% endif %}
+        </summary>
+
       <form method="get" class="nest-size-filter">
         {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category.slug }}">{% endif %}
         {% if selected_age %}<input type="hidden" name="age" value="{{ selected_age }}">{% endif %}
@@ -111,7 +108,16 @@
         </div>
       </form>
 
+      </details>
     </aside>
+    <script>
+      (function () {
+        var box = document.querySelector('.boutique-filters');
+        if (!box) return;
+        // Collapsed by default on phones; desktop keeps them expanded.
+        if (window.matchMedia('(max-width: 767px)').matches) box.removeAttribute('open');
+      })();
+    </script>
 
     <div class="boutique-catalog-results">
       {% if selected_condition == 'mtumba' %}

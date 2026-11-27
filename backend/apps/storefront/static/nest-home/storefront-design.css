@@ -107,6 +107,24 @@ main input[type="radio"]:focus-visible + div { outline: 3px solid #48668c; outli
 .coast-catalog-intro .nest-catalog-heading p { color: var(--shop-muted); font-size: .95rem; }
 .boutique-catalog-body { display: grid; grid-template-columns: minmax(208px, 235px) minmax(0, 1fr); gap: 28px; align-items: start; }
 .boutique-filter-panel { border-inline-end: 1px solid var(--shop-border); padding-inline-end: 16px; }
+/* One tidy "Filters" group instead of three loose blocks. */
+.boutique-filters > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  min-height: 48px; padding: 0 14px; margin-bottom: 4px; cursor: pointer;
+  list-style: none; font-weight: 750; color: var(--shop-ink-dark);
+  border: 1px solid var(--shop-border); border-radius: 999px; background: #fff;
+}
+.boutique-filters > summary::-webkit-details-marker { display: none; }
+.boutique-filters > summary::after {
+  content: ""; width: 7px; height: 7px; flex-shrink: 0;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px); transition: transform 160ms ease;
+}
+.boutique-filters[open] > summary::after { transform: rotate(225deg) translateY(-1px); }
+.boutique-filters-count {
+  font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px; background: var(--shop-butter); color: var(--shop-ink-dark);
+}
 .boutique-filter-panel .nest-size-filter { background: transparent; padding: 0; border: 0; margin: 0; }
 .boutique-filter-panel :is(summary, .coast-size-toggle) { min-height: 48px; padding-block: 13px; cursor: pointer; font-weight: 750; }
 .boutique-category-filter { border-block: 1px solid var(--shop-border); margin-bottom: 9px; }
@@ -397,8 +415,10 @@ a.nest-home-product.is-soldout .nest-home-price,
 .coast-age-menu[open] > summary { border-color: var(--shop-ink); }
 .coast-age-menu[open] > summary::after { transform: rotate(225deg) translateY(-1px); }
 .coast-age-list {
-  position: absolute; z-index: 60; top: calc(100% + 6px); left: 0;
-  min-width: 210px; max-height: min(58vh, 380px); overflow-y: auto;
+  position: absolute; z-index: 60; top: calc(100% + 6px);
+  left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: min(260px, calc(100vw - 24px));
+  max-height: 300px; overflow-y: auto;
   margin: 0; padding: 6px; list-style: none;
   background: #fff; border: 1px solid var(--shop-border); border-radius: 12px;
   box-shadow: 0 14px 34px rgba(27, 48, 74, .16);
@@ -408,14 +428,18 @@ a.nest-home-product.is-soldout .nest-home-price,
   border-radius: 8px; font-size: .9rem; font-weight: 600; color: var(--shop-ink-dark);
 }
 .coast-age-list a:hover, .coast-age-list a:focus-visible { background: var(--shop-blue); text-decoration: none; }
+.coast-age-list a[aria-current="true"] { background: var(--shop-blue); font-weight: 750; }
 
 /* Must come after the base .coast-age-list rules to win the cascade. */
 @media (max-width: 767px) {
-  .coast-age-menu { position: static; }
-  .coast-age-list { left: 0; right: 0; min-width: 0; max-height: 52vh; }
   .coast-age-menu > summary { min-height: 44px; }
   .coast-age-list a { min-height: 44px; }
 }
+
+/* Sort menu on the shop page — same compact popover pattern. */
+.coast-sort-menu { position: relative; }
+.coast-sort-trigger { white-space: nowrap; }
+.coast-sort-menu[open] > summary { border-color: var(--shop-ink); }
 
 /* ── Customer account: sign in / sign up / account ────────────────────────── */
 .coast-auth-page { display: flex; justify-content: center; padding: 40px 0 64px; }

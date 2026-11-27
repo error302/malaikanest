@@ -1,4 +1,6 @@
 from django.urls import path
+from django.views.generic import RedirectView
+
 from . import views, views_cart, views_checkout, pwa, views_wishlist
 from . import seo
 from .admin_spa import AdminDashboardView
@@ -12,6 +14,18 @@ urlpatterns = [
     # SEO
     path("robots.txt", seo.robots_txt, name="robots"),
     path("sitemap.xml", seo.sitemap_xml, name="sitemap"),
+    # Legacy URLs from the previous Next.js deployment — 301 them so Google
+    # (which still crawls them) and old links land on the live page.
+    path("find-us/", RedirectView.as_view(url="/contact/", permanent=True), name="legacy-find-us"),
+    path("about/", RedirectView.as_view(url="/contact/", permanent=True), name="legacy-about"),
+    path("faq/", RedirectView.as_view(url="/delivery-returns/", permanent=True), name="legacy-faq"),
+    path("shipping/", RedirectView.as_view(url="/delivery-returns/", permanent=True), name="legacy-shipping"),
+    path("returns/", RedirectView.as_view(url="/delivery-returns/", permanent=True), name="legacy-returns"),
+    path("shop/", RedirectView.as_view(url="/products/", permanent=True), name="legacy-shop"),
+    path("best-sellers/", RedirectView.as_view(url="/products/", permanent=True), name="legacy-best-sellers"),
+    path("login/", RedirectView.as_view(url="/account/signin/", permanent=True), name="legacy-login"),
+    path("register/", RedirectView.as_view(url="/account/signup/", permanent=True), name="legacy-register"),
+    path("wishlist/", RedirectView.as_view(url="/saved/", permanent=True), name="legacy-wishlist"),
     # Catalogue
     path("", views.HomeView.as_view(), name="home"),
     path("products/", views.ProductListView.as_view(), name="product_list"),
@@ -51,6 +65,8 @@ urlpatterns = [
 
     # Static pages
     path("delivery-returns/", views.StaticPageView.as_view(template_name="storefront/delivery_returns.html"), name="delivery_returns"),
+    path("privacy-policy/", views.StaticPageView.as_view(template_name="storefront/privacy_policy.html"), name="privacy_policy"),
+    path("terms-of-service/", views.StaticPageView.as_view(template_name="storefront/terms_of_service.html"), name="terms_of_service"),
     path("contact/", views.StaticPageView.as_view(template_name="storefront/contact.html"), name="contact"),
 
     # Static TS admin dashboard (serves backend/static/adminapp/index.html)

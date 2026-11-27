@@ -1,0 +1,37 @@
+{% extends "storefront/base.html" %}
+{% load static %}
+
+{% block title %}Terms of Service | Malaika Nest{% endblock %}
+{% block meta_description %}The terms for buying from Malaika Nest: ordering, M-Pesa payment, delivery across Kenya, store pickup in Likoni, returns within 7 days, and liability.{% endblock %}
+
+{% block content %}
+<div class="coast-policy shop-frame coast-page">
+  <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#1b304a] mt-1 mb-2">Terms of Service</h1>
+  <p class="text-xs text-stone-500 mb-8">Last updated: {% now "j F Y" %}</p>
+
+  <div style="max-width: 68ch; display: grid; gap: 18px; font-size: .92rem; line-height: 1.7; color: #3e5069;">
+    <p>These terms apply when you buy from malaikanest.com or order for pickup at Tawakal Toto Wear, Likoni, Mombasa. By placing an order you accept them.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">1. Orders</h2>
+    <p>An order is confirmed once we receive payment. We may decline an order (for example, if an item has just sold out) and will refund any payment already made for it.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">2. Prices and payment</h2>
+    <p>Prices are in Kenya Shillings and include what is shown at checkout. We accept M-Pesa STK push and Lipa na M-Pesa Till. We dispatch after payment clears — we do not offer cash on delivery. In the rare case a price was displayed incorrectly, we will contact you before processing.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">3. Delivery</h2>
+    <p>Mombasa orders are delivered same-day or next-day; Nairobi in 1–2 business days; upcountry in 2–3 business days. Store pickup in Likoni is free. Delivery fees shown at checkout apply, and delivery is free above the threshold shown on the cart page. Risk passes to you on delivery to the address or person you nominated.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">4. Returns</h2>
+    <p>Unused items in their original condition can be returned within 7 days of delivery — message us on WhatsApp or email to arrange it. Refunds go back via M-Pesa to the paying number. Items marked as final sale, and clearance/mtumba items listed as such, are exempt. If an item arrives damaged or is not what you ordered, we will replace or refund it in full including delivery.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">5. Product information</h2>
+    <p>We describe sizes, measurements and condition as accurately as we can. Colours may vary slightly between screens. Where an item is pre-loved (mtumba), its listing states the condition — these are one-off pieces.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">6. Liability</h2>
+    <p>To the extent permitted by Kenyan law, our liability for any order is limited to the amount you paid for it. Nothing here limits your statutory consumer rights under the Consumer Protection Act, 2012.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">7. Contact</h2>
+    <p>Questions about these terms: <a class="coast-text-link" href="mailto:orders@malaikanest.com">orders@malaikanest.com</a>, <a class="coast-text-link" href="tel:+254726771321">+254 726 771 321</a>, or visit us at Tawakal Toto Wear, Likoni, Mombasa.</p>
+  </div>
+</div>
+{% endblock %}

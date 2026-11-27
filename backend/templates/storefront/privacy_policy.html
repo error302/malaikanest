@@ -1,0 +1,47 @@
+{% extends "storefront/base.html" %}
+{% load static %}
+
+{% block title %}Privacy Policy | Malaika Nest{% endblock %}
+{% block meta_description %}How Malaika Nest collects, uses and protects your personal data when you shop with us online or at our Mombasa shop, under the Kenya Data Protection Act, 2019.{% endblock %}
+
+{% block content %}
+<div class="coast-policy shop-frame coast-page">
+  <h1 class="font-serif text-3xl sm:text-4xl font-bold text-[#1b304a] mt-1 mb-2">Privacy Policy</h1>
+  <p class="text-xs text-stone-500 mb-8">Last updated: {% now "j F Y" %}</p>
+
+  <div style="max-width: 68ch; display: grid; gap: 18px; font-size: .92rem; line-height: 1.7; color: #3e5069;">
+    <p>Malaika Nest ("we", "us") runs this online shop and the Tawakal Toto Wear shop in Likoni, Mombasa. This policy explains what we collect, why, and the choices you have. It follows the Kenya Data Protection Act, 2019.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">What we collect</h2>
+    <ul style="padding-left: 20px; display: grid; gap: 6px;">
+      <li><strong style="color: var(--shop-ink-dark);">Order details</strong> — your name, phone number, email, delivery address and what you ordered, so we can deliver and receipt your order.</li>
+      <li><strong style="color: var(--shop-ink-dark);">Payment references</strong> — M-Pesa transaction codes and amounts. We never see or store your M-Pesa PIN.</li>
+      <li><strong style="color: var(--shop-ink-dark);">Account details</strong> — if you create an account, your email and (optionally) phone number.</li>
+      <li><strong style="color: var(--shop-ink-dark);">Basic usage data</strong> — anonymous analytics about which pages are visited, to improve the shop.</li>
+    </ul>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">How we use it</h2>
+    <ul style="padding-left: 20px; display: grid; gap: 6px;">
+      <li>To take payment, deliver your order and handle returns.</li>
+      <li>To send order updates by SMS, WhatsApp or email.</li>
+      <li>To answer your questions when you contact us.</li>
+      <li>We never sell your data, and we do not send marketing messages without your consent.</li>
+    </ul>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">Who we share it with</h2>
+    <p>Only what is necessary: our delivery partners (name, address, phone for your parcel), Safaricom's M-Pesa system (to confirm your payment), our email service (to send receipts), and our website hosting and security providers. Each only receives what it needs.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">How long we keep it</h2>
+    <p>Order and payment records are kept as long as Kenyan tax and accounting law requires. Account details are kept until you ask us to delete them.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">Your rights</h2>
+    <p>You can ask us to show you, correct or delete your personal data, or withdraw consent for marketing, at any time. Email <a class="coast-text-link" href="mailto:orders@malaikanest.com">orders@malaikanest.com</a> or message us on WhatsApp and we will respond within a reasonable time. You may also complain to the Office of the Data Protection Commissioner (Kenya).</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">Security</h2>
+    <p>The site is served over HTTPS. Passwords are stored hashed, payment confirmations are verified against Safaricom's own records, and access to order data is limited to the shop's administrators.</p>
+
+    <h2 class="font-serif text-xl font-bold text-[#1b304a]">Cookies</h2>
+    <p>We use a small number of cookies that are needed for the shop to work — keeping your basket, keeping you signed in, and protecting forms. Anonymous analytics cookies help us understand which pages are useful. You can clear or block cookies in your browser at any time; the basket and sign-in features need them to work.</p>
+  </div>
+</div>
+{% endblock %}
