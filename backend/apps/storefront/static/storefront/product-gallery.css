@@ -40,6 +40,9 @@
 .pdp-product-meta { margin-top: 8px; }
 .pdp-gallery { grid-area: gallery; display: grid; align-content: start; gap: 10px; min-width: 0; }
 .nest-product-detail .pdp-gallery .coast-product-photo {
+  width: 100%;
+  max-width: none;
+  margin: 0;
   aspect-ratio: 1 / 1;
   background: var(--pdp-paper);
   border: 1px solid var(--pdp-rule);
@@ -68,7 +71,7 @@
 }
 .pdp-thumbnails button[aria-pressed="true"] { border-color: var(--pdp-accent); box-shadow: inset 0 0 0 1px var(--pdp-accent); }
 .pdp-thumbnails img { width: 100%; height: 62px; object-fit: contain; }
-.nest-product-detail .pdp-buy-panel { grid-area: purchase; min-width: 0; display: grid; align-content: start; gap: 18px; padding: 0; }
+.nest-product-detail .pdp-buy-panel { grid-area: purchase; min-width: 0; display: grid; align-content: start; gap: 18px; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
 #pdp-add-form { display: grid; gap: 17px; margin: 0; }
 .product-options { min-width: 0; margin: 0; padding: 0; border: 0; }
 .product-options legend { margin-bottom: 9px; padding: 0; color: var(--pdp-ink); font-size: .92rem; font-weight: 700; }
@@ -153,9 +156,11 @@
 }
 .pdp-buy-panel .nest-fit summary { display: list-item; min-height: 34px; font-weight: 700; color: var(--pdp-ink); cursor: pointer; }
 .pdp-buy-panel .nest-fit-content, .pdp-section-copy { max-width: 62ch; color: var(--pdp-muted); font-size: .91rem; line-height: 1.65; }
+.pdp-buy-panel .nest-fit-content { padding: 0; border: 0; border-radius: 0; background: transparent; }
 .pdp-section-title { margin: 0 0 5px; color: var(--pdp-ink); font-size: 1rem; font-weight: 700; }
 .pdp-mobile-cart { display: none; }
 @media (max-width: 767px) {
+  .pdp-breadcrumb-current { display: none; }
   .pdp-mobile-cart:not([hidden]) { display: block; position: fixed; z-index: 39; left: 12px; right: 12px; bottom: calc(73px + env(safe-area-inset-bottom)); padding: 5px; border: 1px solid var(--pdp-rule); border-radius: 11px; background: #fff; box-shadow: 0 6px 26px #182a3520; }
   .keyboard-open .pdp-mobile-cart { display: none !important; }
 }

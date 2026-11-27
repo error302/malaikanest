@@ -38,8 +38,8 @@
     <a href="{% url 'storefront:product_list' %}" class="coast-text-link" style="min-height: auto; text-decoration: none;">Products</a>
     <span>/</span>
     <a href="{% url 'storefront:category_detail' category_slug=product.category.slug %}" class="coast-text-link" style="min-height: auto; text-decoration: none;">{{ product.category.name }}</a>
-    <span>/</span>
-    <span style="font-weight: 600; color: var(--coast-deep); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ product.name }}</span>
+    <span class="pdp-breadcrumb-current">/</span>
+    <span class="pdp-breadcrumb-current" style="font-weight: 600; color: var(--coast-deep); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ product.name }}</span>
   </div>
 
   <div class="nest-pdp-layout pdp-layout">
@@ -72,7 +72,7 @@
         </div>
         {% if product.shop_stock <= 0 %}
           <div class="badge badge-secondary pdp-stock-badge">Out of Stock</div>
-        {% elif product.is_low_stock %}
+        {% elif product.is_low_stock and not variants %}
           <div class="badge badge-accent pdp-stock-badge">Only {{ product.shop_stock }} left</div>
         {% endif %}
       </div>
