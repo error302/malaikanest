@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { CatalogueOption, COLOR_CHOICES, Variant } from "./api";
+import { CatalogueOption, COLOR_CHOICES, ProductImage, Variant } from "./api";
 import { availableVariantStock } from "./productDraft";
 
 export function VariantsEditor({
   sizeOptions,
   variants,
   previous,
+  photos,
+  onPhotos,
   onChange,
 }: {
   sizeOptions: CatalogueOption[];
   variants: Variant[];
   previous: Variant[];
+  photos: ProductImage[];
+  onPhotos: () => void;
   onChange: (next: Variant[]) => void;
 }) {
   const [adding, setAdding] = useState(false);
@@ -88,8 +92,15 @@ export function VariantsEditor({
             {variants.map((row, index) => {
               const available = availableVariantStock(row, previous);
               const held = row.stock - available;
+              const photo = row.image || photos.find(item => row.id && item.variant_id === row.id)?.url;
               return (
                 <li key={row.id ?? `new-${index}`} className="variant-row">
+                  {row.id && <div className="variant-photo-preview">
+                    {photo && <img src={photo} alt="Variant photo" width={48} height={48} loading="lazy" />}
+                    <button type="button" className="btn ghost small" onClick={onPhotos}>
+                      {photo ? "Manage photos" : "Add variant photo"}
+                    </button>
+                  </div>}
                   <div className="variant-row-fields">
                     <label className="field">
                       <span>Size</span>

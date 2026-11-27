@@ -234,6 +234,10 @@ class ProductDetailView(View):
                 url = name if name.startswith(("https://", "http://")) else variant.image.url
                 if not any(photo["url"] == url for photo in variant.gallery):
                     variant.gallery.insert(0, {"url": url, "label": str(variant)})
+            variant.option_photo = variant.gallery[0]["url"] if variant.gallery else ""
+            variant.option_label = " · ".join(filter(None, [
+                variant.get_color_display(), variant.get_size_display(),
+            ])) or "Standard"
             variant.gallery = variant.gallery or shared
 
         default_variant = None

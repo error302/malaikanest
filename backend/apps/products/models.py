@@ -198,9 +198,8 @@ class Category(BaseModel):
             for part in parts[1:]:
                 current = cls.objects.filter(slug=part, parent=current).first()
                 if not current:
-                    break
-            if current:
-                return current
+                    return None
+            return current
 
         # 2. Single slug direct match (or fallback if path root was not found)
         target_slug = parts[-1]

@@ -1,4 +1,6 @@
 import sys
+from importlib import import_module
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -35,6 +37,9 @@ import django
 django.setup()
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.apps import apps
+from django.core.management import call_command
+from django.db import connection
 from django.test import TestCase, override_settings
 from django.test.runner import DiscoverRunner
 from django.utils.datastructures import MultiValueDict
@@ -64,6 +69,23 @@ class AdminProductApiTests(TestCase):
         response = self.client.post("/api/products/admin/products/", payload, format="json")
         self.assertEqual(response.status_code, 201, response.content)
         return response.json()["data"]["id"]
+
+    def test_boys_dresses_cleanup_preserves_categories_with_products(self):
+        call_command("seed_categories", stdout=StringIO())
+        invalid_path = "clothing/baby/boys/dresses"
+        self.assertIsNone(Category.resolve_by_path(invalid_path))
+        girls_dresses = Category.resolve_by_path("clothing/baby/girls/dresses")
+        self.assertIsNotNone(girls_dresses)
+        empty = Category.objects.create(name="Dresses", parent=Category.resolve_by_path("clothing/baby/boys"))
+        occupied = Category.objects.create(name="Dresses", parent=Category.resolve_by_path("clothing/kids/boys"))
+        product_id = self.create_product(category=str(occupied.pk))
+
+        migration = import_module("apps.products.migrations.0013_remove_empty_boys_dress_categories")
+        migration.remove_empty_boys_dress_categories(apps, SimpleNamespace(connection=connection))
+
+        self.assertFalse(Category.objects.filter(pk=empty.pk).exists())
+        self.assertEqual(Product.objects.get(pk=product_id).category_id, occupied.pk)
+        self.assertTrue(Category.objects.filter(pk=girls_dresses.pk).exists())
 
     def test_catalogue_filters_roll_up_categories_and_match_age_without_stock(self):
         child = Category.objects.create(name="Dresses", parent=self.category)
