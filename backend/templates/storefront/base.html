@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}Baby & Kids Clothes in Kenya — Rompers, Dresses & Hampers | Malaika Nest Mombasa{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Shop baby clothes and kids wear online in Kenya: newborn outfits, rompers, onesies, dresses and gift hampers. Same-day Mombasa delivery, nationwide delivery and free Likoni store pickup. Pay with M-Pesa STK.{% endblock %}">
+  <meta name="description" content="{% block meta_description %}Shop baby clothes and kids wear online in Kenya: newborn outfits, rompers, onesies, dresses and gift hampers. Same-day Mombasa delivery, nationwide delivery and free Likoni store pickup. Pay with M-Pesa STK, PayPal or card.{% endblock %}">
   <meta name="keywords" content="baby clothes Kenya, baby shop Kenya, online baby shop Kenya, baby clothes Mombasa, baby shop Mombasa, kids clothes Kenya, kids wear Nairobi, newborn clothes Kenya, newborn outfits Kenya, baby rompers Kenya, baby onesies Kenya, baby dresses Kenya, toddler clothes Kenya, children's clothing Kenya, baby clothes online Kenya, baby wear Kenya, baby outfits Mombasa, baby hamper Kenya, newborn gift set Kenya, baby shower gifts Kenya, mtumba baby clothes Kenya, pre-loved kids clothes Kenya, second hand baby clothes Mombasa, affordable baby clothes Kenya, cheap baby clothes Kenya, designer baby clothes Kenya, baby clothing store Mombasa, kids boutique Kenya, baby clothes delivery Kenya, M-Pesa baby shop, Tawakal Toto Shop Likoni, Likoni baby shop, Mombasa kids clothes, Kenyan baby boutique">
 
   <!-- Local store + site search structured data (helps Google and AI answers). -->
@@ -156,7 +156,6 @@
   <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="48x48">
   <link rel="icon" type="image/png" href="{% static 'img/favicon-32x32.png' %}" sizes="32x32">
   <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
-  {% include "storefront/organic_theme.html" %}
 
   <!-- LocalBusiness + WebSite Schema.org Structured Data -->
   <script type="application/ld+json">
@@ -179,7 +178,7 @@
         "email": "orders@malaikanest.com",
         "priceRange": "KES 200 - KES 15,000",
         "currenciesAccepted": "KES",
-        "paymentAccepted": "M-Pesa STK push, Lipa na M-Pesa Till 3370347",
+        "paymentAccepted": "M-Pesa STK push, Lipa na M-Pesa Till 3370347, PayPal, Visa, Mastercard",
         "hasMap": "https://maps.app.goo.gl/AHTa75obHAyjB3xZ8",
         "address": {
           "@type": "PostalAddress",
@@ -238,8 +237,8 @@
     ]
   }
   </script>
-  <link rel="preload" as="style" href="{% static 'nest-home/storefront-design.css' %}?v=coast21" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast21"></noscript>
+  <link rel="preload" as="style" href="{% static 'nest-home/storefront-design.css' %}?v=coast22" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast22"></noscript>
   <link rel="preload" as="image" href="{% static 'nest-home/coastal-campaign-mobile.webp' %}" fetchpriority="high" media="(max-width: 640px)">
   {% block extra_head %}{% endblock %}
 </head>

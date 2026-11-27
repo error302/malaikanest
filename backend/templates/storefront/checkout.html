@@ -281,23 +281,29 @@
 
           <!-- Cash on Delivery is intentionally NOT offered: pay first, then dispatch. -->
 
-          <!-- Option 4: PayPal (Temporarily Disabled for Maintenance) -->
-          <div class="card-elevated" style="padding: 20px; background: #fafcf9; border-color: var(--coast-line); opacity: 0.6; cursor: not-allowed;">
+          <!-- Option 3: PayPal / cards (wallet, Visa, Mastercard) -->
+          <label class="card-elevated" style="padding: 20px; cursor: pointer; display: flex; flex-direction: column; gap: 12px; transition: all var(--transition-base);" onmouseover="this.style.borderColor='var(--coast-leaf)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--coast-line)'; this.style.boxShadow='var(--shadow-sm)'">
+            <input type="radio" name="payment_method" value="paypal" onchange="document.getElementById('mpesaPhoneInput').classList.add('hidden')" style="position: absolute; opacity: 0; pointer-events: none;">
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
               <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                <div style="width: 24px; height: 24px; border: 2px solid var(--coast-line); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.4;">
+                <div style="width: 24px; height: 24px; border: 2px solid var(--coast-line); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--coast-leaf); opacity: 0; transition: opacity var(--transition-fast);"></div>
                 </div>
                 <div>
-                  <div style="font-size: .95rem; font-weight: 700; color: var(--coast-muted); display: flex; align-items: center; gap: 8px;">
-                    <span>PayPal / International Cards</span>
-                    <span class="badge" style="background: var(--coast-mango); color: var(--coast-ink);">Maintenance</span>
+                  <div style="font-size: .95rem; font-weight: 700; color: var(--coast-deep); display: flex; align-items: center; gap: 8px;">
+                    <span>PayPal / Cards</span>
+                    <span class="badge badge-primary">Visa & Mastercard</span>
                   </div>
-                  <p style="font-size: .8rem; color: var(--coast-muted); margin-top: 4px; line-height: 1.5;">Undergoing scheduled maintenance. Please checkout via M-Pesa.</p>
+                  <p style="font-size: .8rem; color: var(--coast-muted); margin-top: 4px; line-height: 1.5;">Pay with your PayPal wallet or credit/debit card. You will be redirected to PayPal to approve the payment.</p>
                 </div>
               </div>
-              <span class="badge badge-outline" style="font-size: .65rem; opacity: 0.6;">PAYPAL</span>
+              <span class="badge badge-accent" style="font-size: .65rem;">PAYPAL</span>
             </div>
-          </div>
+          </label>
+
+
+          <!-- PayPal is now a live payment method above. -->
+
         </div>
       </section>
 

@@ -764,7 +764,8 @@ class PayPalCallbackView(APIView):
             except Exception as exc:
                 logger.exception("PayPal redirect capture failed for Order #%s: %s", receipt, exc)
 
-        success_url = f"{frontend_url}/checkout/success?order={receipt}&token={checkout_token}&status=paid"
+        # Return the customer to the Django order status page (not a Next.js route).
+        success_url = f"{frontend_url}/orders/{receipt}/?token={checkout_token}"
         return HttpResponseRedirect(success_url)
 
     def post(self, request):

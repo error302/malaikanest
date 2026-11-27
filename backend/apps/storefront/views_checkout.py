@@ -131,9 +131,9 @@ class CheckoutView(View):
         delivery_region = request.POST.get("delivery_region", "nairobi").strip()
         payment_method = request.POST.get("payment_method", "mpesa").strip()
         # Django choices are not enforced at the DB layer — reject anything
-        # outside the two methods we actually support before an order exists.
-        if payment_method not in {"mpesa", "till"}:
-            return fail("payment_method", "Choose M-Pesa STK or M-Pesa Till as your payment method.")
+        # outside the methods we actually support before an order exists.
+        if payment_method not in {"mpesa", "till", "paypal"}:
+            return fail("payment_method", "Choose M-Pesa STK, M-Pesa Till or PayPal as your payment method.")
         mpesa_phone = (request.POST.get("mpesa_phone") or shipping_phone).strip()
         notes = request.POST.get("notes", "").strip()
         is_gift = bool(request.POST.get("is_gift"))
@@ -275,11 +275,36 @@ class CheckoutView(View):
             return redirect(status_url)
 
         elif payment_method == "paypal":
-            messages.warning(
-                request,
-                "PayPal checkout is currently undergoing scheduled maintenance. Please complete your payment via M-Pesa Buy Goods Till 3370347."
+            # PayPal wallet / cards: create the payment record and send the
+            # customer to PayPal to approve, then capture on the way back.
+            from django.urls import reverse as _reverse
+            from apps.payments.gateway import PayPalGateway
+
+            payment, _ = Payment.objects.get_or_create(
+                order=order,
+                payment_method="paypal",
+                defaults={"status": "pending", "amount": order.total},
             )
-            return redirect(status_url)
+            try:
+                result = PayPalGateway().initiate(
+                    payment,
+                    return_url=request.build_absolute_uri(
+                        _reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number})
+                    ),
+                )
+            except Exception as exc:
+                logger.exception("PayPal initiate failed for order %s: %s", order.receipt_number, exc)
+                messages.error(request, "PayPal payment could not be started. Please try M-Pesa or try again.")
+                return redirect(status_url)
+
+            approval_url = next(
+                (link["href"] for link in result.get("links", []) if link.get("rel") == "approve"),
+                None,
+            )
+            if not approval_url:
+                messages.error(request, "PayPal did not return an approval link. Please try again.")
+                return redirect(status_url)
+            return redirect(approval_url)
 
         # Fallback redirect
         return redirect(status_url)

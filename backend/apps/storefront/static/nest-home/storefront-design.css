@@ -14,6 +14,8 @@
   --shop-border: #d4dce6;
   --shop-blue: #e5edf6;
   --shop-butter: #fcf0d9;
+  --mobile-nav-h: 4.5rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shop-heading: Fraunces, Georgia, serif;
   --brand-brown-dark: var(--shop-ink-dark);
   --brand-brown: var(--shop-ink);
@@ -505,3 +507,477 @@ a.nest-home-product.is-soldout .nest-home-price,
   color: inherit;
 }
 .shop-header-account:hover { background: var(--shop-blue); }
+
+/* ===== migrated from organic_theme.html (single-source) ===== */
+/* ── Baby Mori Organic Nursery Theme (Option 1 Design Tokens) ─────────── */
+:root {
+  --brand-bg: var(--shop-paper);
+  --brand-brown-dark: var(--shop-ink-dark);
+  --brand-brown: var(--shop-ink);
+  --brand-gold: var(--shop-ink);
+  --brand-gold-soft: var(--shop-butter);
+  --brand-terra: #c96e4b;
+  --brand-warm: var(--shop-butter);
+  --brand-border: var(--shop-border);
+  --brand-muted: var(--shop-muted);
+  --brand-sage: var(--shop-blue);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-nav-h: 4.5rem;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--shop-heading);
+  --ease-spring: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 140px;
+  scroll-padding-bottom: 140px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  background-color: var(--shop-paper);
+  color: var(--shop-ink-dark);
+  font-family: var(--font-sans);
+  overflow-wrap: anywhere;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
+}
+
+/* Clear space for floating dock and help box on mobile */
+main#main-content {
+  padding-bottom: calc(var(--mobile-nav-h) + var(--safe-bottom) + 2.5rem);
+}
+@media (min-width: 768px) {
+  main#main-content { padding-bottom: 2.5rem; }
+}
+
+/* Hide scrollbars cleanly */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Announcement Top Bar ─────────────────────────────────────────────── */
+.nest-top-bar {
+  background-color: var(--brand-brown-dark) !important;
+  color: var(--brand-warm) !important;
+}
+.nest-announce-full { display: none !important; }
+.nest-announce-short { display: inline !important; }
+@media (min-width: 640px) {
+  .nest-announce-full { display: inline !important; }
+  .nest-announce-short { display: none !important; }
+}
+
+.nest-scroll-x {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  padding-bottom: 4px;
+}
+.nest-scroll-x::-webkit-scrollbar { display: none; }
+
+/* ── Mobile bottom navigation ── */
+.floating-bottom-dock {
+  position: fixed !important;
+  bottom: calc(12px + var(--safe-bottom)) !important;
+  left: 12px !important;
+  right: 12px !important;
+  max-width: 520px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  z-index: 50 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 10px 30px rgba(45, 41, 38, 0.16) !important;
+  padding: 5px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+@media (min-width: 768px) {
+  .floating-bottom-dock {
+    display: none !important;
+  }
+}
+
+.dock-track {
+  display: grid;
+  /* Four items: Home, Shop, Cart, Track (Help was removed as redundant). */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+}
+
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 2px;
+  border-radius: 18px;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 650;
+  min-height: 44px;
+  text-decoration: none;
+  color: #4A4643;
+  touch-action: manipulation;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.dock-item:not(.active):hover {
+  background: var(--shop-paper) !important;
+  color: var(--brand-brown-dark) !important;
+}
+
+.dock-item.active {
+  background: var(--brand-brown-dark) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(45, 41, 38, 0.2) !important;
+}
+
+.dock-item:active {
+  transform: scale(0.96) !important;
+}
+
+/* ── Desktop WhatsApp help ───────── */
+.floating-help-box {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 49 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 6px 24px rgba(45, 41, 38, 0.14) !important;
+  padding: 8px 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 44px !important;
+  text-decoration: none !important;
+  color: var(--brand-brown-dark) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  touch-action: manipulation !important;
+  transition: all 180ms var(--ease-spring) !important;
+}
+
+.floating-help-box:hover {
+  border-color: #25D366 !important;
+  color: #047857 !important;
+  box-shadow: 0 8px 28px rgba(45, 41, 38, 0.18) !important;
+}
+
+.floating-help-box:active {
+  transform: scale(0.96) !important;
+}
+
+@media (max-width: 767px) {
+  .floating-help-box { display: none !important; }
+}
+
+/* ── Hero (Organic Nursery Aesthetic) ─────────────────────────────────── */
+.nest-hero {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: center;
+  gap: 36px;
+}
+.nest-hero-copy { padding: 16px 0; }
+.nest-eyebrow {
+  display: inline-block;
+  color: var(--shop-ink);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.nest-hero h1 {
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--shop-ink-dark);
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+.nest-hero h1 em { color: var(--shop-ink); font-style: normal; }
+.nest-hero p {
+  max-width: 44ch;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--shop-muted);
+}
+.nest-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 24px 0 16px;
+}
+.nest-button {
+  background: var(--brand-brown-dark);
+  color: #FFFFFF;
+  border-radius: 9999px;
+  padding: 13px 26px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(45, 41, 38, 0.12);
+  transition: all 180ms var(--ease-spring);
+}
+.nest-button:hover {
+  background: #3D3935;
+  color: #FFFFFF;
+}
+.nest-button:active {
+  transform: scale(0.97);
+}
+.nest-text-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shop-ink-dark);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.nest-text-link:hover { color: var(--shop-ink); }
+.nest-hero-note {
+  color: var(--shop-muted);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nest-hero-photo {
+  position: relative;
+  height: 460px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--shop-butter);
+  border: 1px solid var(--brand-border);
+  box-shadow: 0 12px 36px rgba(45, 41, 38, 0.07);
+}
+.nest-hero-photo img { height: 100%; width: 100%; object-fit: cover; }
+.nest-photo-caption {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-align: center;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--shop-ink-dark);
+  border: 1px solid var(--brand-border);
+}
+
+/* ── Size & Filter Chips ──────────────────────────────────────────────── */
+.nest-size-filter {
+  margin: 20px 0;
+  padding: 18px 0;
+  border-top: 1px solid var(--brand-border);
+  border-bottom: 1px solid var(--brand-border);
+}
+.nest-size-filter legend {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--shop-ink-dark);
+  margin-bottom: 10px;
+}
+.nest-size-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.nest-size-option {
+  min-height: 44px;
+  min-width: 58px;
+  padding: 8px 14px;
+  border: 1px solid var(--brand-border);
+  border-radius: 9999px;
+  color: var(--shop-ink-dark);
+  font-size: 13px;
+  font-weight: 600;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 160ms var(--ease-spring);
+}
+.nest-size-option:hover {
+  background: var(--brand-bg);
+  border-color: var(--shop-ink-dark);
+}
+.nest-size-option[aria-pressed="true"] {
+  background: var(--brand-brown-dark);
+  color: #FFFFFF;
+  border-color: var(--shop-ink-dark);
+}
+
+/* ── Details Accordion ────────────────────────────────────────────────── */
+.nest-fit {
+  margin: 20px 0;
+  border-top: 1px solid var(--brand-border);
+  border-bottom: 1px solid var(--brand-border);
+  padding: 14px 0;
+}
+.nest-fit summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--shop-ink-dark);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.nest-fit-content {
+  padding: 14px;
+  background: #FFFFFF;
+  border: 1px solid var(--brand-border);
+  border-radius: 12px;
+  line-height: 1.6;
+  font-size: 14px;
+  color: var(--shop-ink-dark);
+  margin-top: 8px;
+}
+
+/* ── Sticky Mobile Checkout / Cart Bar ────────────────────────────────── */
+@media (max-width: 767px) {
+  .nest-sticky-cta {
+    display: flex !important;
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(76px + var(--safe-bottom)) !important;
+    z-index: 48 !important;
+    gap: 8px !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    background: rgba(250, 248, 245, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid var(--brand-border) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 4px 20px rgba(45, 41, 38, 0.12) !important;
+  }
+
+  .nest-sticky-cta .nest-button,
+  .nest-sticky-cta button {
+    flex: 2 !important;
+    min-height: 46px !important;
+    padding: 0 16px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 2px 6px rgba(45, 41, 38, 0.15) !important;
+  }
+
+  .nest-sticky-cta a {
+    min-height: 46px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 9999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    transition: all 180ms var(--ease-spring) !important;
+  }
+
+  .nest-sticky-cta svg {
+    width: 16px !important;
+    height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .nest-sticky-cta span {
+    white-space: nowrap !important;
+  }
+
+  .nest-sticky-cta a:active,
+  .nest-sticky-cta button:active {
+    transform: scale(0.97) !important;
+  }
+
+}
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .nest-hero { gap: 24px; padding: 24px 16px 36px; }
+  .nest-hero-photo { height: 380px; }
+}
+
+@media (max-width: 640px) {
+  .nest-hero {
+    grid-template-columns: 1fr;
+    padding: 14px 14px 24px;
+    gap: 16px;
+  }
+  .nest-hero-copy { padding: 4px 0 0; }
+  .nest-eyebrow { margin-bottom: 8px; }
+  .nest-hero h1 {
+    font-size: clamp(1.75rem, 7.5vw, 2.25rem);
+    margin-bottom: 12px;
+  }
+  .nest-hero p { font-size: 14px; line-height: 1.6; }
+  .nest-hero-photo { height: min(62vw, 270px); border-radius: 18px; }
+  .nest-hero-actions { margin: 16px 0 8px; gap: 10px; }
+  .nest-button { width: 100%; }
+
+  /* Prevent iOS zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Hide navigation bars when virtual keyboard is active */
+.keyboard-open .floating-bottom-dock,
+.keyboard-open .floating-help-box,
+.keyboard-open .nest-sticky-cta {
+  display: none !important;
+}
