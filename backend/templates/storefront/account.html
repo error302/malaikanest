@@ -3,10 +3,21 @@
 
 {% block title %}My account | Malaika Nest{% endblock %}
 
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'storefront/account-access.css' %}?v=1">
+{% endblock %}
+
 {% block content %}
 <section class="coast-page shop-frame coast-auth-page" aria-labelledby="account-title">
   <div class="coast-auth-panel">
-    <h1 id="account-title">My account</h1>
+    <div class="account-heading">
+      <h1 id="account-title">My account</h1>
+      <form method="post" action="{% url 'storefront:signout' %}">
+        {% csrf_token %}
+        <button class="account-signout" type="submit">Sign out</button>
+      </form>
+    </div>
     <p class="coast-auth-sub">Your details on file — we use these for receipts and delivery updates.</p>
 
     <dl class="coast-account-details">

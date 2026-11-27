@@ -1,40 +1,20 @@
-{% extends "storefront/base.html" %}
-{% load static %}
+{% extends "storefront/account_access.html" %}
 
 {% block title %}Sign in | Malaika Nest{% endblock %}
-{% block meta_description %}Sign in to your Malaika Nest account to track orders and check out faster.{% endblock %}
+{% block meta_description %}Sign in to your Malaika Nest account to manage your details and check out faster.{% endblock %}
 
-{% block content %}
-<section class="coast-page shop-frame coast-auth-page" aria-labelledby="signin-title">
-  <div class="coast-auth-panel">
-    <h1 id="signin-title">Welcome back</h1>
-    <p class="coast-auth-sub">Sign in to track orders and check out faster.</p>
+{% block access_title %}Welcome back{% endblock %}
+{% block access_description %}Sign in to manage your details and check out faster.{% endblock %}
 
-    {% if form.non_field_errors %}
-      <div class="coast-form-errors" role="alert">
-        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
-      </div>
-    {% endif %}
-
-    <form method="post" action="{% url 'storefront:signin' %}" novalidate>
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{{ next|default:'' }}">
-      <div class="coast-field">
-        <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
-        {{ form.username }}
-        {% for error in form.username.errors %}<p class="coast-field-error">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="coast-field">
-        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
-        {{ form.password }}
-        {% for error in form.password.errors %}<p class="coast-field-error">{{ error }}</p>{% endfor %}
-      </div>
-      <button type="submit" class="coast-button coast-button-primary coast-auth-submit">Sign in</button>
-    </form>
-
-    <p class="coast-auth-alt">New here? <a href="{% url 'storefront:signup' %}">Create an account</a></p>
-    <p class="coast-auth-alt">Forgot your password? <a href="{% url 'storefront:forgot_password' %}">Reset it yourself — no need to contact us</a></p>
-  </div>
-</section>
-<script src="{% static 'storefront/pw-toggle.js' %}" defer></script>
+{% block access_form %}
+<form class="account-access-form" method="post" action="{% url 'storefront:signin' %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next|default:'' }}">
+  {% include "storefront/partials/account_access_field.html" with field=form.username only %}
+  {% include "storefront/partials/account_access_field.html" with field=form.password only %}
+  <a class="account-access-reset" href="{% url 'storefront:forgot_password' %}">Forgot password?</a>
+  <button class="account-access-submit" type="submit">Sign in</button>
+</form>
 {% endblock %}
+
+{% block access_switch %}New to Malaika Nest? <a href="{% url 'storefront:signup' %}">Create an account</a>{% endblock %}
