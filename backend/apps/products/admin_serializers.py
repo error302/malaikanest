@@ -28,9 +28,10 @@ class AdminCategorySerializer(serializers.ModelSerializer):
     full_slug = serializers.CharField(read_only=True)
     path_label = serializers.SerializerMethodField()
     level = serializers.IntegerField(read_only=True)
-    image = serializers.ImageField(required=False, allow_null=True)
+    image = serializers.ImageField(required=False, allow_null=True, validators=[validate_image_file])
     image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     image_full_url = serializers.SerializerMethodField(read_only=True)
+    is_storefront_root = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Category
@@ -46,6 +47,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             "image",
             "image_url",
             "image_full_url",
+            "is_storefront_root",
             "level",
         ]
         read_only_fields = ["id", "slug", "full_slug", "level"]
@@ -54,22 +56,17 @@ class AdminCategorySerializer(serializers.ModelSerializer):
         }
 
     def get_image_full_url(self, obj):
-        if obj.image_url:
-            return obj.image_url
-        if obj.image:
-            url = obj.image.url
-            if url.startswith("http://") or url.startswith("https://"):
-                return url
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(url)
-            from django.conf import settings
+        url = obj.get_image_url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request and url else url
 
-            host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "malaikanest.com"
-            if host.startswith("http://") or host.startswith("https://"):
-                return f"{host}{url}"
-            return f"https://{host}{url}"
-        return None
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        custom_url = instance.custom_image_url
+        if custom_url != instance.image_url:
+            data["image"] = None
+        data["image_url"] = custom_url
+        return data
 
     def _download_image(self, image_url):
         if not image_url:
@@ -87,7 +84,9 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         image_url = validated_data.get("image_url")
-        if image_url and not validated_data.get("image"):
+        if validated_data.get("image"):
+            validated_data["image_url"] = ""
+        elif image_url:
             downloaded = self._download_image(image_url)
             if downloaded:
                 validated_data["image"] = downloaded
@@ -292,9 +291,12 @@ class AdminProductSerializer(serializers.ModelSerializer):
             norm = [n for n in norm if n]
             if norm:
                 deleted = product.images.filter(id__in=norm)
-                if product.image and deleted.filter(image=product.image.name).exists():
-                    Product.objects.filter(pk=product.pk).update(image="")
+                if deleted.filter(is_primary=True).exists() or (
+                    product.image and deleted.filter(image=product.image.name).exists()
+                ):
+                    Product.objects.filter(pk=product.pk).update(image="", image_url="")
                     product.image.name = ""
+                    product.image_url = ""
                 deleted.delete()
 
         order = self._parse_json_list(request.data.get("image_orders"))
@@ -324,8 +326,11 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"primary_image_id": ["Select an existing photo for this product."]})
             product.images.update(is_primary=False)
             product.images.filter(id=primary_id).update(is_primary=True)
-            Product.objects.filter(pk=product.pk).update(image=primary.image.name)
-            product.image.name = primary.image.name
+            stored_file = primary.image.name or ""
+            stored_url = primary.image_url or ""
+            Product.objects.filter(pk=product.pk).update(image=stored_file, image_url=stored_url)
+            product.image.name = stored_file
+            product.image_url = stored_url
 
     def get_variants(self, obj):
         request = self.context.get("request")
@@ -636,7 +641,9 @@ class AdminProductSerializer(serializers.ModelSerializer):
         # A full remote URL (e.g. Cloudinary) is stored verbatim, bypassing the
         # storage backend. Only download when it is not already an absolute URL.
         remote_url = None
-        if image_url:
+        if "image" in validated_data:
+            validated_data["image_url"] = ""
+        elif image_url:
             if image_url.startswith(("http://", "https://")):
                 remote_url = image_url
             else:
@@ -650,6 +657,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 product = super().update(instance, validated_data)
                 if remote_url:
                     self._store_image_url(product, remote_url)
+                    product.images.update(is_primary=False)
                 self._sync_variants(product, variants_payload)
                 self._handle_gallery(product)
                 if "stock" in validated_data:

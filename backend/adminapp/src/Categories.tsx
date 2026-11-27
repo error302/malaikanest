@@ -7,6 +7,7 @@ import { validatePhotos } from "./productDraft";
 export function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
+  const [activeRoot, setActiveRoot] = useState<Category | null>(null);
   const [editing, setEditing] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,14 +29,16 @@ export function Categories() {
     void load();
   }, []);
 
-  const filtered = categories.filter((c) => {
-    const q = search.toLowerCase();
-    return (
-      c.name.toLowerCase().includes(q) ||
-      (c.slug && c.slug.toLowerCase().includes(q)) ||
-      (c.group && c.group.toLowerCase().includes(q))
-    );
-  });
+  const roots = categories.filter(category => category.is_storefront_root)
+    .sort((a, b) => a.name.localeCompare(b.name, "en-KE"));
+  const query = search.trim().toLowerCase();
+  const filtered = query
+    ? categories.filter(category => [category.name, category.full_slug, category.description].some(value => value?.toLowerCase().includes(query)))
+    : categories.filter(category => {
+      const path = category.full_slug || category.slug;
+      if (activeRoot) return path.startsWith(`${activeRoot.full_slug || activeRoot.slug}/`);
+      return !roots.some(root => path === root.slug || path.startsWith(`${root.slug}/`));
+    });
 
   return (
     <>
@@ -68,7 +71,34 @@ export function Categories() {
       {error && <div className="error" role="alert">{error} <button className="btn ghost" onClick={() => void load()}>Retry</button></div>}
       {loading && <p role="status">Loading categories…</p>}
 
-      {!loading && (
+      {!loading && !error && !query && roots.length > 0 && (
+        <section aria-labelledby="homepage-categories-heading">
+          <h3 id="homepage-categories-heading">Homepage categories</h3>
+          <ul className="manager-category-grid">
+            {roots.map(category => {
+              const path = category.full_slug || category.slug;
+              const hasSubcategories = categories.some(item => item.full_slug?.startsWith(`${path}/`));
+              return (
+                <li key={category.id} className="panel manager-category">
+                  {category.image_full_url && <img src={category.image_full_url} alt="" width="88" height="88" loading="lazy" />}
+                  <div className="manager-category-body">
+                    <h4>{category.name}</h4>
+                    {category.description && <p>{category.description}</p>}
+                    <div className="manager-category-actions">
+                      <button className="btn ghost small" aria-label={`Edit ${category.name}`} onClick={() => setEditing(category)}>Edit</button>
+                      {hasSubcategories && <button className="btn ghost small" aria-label={`${category.name} subcategories`} aria-expanded={activeRoot?.id === category.id} onClick={() => setActiveRoot(previous => previous?.id === category.id ? null : category)}>Subcategories</button>}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {!loading && !error && (query || activeRoot || filtered.length > 0) && (
+        <details className="manager-category-detail" open={Boolean(query || activeRoot)}>
+          <summary>{query ? "Search results" : activeRoot ? `${activeRoot.name} subcategories` : "Other categories"}</summary>
         <div className="card table-wrap" role="region" aria-label="Categories table, scroll horizontally for more columns" tabIndex={0}>
           <table>
             <thead>
@@ -142,6 +172,7 @@ export function Categories() {
             </tbody>
           </table>
         </div>
+        </details>
       )}
 
       {editing && (
@@ -179,6 +210,7 @@ function CategoryDrawer({
   const [removeImage, setRemoveImage] = useState(false);
   const preview = useObjectUrl(file);
   const currentPreview = file ? preview : removeImage ? null : imageUrl || category.image_full_url || category.image;
+  const hasCustomImage = Boolean(file || imageUrl || category.image);
   const dirty = name !== category.name || description !== (category.description || "") || group !== (category.group || "") || imageUrl !== (category.image_url || "") || !!file || removeImage;
   function close() {
     if (!busy && (!dirty || window.confirm("Discard unsaved category changes?"))) onClose();
@@ -197,9 +229,9 @@ function CategoryDrawer({
     setError("");
 
     try {
-      if (file && category.id) {
+      if (file) {
         await api.saveCategoryMultipart(
-          category.id,
+          category.id || null,
           {
             name,
             description,
@@ -213,8 +245,8 @@ function CategoryDrawer({
           name,
           description,
           group,
-          image_url: imageUrl,
-          ...(removeImage ? { image: null } : {}),
+          ...(imageUrl !== (category.image_url || "") ? { image_url: imageUrl } : {}),
+          ...(removeImage ? { image: null, image_url: "" } : {}),
         });
       }
       onSaved();
@@ -298,7 +330,7 @@ function CategoryDrawer({
                     border: "1px solid var(--border)",
                   }}
                 />
-                <div>
+                {hasCustomImage && <div>
                   <button
                     type="button"
                     className="btn ghost tiny danger"
@@ -309,9 +341,9 @@ function CategoryDrawer({
                       setRemoveImage(true);
                     }}
                   >
-                    Remove Image
+                    {category.is_storefront_root ? "Reset image" : "Remove image"}
                   </button>
-                </div>
+                </div>}
               </div>
             ) : (
               <div
@@ -333,7 +365,21 @@ function CategoryDrawer({
               </div>
             )}
 
-            <label className="field" style={{ marginBottom: "0.75rem" }}>
+              <label className="field file-picker">
+                <span>Choose a category photo from your files</span>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) { const problem = validatePhotos([f]); if (problem) { setError(problem); e.target.value = ""; return; } setFile(f); setImageUrl(""); setRemoveImage(false); setError(""); }
+                  }}
+                />
+                <small>JPG, PNG or WebP, up to 5 MB.</small>
+              </label>
+            <details className="editor-details">
+              <summary>Use an image link instead</summary>
+            <label className="field" >
               <span>Paste Cloudinary / Web Image URL</span>
               <input
                 type="url"
@@ -347,19 +393,7 @@ function CategoryDrawer({
               />
             </label>
 
-            {!isNew && (
-              <label className="field">
-                <span>Or Upload Image File (JPG, PNG, WEBP)</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) { const problem = validatePhotos([f]); if (problem) { setError(problem); e.target.value = ""; return; } setFile(f); setImageUrl(""); setRemoveImage(false); setError(""); }
-                  }}
-                />
-              </label>
-            )}
+            </details>
           </div>
 
           </fieldset>

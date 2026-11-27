@@ -26,9 +26,8 @@ export function PhotosEditor({
 }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
   const [urlInput, setUrlInput] = useState("");
-  const mainInput = useRef<HTMLInputElement>(null);
-  const galleryInput = useRef<HTMLInputElement>(null);
 
   const running = useRef(false);
 
@@ -38,9 +37,11 @@ export function PhotosEditor({
     setBusy(true);
     onBusyChange(true);
     setError("");
+    setNotice("");
     try {
       const saved = await action();
       onChanged(saved);
+      setNotice("Photos saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Photo update failed");
     } finally {
@@ -98,70 +99,32 @@ export function PhotosEditor({
   }
 
   return (
-    <div className="photos-editor">
-      <h4>Photos</h4>
-      <p className="variants-hint">Photo changes save immediately. JPG, PNG, WEBP, or direct Cloudinary URLs.</p>
+    <section className="photos-editor" aria-labelledby="product-photos-heading">
+      <h4 id="product-photos-heading">Product photos</h4>
+      <p className="variants-hint">The cover appears in the shop and product list. Photos save when you choose them.</p>
       {busy && <p role="status">Saving photos…</p>}
+      {!busy && notice && <p role="status">{notice}</p>}
       {error && <div className="error" role="alert">{error}</div>}
 
-      <div className="photo-url-box" style={{ margin: "0.75rem 0", padding: "0.75rem", background: "var(--blue-wash)", borderRadius: "8px", border: "1px solid var(--border)" }}>
-        <p style={{ margin: "0 0 0.4rem 0", fontSize: "12px", fontWeight: "600", color: "var(--text)" }}>
-          Paste Cloudinary / Web Image URL
-        </p>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <input
-            type="url"
-            aria-label="Photo URL"
-            placeholder="https://res.cloudinary.com/..."
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            disabled={busy || disabled}
-            style={{ flex: "1 1 200px", padding: "0.4rem 0.6rem", fontSize: "12px", border: "1px solid #ccc", borderRadius: "4px" }}
-          />
-          <button
-            type="button"
-            className="btn ghost small"
-            disabled={busy || disabled || !urlInput.trim()}
-            onClick={onApplyUrlAsMain}
-          >
-            Set as Main
-          </button>
-          <button
-            type="button"
-            className="btn ghost small"
-            disabled={busy || disabled || !urlInput.trim()}
-            onClick={onApplyUrlToGallery}
-          >
-            Add to Gallery
-          </button>
+      <div className="product-cover">
+        {mainImage ? <img src={mainImage} alt="Product cover" /> : <div className="photo-empty">Add a front photo</div>}
+        <div>
+          <label className="field file-picker">
+            <span>{mainImage ? "Replace cover from files" : "Choose cover from files"}</span>
+            <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" disabled={busy || disabled} onChange={onMainPicked} />
+            <small>JPG, PNG or WebP, up to 5 MB per photo.</small>
+          </label>
+          {mainImage && <button type="button" className="btn ghost small danger" disabled={busy || disabled} onClick={() => {
+            if (confirm("Remove the main photo? Gallery copies are kept.")) void run(() => api.saveProduct(productId, { image: null, image_url: null }));
+          }}>Remove cover</button>}
         </div>
       </div>
 
-      <div className="photo-main">
-        {mainImage ? (
-          <img src={mainImage} alt="Product photo" />
-        ) : (
-          <div className="photo-empty">No photo yet</div>
-        )}
-        <input
-          ref={mainInput}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          hidden
-          onChange={onMainPicked}
-        />
-        <button
-          type="button"
-          className="btn ghost small"
-          disabled={busy || disabled}
-          onClick={() => mainInput.current?.click()}
-        >
-          {mainImage ? "Upload new main photo" : "Upload main photo"}
-        </button>
-        {mainImage && <button type="button" className="btn ghost small danger" disabled={busy || disabled} onClick={() => {
-          if (confirm("Remove the main photo? Gallery copies are kept.")) void run(() => api.saveProduct(productId, { image: null, image_url: null }));
-        }}>Remove main photo</button>}
-      </div>
+      <label className="field file-picker">
+        <span>Add gallery photos from files</span>
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple disabled={busy || disabled} onChange={onGalleryPicked} />
+        <small>Choose one or more back views or close-ups.</small>
+      </label>
 
       {gallery.length > 0 && (
         <div className="photo-grid">
@@ -198,22 +161,17 @@ export function PhotosEditor({
         </div>
       )}
 
-      <input
-        ref={galleryInput}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        hidden
-        onChange={onGalleryPicked}
-      />
-      <button
-        type="button"
-        className="btn ghost small"
-        disabled={busy || disabled}
-        onClick={() => galleryInput.current?.click()}
-      >
-        + Add gallery photos
-      </button>
-    </div>
+      <details className="editor-details">
+        <summary>Use an image link instead</summary>
+        <label className="field">
+          <span>Photo URL</span>
+          <input type="url" value={urlInput} onChange={e => setUrlInput(e.target.value)} disabled={busy || disabled} />
+        </label>
+        <div className="photo-actions">
+          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlAsMain}>Set as cover</button>
+          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlToGallery}>Add to gallery</button>
+        </div>
+      </details>
+    </section>
   );
 }

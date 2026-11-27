@@ -2,7 +2,7 @@ import { test, expect, Page } from "@playwright/test";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const product = { id: "1", name: "A long descriptive product name for a cotton dress", slug: "dress", price: "1500.00", stock: 4, is_active: true, status: "published", category: "1", variants: [], images: [] };
-const category = { id: "1", name: "Baby clothing", slug: "baby", full_slug: "baby/clothing", product_count: 1 };
+const category = { id: "1", name: "Baby clothing", slug: "baby", full_slug: "baby", is_storefront_root: true, product_count: 1 };
 const settings = { site_name: "Malaika Nest", site_description: "Your baby shop", contact_phone: "+254700000000", contact_email: "qa@example.test", address: "Mombasa", shipping_fee: "300", free_shipping_threshold: "5000" };
 async function mock(page: Page) {
   await page.route("**/api/**", async route => {
@@ -131,7 +131,7 @@ test("open product editor survives orientation and zoom-sized viewport changes",
 });
 test("category upload rejects oversized images before any save", async ({ page }) => {
   await mock(page); await page.goto("/static/adminapp/#categories");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("button", { name: "Edit Baby clothing", exact: true }).click();
   await page.locator('input[type="file"]').setInputFiles({ name: "large.png", mimeType: "image/png", buffer: Buffer.alloc(6 * 1024 * 1024) });
   await expect(page.getByRole("alert")).toContainText("no larger than 5 MB");
 });

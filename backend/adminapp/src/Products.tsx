@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, CatalogueOption, CatalogueOptions, Category, Paged, Product, SIZE_CHOICES, Variant } from "./api";
-import { productChanges, productForm, SaveIntent, validateVariants } from "./productDraft";
+import { productChanges, productForm, SaveIntent, validatePhotos, validateVariants } from "./productDraft";
 import { VariantsEditor } from "./VariantsEditor";
 import { Modal, trapModalTab } from "./Modal";
 import { PhotosEditor } from "./PhotosEditor";
+import { useObjectUrl } from "./useObjectUrl";
 import { useUnsavedChanges } from "./useUnsavedChanges";
 
 const PAGE_SIZE = 25;
@@ -256,10 +257,12 @@ function EditDrawer({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [cover, setCover] = useState<File | null>(null);
+  const coverPreview = useObjectUrl(cover);
   const [loaded, setLoaded] = useState(!product.id);
   const [attempt, setAttempt] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
-  const dirty = JSON.stringify(form) !== JSON.stringify(productForm(current)) || JSON.stringify(variants) !== JSON.stringify(current.variants ?? []);
+  const dirty = Boolean(cover) || JSON.stringify(form) !== JSON.stringify(productForm(current)) || JSON.stringify(variants) !== JSON.stringify(current.variants ?? []);
   const locked = busy || photoBusy || !loaded;
 
   useEffect(() => {
@@ -333,11 +336,14 @@ function EditDrawer({
     setError("");
     setNotice("");
     try {
-      const saved = await api.saveProduct(isNew ? null : current.id, body);
+      const saved = isNew && cover
+        ? await api.saveProductMultipart(null, body, [{ key: "image", file: cover }])
+        : await api.saveProduct(isNew ? null : current.id, body);
+      setCover(null);
       setCurrent(saved);
       setForm(productForm(saved));
       setVariants(saved.variants ?? []);
-      setNotice(isNew ? "Draft saved. Add photos below, then publish when ready." : intent === "publish" ? "Published." : intent === "draft" ? "Saved as a hidden draft." : "Changes saved. Visibility unchanged.");
+      setNotice(isNew ? "Draft saved. Review the product and publish when ready." : intent === "publish" ? "Published." : intent === "draft" ? "Saved as a hidden draft." : "Changes saved. Visibility unchanged.");
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
@@ -348,23 +354,30 @@ function EditDrawer({
 
   return (
     <dialog onKeyDown={trapModalTab} ref={dialog} className="product-dialog panel" aria-labelledby="product-editor-title" onCancel={(event) => { event.preventDefault(); close(); }}>
-      {!isNew && (current.image_full_url ?? current.image) ? (
-        <div style={{ marginBottom: 16 }}>
-          <span className="variants-hint" style={{ display: "block", marginBottom: 6 }}>Current main image</span>
-          <img
-            src={current.image_full_url ?? current.image ?? ""}
-            alt="Current main image"
-            style={{ maxHeight: 180, maxWidth: "100%", objectFit: "contain", borderRadius: 8, border: "1px solid var(--border)", display: "block" }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          />
-        </div>
-      ) : null}
       <form onSubmit={save}>
         <div className="dialog-heading"><h3 id="product-editor-title">{isNew ? "New product" : `Edit — ${current.name}`}</h3><button className="btn ghost" type="button" onClick={close} disabled={busy || photoBusy}>Close</button></div>
-        <p className="variants-hint">{isNew ? "Start with the name, price and category. Save a draft to add photos from your phone." : current.is_active ? "Visible in the shop." : "Hidden draft. Add photos and check sizes before publishing."}</p>
+        <p className="variants-hint">{isNew ? "Add your product details and choose a cover from your files." : current.is_active ? "Visible in the shop." : "Hidden draft. Add photos and check sizes before publishing."}</p>
         {error && <div className="error" role="alert">{error}</div>}
         {notice && <div className="notice" role="status">{notice}</div>}
         {!loaded && (error ? <button className="btn ghost" type="button" onClick={() => setAttempt((value) => value + 1)}>Retry loading</button> : <p role="status">Loading product details…</p>)}
+        {isNew && <div className="product-cover product-cover-draft">
+          {coverPreview && <img src={coverPreview} alt="Cover preview" />}
+          <label className="field file-picker">
+            <span>Choose cover from files (optional)</span>
+            <input type="file" disabled={locked} accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                   onChange={event => {
+                     const file = event.target.files?.[0];
+                     const problem = file ? validatePhotos([file]) : "";
+                     setError(problem);
+                     setCover(problem ? null : file ?? null);
+                     if (problem) event.target.value = "";
+                   }} />
+            <small>JPG, PNG or WebP, up to 5 MB. The cover uploads when you create the draft.</small>
+          </label>
+        </div>}
+        {!isNew && loaded && (
+          <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
+        )}
         <fieldset disabled={locked} className="product-fields">
         <label className="field">
           <span>Name</span>
@@ -475,25 +488,6 @@ function EditDrawer({
             placeholder="e.g. 2y: chest 54 cm, length 38 cm"
           />
         </label>
-        <label className="field">
-          <span>Main Image URL (Cloudinary or Web)</span>
-          <input
-            type="url"
-            placeholder="https://res.cloudinary.com/..."
-            value={form.image_url}
-            onChange={(e) => set("image_url", e.target.value)}
-          />
-        </label>
-         {form.image_url.trim() ? (
-           <div style={{ margin: "0 0 12px" }}>
-             <img
-               src={form.image_url}
-               alt="Preview"
-               style={{ maxHeight: 180, maxWidth: "100%", objectFit: "contain", borderRadius: 8, border: "1px solid var(--border)", display: "block" }}
-               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-             />
-           </div>
-         ) : null}
         {isNew && <label className="field">
           <span>URL slug (optional; generated from name)</span>
           <input type="text" pattern="[a-zA-Z0-9_-]+" maxLength={300} value={form.slug} onChange={(e) => set("slug", e.target.value)} />
@@ -501,9 +495,6 @@ function EditDrawer({
         </details>
         <VariantsEditor variants={variants} previous={current.variants ?? []} onChange={(rows) => { setVariants(rows); setNotice(""); }} />
         </fieldset>
-        {!isNew && loaded && (
-          <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
-        )}
         <div className="editor-actions">
           <button className="btn" disabled={locked} type="submit" value="save">
             {busy ? "Saving…" : isNew ? "Create draft" : "Save changes"}

@@ -156,6 +156,33 @@ main .boutique-filter-panel #condition-filter button {
 .boutique-filter-panel :is([aria-current="page"], [aria-pressed="true"]) { font-weight: 750; }
 .boutique-catalog-note { margin: 0 0 14px; color: var(--shop-muted); }
 .boutique-product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.shop-product-tile { position: relative; min-width: 0; overflow-wrap: anywhere; }
+.shop-product-link { display: block; color: var(--shop-ink-dark); text-decoration: none; }
+.shop-product-link:hover h3 { text-decoration: underline; text-underline-offset: 4px; }
+.shop-product-link:focus-visible { outline: 2px solid var(--shop-ink-dark); outline-offset: 3px; }
+.shop-product-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 10px 10px 3px 3px;
+  background: #f2f1ed;
+}
+.shop-product-media img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.shop-product-tile.is-soldout .shop-product-media img { opacity: .65; }
+.shop-product-missing { color: var(--shop-muted); font-size: .82rem; text-align: center; }
+.shop-product-badges { position: absolute; bottom: 8px; left: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.shop-product-badges span { padding: 4px 8px; border-radius: 4px; background: var(--shop-ink-dark); color: white; font-size: .72rem; font-weight: 650; }
+.shop-product-tile .nest-save-form { top: 6px; right: 6px; }
+.shop-product-tile .nest-save { width: 44px; height: 44px; }
+.shop-product-info { display: grid; gap: 5px; padding-block: 10px; border-bottom: 1px solid var(--shop-border); }
+.shop-product-info h3 { margin: 0; font-size: clamp(.88rem, 1.5vw, 1.07rem); font-weight: 750; line-height: 1.32; }
+.shop-product-info p { margin: 0; }
+.shop-product-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-variant-numeric: tabular-nums; }
+.shop-product-price strong { font-size: clamp(.96rem, 1.55vw, 1.15rem); }
+.shop-product-price del, .shop-product-sizes { color: var(--shop-muted); font-size: .78rem; }
+.shop-product-sizes span { font-weight: 700; }
 .boutique-product-grid .nest-product-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .boutique-product-grid .nest-product-card > a { aspect-ratio: 4 / 5; border-radius: 7px; }
 .boutique-product-grid .nest-product-card > div { padding-inline: 0; }
