@@ -71,4 +71,4 @@ class AdminDashboardView(View):
                 status=503,
                 content_type="text/html",
             )
-        return HttpResponse(html, content_type="text/html")
+        return HttpResponse(html, content_type="text/html; charset=utf-8")
