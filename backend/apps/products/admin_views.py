@@ -29,7 +29,6 @@ from apps.accounts.models import User
 from apps.orders.models import CartItem, OrderItem, Order
 from apps.orders.services import OrderService
 from apps.products.models import Banner, Category, Product
-from apps.storefront.context_processors import AGE_GROUPS
 from apps.storefront.sizing import filter_size
 from .admin_serializers import (
     AdminBannerSerializer,
@@ -86,9 +85,9 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="catalogue-options")
     def catalogue_options(self, request):
         return Response({
-            "ages": [{"value": entry["slug"], "label": entry["label"]} for entry in AGE_GROUPS],
-            "sizes": [{"value": value, "label": label} for value, label in Product.SIZE_CHOICES],
-            "age_ranges": [{"value": value, "label": label} for value, label in Product.AGE_RANGE_CHOICES],
+            "ages": [{"value": value, "label": label} for value, label in Product.AGE_SIZE_CHOICES],
+            "sizes": [{"value": value, "label": label} for value, label in Product.SHOP_SIZE_CHOICES],
+            "age_ranges": [{"value": value, "label": label} for value, label in Product.SHOP_AGE_RANGE_CHOICES],
             "conditions": [{"value": value, "label": label} for value, label in Product.CONDITION_CHOICES],
         })
 

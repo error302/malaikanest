@@ -284,27 +284,6 @@ export function asPaged<T>(raw: unknown): Paged<T> {
   };
 }
 
-/** Choice lists mirrored from Product.SIZE_CHOICES / ProductVariant.COLOR_CHOICES. */
-export const SIZE_CHOICES: { value: string; label: string }[] = [
-  { value: "newborn", label: "Newborn" },
-  { value: "0-3m", label: "0-3M" },
-  { value: "3-6m", label: "3-6M" },
-  { value: "6-12m", label: "6-12M" },
-  { value: "1y", label: "1Y" },
-  { value: "2y", label: "2Y" },
-  { value: "3y", label: "3Y" },
-  { value: "4y", label: "4Y" },
-  { value: "5y", label: "5Y" },
-  { value: "6y", label: "6Y" },
-  { value: "7y", label: "7Y" },
-  { value: "8y", label: "8Y" },
-  { value: "9y", label: "9Y" },
-  { value: "10y", label: "10Y" },
-  { value: "11y", label: "11Y" },
-  { value: "12y", label: "12Y" },
-  { value: "one-size", label: "One Size" },
-];
-
 export const COLOR_CHOICES: { value: string; label: string }[] = [
   "white", "black", "gray", "pink", "blue", "green", "yellow", "red",
   "purple", "orange", "brown", "beige", "multi",

@@ -4,7 +4,7 @@ import logging
 
 from apps.core.models import SiteSettings
 from apps.orders.models import Cart
-from apps.products.models import Category
+from apps.products.models import Category, Product
 
 from django.db import models
 from django.utils import timezone
@@ -12,18 +12,7 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 # Shared age-size taxonomy (slugs are consumed by ProductListView ?age= filter).
-AGE_GROUPS = [
-    {"label": "Newborn", "slug": "newborn"},
-    {"label": "0–3 months", "slug": "0-3m"},
-    {"label": "3–6 months", "slug": "3-6m"},
-    {"label": "6–12 months", "slug": "6-12m"},
-    {"label": "1–2 years", "slug": "1-2y"},
-    {"label": "2–4 years", "slug": "2-4y"},
-    {"label": "4–6 years", "slug": "4-6y"},
-    {"label": "6–8 years", "slug": "6-8y"},
-    {"label": "8–10 years", "slug": "8-10y"},
-    {"label": "10–12 years", "slug": "10-12y"},
-]
+AGE_GROUPS = [{"label": label, "slug": value} for value, label in Product.AGE_SIZE_CHOICES]
 
 
 def storefront_context(request):

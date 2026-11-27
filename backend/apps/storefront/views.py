@@ -193,7 +193,7 @@ class ProductListView(View):
             "selected_condition": condition_param,
             "total_count": paginator.count,
             "selected_size": size_param,
-            "size_choices": Product.SIZE_CHOICES,
+            "size_choices": Product.SHOP_SIZE_CHOICES,
             "pagination_query": pagination_params.urlencode(),
             "sort_query": sort_params.urlencode(),
         }

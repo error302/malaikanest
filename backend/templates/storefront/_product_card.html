@@ -33,7 +33,7 @@
       {% if product.shop_sizes %}
         <p class="shop-product-sizes"><span>Sizes</span> {{ product.shop_sizes|join:", " }}</p>
       {% elif product.age_range %}
-        <p class="shop-product-sizes"><span>Ages</span> {{ product.age_range }}</p>
+        <p class="shop-product-sizes"><span>Ages</span> {{ product.get_age_range_display }}</p>
       {% endif %}
     </div>
   </a>

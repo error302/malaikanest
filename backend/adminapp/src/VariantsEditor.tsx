@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { COLOR_CHOICES, SIZE_CHOICES, Variant } from "./api";
+import { CatalogueOption, COLOR_CHOICES, Variant } from "./api";
 import { availableVariantStock } from "./productDraft";
 
 export function VariantsEditor({
+  sizeOptions,
   variants,
   previous,
   onChange,
 }: {
+  sizeOptions: CatalogueOption[];
   variants: Variant[];
   previous: Variant[];
   onChange: (next: Variant[]) => void;
@@ -36,7 +38,7 @@ export function VariantsEditor({
     <div className="variants-editor">
       <div className="variants-head">
         <h4>Sizes and colours</h4>
-        <button type="button" className="btn ghost small" aria-expanded={adding} aria-controls="variant-builder" onClick={() => setAdding(value => !value)}>
+        <button type="button" className="btn ghost small" aria-expanded={adding} aria-controls="variant-builder" disabled={!sizeOptions.length} onClick={() => setAdding(value => !value)}>
           {adding ? "Close variant picker" : "Add variants"}
         </button>
       </div>
@@ -57,7 +59,7 @@ export function VariantsEditor({
           </div>
           <fieldset className="variant-size-picker">
             <legend>Sizes to add</legend>
-            {SIZE_CHOICES.map(size => (
+            {sizeOptions.map(size => (
               <label key={size.value}>
                 <input type="checkbox" checked={sizes.includes(size.value)} disabled={existingSizes.has(size.value)}
                        onChange={event => setSizes(previousSizes => event.target.checked ? [...previousSizes, size.value] : previousSizes.filter(value => value !== size.value))} />
@@ -84,9 +86,10 @@ export function VariantsEditor({
                   <div className="variant-row-fields">
                     <label className="field">
                       <span>Size</span>
-                      <select value={row.size ?? ""} onChange={event => update(index, { size: event.target.value || null })}>
+                      <select value={row.size ?? ""} disabled={!sizeOptions.length} onChange={event => update(index, { size: event.target.value || null })}>
                         <option value="">Standard</option>
-                        {SIZE_CHOICES.map(size => <option key={size.value} value={size.value}>{size.label}</option>)}
+                        {row.size && !sizeOptions.some(size => size.value === row.size) && <option value={row.size}>{row.size.toUpperCase()}</option>}
+                        {sizeOptions.map(size => <option key={size.value} value={size.value}>{size.label}</option>)}
                       </select>
                     </label>
                     <label className="field">

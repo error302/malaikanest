@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, CatalogueOption, CatalogueOptions, Category, Paged, Product, SIZE_CHOICES, Variant } from "./api";
+import { api, CatalogueOption, CatalogueOptions, Category, Paged, Product, Variant } from "./api";
 import { productChanges, productForm, SaveIntent, validatePhotos, validateVariants } from "./productDraft";
 import { VariantsEditor } from "./VariantsEditor";
 import { Modal, trapModalTab } from "./Modal";
@@ -259,7 +259,9 @@ function EditDrawer({
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [cover, setCover] = useState<File | null>(null);
+  const coverInput = useRef<HTMLInputElement>(null);
   const coverPreview = useObjectUrl(cover);
+  const linkedCover = /^https?:\/\//i.test(form.image_url.trim()) ? form.image_url.trim() : "";
   const [loaded, setLoaded] = useState(!product.id);
   const [attempt, setAttempt] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -325,6 +327,7 @@ function EditDrawer({
     if (variantError) { setError(variantError); return; }
     if (intent === "publish" && !window.confirm("Publish this product and make it visible in the shop?")) return;
     const body = productChanges(current, form, intent);
+    if (isNew) body.image_url = form.image_url.trim();
     if (variants.length) delete body.stock;
     if (JSON.stringify(variants) !== JSON.stringify(current.variants ?? [])) {
       body.variants = variants.map((v) => ({
@@ -399,13 +402,14 @@ function EditDrawer({
           </label>
         <label className="field">
           <span>Single size (optional)</span>
-          <select value={form.size_label} onChange={(e) => set("size_label", e.target.value)}>
+          <select value={form.size_label} onChange={(e) => set("size_label", e.target.value)} disabled={!options.sizes.length}>
             <option value="">Not specified</option>
-            {(options.sizes.length ? options.sizes : SIZE_CHOICES).map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
+            {form.size_label && !options.sizes.some(size => size.value === form.size_label) && <option value={form.size_label}>{form.size_label.toUpperCase()}</option>}
+            {options.sizes.map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
           </select>
         </label>
           </div>}
-        <VariantsEditor variants={variants} previous={current.variants ?? []} onChange={(rows) => { setVariants(rows); setNotice(""); }} />
+        <VariantsEditor sizeOptions={options.sizes} variants={variants} previous={current.variants ?? []} onChange={(rows) => { setVariants(rows); setNotice(""); }} />
         </section>
         <details className="editor-details">
           <summary>Description and catalogue details</summary>
@@ -481,26 +485,41 @@ function EditDrawer({
         </label>}
         </details>
         </fieldset>
-        {isNew && <div className="product-cover product-cover-draft">
-          {coverPreview && <img src={coverPreview} alt="Cover preview" />}
+        {isNew && <section className="product-cover product-cover-draft" aria-label="Product cover photo">
+          {(coverPreview || linkedCover) && <img src={coverPreview || linkedCover} alt="Cover preview" />}
+          <div>
+          <label className="field">
+            <span>Cloudinary image URL (optional)</span>
+            <input type="url" inputMode="url" placeholder="https://res.cloudinary.com/…" value={form.image_url} disabled={locked}
+                   onChange={event => {
+                     set("image_url", event.target.value);
+                     if (event.target.value.trim()) {
+                       setCover(null);
+                       if (coverInput.current) coverInput.current.value = "";
+                     }
+                   }} />
+          </label>
           <label className="field file-picker">
             <span>Choose cover from files (optional)</span>
-            <input type="file" disabled={locked} accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+            <input ref={coverInput} type="file" disabled={locked} accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                    onChange={event => {
                      const file = event.target.files?.[0];
                      const problem = file ? validatePhotos([file]) : "";
                      setError(problem);
-                     setCover(problem ? null : file ?? null);
-                     if (problem) event.target.value = "";
+                     if (problem) {
+                       event.target.value = "";
+                       setCover(null);
+                     } else if (file) {
+                       set("image_url", "");
+                       setCover(file);
+                     }
                    }} />
             <small>JPG, PNG or WebP, up to 5 MB. The cover uploads when you create the draft.</small>
           </label>
-        </div>}
+          </div>
+        </section>}
         {!isNew && loaded && (
-          <details className="editor-details">
-            <summary>Product photos</summary>
-            <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
-          </details>
+          <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
         )}
         <div className="editor-actions">
           <button className="btn" disabled={locked} type="submit" value="save">
