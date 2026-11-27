@@ -5,7 +5,7 @@
 {% block meta_description %}Shop baby and children's clothes at Malaika Nest. Browse by size, order for delivery in Kenya or pick up at Tawakal Toto Shop in Likoni, Mombasa.{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'nest-home/storefront-home.css' %}">
+<link rel="stylesheet" href="{% static 'nest-home/storefront-home.css' %}?v=catalogue2">
 {% if active_banner.get_image_url %}
 <link rel="preload" as="image" href="{{ active_banner.get_image_url|cloudinary_auto }}" fetchpriority="high">
 {% elif active_banner.get_mobile_image_url %}
