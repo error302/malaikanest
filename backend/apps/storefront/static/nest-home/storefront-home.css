@@ -22,7 +22,7 @@
 .nest-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 176px), 1fr)); gap: 6px 16px; }
 .nest-category-grid a { display: flex; align-items: center; gap: 9px; min-height: 48px; padding: 8px 0; border-bottom: 1px solid var(--shop-border); font-size: .94rem; font-weight: 700; overflow-wrap: anywhere; }
 .nest-category-grid a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.nest-category-grid img { width: 34px; height: 34px; object-fit: cover; border-radius: 4px; }
+.nest-category-grid img { width: 46px; height: 46px; object-fit: cover; border-radius: 10px; border: 1px solid var(--shop-border); }
 .nest-home-products { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(10px, 2.5vw, 22px); }
 .nest-home-product { min-width: 0; overflow-wrap: anywhere; padding-bottom: 8px; }
 .nest-home-product:hover h3 { text-decoration: underline; text-underline-offset: 3px; }
