@@ -13,6 +13,10 @@ export function productForm(product: Partial<Product>) {
     whats_included: product.whats_included ?? "",
     size_guide: product.size_guide ?? "",
     size_label: product.size_label ?? "",
+    age_group: product.age_group ?? "",
+    age_range: product.age_range ?? "",
+    gender: product.gender ?? "unisex",
+    compare_price: product.compare_price ?? "",
   };
 }
 

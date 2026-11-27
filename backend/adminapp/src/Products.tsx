@@ -341,6 +341,42 @@ function EditDrawer({
             {SIZE_CHOICES.map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
           </select>
         </label>
+        <label className="field">
+          <span>Age group (broad)</span>
+          <select value={form.age_group} onChange={(e) => set("age_group", e.target.value)}>
+            <option value="">Not specified</option>
+            <option value="baby">Baby (0-2 years)</option>
+            <option value="toddler">Toddler (2-5 years)</option>
+            <option value="kids">Kids (6-12 years)</option>
+          </select>
+        </label>
+        <label className="field">
+          <span>Age range (shown on the product page)</span>
+          <input
+            type="text"
+            placeholder="e.g. 0-3 months, 3-6 months, 1-2 years"
+            value={form.age_range}
+            onChange={(e) => set("age_range", e.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span>Gender</span>
+          <select value={form.gender} onChange={(e) => set("gender", e.target.value)}>
+            <option value="unisex">Unisex</option>
+            <option value="boy">Boy</option>
+            <option value="girl">Girl</option>
+          </select>
+        </label>
+        <label className="field">
+          <span>Compare price (KES, for "save X%" badge)</span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.compare_price}
+            onChange={(e) => set("compare_price", e.target.value)}
+          />
+        </label>
         <details className="editor-details">
           <summary>Optional product details</summary>
         <label className="field">

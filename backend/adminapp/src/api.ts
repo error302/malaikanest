@@ -342,6 +342,9 @@ export interface Product {
   whats_included?: string;
   size_guide?: string;
   size_label?: string;
+  age_group?: string;
+  age_range?: string;
+  gender?: string;
   status?: "draft" | "published";
   category_name?: string;
   variants?: Variant[];
