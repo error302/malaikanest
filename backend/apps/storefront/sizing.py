@@ -28,24 +28,36 @@ AGE_INTERVAL_MAP = {
 }
 
 
-def filter_size(queryset, size):
+AGE_RANGE_MATCHES = {
+    "0-3m": ["0-3 months"],
+    "3-6m": ["3-6 months"],
+    "6-12m": ["6-12 months"],
+    "1-2y": ["1-2 years"],
+    "2-4y": ["2-3 years", "3-5 years"],
+    "4-6y": ["3-5 years"],
+    "6-8y": ["6-8 years"],
+    "8-10y": ["9-12 years"],
+    "10-12y": ["9-12 years"],
+}
+
+
+def filter_size(queryset, size, *, in_stock=True, match_age_range=False):
     if not size:
         return queryset
-    target_sizes = AGE_INTERVAL_MAP.get(size.lower(), [size])
-    if size not in target_sizes:
-        target_sizes.append(size)
+    target_sizes = {*AGE_INTERVAL_MAP.get(size.lower(), ()), size}
 
     any_variant = ProductVariant.objects.filter(product_id=OuterRef('pk'))
-    active = any_variant.filter(is_active=True)
-    matching = active.filter(size__in=target_sizes, inventory__quantity__gt=F('inventory__reserved'))
+    matching = any_variant.filter(is_active=True, size__in=target_sizes)
+    simple = Q(size_label__in=target_sizes) | Q(age_group=size)
+    if match_age_range and size in AGE_RANGE_MATCHES:
+        simple |= Q(size_label="", age_range__in=AGE_RANGE_MATCHES[size])
+    if in_stock:
+        matching = matching.filter(inventory__quantity__gt=F('inventory__reserved'))
+        simple &= Q(_simple_stock__gt=0)
     return queryset.annotate(
         _has_variants=Exists(any_variant), _matching_size=Exists(matching),
         _simple_stock=Coalesce(F('inventory__quantity'), F('stock')) - Coalesce(F('inventory__reserved'), 0),
-    ).filter(
-        Q(_matching_size=True) |
-        Q(_has_variants=False, size_label__in=target_sizes, _simple_stock__gt=0) |
-        Q(_has_variants=False, age_group=size, _simple_stock__gt=0)
-    )
+    ).filter(Q(_matching_size=True) | (Q(_has_variants=False) & simple))
 
 
 def prepare_product(product):

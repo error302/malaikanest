@@ -22,6 +22,15 @@ class SizeShoppingTests(TestCase):
         empty = self.client.get(reverse('storefront:product_list'), {'size': '3y'})
         self.assertEqual(list(empty.context['products']), [])
 
+    def test_product_detail_preselects_the_only_available_option(self):
+        url = reverse('storefront:product_detail', args=[self.product.slug])
+        response = self.client.get(url)
+        self.assertEqual(response.context['default_variant'], self.variant)
+        self.assertContains(response, f'value="{self.variant.pk}" required checked')
+        VariantInventory.objects.filter(variant=self.empty).update(reserved=0)
+        response = self.client.get(url)
+        self.assertIsNone(response.context['default_variant'])
+
     def test_cards_show_available_sizes_not_reserved_or_inactive(self):
         self.variant.is_active = False
         self.variant.save()

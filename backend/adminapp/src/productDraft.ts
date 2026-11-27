@@ -7,7 +7,7 @@ export function productForm(product: Partial<Product>) {
     price: product.price ?? "",
     stock: product.stock ?? 0,
     category: typeof product.category === "object" && product.category !== null ? product.category.id : product.category ?? "",
-    image_url: (product.image_url ?? product.image ?? "") as string,
+    image_url: product.image_url ?? "",
     description: product.description ?? "",
     fabric: product.fabric ?? "",
     whats_included: product.whats_included ?? "",
@@ -16,6 +16,7 @@ export function productForm(product: Partial<Product>) {
     age_group: product.age_group ?? "",
     age_range: product.age_range ?? "",
     gender: product.gender ?? "unisex",
+    condition: product.condition ?? "new",
     compare_price: product.compare_price ?? "",
   };
 }

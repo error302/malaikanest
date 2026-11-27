@@ -103,6 +103,14 @@ class CheckoutView(View):
             Decimal("1"), rounding=ROUND_HALF_UP
         )
 
+        form = request.session.pop("checkout_form", None)
+        if form is None:
+            user = request.user
+            form = {
+                "shipping_name": user.full_name,
+                "shipping_phone": user.phone_number,
+                "guest_email": user.email,
+            } if user.is_authenticated else {}
         context = {
             "cart": cart,
             "items": items,
@@ -122,7 +130,7 @@ class CheckoutView(View):
             "till_number": BUY_GOODS_TILL_NUMBER,
             # Values typed before a failed validation, so the customer never
             # has to retype the whole form after one mistake.
-            "form": request.session.pop("checkout_form", None) or {},
+            "form": form,
             "form_errors": request.session.pop("checkout_form_errors", None) or {},
         }
         return render(request, "storefront/checkout.html", context)
@@ -230,15 +238,14 @@ class CheckoutView(View):
                 shipping_city=shipping_city or delivery_region.title(),
                 shipping_county=shipping_county or delivery_region.title(),
                 notes=notes,
+                payment_method=payment_method,
             )
-            order.payment_method = payment_method
-            order.save(update_fields=["payment_method"])
             request.session[f"order_token_{order.receipt_number}"] = order.checkout_token
 
         except ValueError as exc:
             logger.warning("Checkout failed for cart #%s: %s", cart.id, str(exc))
             request.session["checkout_form"] = form_values
-            request.session["checkout_form_errors"] = {"__all__": str(exc)}
+            request.session["checkout_form_errors"] = {"order": str(exc)}
             messages.error(request, f"Unable to place order: {exc}")
             return redirect("storefront:checkout")
         except Exception as exc:

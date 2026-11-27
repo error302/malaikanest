@@ -1,6 +1,8 @@
 from decimal import Decimal
 
-from django.test import Client, TestCase
+from django.core import mail
+from django.template.loader import render_to_string
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from apps.orders.models import Cart, Order
@@ -66,6 +68,26 @@ class StorefrontCheckoutTests(TestCase):
         )
         self.assertContains(response, "data-region-fees")
 
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_till_checkout_renders_receipts_with_line_totals(self):
+        self._add_product_to_cart(quantity=2)
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse("storefront:checkout"), {
+                "shipping_name": "Amina Mohamed",
+                "shipping_phone": "0712345678",
+                "guest_email": "amina@example.com",
+                "delivery_region": "mombasa_pickup",
+                "payment_method": "till",
+            })
+        self.assertEqual(response.status_code, 302)
+        order = Order.objects.get(guest_email="amina@example.com")
+        self.assertEqual(order.items.get().total_price, Decimal("5000.00"))
+        self.assertEqual(len(mail.outbox), 1)
+        confirmation, _ = mail.outbox[0].alternatives[0]
+        self.assertIn(order.get_payment_method_display(), confirmation)
+        self.assertIn("KES 5000", confirmation)
+        self.assertIn("KES 5000", render_to_string("emails/payment_confirmation.html", {"order": order}))
+
     def test_guest_checkout_places_order_and_reserves_stock(self):
         """Submitting the checkout form reserves stock, clears cart, and creates order."""
         self._add_product_to_cart(quantity=4)
@@ -92,7 +114,7 @@ class StorefrontCheckoutTests(TestCase):
         self.assertIsNotNone(order)
         self.assertEqual(order.shipping_first_name, "Amina")
         self.assertEqual(order.shipping_last_name, "Mohamed")
-        self.assertEqual(order.shipping_phone, "0712345678")
+        self.assertEqual(order.shipping_phone, "254712345678")
         self.assertEqual(order.delivery_region, "mombasa")
         self.assertEqual(order.total, Decimal("10000.00"))  # 4 * 2500, free shipping
         self.assertTrue(order.is_gift)

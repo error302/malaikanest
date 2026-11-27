@@ -74,6 +74,7 @@ class OrderService:
         shipping_county="",
         shipping_postal_code="",
         notes="",
+        payment_method=None,
     ):
         """
         Handles the business logic of creating an order from a cart, atomic inventory locking,
@@ -189,6 +190,7 @@ class OrderService:
                 tax_amount=0,
                 total=total,
                 status="pending",
+                payment_method=payment_method,
                 coupon=coupon,
                 guest_email=guest_email,
                 guest_phone=guest_phone,

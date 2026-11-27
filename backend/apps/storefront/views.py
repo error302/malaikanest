@@ -133,7 +133,7 @@ class ProductListView(View):
 
         age_param = request.GET.get("age")
         if age_param:
-            queryset = filter_size(queryset, age_param)
+            queryset = filter_size(queryset, age_param, match_age_range=True)
 
         condition_param = request.GET.get("condition")
         if condition_param in ("new", "mtumba"):
@@ -208,6 +208,7 @@ class ProductDetailView(View):
 
         prepare_product(product)
         variants = product.shop_variants
+        available_variants = [variant for variant in variants if variant.shop_stock > 0]
 
         # Related products in same category
         related_products = (
@@ -228,6 +229,7 @@ class ProductDetailView(View):
         context = {
             "product": product,
             "variants": variants,
+            "default_variant": available_variants[0] if len(available_variants) == 1 else None,
             "wishlist_ids": get_wishlist_ids(request),
             "related_products": related_products,
             "mombasa_fee": get_delivery_fee_for_region("mombasa"),

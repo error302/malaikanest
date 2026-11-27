@@ -143,6 +143,7 @@ export const api = {
   },
   analytics: (days = "30") => request<Analytics>(`/orders/admin/analytics/?payment_days=${encodeURIComponent(days)}`),
   products: async (params: string) => asPaged<Product>(await request<unknown>(`/products/admin/products/${params}`)),
+  catalogueOptions: () => request<CatalogueOptions>("/products/admin/products/catalogue-options/"),
   product: (id: string) => request<Product>(`/products/admin/products/${id}/`),
   saveProduct: (id: string | null, body: Partial<Product>) =>
     request<Product>(
@@ -330,6 +331,7 @@ export interface Product {
   price: string;
   compare_price?: string | null;
   stock: number;
+  available_stock?: number;
   is_active: boolean;
   featured?: boolean;
   category?: { id: string; name: string; slug: string } | string | null;
@@ -345,6 +347,7 @@ export interface Product {
   age_group?: string;
   age_range?: string;
   gender?: string;
+  condition?: string;
   status?: "draft" | "published";
   category_name?: string;
   variants?: Variant[];
@@ -357,6 +360,7 @@ export interface Category {
   slug: string;
   parent?: { id: string; name: string } | string | null;
   full_slug?: string;
+  path_label?: string;
   product_count?: number;
   description?: string;
   group?: string;
@@ -364,6 +368,18 @@ export interface Category {
   image_url?: string | null;
   image_full_url?: string | null;
   level?: number;
+}
+
+export interface CatalogueOption {
+  value: string;
+  label: string;
+}
+
+export interface CatalogueOptions {
+  ages: CatalogueOption[];
+  sizes: CatalogueOption[];
+  age_ranges: CatalogueOption[];
+  conditions: CatalogueOption[];
 }
 
 export interface Banner {

@@ -142,7 +142,7 @@
         </details>
 
         <!-- Add to Cart Form -->
-        <form action="/cart/add/" method="post" class="nest-pdp-form" style="display: flex; flex-direction: column; gap: 24px;" id="pdp-add-form">
+        <form action="{% url 'storefront:cart_add' %}" method="post" class="nest-pdp-form" style="display: flex; flex-direction: column; gap: 24px;" id="pdp-add-form">
           {% csrf_token %}
           <input type="hidden" name="product_id" value="{{ product.id }}">
 
@@ -152,7 +152,7 @@
             <div class="nest-size-options" style="display: flex; flex-wrap: wrap; gap: 8px;">
               {% for v in variants %}
               <label class="nest-variant" style="cursor: pointer; display: block;">
-                <input type="radio" name="variant_id" value="{{ v.id }}" required {% if v.shop_stock <= 0 %}disabled{% endif %} style="position: absolute; opacity: 0; pointer-events: none;">
+                <input type="radio" name="variant_id" value="{{ v.id }}" required {% if v.shop_stock <= 0 %}disabled{% elif v == default_variant %}checked{% endif %} style="position: absolute; opacity: 0; pointer-events: none;">
                 <span class="nest-size-option{% if v.shop_stock <= 0 %} disabled{% endif %}" style="display: inline-flex; align-items: center; padding: 10px 18px; border-radius: var(--radius-md); border: 2px solid var(--coast-line); background: white; font-weight: 600; color: var(--coast-deep); transition: all var(--transition-fast); {% if v.shop_stock <= 0 %}opacity: 0.5; cursor: not-allowed;{% endif %}">{{ v.get_size_display|default:"Standard" }}{% if v.color %} · {{ v.get_color_display }}{% endif %}{% if v.price_modifier %} · KES {{ v.shop_price|floatformat:"0" }}{% endif %}{% if v.shop_stock <= 0 %} · Sold out{% endif %}</span>
               </label>
               {% endfor %}

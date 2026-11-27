@@ -28,6 +28,8 @@ class AdminLimitOffsetPagination(LimitOffsetPagination):
 from apps.accounts.models import User
 from apps.orders.models import CartItem, OrderItem, Order
 from apps.products.models import Banner, Category, Product
+from apps.storefront.context_processors import AGE_GROUPS
+from apps.storefront.sizing import filter_size
 from .admin_serializers import (
     AdminBannerSerializer,
     AdminCategorySerializer,
@@ -41,8 +43,8 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication, SessionAuthentication]
     queryset = (
         Product.objects.all()
-        .select_related("category", "brand")
-        .prefetch_related("variants__inventory")
+        .select_related("category", "category__parent", "category__parent__parent", "brand", "inventory")
+        .prefetch_related("images", "variants__inventory")
         .order_by("-created_at")
     )
     serializer_class = AdminProductSerializer
@@ -53,18 +55,41 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         search = self.request.query_params.get("search")
         category = self.request.query_params.get("category")
+        category_path = self.request.query_params.get("category_path")
         featured = self.request.query_params.get("featured")
+        age = self.request.query_params.get("age")
+        size = self.request.query_params.get("size")
+        condition = self.request.query_params.get("condition")
+        sort = self.request.query_params.get("sort")
 
         if search:
             queryset = queryset.filter(
                 Q(name__icontains=search) | Q(description__icontains=search)
             )
-        if category:
+        if category_path:
+            selected = Category.resolve_by_path(category_path)
+            queryset = queryset.filter(category_id__in=selected.descendant_ids() if selected else [])
+        elif category:
             queryset = queryset.filter(category__slug=category)
+        if age:
+            queryset = filter_size(queryset, age, in_stock=False, match_age_range=True)
+        if size:
+            queryset = filter_size(queryset, size, in_stock=False)
+        if condition in dict(Product.CONDITION_CHOICES):
+            queryset = queryset.filter(condition=condition)
         if featured:
             queryset = queryset.filter(featured=featured.lower() == "true")
+        ordering = {"price_asc": "price", "price_desc": "-price", "name": "name"}.get(sort, "-created_at")
+        return queryset.order_by(ordering, "pk")
 
-        return queryset
+    @action(detail=False, methods=["get"], url_path="catalogue-options")
+    def catalogue_options(self, request):
+        return Response({
+            "ages": [{"value": entry["slug"], "label": entry["label"]} for entry in AGE_GROUPS],
+            "sizes": [{"value": value, "label": label} for value, label in Product.SIZE_CHOICES],
+            "age_ranges": [{"value": value, "label": label} for value, label in Product.AGE_RANGE_CHOICES],
+            "conditions": [{"value": value, "label": label} for value, label in Product.CONDITION_CHOICES],
+        })
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

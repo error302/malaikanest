@@ -84,10 +84,12 @@
                     <td align="right" style="font-family:monospace;font-size:14px;font-weight:600;color:#2D1810;padding:6px 0;">{{ order.mpesa_receipt_number }}</td>
                   </tr>
                   {% endif %}
+                  {% if order.payment_method %}
                   <tr>
                     <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:6px 0;">Payment Method</td>
-                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding:6px 0;">{{ order.get_payment_method_display|default:"M-Pesa" }}</td>
+                    <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding:6px 0;">{{ order.get_payment_method_display }}</td>
                   </tr>
+                  {% endif %}
                   <tr>
                     <td style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#6B4A3A;padding:6px 0;">Delivery</td>
                     <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;color:#2D1810;padding:6px 0;">{{ order.get_delivery_region_display }}</td>
@@ -140,7 +142,7 @@
                   </tr>
                 </table>
               </td>
-              <td align="right" style="vertical-align:top;padding-left:16px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;color:#2D1810;white-space:nowrap;">KES {{ item.line_total|default:item.total_price|default:item.price|floatformat:0 }}</td>
+              <td align="right" style="vertical-align:top;padding-left:16px;font-family:'Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;color:#2D1810;white-space:nowrap;">KES {{ item.total_price|floatformat:0 }}</td>
             </tr>
           </table>
         </td>
@@ -170,7 +172,7 @@
               <td align="right" style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:#2D1810;padding:4px 0;">KES {{ order.delivery_fee|floatformat:0 }}</td>
             </tr>
             <tr>
-              <td style="padding-top:12px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">Total Paid</td>
+              <td style="padding-top:12px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">Order Total</td>
               <td align="right" style="padding-top:12px;border-top:2px solid #EDDCC8;font-family:'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#2D1810;">KES {{ order.total|floatformat:0 }}</td>
             </tr>
           </table>

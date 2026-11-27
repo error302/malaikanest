@@ -20,6 +20,7 @@ async function mock(page: Page) {
       low_stock: [{ product: product.name, available: 2 }],
     };
     else if (url.includes("categories")) data = route.request().method() === "GET" ? [category] : category;
+    else if (url.includes("catalogue-options")) data = { ages: [{ value: "6-8y", label: "6–8 years" }], sizes: [], age_ranges: [], conditions: [] };
     else if (url.includes("products/1/")) data = product;
     else if (url.includes("admin/products")) data = { count: 1, results: [product] };
     else if (url.includes("admin/orders")) data = { count: 1, results: [{ id: "1", order_number: "MN-20260927-LONG", customer_name: "Example Customer", total: "1500", status: "pending", payment_status: "pending", items: [], created_at: "2026-09-27" }] };

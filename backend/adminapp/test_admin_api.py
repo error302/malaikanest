@@ -63,6 +63,22 @@ class AdminProductApiTests(TestCase):
         self.assertEqual(response.status_code, 201, response.content)
         return response.json()["data"]["id"]
 
+    def test_catalogue_filters_roll_up_categories_and_match_age_without_stock(self):
+        child = Category.objects.create(name="Dresses", parent=self.category)
+        product_id = self.create_product(category=str(child.id), age_range="6-8 years",
+                                         condition="mtumba", stock=0)
+        self.create_product(slug="other-draft", age_range="1-2 years")
+        product_list = "/api/products/admin/products/"
+        response = self.client.get(product_list + "catalogue-options/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn({"value": "6-8y", "label": "6–8 years"}, response.json()["data"]["ages"])
+        response = self.client.get(product_list, {
+            "category_path": self.category.full_slug, "age": "6-8y", "condition": "mtumba",
+        })
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual([row["id"] for row in response.json()["data"]["results"]], [product_id])
+        self.assertEqual(response.json()["data"]["results"][0]["available_stock"], 0)
+
     def test_owner_data_survives_a_description_only_save(self):
         product_id = self.create_product(size_guide="Owner guide", fabric="Owner fabric", whats_included="Owner contents")
         response = self.client.patch(

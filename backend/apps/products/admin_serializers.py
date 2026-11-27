@@ -26,6 +26,7 @@ from apps.products.models import (
 
 class AdminCategorySerializer(serializers.ModelSerializer):
     full_slug = serializers.CharField(read_only=True)
+    path_label = serializers.SerializerMethodField()
     level = serializers.IntegerField(read_only=True)
     image = serializers.ImageField(required=False, allow_null=True)
     image_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
@@ -38,6 +39,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "full_slug",
+            "path_label",
             "description",
             "parent",
             "group",
@@ -92,6 +94,10 @@ class AdminCategorySerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+    def get_path_label(self, obj):
+        return " › ".join(part["name"] for part in obj.breadcrumb)
+
+
 class AdminProductSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(required=True, validators=[])
     category_name = serializers.SerializerMethodField()
@@ -126,6 +132,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "image_full_url",
             "images",
             "gender",
+            "condition",
             "age_group",
             "age_range",
             "size_label",
@@ -135,6 +142,17 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data["variants"]:
+            data["available_stock"] = sum(
+                variant["available_stock"] for variant in data["variants"] if variant["is_active"]
+            )
+        else:
+            inventory = getattr(instance, "inventory", None)
+            data["available_stock"] = inventory.available() if inventory else instance.stock
+        return data
 
     def to_internal_value(self, data):
         if hasattr(data, "copy"):

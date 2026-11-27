@@ -491,6 +491,10 @@ class OrderItem(BaseModel):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
 
+    @property
+    def total_price(self):
+        return self.price * self.quantity
+
     def __str__(self):
         color_label = ""
         if isinstance(self.variant_details, dict):

@@ -11,8 +11,8 @@
 <div class="nest-checkout-page shop-frame coast-page">
   <h1 style="font-family: var(--coast-heading); font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800; color: var(--coast-deep); line-height: 1.05; margin-bottom: 8px;">Checkout</h1>
   <p style="font-size: .9rem; color: var(--coast-muted); margin-bottom: 24px;">Add your contact details, choose delivery or pickup, then select a payment method.</p>
-  {% if form_errors.__all__ %}
-  <div class="field-error" style="margin-bottom: 16px;" role="alert">{{ form_errors.__all__ }}</div>
+  {% if form_errors.order %}
+  <div class="field-error" style="margin-bottom: 16px;" role="alert">{{ form_errors.order }}</div>
   {% endif %}
 
   <form action="{% url 'storefront:checkout' %}" method="post" id="checkoutForm" style="display: grid; grid-template-columns: 1fr; gap: 32px;">
@@ -38,7 +38,7 @@
               required
               autocomplete="name"
               placeholder="e.g. Amina Mohamed" 
-              value="{{ form.shipping_name|default:user.full_name }}"
+              value="{{ form.shipping_name }}"
               class="form-input{% if form_errors.shipping_name %} field-invalid{% endif %}"
               aria-invalid="{% if form_errors.shipping_name %}true{% else %}false{% endif %}"
             >
@@ -54,7 +54,7 @@
               required
               autocomplete="tel"
               placeholder="07XX XXX XXX or +254..." 
-              value="{{ form.shipping_phone|default:user.phone_number }}"
+              value="{{ form.shipping_phone }}"
               class="form-input{% if form_errors.shipping_phone %} field-invalid{% endif %}"
               aria-invalid="{% if form_errors.shipping_phone %}true{% else %}false{% endif %}"
             >
@@ -71,7 +71,7 @@
             {% if not user.is_authenticated %}required{% endif %}
             autocomplete="email"
             placeholder="For order receipt and tracking updates" 
-            value="{{ form.guest_email|default:user.email }}"
+            value="{{ form.guest_email }}"
             class="form-input{% if form_errors.guest_email %} field-invalid{% endif %}"
             aria-invalid="{% if form_errors.guest_email %}true{% else %}false{% endif %}"
           >
