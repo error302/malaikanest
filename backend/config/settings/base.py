@@ -157,6 +157,9 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Versioned static assets can be cached for a year (we bump ?v= on every change).
+WHITENOISE_MAX_AGE = 31536000
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

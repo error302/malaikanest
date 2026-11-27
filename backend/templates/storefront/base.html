@@ -77,7 +77,8 @@
   
   <!-- Tailwind CSS & Fonts -->
   <link rel="stylesheet" href="{% static 'css/storefront.css' %}?v=coast">
-  <link rel="stylesheet" href="{% static 'nest-home/coast.css' %}?v=coast1">
+  <link rel="preload" as="style" href="{% static 'nest-home/coast.css' %}?v=coast1" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{% static 'nest-home/coast.css' %}?v=coast1"></noscript>
 
   <style>
     :root {
@@ -225,7 +226,7 @@
   }
   </script>
   <link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast17">
-  <link rel="stylesheet" href="{% static 'nest-home/storefront-home.css' %}?v=coast2">
+  <link rel="preload" as="image" href="{% static 'nest-home/coastal-campaign-mobile.webp' %}" fetchpriority="high" media="(max-width: 640px)">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
