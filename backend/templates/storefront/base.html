@@ -90,7 +90,8 @@
     .dock-item { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; }
   </style>
   <link rel="stylesheet" href="{% static 'css/storefront.css' %}?v=coast">
-  <link rel="stylesheet" href="{% static 'nest-home/coast.css' %}?v=coast19">
+  <link rel="preload" as="style" href="{% static 'nest-home/coast.css' %}?v=coast21" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{% static 'nest-home/coast.css' %}?v=coast21"></noscript>
 
   <style>
     :root {
@@ -237,8 +238,8 @@
     ]
   }
   </script>
-  <link rel="preload" as="style" href="{% static 'nest-home/storefront-design.css' %}?v=coast20" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast20"></noscript>
+  <link rel="preload" as="style" href="{% static 'nest-home/storefront-design.css' %}?v=coast21" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{% static 'nest-home/storefront-design.css' %}?v=coast21"></noscript>
   <link rel="preload" as="image" href="{% static 'nest-home/coastal-campaign-mobile.webp' %}" fetchpriority="high" media="(max-width: 640px)">
   {% block extra_head %}{% endblock %}
 </head>
