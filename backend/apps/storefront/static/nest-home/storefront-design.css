@@ -161,12 +161,19 @@ main .boutique-filter-panel #condition-filter button {
 .boutique-product-grid .nest-product-card > div { padding-inline: 0; }
 
 .coast-page { padding-block: clamp(18px, 4vw, 54px); }
-.coast-product-photo { aspect-ratio: 5 / 6; background: #f5f8fc; overflow: hidden; border-radius: 7px; }
+.coast-product-photo { aspect-ratio: 4 / 5; background: #f5f8fc; overflow: hidden; border-radius: 10px; max-width: 520px; margin-inline: auto; }
+@media (max-width: 767px) {
+  .coast-product-photo { aspect-ratio: 1 / 1; max-width: 100%; }
+}
 .coast-product-purchase { padding-top: clamp(8px, 2vw, 20px); min-width: 0; }
 .coast-product-purchase h1 { overflow-wrap: anywhere; }
 
 /* Product-detail rhythm. Defined here so phones can tighten it (see the
    mobile block) instead of the template hardcoding desktop margins. */
+.nest-pdp-layout { display: grid; grid-template-columns: 1fr; gap: 32px; }
+@media (min-width: 768px) {
+  .nest-pdp-layout { grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 48px; align-items: start; }
+}
 .nest-pdp-block { margin-top: 24px; }
 .nest-pdp-form { margin-top: 24px; }
 .nest-pdp-section { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--coast-line); }

@@ -60,7 +60,7 @@ export function App() {
     catch (error) { setSessionError(error instanceof Error ? error.message : "Sign out failed. Please retry."); }
     finally { setSigningOut(false); }
   }
-  if (authed === null) return <main className="login-wrap">{sessionError ? <div className="error" role="alert">{sessionError} <button className="btn" onClick={checkSession}>Retry connection</button></div> : <p role="status">Connecting to your storeâ€¦</p>}</main>;
+  if (authed === null) return <main className="login-wrap">{sessionError ? <div className="error" role="alert">{sessionError} <button className="btn" onClick={checkSession}>Retry connection</button></div> : <p role="status">Connecting to your store…</p>}</main>;
   if (!authed) return <Login onDone={() => { setAuthed(true); setSessionError(""); }} />;
   return <>
     <a className="skip-link" href="#manager-content">Skip to content</a>
@@ -70,8 +70,8 @@ export function App() {
         <button className="menu-toggle" aria-expanded={menu} aria-controls="manager-navigation" onClick={() => setMenu(!menu)}>{menu ? "Close menu" : "Menu"}</button>
         <nav id="manager-navigation" aria-label="Store management" className={menu ? "manager-navigation open" : "manager-navigation"}>
           {Object.entries(views).filter(([key]) => key !== "products/new").map(([key, label]) => <a key={key} href={`#${key}`} aria-current={view === key || (key === "products" && view === "products/new") ? "page" : undefined} onClick={() => setMenu(false)}>{label}</a>)}
-          <a href="/" target="_blank" rel="noopener noreferrer">View shop â†—</a>
-          <button className="logout" disabled={signingOut} onClick={logout}>{signingOut ? "Signing outâ€¦" : "Sign out"}</button>
+          <a href="/" target="_blank" rel="noopener noreferrer">View shop →</a>
+          <button className="logout" disabled={signingOut} onClick={logout}>{signingOut ? "Signing out…" : "Sign out"}</button>
         </nav>
       </aside>
       <main ref={main} id="manager-content" className="main" tabIndex={-1}>

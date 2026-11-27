@@ -40,7 +40,7 @@
     <span style="font-weight: 600; color: var(--coast-deep); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ product.name }}</span>
   </div>
 
-  <div style="display: grid; grid-template-columns: 1fr; gap: 32px;">
+  <div class="nest-pdp-layout" style="display: grid; grid-template-columns: 1fr; gap: 32px;">
     
     <!-- Image Gallery -->
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -128,7 +128,7 @@
         </div>
 
         <!-- Size Guide -->
-        <details class="nest-fit nest-pdp-block" id="size-guide" {% if product.size_guide %}open{% endif %} style="background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
+        <details class="nest-fit nest-pdp-block" id="size-guide" style="background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
           <summary style="font-weight: 700; color: var(--coast-deep); cursor: pointer; min-height: 48px; display: flex; align-items: center; list-style: none;">Measurements & fit</summary>
           <div class="nest-fit-content" style="margin-top: 16px;">
             {% if product.size_guide %}

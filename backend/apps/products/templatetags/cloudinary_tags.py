@@ -39,16 +39,20 @@ def optimize_cloudinary_url(url: str, options: str = "f_auto,q_auto") -> str:
     
     insert_pos = upload_index + len("/image/upload/")
     
-    # Check if transformations already exist (they start with a letter followed by comma/underscore or end)
+    # Check if transformations already exist. Cloudinary URLs may carry a
+    # version segment (v1234567890/) right after /image/upload/; transforms
+    # must be inserted BEFORE that segment, not after it.
     existing_transforms = ""
     remaining_path = path[insert_pos:]
     
-    # Cloudinary transformations are like: c_fill,w_800,h_600/
-    # They end with a /
-    transform_match = re.match(r"^([a-z_][a-z0-9_,]*\/)", remaining_path)
-    if transform_match:
-        existing_transforms = transform_match.group(1)
-        insert_pos += len(existing_transforms)
+    # A version segment is not a transform — leave insert_pos before it.
+    if not re.match(r"^v\d+\/", remaining_path):
+        # Cloudinary transformations are like: c_fill,w_800,h_600/
+        # They end with a / and always contain _ or ,
+        transform_match = re.match(r"^([a-z][a-z0-9_]*[_,][a-z0-9_,]*\/)", remaining_path)
+        if transform_match:
+            existing_transforms = transform_match.group(1)
+            insert_pos += len(existing_transforms)
     
     # Build new path with transformations
     new_path = path[:insert_pos] + options + "/" + path[insert_pos:]
