@@ -24,7 +24,7 @@
       <p class="account-access-switch">{% block access_switch %}{% endblock %}</p>
     </div>
     <div class="account-access-art" aria-hidden="true">
-      <img class="account-access-photo" src="{% static 'nest-home/coastal-campaign-mobile.webp' %}" alt="" width="720" height="480">
+      {% block access_art %}<img class="account-access-photo" src="{% static 'nest-home/coastal-campaign-mobile.webp' %}" alt="" width="720" height="480">{% endblock %}
     </div>
   </div>
 </section>
