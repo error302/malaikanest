@@ -66,13 +66,15 @@ def search_products(queryset, all_products, query):
         if score >= 0.28:
             scored.append((score, product))
     scored.sort(key=lambda item: (-item[0], item[1].name))
-    return queryset.none(), False, [product for _, product in scored[:8]]
+    suggestion_ids = [product.pk for _, product in scored[:8]]
+    suggestions = shopping_queryset(all_products.prefetch_related("images")).in_bulk(suggestion_ids)
+    return queryset.none(), False, [suggestions[pk] for pk in suggestion_ids if pk in suggestions]
 
 
 class HomeView(View):
     def get(self, request):
         banner = Banner.objects.filter(is_active=True).order_by("position", "pk").first()
-        categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review").order_by("name")
+        categories = Category.storefront_roots()
         products = shopping_queryset(
             Product.objects.filter(is_active=True, status=PUBLIC_STATUS)
             .prefetch_related("images").select_related("category")
@@ -85,13 +87,13 @@ class HomeView(View):
 
         # One scrollable row per top-level category that has products.
         # Subcategory products roll up into their root row.
-        root_of = {
-            cat.id: cat.parent_id
-            for cat in Category.objects.filter(parent__isnull=False).only("id", "parent_id")
-        }
+        parents = dict(Category.objects.filter(parent__isnull=False).values_list("id", "parent_id"))
+        featured_ids = {product.pk for product in featured_products}
         products_by_root = {}
-        for product in products[:120]:
-            root_id = root_of.get(product.category_id, product.category_id)
+        for product in products.exclude(pk__in=featured_ids)[:120]:
+            root_id = product.category_id
+            while root_id in parents:
+                root_id = parents[root_id]
             products_by_root.setdefault(root_id, []).append(product)
 
         category_rows = []
@@ -109,6 +111,7 @@ class HomeView(View):
             "category_rows": category_rows,
             "new_arrivals": products.order_by("-created_at", "pk")[:12],
             "age_groups": AGE_GROUPS,
+            "wishlist_ids": get_wishlist_ids(request),
             "free_shipping_threshold": SiteSettings.get_free_shipping_threshold(),
         }
         return render(request, "storefront/home.html", context)
@@ -175,7 +178,7 @@ class ProductListView(View):
         sort_params = pagination_params.copy()
         sort_params.pop('sort', None)
 
-        categories = Category.objects.filter(parent__isnull=True).exclude(slug="shop-photo-review").order_by("name")
+        categories = Category.storefront_roots()
 
         context = {
             "products": page_obj,

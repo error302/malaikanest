@@ -5,7 +5,7 @@
 {% block meta_description %}Shop baby and children's clothes at Malaika Nest. Browse by size, order for delivery in Kenya or pick up at Tawakal Toto Shop in Likoni, Mombasa.{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'nest-home/storefront-home.css' %}">
+<link rel="stylesheet" href="{% static 'nest-home/storefront-home.css' %}?v=catalogue2">
 {% if active_banner.get_image_url %}
 <link rel="preload" as="image" href="{{ active_banner.get_image_url|cloudinary_auto }}" fetchpriority="high">
 {% elif active_banner.get_mobile_image_url %}
@@ -47,22 +47,16 @@
     <h2 id="shop-by-category">Shop by category</h2>
     <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View the catalogue</a>
   </header>
-  <div class="nest-category-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px;">
+  <div class="nest-category-grid">
     {% for cat in categories %}
       <a href="{% url 'storefront:category_detail' category_slug=cat.slug %}"
-         class="category-card card-elevated"
-         style="display: flex; flex-direction: column; align-items: center; padding: 24px 16px; text-align: center; text-decoration: none; gap: 12px; transition: all var(--transition-base);">
-        {% if cat.get_image_url %}
-          <img src="{{ cat.get_image_url|cloudinary_auto }}"
-               alt=""
-               width="80" height="80"
-               loading="lazy"
-               decoding="async"
-               style="border-radius: 50%; object-fit: cover; border: 2px solid var(--coast-line);">
-        {% else %}
-          <div class="skeleton skeleton-category" aria-hidden="true"></div>
-        {% endif %}
-        <span style="font-weight: 600; color: var(--coast-deep); font-size: .95rem;">{{ cat.name }}</span>
+         class="shop-category-tile">
+        {% with photo=cat.get_image_url %}
+          {% if photo %}
+            <img class="shop-category-photo" src="{{ photo|cloudinary_auto }}" alt="" width="384" height="384" loading="lazy" decoding="async">
+          {% endif %}
+        {% endwith %}
+        <span>{{ cat.name }}</span>
       </a>
     {% endfor %}
   </div>
@@ -76,7 +70,7 @@
     <h2 id="on-the-rails">From the shop</h2>
     <a class="coast-text-link" href="{% url 'storefront:product_list' %}">View all clothes</a>
   </header>
-  <div class="nest-home-products" role="list">
+  <div class="nest-home-products">
     {% for product in featured_products %}
       {% include "storefront/_product_card.html" with product=product %}
     {% endfor %}
@@ -91,7 +85,7 @@
     <h2 id="row-{{ row.category.slug }}">{{ row.category.name }}</h2>
     <a class="coast-text-link" href="{% url 'storefront:category_detail' category_slug=row.category.slug %}">View all</a>
   </header>
-  <div class="nest-home-products" role="list">
+  <div class="nest-home-products">
     {% for product in row.products %}
       {% include "storefront/_product_card.html" with product=product %}
     {% endfor %}

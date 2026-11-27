@@ -6,7 +6,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.core.models import SiteSettings
-from apps.products.models import Banner, Category, Product, ProductVariant, Inventory
+from apps.accounts.models import User
+from apps.products.models import Banner, Category, Product, ProductImage, ProductVariant, Inventory
 
 
 @override_settings(SECURE_SSL_REDIRECT=False, ALLOWED_HOSTS=['testserver'])
@@ -153,6 +154,47 @@ class StorefrontCatalogueViewsTests(TestCase):
         self.assertContains(response, "Organic Cotton Romper")
         self.assertContains(response, "Baby Clothing")
         self.assertNotContains(response, "Discontinued Shoes")
+
+    def test_manager_and_homepage_share_category_images_and_roots(self):
+        legacy = "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=88"
+        category = Category.objects.create(name="Clothing", slug="clothing", image_url=legacy, image="categories/old-crop.webp")
+        Category.objects.create(name="Dresses", parent=category)
+        Category.objects.create(name="Shop photo review")
+        homepage = self.client.get(reverse("storefront:home"))
+        self.assertContains(homepage, "/nest-home/categories/clothing.webp")
+        self.assertNotContains(homepage, "Shop photo review")
+        self.assertNotContains(homepage, legacy)
+        staff = User.objects.create_superuser(email="categories@example.test", phone_number="+254700002036", password="OnlyForTests")
+        self.client.force_login(staff)
+        response = self.client.get("/api/products/admin/categories/")
+        self.assertEqual(response.status_code, 200)
+        rows = response.json()["data"]
+        self.assertEqual(
+            {row["slug"] for row in rows if row["is_storefront_root"]},
+            {item.slug for item in homepage.context["categories"]},
+        )
+        clothing = next(row for row in rows if row["slug"] == "clothing")
+        self.assertTrue(clothing["image_full_url"].endswith("/nest-home/categories/clothing.webp"))
+        self.assertFalse(clothing["image_url"])
+        self.assertIsNone(clothing["image"])
+        self.client.patch(
+            f"/api/products/admin/categories/{category.pk}/",
+            {"description": "Clothes for babies and children"},
+            content_type="application/json",
+        )
+        self.assertContains(self.client.get(reverse("storefront:home")), "/nest-home/categories/clothing.webp")
+        Category.objects.filter(pk=category.pk).update(image_url="https://example.test/clothing.webp")
+        self.assertContains(self.client.get(reverse("storefront:home")), "https://example.test/clothing.webp")
+
+    def test_shared_product_card_uses_primary_gallery_url(self):
+        ProductImage.objects.create(product=self.active_product, position=0, image_url="https://example.test/detail.webp")
+        ProductImage.objects.create(product=self.active_product, position=1, is_primary=True, image_url="https://example.test/front.webp")
+        for route in ("storefront:home", "storefront:product_list"):
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route))
+                self.assertContains(response, "https://example.test/front.webp")
+                self.assertNotContains(response, "https://example.test/detail.webp")
+                self.assertContains(response, f"Save {self.active_product.name} for later")
 
     def test_product_list_renders_products_and_filters(self):
         """Catalogue page lists active products and supports category filter."""

@@ -2,7 +2,9 @@ import logging
 import re
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
+from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.http import Http404, JsonResponse
@@ -83,26 +85,14 @@ class CheckoutView(View):
             unit = item.product.price
             if item.variant_id and item.variant:
                 unit = unit + (item.variant.price_modifier or Decimal("0.00"))
-            subtotal += (unit or Decimal("0.00")) * (item.quantity or 0)
+            item.checkout_unit_price = unit
+            subtotal += unit * item.quantity
         subtotal = subtotal.quantize(Decimal("0.01"))
         # If the stored cart line prices drifted, tell the customer.
         if cart.subtotal_amount() != subtotal:
             messages.info(request, "Some prices in your bag have been updated to the latest amounts.")
         discount = cart.discount_amount()
         free_shipping_threshold = get_free_shipping_threshold()
-
-        if subtotal >= free_shipping_threshold and subtotal > 0:
-            delivery_fee = Decimal("0.00")
-            free_shipping_qualified = True
-        else:
-            delivery_fee = get_delivery_fee_for_region(cart.delivery_region)
-            free_shipping_qualified = False
-
-        # Round to whole KES so the displayed total equals the STK charge.
-        total = (max(Decimal("0.00"), subtotal - discount) + delivery_fee).quantize(
-            Decimal("1"), rounding=ROUND_HALF_UP
-        )
-
         form = request.session.pop("checkout_form", None)
         if form is None:
             user = request.user
@@ -111,6 +101,29 @@ class CheckoutView(View):
                 "shipping_phone": user.phone_number,
                 "guest_email": user.email,
             } if user.is_authenticated else {}
+        regions = {
+            "mombasa_pickup": "Pick up in Likoni",
+            "mombasa": "Mombasa delivery",
+            "nairobi": "Nairobi delivery",
+            "upcountry": "Other locations in Kenya",
+        }
+        region_fees = {region: str(get_delivery_fee_for_region(region)) for region in regions}
+        default_region = form.get("delivery_region") or cart.delivery_region
+        if default_region not in regions:
+            default_region = "nairobi"
+
+        if subtotal >= free_shipping_threshold and subtotal > 0:
+            delivery_fee = Decimal("0.00")
+            free_shipping_qualified = True
+        else:
+            delivery_fee = Decimal(region_fees[default_region])
+            free_shipping_qualified = False
+
+        # Round to whole KES so the displayed total equals the STK charge.
+        total = (max(Decimal("0.00"), subtotal - discount) + delivery_fee).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
+
         context = {
             "cart": cart,
             "items": items,
@@ -120,20 +133,17 @@ class CheckoutView(View):
             "total": total,
             "free_shipping_qualified": free_shipping_qualified,
             "free_shipping_threshold": free_shipping_threshold,
-            "region_fees": {
-                "mombasa_pickup": str(get_delivery_fee_for_region("mombasa_pickup")),
-                "mombasa": str(get_delivery_fee_for_region("mombasa")),
-                "nairobi": str(get_delivery_fee_for_region("nairobi")),
-                "upcountry": str(get_delivery_fee_for_region("upcountry")),
-            },
-            "default_region": cart.delivery_region or "nairobi",
-            "till_number": BUY_GOODS_TILL_NUMBER,
+            "region_fees": region_fees,
+            "regions": regions,
+            "default_region": default_region,
             # Values typed before a failed validation, so the customer never
             # has to retype the whole form after one mistake.
             "form": form,
             "form_errors": request.session.pop("checkout_form_errors", None) or {},
         }
-        return render(request, "storefront/checkout.html", context)
+        response = render(request, "storefront/checkout.html", context)
+        add_never_cache_headers(response)
+        return response
 
     def post(self, request):
         cart = get_or_create_cart(request)
@@ -150,11 +160,6 @@ class CheckoutView(View):
         shipping_county = request.POST.get("shipping_county", "").strip()
         delivery_region = request.POST.get("delivery_region", "nairobi").strip()
         payment_method = request.POST.get("payment_method", "mpesa").strip()
-        # Django choices are not enforced at the DB layer — reject anything
-        # outside the methods we actually support before an order exists.
-        if payment_method not in {"mpesa", "till", "paypal"}:
-            return fail("payment_method", "Choose M-Pesa STK, M-Pesa Till or PayPal as your payment method.")
-        mpesa_phone = (request.POST.get("mpesa_phone") or shipping_phone).strip()
         notes = request.POST.get("notes", "").strip()
         is_gift = bool(request.POST.get("is_gift"))
         gift_message = request.POST.get("gift_message", "").strip()
@@ -179,8 +184,19 @@ class CheckoutView(View):
         def fail(field, message):
             request.session["checkout_form"] = form_values
             request.session["checkout_form_errors"] = {field: message}
-            messages.error(request, message)
             return redirect("storefront:checkout")
+
+        if payment_method not in {"mpesa", "paypal"}:
+            return fail("payment_method", "Choose M-Pesa STK Push or PayPal.")
+
+        paypal = None
+        if payment_method == "paypal":
+            from apps.payments.paypal import PayPalGateway
+
+            paypal = PayPalGateway()
+            service = paypal.service
+            if not (service.client_id and service.client_secret) or (not settings.DEBUG and service.mode != "live"):
+                return fail("payment_method", "PayPal is currently unavailable. Please choose M-Pesa STK Push.")
 
         is_store_pickup = delivery_region == "mombasa_pickup"
         if is_store_pickup:
@@ -202,15 +218,12 @@ class CheckoutView(View):
         except ValueError:
             return fail("shipping_phone", "That phone number looks wrong. Use 07XXXXXXXX or +2547XXXXXXXX.")
 
-        # An invalid STK override must never beat a valid contact number.
-        override_phone = request.POST.get("mpesa_phone", "").strip()
-        if override_phone:
+        mpesa_phone = shipping_phone
+        if payment_method == "mpesa" and form_values["mpesa_phone"]:
             try:
-                mpesa_phone = normalize_phone(override_phone)
+                mpesa_phone = normalize_phone(form_values["mpesa_phone"])
             except ValueError:
-                mpesa_phone = shipping_phone
-        else:
-            mpesa_phone = shipping_phone
+                return fail("mpesa_phone", "Enter a valid M-Pesa number or leave it blank to use your contact number.")
 
         if not request.user.is_authenticated and not guest_email:
             return fail("guest_email", "Please provide an email address for order confirmation and receipts.")
@@ -246,78 +259,56 @@ class CheckoutView(View):
             logger.warning("Checkout failed for cart #%s: %s", cart.id, str(exc))
             request.session["checkout_form"] = form_values
             request.session["checkout_form_errors"] = {"order": str(exc)}
-            messages.error(request, f"Unable to place order: {exc}")
             return redirect("storefront:checkout")
         except Exception as exc:
             logger.exception("Unexpected error in process_checkout: %s", exc)
-            messages.error(request, "An unexpected error occurred while placing your order. Please try again.")
-            return redirect("storefront:checkout")
+            return fail("order", "An unexpected error occurred while placing your order. Please try again.")
 
         # Handle chosen payment method
         status_url = reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number})
 
         if payment_method == "mpesa":
-            phone_to_charge = mpesa_phone or shipping_phone
-            try:
-                norm_phone = normalize_phone(phone_to_charge)
-            except Exception:
-                norm_phone = phone_to_charge
-
             payment, _ = Payment.objects.get_or_create(
                 order=order,
                 defaults={
                     "amount": order.total,
                     "payment_method": "mpesa",
-                    "phone_number": norm_phone,
+                    "phone_number": mpesa_phone,
                     "status": "initiated",
                 },
             )
 
             # Try STK Push
             try:
-                PaymentService.initiate_mpesa_stk(payment, norm_phone)
+                PaymentService.initiate_mpesa_stk(payment, mpesa_phone)
             except StkInitiationUncertain:
                 return redirect(status_url)
             except ValueError:
-                messages.info(request, "The M-Pesa prompt could not be started. You can use the Buy Goods Till.")
+                messages.info(request, "The M-Pesa prompt could not be started. If you were charged, contact the shop before paying again.")
             return redirect(status_url)
 
-        elif payment_method == "till":
-            Payment.objects.get_or_create(
-                order=order,
-                defaults={
-                    "amount": order.total,
-                    "payment_method": "mpesa",
-                    "status": "initiated",
-                },
-            )
-            return redirect(status_url)
-
-        elif payment_method == "paypal":
+        if paypal:
             # PayPal wallet / cards: create the payment record and send the
             # customer to PayPal to approve, then capture on the way back.
-            from django.urls import reverse as _reverse
-            from apps.payments.gateway import PayPalGateway
-
             payment, _ = Payment.objects.get_or_create(
                 order=order,
                 payment_method="paypal",
                 defaults={"status": "pending", "amount": order.total},
             )
             try:
-                result = PayPalGateway().initiate(
+                return_url = reverse("storefront:paypal_return") + "?" + urlencode({"receipt": order.receipt_number})
+                result = paypal.initiate(
                     payment,
-                    return_url=request.build_absolute_uri(
-                        _reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number})
-                    ),
+                    return_url=request.build_absolute_uri(return_url),
+                    cancel_url=request.build_absolute_uri(status_url),
                 )
             except Exception as exc:
                 logger.exception("PayPal initiate failed for order %s: %s", order.receipt_number, exc)
-                messages.error(request, "PayPal payment could not be started. Please try M-Pesa or try again.")
+                messages.error(request, "PayPal payment could not be started. Contact the shop about this order.")
                 return redirect(status_url)
 
             approval_url = next(
-                (link["href"] for link in result.get("links", []) if link.get("rel") == "approve"),
+                (link.get("href") for link in result.get("links", []) if link.get("rel") in {"approve", "payer-action"} and link.get("href")),
                 None,
             )
             if not approval_url:
@@ -368,11 +359,20 @@ class PayPalReturnView(View):
             messages.error(request, "Payment record not found.")
             return redirect(reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number}))
 
+        if payment.status == "completed":
+            return redirect(reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number}))
+        if payment.paypal_transaction_id != paypal_order_id:
+            messages.error(request, "This PayPal payment does not match the order.")
+            return redirect(reverse("storefront:order_status", kwargs={"receipt_number": order.receipt_number}))
+
         try:
             from apps.payments.paypal import PayPalService
             paypal_service = PayPalService()
-            paypal_service.capture_order(paypal_order_id, payment)
-            messages.success(request, "PayPal payment captured successfully! Thank you for your order.")
+            result = paypal_service.capture_order(paypal_order_id, payment)
+            if result.get("status") == "completed":
+                messages.success(request, "PayPal payment confirmed. Thank you for your order.")
+            else:
+                messages.info(request, "PayPal has not confirmed this payment.")
             # Ensure authorized session is set so order_status can be viewed without token in URL
             request.session[f"order_token_{order.receipt_number}"] = order.checkout_token
         except Exception as exc:
@@ -519,14 +519,16 @@ def customer_payment_state(order, payment):
         return "confirmed"
     if order.status in {"cancelled", "refunded"}:
         return "closed"
+    if order.payment_method == "till":
+        return "manual"
     if payment and payment.payment_method == "mpesa":
         if payment.mpesa_issue in {"initiation_unknown", "intent_mismatch", "duplicate_receipt", "query_attempts_exhausted"}:
             return "review"
-        if payment.checkout_request_id and payment.status in {"failed", "cancelled"}:
+        if payment.status in {"failed", "cancelled"}:
             return payment.status
         if payment.checkout_request_id:
             return "pending"
-    return "manual"
+    return "awaiting"
 
 
 class OrderStatusPollView(View):

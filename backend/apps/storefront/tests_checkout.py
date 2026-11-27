@@ -1,4 +1,6 @@
 from decimal import Decimal
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 from django.core import mail
 from django.template.loader import render_to_string
@@ -6,6 +8,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from apps.orders.models import Cart, Order
+from apps.payments.models import Payment
 from apps.products.models import Category, Inventory, Product
 
 
@@ -44,10 +47,11 @@ class StorefrontCheckoutTests(TestCase):
         response = self.client.get(reverse("storefront:checkout"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Cashmere Baby Blanket")
-        self.assertContains(response, "2500")
+        self.assertContains(response, "2,500")
         self.assertContains(response, "FREE")  # 20000 >= 10000 free delivery
         self.assertContains(response, "M-Pesa STK Push")
-        self.assertContains(response, "3370347")  # Till number
+        self.assertContains(response, 'name="payment_method" value="paypal"')
+        self.assertNotContains(response, 'name="payment_method" value="till"')
 
     def test_checkout_exposes_authoritative_region_fees(self):
         """Displayed delivery fees come from the same source used to charge the order."""
@@ -69,7 +73,8 @@ class StorefrontCheckoutTests(TestCase):
         self.assertContains(response, "data-region-fees")
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-    def test_till_checkout_renders_receipts_with_line_totals(self):
+    @patch("apps.storefront.views_checkout.PaymentService.initiate_mpesa_stk")
+    def test_stk_checkout_renders_receipts_with_line_totals(self, initiate_stk):
         self._add_product_to_cart(quantity=2)
         with self.captureOnCommitCallbacks(execute=True):
             response = self.client.post(reverse("storefront:checkout"), {
@@ -77,16 +82,57 @@ class StorefrontCheckoutTests(TestCase):
                 "shipping_phone": "0712345678",
                 "guest_email": "amina@example.com",
                 "delivery_region": "mombasa_pickup",
-                "payment_method": "till",
+                "payment_method": "mpesa",
             })
         self.assertEqual(response.status_code, 302)
         order = Order.objects.get(guest_email="amina@example.com")
         self.assertEqual(order.items.get().total_price, Decimal("5000.00"))
+        initiate_stk.assert_called_once()
         self.assertEqual(len(mail.outbox), 1)
         confirmation, _ = mail.outbox[0].alternatives[0]
         self.assertIn(order.get_payment_method_display(), confirmation)
         self.assertIn("KES 5000", confirmation)
         self.assertIn("KES 5000", render_to_string("emails/payment_confirmation.html", {"order": order}))
+
+    def test_old_checkout_submission_cannot_create_a_till_order(self):
+        self._add_product_to_cart()
+        response = self.client.post(reverse("storefront:checkout"), {
+            "shipping_name": "Amina Mohamed",
+            "payment_method": "till",
+        }, follow=True)
+        self.assertContains(response, "Choose M-Pesa STK Push or PayPal.")
+        self.assertContains(response, 'value="Amina Mohamed"')
+        self.assertEqual(Order.objects.count(), 0)
+
+    @patch("apps.payments.paypal.PayPalService.capture_order", return_value={"status": "completed"})
+    @patch("apps.payments.paypal.PayPalGateway")
+    def test_paypal_checkout_returns_to_capture_with_the_same_order(self, gateway, capture):
+        self._add_product_to_cart()
+        gateway.return_value.service.mode = "live"
+        gateway.return_value.initiate.return_value = {
+            "links": [{"rel": "payer-action", "href": "https://www.paypal.com/checkoutnow?token=QA-PAYPAL"}],
+        }
+        response = self.client.post(reverse("storefront:checkout"), {
+            "shipping_name": "Amina Mohamed",
+            "shipping_phone": "0712345678",
+            "guest_email": "amina@example.com",
+            "delivery_region": "mombasa_pickup",
+            "payment_method": "paypal",
+        })
+        order = Order.objects.get(guest_email="amina@example.com")
+        payment = Payment.objects.get(order=order)
+        payment.paypal_transaction_id = "QA-PAYPAL"
+        payment.save(update_fields=["paypal_transaction_id"])
+        self.assertEqual(response.url, "https://www.paypal.com/checkoutnow?token=QA-PAYPAL")
+        return_url = urlsplit(gateway.return_value.initiate.call_args.kwargs["return_url"])
+        self.assertEqual(return_url.path, reverse("storefront:paypal_return"))
+        self.assertEqual(parse_qs(return_url.query)["receipt"], [order.receipt_number])
+        url = f"{return_url.path}?{return_url.query}"
+        self.client.get(url + "&token=OTHER-PAYMENT")
+        capture.assert_not_called()
+        response = self.client.get(url + "&token=QA-PAYPAL")
+        capture.assert_called_once_with("QA-PAYPAL", payment)
+        self.assertRedirects(response, reverse("storefront:order_status", args=[order.receipt_number]))
 
     def test_guest_checkout_places_order_and_reserves_stock(self):
         """Submitting the checkout form reserves stock, clears cart, and creates order."""
@@ -131,7 +177,7 @@ class StorefrontCheckoutTests(TestCase):
 
         # Order confirmation page rendered
         self.assertContains(response, order.receipt_number)
-        self.assertContains(response, "3370347")
+        self.assertNotContains(response, "Pay via Buy Goods Till")
 
     def test_order_status_access_control(self):
         """Guest order status requires the correct checkout_token."""
@@ -144,7 +190,7 @@ class StorefrontCheckoutTests(TestCase):
                 "guest_email": "zahra@example.com",
                 "shipping_address": "Kilimani, Nairobi",
                 "delivery_region": "nairobi",
-                "payment_method": "till",
+                "payment_method": "mpesa",
             },
         )
         order = Order.objects.get(guest_email="zahra@example.com")
@@ -177,7 +223,7 @@ class StorefrontCheckoutTests(TestCase):
                 "guest_email": "fatma@example.com",
                 "shipping_address": "CBD, Mombasa",
                 "delivery_region": "mombasa",
-                "payment_method": "till",
+                "payment_method": "mpesa",
             },
         )
         order = Order.objects.get(guest_email="fatma@example.com")

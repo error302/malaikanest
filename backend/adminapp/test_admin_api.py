@@ -79,6 +79,20 @@ class AdminProductApiTests(TestCase):
         self.assertEqual([row["id"] for row in response.json()["data"]["results"]], [product_id])
         self.assertEqual(response.json()["data"]["results"][0]["available_stock"], 0)
 
+    def test_cover_file_replaces_a_previously_saved_image_url(self):
+        product_id = self.create_product(image_url="https://example.test/old-cover.webp")
+        photo = BytesIO()
+        Image.new("RGB", (12, 12), "pink").save(photo, format="PNG")
+        upload = SimpleUploadedFile("new-cover.png", photo.getvalue(), content_type="image/png")
+        response = self.client.patch(
+            f"/api/products/admin/products/{product_id}/", {"image": upload}, format="multipart",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        product = Product.objects.get(pk=product_id)
+        self.assertFalse(product.image_url)
+        self.assertTrue(product.image.name.endswith("new-cover.png"))
+        self.assertTrue(response.json()["data"]["image_full_url"].endswith("new-cover.png"))
+
     def test_owner_data_survives_a_description_only_save(self):
         product_id = self.create_product(size_guide="Owner guide", fabric="Owner fabric", whats_included="Owner contents")
         response = self.client.patch(

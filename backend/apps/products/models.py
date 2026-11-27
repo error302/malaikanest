@@ -1,9 +1,11 @@
 import logging
 import mimetypes
 import os
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.templatetags.static import static
 from django.db import models
 from apps.core.models import BaseModel
 from django.db.models import Q
@@ -64,6 +66,15 @@ class Brand(BaseModel):
 
 
 class Category(BaseModel):
+    INTERNAL_ROOTS = ("shop-photo-review",)
+    LEGACY_CATEGORY_PHOTOS = {
+        "baby-essentials": "/photo-1596870230751-ebdfce98ec42",
+        "clothing": "/photo-1515488042361-ee00e0ddd4e4",
+        "gifts": "/photo-1513885535751-8b9238bd345a",
+        "nursery": "/photo-1543857778-c4a1a3e0b2eb",
+        "toys": "/photo-1566576912321-d58ddd7a6088",
+        "travel": "/photo-1591088398332-8a7791972843",
+    }
     name = models.CharField(max_length=120)
     slug = models.SlugField(max_length=140, blank=True)
     description = models.TextField(blank=True)
@@ -215,15 +226,34 @@ class Category(BaseModel):
     def is_top_level(self):
         return self.parent is None
 
+    @classmethod
+    def storefront_roots(cls):
+        return cls.objects.filter(parent__isnull=True).exclude(slug__in=cls.INTERNAL_ROOTS).order_by("name")
+
+    @property
+    def is_storefront_root(self):
+        return not self.parent_id and self.slug not in self.INTERNAL_ROOTS
+
+    @property
+    def custom_image_url(self):
+        if self.image_url and self.is_storefront_root and self.slug in self.LEGACY_CATEGORY_PHOTOS:
+            url = urlsplit(self.image_url)
+            if url.netloc == "images.unsplash.com" and url.path == self.LEGACY_CATEGORY_PHOTOS[self.slug]:
+                return ""
+        return self.image_url
+
     @property
     def get_image_url(self) -> str:
-        if self.image_url:
-            return self.image_url
-        if self.image:
+        custom_url = self.custom_image_url
+        if custom_url:
+            return custom_url
+        if self.image and custom_url == self.image_url:
             try:
                 return self.image.url
             except Exception:
                 return str(self.image)
+        if self.is_storefront_root and self.slug in self.LEGACY_CATEGORY_PHOTOS:
+            return static(f"nest-home/categories/{self.slug}.webp")
         return ""
 
     def __str__(self):

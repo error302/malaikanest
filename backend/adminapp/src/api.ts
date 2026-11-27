@@ -152,12 +152,16 @@ export const api = {
     ),
   /** Multipart save for photo changes: the backend reads image/gallery_images
    * (FILES) plus delete_image_ids / primary_image_id from request.data. */
-  saveProductMultipart: (id: string, fields: Record<string, string>, files: { key: string; file: File }[]) => {
+  saveProductMultipart: (id: string | null, fields: Partial<Product>, files: { key: string; file: File }[]) => {
     const fd = new FormData();
-    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        fd.append(key, typeof value === "object" && value !== null ? JSON.stringify(value) : String(value ?? ""));
+      }
+    }
     for (const { key, file } of files) fd.append(key, file);
-    return request<Product>(`/products/admin/products/${id}/`, {
-      method: "PATCH",
+    return request<Product>(id ? `/products/admin/products/${id}/` : "/products/admin/products/", {
+      method: id ? "PATCH" : "POST",
       body: fd,
     });
   },
@@ -183,12 +187,12 @@ export const api = {
       id ? `/products/admin/categories/${id}/` : "/products/admin/categories/",
       { method: id ? "PATCH" : "POST", body: JSON.stringify(body) }
     ),
-  saveCategoryMultipart: (id: string, fields: Record<string, string>, file?: File) => {
+  saveCategoryMultipart: (id: string | null, fields: Record<string, string>, file: File) => {
     const fd = new FormData();
     for (const [k, v] of Object.entries(fields)) fd.append(k, v);
-    if (file) fd.append("image", file);
-    return request<Category>(`/products/admin/categories/${id}/`, {
-      method: "PATCH",
+    fd.append("image", file);
+    return request<Category>(id ? `/products/admin/categories/${id}/` : "/products/admin/categories/", {
+      method: id ? "PATCH" : "POST",
       body: fd,
     });
   },
@@ -361,6 +365,7 @@ export interface Category {
   parent?: { id: string; name: string } | string | null;
   full_slug?: string;
   path_label?: string;
+  is_storefront_root?: boolean;
   product_count?: number;
   description?: string;
   group?: string;

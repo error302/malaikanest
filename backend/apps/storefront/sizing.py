@@ -79,4 +79,10 @@ def prepare_product(product):
             sizes.add(product.size_label)
     product.shop_stock = stock
     product.shop_sizes = [label for key, label in labels.items() if key in sizes]
+    product.shop_image = product.get_image_url
+    if not product.shop_image:
+        gallery = list(product.images.all())
+        primary = next((image for image in gallery if image.is_primary), gallery[0] if gallery else None)
+        if primary:
+            product.shop_image = primary.get_image_url
     return product

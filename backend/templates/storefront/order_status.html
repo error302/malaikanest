@@ -40,7 +40,8 @@
     <p id="payment-connection" class="mt-2 text-sm text-stone-700" role="status"></p>
 
     <!-- Manual Till Instructions (Shown if payment is pending) -->
-    <div id="tillInstructionsBox" class="{% if not show_till_instructions %}hidden{% endif %} mt-6 p-6 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE] space-y-4">
+    {% if show_till_instructions %}
+    <div id="tillInstructionsBox" class="mt-6 p-6 rounded-2xl bg-[#FAF7F2] border border-[#EADBCE] space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="font-serif text-lg font-bold text-[#2C1810] flex items-center gap-2">
           Pay via Buy Goods Till
@@ -80,6 +81,7 @@
         </button>
       </div>
     </div>
+    {% endif %}
 
   </section>
 
