@@ -6,8 +6,8 @@
 
 {% block extra_head %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'storefront/product-gallery.css' %}?v=2">
-<script src="{% static 'storefront/product-gallery.js' %}?v=2" defer></script>
+<link rel="stylesheet" href="{% static 'storefront/product-gallery.css' %}?v=3">
+<script src="{% static 'storefront/product-gallery.js' %}?v=3" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -65,8 +65,8 @@
     </header>
     <div class="pdp-gallery">
       <div class="coast-product-photo relative" data-pdp-name="{{ product.name }}">
-        <img id="mainProductImage" {% if initial_gallery %}src="{{ initial_gallery.0.url|cloudinary_auto }}"{% else %}hidden{% endif %}
-             alt="{{ product.name }}{% if initial_gallery %} — {{ initial_gallery.0.label }}{% endif %}" width="800" height="800" fetchpriority="high">
+        <button type="button" class="pdp-image-open" id="pdp-image-open" aria-label="Enlarge product photo" {% if not initial_gallery %}hidden{% endif %}><img id="mainProductImage" {% if initial_gallery %}src="{{ initial_gallery.0.url|cloudinary_auto }}"{% else %}hidden{% endif %}
+             alt="{{ product.name }}{% if initial_gallery %} — {{ initial_gallery.0.label }}{% endif %}" width="800" height="800" fetchpriority="high"></button>
         <div id="pdp-no-photo" class="pdp-no-photo" {% if initial_gallery %}hidden{% endif %}>
           {% if variants %}Photo unavailable for this option{% else %}Product photo unavailable{% endif %}
         </div>
@@ -85,6 +85,10 @@
           </button>
         {% endfor %}
       </div>
+      <dialog class="pdp-image-dialog" id="pdp-image-dialog" aria-label="Product photo">
+        <button type="button" class="pdp-image-close" aria-label="Close enlarged photo">Close</button>
+        <img id="pdp-large-image" alt="">
+      </dialog>
       {% if variants %}{{ gallery_variants|json_script:"pdp-variant-galleries" }}{% endif %}
     </div>
 
@@ -160,6 +164,7 @@
         </form>
 
           <!-- Add to Cart CTA (outside the form; buttons use form="pdp-add-form") -->
+          {% if variants %}<p class="pdp-selected" id="pdp-selected" aria-live="polite">{% if default_variant %}Selected: {{ default_variant.option_label }}{% else %}Choose an option above{% endif %}</p>{% endif %}
           <div class="pdp-purchase-actions">
             <button 
               type="submit" 
@@ -260,18 +265,17 @@
           </div>
         {% endif %}
 
-        <!-- Kenya Delivery, Returns & Payment -->
-        <div class="nest-pdp-shipping">
-          <p style="font-weight: 700; color: var(--coast-deep); font-size: .9rem; margin-bottom: 10px;">Kenya Delivery & Returns:</p>
-          <ul>
-            <li>• <strong style="color: var(--coast-deep);">Mombasa:</strong> Same-day or next-day — KES {{ mombasa_fee|floatformat:"0" }}</li>
-            <li>• <strong style="color: var(--coast-deep);">Nairobi:</strong> 1–2 business days — KES {{ nairobi_fee|floatformat:"0" }}</li>
-            <li>• <strong style="color: var(--coast-deep);">Upcountry:</strong> 2–3 business days — KES {{ upcountry_fee|floatformat:"0" }}</li>
-            <li>• <strong style="color: var(--coast-deep);">Free delivery</strong> on all orders over KES {{ free_shipping_threshold|floatformat:"0" }}</li>
-            <li>• <strong style="color: var(--coast-deep);">Returns:</strong> Unused items in original condition within 7 days — message us on WhatsApp to arrange.</li>
-            <li>• <strong style="color: var(--coast-deep);">M-Pesa STK Prompt:</strong> Enter your phone at checkout for an instant PIN prompt.</li>
-          </ul>
-        </div>
+        <section class="pdp-delivery" aria-labelledby="pdp-delivery-title">
+          <h3 id="pdp-delivery-title" class="pdp-section-title">Delivery across Kenya</h3>
+          <dl>
+            <div><dt>Mombasa</dt><dd>KES {{ mombasa_fee|floatformat:"0" }}</dd></div>
+            <div><dt>Nairobi</dt><dd>KES {{ nairobi_fee|floatformat:"0" }}</dd></div>
+            <div><dt>Upcountry</dt><dd>KES {{ upcountry_fee|floatformat:"0" }}</dd></div>
+          </dl>
+          <p>Free delivery on orders over KES {{ free_shipping_threshold|floatformat:"0" }}.</p>
+          <p>Pay with M-Pesa STK prompt at checkout.</p>
+          <a href="{% url 'storefront:delivery_returns' %}">Delivery and returns</a>
+        </section>
       </div>
     </div>
   </div>

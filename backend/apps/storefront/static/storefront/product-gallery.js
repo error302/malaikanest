@@ -7,12 +7,47 @@
   const image = document.getElementById("mainProductImage");
   const noPhoto = document.getElementById("pdp-no-photo");
   const thumbnails = document.getElementById("pdp-thumbnails");
+  const imageOpen = document.getElementById("pdp-image-open");
+  const imageDialog = document.getElementById("pdp-image-dialog");
+  const largeImage = document.getElementById("pdp-large-image");
+  const selection = document.getElementById("pdp-selected");
   const whatsapp = document.querySelector("[data-pdp-whatsapp]");
   const galleries = document.getElementById("pdp-variant-galleries");
   const productName = image?.parentElement.dataset.pdpName;
   const variantPhotos = new Map(JSON.parse(galleries?.textContent || "[]").map(({id, photos}) => [id, photos]));
   const whatsappBase = whatsapp ? new URL(whatsapp.href) : null;
   let currentVariant;
+  let currentPhotos = Array.from(thumbnails?.querySelectorAll("[data-gallery-src]") || [])
+    .map(button => ({url: button.dataset.gallerySrc, label: button.dataset.galleryLabel}));
+  let currentPhoto = 0;
+  let touchStart;
+
+  imageOpen?.addEventListener("click", () => {
+    if (!image?.src || !imageDialog || !largeImage) return;
+    largeImage.src = image.src;
+    largeImage.alt = image.alt;
+    imageDialog.showModal();
+    imageDialog.querySelector(".pdp-image-close")?.focus();
+  });
+  imageDialog?.querySelector(".pdp-image-close")?.addEventListener("click", () => imageDialog.close());
+  imageDialog?.addEventListener("close", () => imageOpen?.focus());
+  imageOpen?.addEventListener("touchstart", event => {
+    touchStart = {x: event.touches[0].clientX, y: event.touches[0].clientY};
+  }, {passive: true});
+  imageOpen?.addEventListener("touchend", event => {
+    if (!touchStart || currentPhotos.length < 2) return;
+    const delta = event.changedTouches[0].clientX - touchStart.x;
+    const vertical = event.changedTouches[0].clientY - touchStart.y;
+    touchStart = null;
+    if (Math.abs(delta) < 50 || Math.abs(delta) <= Math.abs(vertical)) return;
+    const next = Math.max(0, Math.min(currentPhotos.length - 1, currentPhoto + (delta < 0 ? 1 : -1)));
+    thumbnails.querySelectorAll("button")[next]?.click();
+  }, {passive: true});
+  image?.addEventListener("error", () => {
+    imageOpen.hidden = true;
+    noPhoto.hidden = false;
+    noPhoto.textContent = "This photo could not be loaded.";
+  });
 
   form?.addEventListener("click", event => {
     const step = event.target.closest("[data-quantity-step]");
@@ -33,6 +68,7 @@
   function setPhoto(url, label) {
     if (!image || !noPhoto) return;
     image.hidden = !url;
+    if (imageOpen) imageOpen.hidden = !url;
     noPhoto.hidden = Boolean(url);
     if (url) {
       image.src = url;
@@ -48,11 +84,14 @@
     for (const item of thumbnails.querySelectorAll("button")) {
       item.setAttribute("aria-pressed", String(item === button));
     }
+    currentPhoto = Array.from(thumbnails.querySelectorAll("button")).indexOf(button);
     setPhoto(button.dataset.gallerySrc, button.dataset.galleryLabel);
   });
 
   function showGallery(photos) {
     if (!thumbnails) return;
+    currentPhotos = photos;
+    currentPhoto = 0;
     thumbnails.hidden = photos.length < 2;
     thumbnails.replaceChildren(...photos.map(({url, label}, index) => {
       const button = document.createElement("button");
@@ -84,6 +123,7 @@
     quantity.max = String(stock);
     if (Number(quantity.value) > stock) quantity.value = String(stock);
     status.textContent = stock + " available";
+    if (selection) selection.textContent = "Selected: " + selected.dataset.label;
     buttonLabel.textContent = "Add to Cart · " + selected.dataset.price;
     if (price) price.textContent = selected.dataset.price;
     if (currentVariant !== selected.value) {
