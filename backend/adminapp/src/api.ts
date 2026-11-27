@@ -294,12 +294,15 @@ export interface ProductImage {
   url: string;
   alt_text: string;
   is_primary: boolean;
+  variant_id?: string | null;
 }
 
 export interface Variant {
   id?: string;
   color: string | null;
+  color_label?: string;
   size?: string | null;
+  size_label?: string;
   sku?: string | null;
   price_modifier?: string;
   stock: number;

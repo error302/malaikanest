@@ -77,10 +77,10 @@ test("overview opens the new product form and requests the selected payment peri
 test("product editor fits short landscape viewport and retains typed details after failed save", async ({ page }) => {
   await mock(page); await page.setViewportSize({ width: 844, height: 390 });
   await page.goto("/static/adminapp/#products"); await page.getByRole("button", { name: "Edit", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible(); await page.getByLabel("Name", { exact: true }).fill("Preserve this edit");
+  await expect(page.getByRole("dialog")).toBeVisible(); await page.getByLabel("Product name", { exact: true }).fill("Preserve this edit");
   await page.route("**/api/products/admin/products/1/", route => route.fulfill({ status: 500, json: { detail: "Save unavailable" } }));
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Save unavailable"); await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Preserve this edit"); await noOverflow(page);
+  await expect(page.getByRole("alert")).toContainText("Save unavailable"); await expect(page.getByLabel("Product name", { exact: true })).toHaveValue("Preserve this edit"); await noOverflow(page);
 });
 test("saving store identity preserves unsaved banner fields", async ({ page }) => {
   await mock(page); await page.goto("/static/adminapp/#settings");
@@ -123,10 +123,10 @@ test("settings navigation respects unsaved-edit cancellation", async ({ page }) 
 test("open product editor survives orientation and zoom-sized viewport changes", async ({ page }) => {
   await mock(page); await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/static/adminapp/#products"); await page.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByLabel("Name", { exact: true }).fill("Keep through rotation");
+  await page.getByLabel("Product name", { exact: true }).fill("Keep through rotation");
   for (const viewport of [{ width: 844, height: 390 }, { width: 320, height: 568 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport); await noOverflow(page);
-    await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Keep through rotation");
+    await expect(page.getByLabel("Product name", { exact: true })).toHaveValue("Keep through rotation");
   }
 });
 test("category upload rejects oversized images before any save", async ({ page }) => {

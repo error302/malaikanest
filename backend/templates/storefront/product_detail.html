@@ -14,7 +14,7 @@
   "@type": "Product",
   "name": "{{ product.name|escapejs }}",
   "description": "{{ product.description|striptags|truncatewords:30|escapejs }}",
-  "image": "{{ product.get_image_url|default:''|escapejs }}",
+  "image": "{{ initial_gallery.0.url|default:''|escapejs }}",
   "sku": "{{ product.sku|default:product.id|stringformat:'s'|escapejs }}",
   "brand": { "@type": "Brand", "name": "Malaika Nest" },
   "offers": {
@@ -44,51 +44,29 @@
 
   <div class="nest-pdp-layout">
     
-    <!-- Image Gallery -->
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      <div class="coast-product-photo relative">
-        {% if product.get_image_url %}
-          <img id="mainProductImage" src="{{ product.get_image_url|cloudinary_auto }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover;">
-        {% elif product.images.first %}
-          <img id="mainProductImage" src="{{ product.images.first.get_image_url|default:product.images.first.image.url|cloudinary_auto }}" alt="{{ product.name }}" width="800" height="800" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover;">
-        {% else %}
-          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--coast-heading); font-size: 4rem; font-weight: 800; color: var(--coast-line);">MN</div>
-        {% endif %}
-
+    <div class="pdp-gallery">
+      <div class="coast-product-photo relative" data-pdp-name="{{ product.name }}">
+        <img id="mainProductImage" {% if initial_gallery %}src="{{ initial_gallery.0.url|cloudinary_auto }}"{% else %}hidden{% endif %}
+             alt="{{ product.name }}{% if initial_gallery %} — {{ initial_gallery.0.label }}{% endif %}" width="800" height="800" fetchpriority="high">
+        <div id="pdp-no-photo" class="pdp-no-photo" {% if initial_gallery %}hidden{% endif %}>
+          {% if variants %}Photo unavailable for this option{% else %}Product photo unavailable{% endif %}
+        </div>
         {% if product.shop_stock <= 0 %}
-          <div class="badge badge-secondary" style="position: absolute; top: 16px; right: 16px;">Out of Stock</div>
+          <div class="badge badge-secondary pdp-stock-badge">Out of Stock</div>
         {% elif product.is_low_stock %}
-          <div class="badge badge-accent" style="position: absolute; top: 16px; right: 16px;">Only {{ product.shop_stock }} left</div>
+          <div class="badge badge-accent pdp-stock-badge">Only {{ product.shop_stock }} left</div>
         {% endif %}
       </div>
-
-      <!-- Thumbnails -->
-      {% if product.images.all|length > 1 %}
-        <div style="display: flex; gap: 12px; overflow-x-auto; padding-bottom: 8px;">
-          {% if product.get_image_url %}
-            <button 
-              type="button" 
-              data-gallery-src="{{ product.get_image_url|cloudinary_auto }}"
-              onclick="document.getElementById('mainProductImage').src = this.dataset.gallerySrc"
-              aria-label="View main image"
-              style="width: 72px; height: 72px; border-radius: var(--radius-md); overflow: hidden; border: 2px solid var(--coast-leaf); flex-shrink: 0; background: white;"
-            >
-              <img src="{{ product.get_image_url|cloudinary_auto }}" alt="" width="64" height="64" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
-            </button>
-          {% endif %}
-          {% for img in product.images.all %}
-            <button 
-              type="button" 
-              data-gallery-src="{{ img.get_image_url|default:img.image.url|cloudinary_auto }}"
-              onclick="document.getElementById('mainProductImage').src = this.dataset.gallerySrc"
-              style="width: 72px; height: 72px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--coast-line); flex-shrink: 0; background: white; transition: border-color var(--transition-fast);"
-              aria-label="View image {{ forloop.counter }}"
-            >
-              <img src="{{ img.get_image_url|default:img.image.url|cloudinary_auto }}" alt="{{ product.name }} — view {{ forloop.counter }}" width="64" height="64" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
-            </button>
-          {% endfor %}
-        </div>
-      {% endif %}
+      <div class="pdp-thumbnails" id="pdp-thumbnails" aria-label="Product photos" {% if initial_gallery|length < 2 %}hidden{% endif %}>
+        {% for photo in initial_gallery %}
+          <button type="button" data-gallery-src="{{ photo.url|cloudinary_auto }}" data-gallery-label="{{ photo.label }}"
+                  aria-pressed="{{ forloop.first|yesno:'true,false' }}">
+            <img src="{{ photo.url|cloudinary_auto }}" alt="" width="64" height="64" loading="lazy">
+            <span>{{ photo.label }}</span>
+          </button>
+        {% endfor %}
+      </div>
+      {% if variants %}{{ gallery_variants|json_script:"pdp-variant-galleries" }}{% endif %}
     </div>
 
     <!-- Product Info & Actions -->
@@ -122,7 +100,7 @@
 
         <!-- Price Display -->
         <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 20px; flex-wrap: wrap;">
-          <span class="price">KES {{ product.price|floatformat:"0" }}</span>
+          <span class="price" id="pdp-price">{% if default_variant %}KES {{ default_variant.shop_price|floatformat:"-2g" }}{% else %}KES {{ product.price|floatformat:"-2g" }}{% endif %}</span>
           {% if product.compare_price %}
             <span style="font-size: 1rem; color: var(--coast-muted); text-decoration: line-through; font-variant-numeric: tabular-nums;">KES {{ product.compare_price|floatformat:"0" }}</span>
             <span class="badge badge-accent">Save {{ product.discount_percentage }}%</span>
@@ -141,8 +119,9 @@
                 {% for variant in variants %}
                   <label class="product-option">
                     <input type="radio" name="variant_id" value="{{ variant.id }}" required {% if variant.shop_stock <= 0 %}disabled{% elif variant == default_variant %}checked{% endif %}
-                           data-stock="{{ variant.shop_stock }}" data-price="KES {{ variant.shop_price|floatformat:'-2g' }}">
+                           data-stock="{{ variant.shop_stock }}" data-label="{{ variant }}" data-price="KES {{ variant.shop_price|floatformat:'-2g' }}">
                     <span class="product-option-card">
+                      {% if variant.color %}<span class="pdp-swatch" data-colour="{{ variant.color }}" aria-hidden="true"></span>{% endif %}
                       <strong>{% if variant.size or not variant.color %}{{ variant.get_size_display|default:"Standard" }}{% endif %}{% if variant.color %} <span>{{ variant.get_color_display }}</span>{% endif %}</strong>
                       <small>{% if variant.shop_stock <= 0 %}Sold out{% else %}KES {{ variant.shop_price|floatformat:"-2g" }}{% endif %}</small>
                     </span>
@@ -186,7 +165,7 @@
         </form>
 
           <!-- Add to Cart CTA (outside the form; buttons use form="pdp-add-form") -->
-          <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 8px;">
+          <div class="pdp-purchase-actions">
             <button 
               type="submit" 
               form="pdp-add-form"
@@ -200,6 +179,7 @@
               <span>{% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Cart{% endif %}</span>
             </button>
 
+            <div class="pdp-secondary-actions">
             <form method="post" action="{% url 'storefront:wishlist_toggle' slug=product.slug %}" class="nest-save-form nest-save-form--pdp">
               {% csrf_token %}
               <button type="submit"
@@ -216,13 +196,14 @@
               href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}" 
               target="_blank" 
               rel="noopener noreferrer" 
-              class="coast-button nest-pdp-wa"
+              class="coast-button nest-pdp-wa" data-pdp-whatsapp
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width: 20px; height: 20px;">
                 <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.981.534 1.777.828 2.796.828 3.182 0 5.768-2.587 5.768-5.766.001-3.18-2.585-5.765-5.768-5.765zm0-2c4.29 0 7.769 3.477 7.77 7.766 0 4.29-3.479 7.768-7.77 7.768-1.323 0-2.434-.33-3.454-.897l-4.577 1.2 1.221-4.464c-.672-1.09-1.03-2.348-1.03-3.607.001-4.289 3.48-7.766 7.77-7.766z"/>
               </svg>
               <span>Order via WhatsApp</span>
             </a>
+            </div>
           </div>
 
         <!-- Mobile sticky CTA (sits comfortably above floating bottom dock) -->
@@ -234,34 +215,25 @@
             class="coast-button coast-button-mango"
             style="flex: 2; min-height: 44px;"
           >
-            <span id="pdp-bag-label">{% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Bag{% if default_variant %} · KES {{ default_variant.shop_price|floatformat:"-2g" }}{% elif not variants %} · KES {{ product.price|floatformat:"-2g" }}{% endif %}{% endif %}</span>
+            <span id="pdp-bag-label">{% if product.shop_stock <= 0 %}Out of Stock{% else %}Add to Cart{% if default_variant %} · KES {{ default_variant.shop_price|floatformat:"-2g" }}{% elif not variants %} · KES {{ product.price|floatformat:"-2g" }}{% endif %}{% endif %}</span>
           </button>
-          <a
-            href="https://wa.me/254726771321?text=Hello%20Malaika%20Nest%2C%20I%20would%20like%20to%20order%20{{ product.name|urlencode }}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="coast-button"
-            style="background: #25d366; color: #0b3d24; flex: 1; min-height: 44px;"
-            aria-label="Order via WhatsApp"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width: 18px; height: 18px;">
-              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.981.534 1.777.828 2.796.828 3.182 0 5.768-2.587 5.768-5.766.001-3.18-2.585-5.765-5.768-5.765zm0-2c4.29 0 7.769 3.477 7.77 7.766 0 4.29-3.479 7.768-7.77 7.768-1.323 0-2.434-.33-3.454-.897l-4.577 1.2 1.221-4.464c-.672-1.09-1.03-2.348-1.03-3.607.001-4.289 3.48-7.766 7.77-7.766z"/>
-            </svg>
-            <span>WhatsApp</span>
-          </a>
         </div>
 
         <!-- Size Guide -->
-        <details class="nest-fit nest-pdp-block" id="size-guide" style="background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
-          <summary style="font-weight: 700; color: var(--coast-deep); cursor: pointer; min-height: 48px; display: flex; align-items: center; list-style: none;">Measurements & fit</summary>
+        <details class="nest-fit nest-pdp-block" id="size-guide" {% if blanket %}open{% endif %} style="background: #fafcf9; border: 1px solid var(--coast-line); border-radius: var(--radius-lg); padding: 20px;">
+          <summary style="font-weight: 700; color: var(--coast-deep); cursor: pointer; min-height: 48px; display: flex; align-items: center; list-style: none;">{% if blanket %}Size & uses{% else %}Measurements & fit{% endif %}</summary>
           <div class="nest-fit-content" style="margin-top: 16px;">
-            {% if product.size_guide %}
+            {% if blanket %}
+              {% if product.size_guide %}{{ product.size_guide|linebreaks }}{% endif %}
+              <p>Use as a receiving blanket when holding your newborn, or as an extra layer on supervised outings with your infant.</p>
+              {% if not product.size_guide %}<a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="coast-text-link">Ask us for the blanket dimensions</a>{% endif %}
+            {% elif product.size_guide %}
               {{ product.size_guide|linebreaks }}
             {% else %}
               <p style="color: var(--coast-muted); line-height: 1.6;">Measurements for this item haven't been added yet. Ask us for the chest, waist and length measurements in cm before choosing a size.</p>
               <a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="coast-text-link" style="margin-top: 12px; display: inline-block;">Ask about measurements on WhatsApp</a>
             {% endif %}
-            <p style="margin-top: 16px; font-size: .85rem; color: var(--coast-muted); line-height: 1.6;">Size labels vary between brands. Compare garment measurements with a similar item that fits your child, and check whether the measurement is a flat width or full circumference.</p>
+            {% if not blanket %}<p style="margin-top: 16px; font-size: .85rem; color: var(--coast-muted); line-height: 1.6;">Size labels vary between brands. Compare garment measurements with a similar item that fits your child, and check whether the measurement is a flat width or full circumference.</p>{% endif %}
           </div>
         </details>
 

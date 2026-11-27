@@ -629,6 +629,10 @@ class ProductImage(BaseModel):
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE
     )
+    variant = models.ForeignKey(
+        ProductVariant, related_name="gallery_images", on_delete=models.CASCADE,
+        blank=True, null=True,
+    )
     image = models.ImageField(
         upload_to="products/gallery/",
         validators=[validate_image_file],

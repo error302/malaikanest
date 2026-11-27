@@ -108,6 +108,7 @@ class AdminProductApiTests(TestCase):
 
     @override_settings(
         STORAGES={"default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"}},
+        FILE_UPLOAD_MAX_MEMORY_SIZE=1,
     )
     def test_draft_sends_the_complete_cover_file_to_cloudinary(self):
         from cloudinary.exceptions import BadRequest
@@ -218,6 +219,34 @@ class AdminProductApiTests(TestCase):
         self.assertEqual(len(data["images"]), 1)
         self.assertTrue(data["images"][0]["url"].endswith(".png"))
         self.assertEqual(Product.objects.get(pk=product_id).images.get().position, 0)
+
+    def test_photo_details_assign_to_a_variant_on_the_same_product(self):
+        product_id = self.create_product(variants=[
+            {"size": "newborn", "color": "pink", "stock": 10, "is_active": True},
+        ], gallery_image_urls=["https://example.test/pink-texture.webp"])
+        product = Product.objects.get(pk=product_id)
+        photo = product.images.get()
+        variant = product.variants.get()
+        url = f"/api/products/admin/products/{product_id}/"
+        response = self.client.patch(url, {"photo_details": {
+            "id": str(photo.pk), "variant_id": str(variant.pk), "alt_text": "Fabric close-up",
+        }}, format="json")
+        self.assertEqual(response.status_code, 200, response.content)
+        data = response.json()["data"]["images"][0]
+        self.assertEqual(data["variant_id"], str(variant.pk))
+        self.assertEqual(data["alt_text"], "Fabric close-up")
+
+        other = self.create_product(slug="other", variants=[
+            {"size": "newborn", "color": "brown", "stock": 10, "is_active": True},
+        ])
+        foreign_variant = ProductVariant.objects.get(product_id=other)
+        response = self.client.patch(url, {"photo_details": {
+            "id": str(photo.pk), "variant_id": str(foreign_variant.pk), "alt_text": "Wrong product",
+        }}, format="json")
+        self.assertEqual(response.status_code, 400)
+        photo.refresh_from_db()
+        self.assertEqual(photo.variant_id, variant.pk)
+        self.assertEqual(photo.alt_text, "Fabric close-up")
 
 
 if __name__ == "__main__":

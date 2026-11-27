@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from copy import copy
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
@@ -157,10 +158,10 @@ class AdminProductSerializer(serializers.ModelSerializer):
         return data
 
     def to_internal_value(self, data):
-        if hasattr(data, "copy"):
-            mutable_data = data.copy()
-        else:
-            mutable_data = dict(data)
+        if not hasattr(data, "get"):
+            return super().to_internal_value(data)
+        # QueryDict.copy() deep-copies files, which breaks disk-backed uploads.
+        mutable_data = copy(data)
 
         # Numeric/URL fields that are genuinely nullable in the DB: turn "" into None.
         nullable_fields = [
@@ -237,6 +238,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 "url": url,
                 "alt_text": img.alt_text,
                 "is_primary": img.is_primary,
+                "variant_id": img.variant_id,
             })
         return items
 
@@ -280,6 +282,8 @@ class AdminProductSerializer(serializers.ModelSerializer):
         if single_url and single_url not in add_urls:
             add_urls.append(single_url)
         if add_urls:
+            url_field = serializers.URLField(max_length=500)
+            add_urls = [url_field.run_validation(url) for url in add_urls]
             last_position = product.images.aggregate(last=Max("position"))["last"]
             base = (last_position + 1) if last_position is not None else 0
             for i, u in enumerate(add_urls):
@@ -287,6 +291,24 @@ class AdminProductSerializer(serializers.ModelSerializer):
                     ProductImage.objects.create(
                         product=product, image_url=u, position=base + i, is_primary=False
                     )
+
+        photo_details = request.data.get("photo_details")
+        if photo_details is not None:
+            if not isinstance(photo_details, dict):
+                raise serializers.ValidationError({"photo_details": "Invalid photo details."})
+            photo_id = self._norm_id(photo_details.get("id"))
+            photo = product.images.filter(pk=photo_id).first()
+            if not photo:
+                raise serializers.ValidationError({"photo_details": "Choose a photo from this product."})
+            variant_id = photo_details.get("variant_id")
+            if variant_id:
+                variant_id = self._norm_id(variant_id)
+                if not variant_id or not product.variants.filter(pk=variant_id).exists():
+                    raise serializers.ValidationError({"photo_details": "Choose a variant from this product."})
+            caption = serializers.CharField(max_length=200, allow_blank=True).run_validation(
+                photo_details.get("alt_text", ""),
+            )
+            product.images.filter(pk=photo.pk).update(alt_text=caption, variant_id=variant_id or None)
 
         delete_ids = self._parse_json_list(request.data.get("delete_image_ids"))
         if delete_ids:
@@ -296,6 +318,8 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 deleted = product.images.filter(id__in=norm)
                 if deleted.filter(is_primary=True).exists() or (
                     product.image and deleted.filter(image=product.image.name).exists()
+                ) or (
+                    product.image_url and deleted.filter(image_url=product.image_url).exists()
                 ):
                     Product.objects.filter(pk=product.pk).update(image="", image_url="")
                     product.image.name = ""
