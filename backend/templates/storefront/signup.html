@@ -1,10 +1,12 @@
 {% extends "storefront/account_access.html" %}
+{% load static %}
 
 {% block title %}Create an account | Malaika Nest{% endblock %}
 {% block meta_description %}Create a Malaika Nest account to save your contact details for orders.{% endblock %}
 
 {% block access_title %}Create your account{% endblock %}
 {% block access_description %}Save your contact details for receipts and delivery updates.{% endblock %}
+{% block access_art %}<img class="account-access-photo" src="{% static 'nest-home/signup-malaika.webp' %}" alt="" width="1024" height="1536">{% endblock %}
 
 {% block access_form %}
 <form class="account-access-form" method="post" action="{% url 'storefront:signup' %}">
