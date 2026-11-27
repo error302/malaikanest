@@ -165,6 +165,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ delete_image_ids: [imageId] }),
     }),
+  deleteProduct: (id: string) =>
+    request<void>(`/products/admin/products/${id}/`, { method: "DELETE" }),
   setPrimaryImage: (productId: string, imageId: string) =>
     request<Product>(`/products/admin/products/${productId}/`, {
       method: "PATCH",

@@ -15,6 +15,19 @@
   --shop-blue: #e5edf6;
   --shop-butter: #fcf0d9;
   --mobile-nav-h: 4.5rem;
+
+  /* Single source of truth: coast.css still references --coast-* tokens, so
+     alias them to the navy palette instead of letting the old green win. */
+  --coast-paper: var(--shop-paper);
+  --coast-ink: var(--shop-ink-dark);
+  --coast-deep: var(--shop-ink-dark);
+  --coast-leaf: var(--shop-ink);
+  --coast-mint: var(--shop-blue);
+  --coast-mango: #f2a03d;
+  --coast-lilac: var(--shop-butter);
+  --coast-line: var(--shop-border);
+  --coast-muted: var(--shop-muted);
+  --coast-heading: var(--shop-heading);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shop-heading: Fraunces, Georgia, serif;
   --brand-brown-dark: var(--shop-ink-dark);

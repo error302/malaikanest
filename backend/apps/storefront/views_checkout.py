@@ -75,7 +75,19 @@ class CheckoutView(View):
             messages.info(request, "Your shopping bag is empty. Please add items before checking out.")
             return redirect("storefront:cart")
 
-        subtotal = cart.subtotal_amount()
+        # Recompute from current catalogue prices so a price change between
+        # add-to-cart and checkout can never silently change the charged total
+        # (orders/services.py re-prices authoritatively at order time too).
+        subtotal = Decimal("0.00")
+        for item in items:
+            unit = item.product.price
+            if item.variant_id and item.variant:
+                unit = unit + (item.variant.price_modifier or Decimal("0.00"))
+            subtotal += (unit or Decimal("0.00")) * (item.quantity or 0)
+        subtotal = subtotal.quantize(Decimal("0.01"))
+        # If the stored cart line prices drifted, tell the customer.
+        if cart.subtotal_amount() != subtotal:
+            messages.info(request, "Some prices in your bag have been updated to the latest amounts.")
         discount = cart.discount_amount()
         free_shipping_threshold = get_free_shipping_threshold()
 

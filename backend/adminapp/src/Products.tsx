@@ -23,6 +23,7 @@ export function Products({ startNew = false }: { startNew?: boolean }) {
   const [editing, setEditing] = useState<Product | null>(startNew ? {} as Product : null);
   const requestVersion = useRef(0);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const load = useCallback(() => {
     const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(page * PAGE_SIZE) });
@@ -53,6 +54,20 @@ export function Products({ startNew = false }: { startNew?: boolean }) {
   }, [load]);
 
   const pages = data ? Math.ceil(data.count / PAGE_SIZE) : 0;
+
+  async function removeProduct(product: Product) {
+    if (!window.confirm("Delete this product and all its photos permanently?")) return;
+    setDeleting(product.id);
+    setError("");
+    try {
+      await api.deleteProduct(product.id);
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   return (
     <>
@@ -110,7 +125,12 @@ export function Products({ startNew = false }: { startNew?: boolean }) {
                   <small className={product.stock <= 3 ? "stock-low" : ""}>{product.stock} in stock</small>
                 </div>
                 <span className={`badge ${published ? "on" : "off"}`}>{published ? "In shop" : "Hidden"}</span>
-                <button className="btn ghost small" onClick={() => setEditing(product)}>Edit</button>
+                <div className="product-list-actions">
+                  <button className="btn ghost small" onClick={() => setEditing(product)}>Edit</button>
+                  <button className="btn ghost small danger" disabled={deleting === product.id} onClick={() => removeProduct(product)}>
+                    {deleting === product.id ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
               </li>
             );
           })}
@@ -255,6 +275,17 @@ function EditDrawer({
 
   return (
     <dialog onKeyDown={trapModalTab} ref={dialog} className="product-dialog panel" aria-labelledby="product-editor-title" onCancel={(event) => { event.preventDefault(); close(); }}>
+      {!isNew && (current.image_full_url ?? current.image) ? (
+        <div style={{ marginBottom: 16 }}>
+          <span className="variants-hint" style={{ display: "block", marginBottom: 6 }}>Current main image</span>
+          <img
+            src={current.image_full_url ?? current.image ?? ""}
+            alt="Current main image"
+            style={{ maxHeight: 180, maxWidth: "100%", objectFit: "contain", borderRadius: 8, border: "1px solid var(--border)", display: "block" }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        </div>
+      ) : null}
       <form onSubmit={save}>
         <div className="dialog-heading"><h3 id="product-editor-title">{isNew ? "New product" : `Edit — ${current.name}`}</h3><button className="btn ghost" type="button" onClick={close} disabled={busy || photoBusy}>Close</button></div>
         <p className="variants-hint">{isNew ? "Start with the name, price and category. Save a draft to add photos from your phone." : current.is_active ? "Visible in the shop." : "Hidden draft. Add photos and check sizes before publishing."}</p>
