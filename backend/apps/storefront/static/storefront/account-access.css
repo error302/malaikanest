@@ -1,0 +1,144 @@
+.account-access {
+  --account-ink: #182d3a;
+  --account-muted: #53616a;
+  --account-edge: #e1dbd1;
+  --account-paper: #fffefa;
+  --account-focus: #9a4c35;
+  padding-block: clamp(20px, 4.5vw, 64px);
+}
+.account-access-frame {
+  max-width: 960px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--account-edge);
+  border-radius: 18px;
+  background: var(--account-paper);
+  box-shadow: 0 14px 40px #384a4b0a;
+}
+.account-access-content {
+  min-width: 0;
+  align-self: center;
+  padding: clamp(20px, 5vw, 56px);
+  color: var(--account-ink);
+}
+.account-access-header { margin-bottom: 23px; }
+.account-access-header h1 {
+  margin: 0 0 9px;
+  color: var(--account-ink);
+  font-family: var(--shop-heading, Georgia, serif);
+  font-weight: 650;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+.account-access-header p {
+  max-width: 36ch;
+  margin: 0;
+  color: var(--account-muted);
+  font-size: .95rem;
+  line-height: 1.55;
+}
+.account-access-art { display: none; }
+.account-access-form { display: grid; gap: 13px; margin: 0; }
+.account-access-field { display: grid; min-width: 0; gap: 5px; }
+.account-access-field label { font-size: .88rem; font-weight: 650; }
+.account-access-field .coast-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 47px;
+  border: 1px solid #b8b8ae;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--account-ink);
+  font: inherit;
+  font-size: 1rem;
+  box-shadow: none;
+}
+.account-access-field .coast-input:focus-visible,
+.account-access-form :is(a, button):focus-visible,
+.account-access-switch a:focus-visible,
+.account-signout:focus-visible {
+  outline: 2px solid var(--account-focus, #9a4c35);
+  outline-offset: 2px;
+}
+.account-access-field .coast-input[aria-invalid="true"] { border-color: #ac3531; }
+.account-access-field .pw-wrap .coast-input { padding-right: 53px; }
+.account-access-field .pw-toggle { right: 3px; color: var(--account-ink); }
+.account-access-hint { margin: 0; color: var(--account-muted); font-size: .81rem; line-height: 1.45; }
+.account-access-field-errors, .account-access-errors {
+  color: #812c26;
+  font-size: .85rem;
+  line-height: 1.45;
+}
+.account-access-field-errors { margin: 0; padding: 0; list-style: none; }
+.account-access-errors { margin: 0 0 14px; padding: 8px 11px; border: 1px solid #edcbc5; border-radius: 8px; background: #fff2ef; }
+.account-access-errors p { margin: 0; }
+.account-access-errors p + p { margin-top: 5px; }
+.account-access-reset, .account-access-switch a { color: #7c3d2c; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.account-access-reset { justify-self: end; display: flex; align-items: center; min-height: 44px; margin-block: -7px -10px; font-size: .85rem; }
+.account-access-submit {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 4px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--account-ink);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.account-access-submit:hover { background: #2d4856; }
+.account-access-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  margin: 15px 0 -6px;
+  padding-top: 9px;
+  border-top: 1px solid var(--account-edge);
+  color: var(--account-muted);
+  font-size: .86rem;
+}
+.account-access-switch a { display: flex; align-items: center; min-height: 44px; }
+.account-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
+.account-heading h1 { margin-block: 0 5px; }
+.account-heading form { margin: 0 0 6px; }
+.account-signout {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 7px 13px;
+  border: 1px solid #aa6c59;
+  border-radius: 8px;
+  background: #fff;
+  color: #793c2d;
+  font: inherit;
+  font-size: .91rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.account-signout:hover { background: #f9ede7; }
+@media (min-width: 760px) {
+  .account-access-frame { grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); }
+  .account-access-content { grid-column: 2; grid-row: 1; }
+  .account-access-art {
+    grid-column: 1;
+    grid-row: 1;
+    display: block;
+    position: relative;
+    min-height: 490px;
+    margin: 10px;
+    overflow: hidden;
+    border-radius: 11px;
+    background: #d6d9bf;
+  }
+  .account-access-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 48% center; }
+}

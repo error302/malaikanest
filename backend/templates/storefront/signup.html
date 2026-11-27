@@ -1,51 +1,19 @@
-{% extends "storefront/base.html" %}
-{% load static %}
+{% extends "storefront/account_access.html" %}
 
 {% block title %}Create an account | Malaika Nest{% endblock %}
-{% block meta_description %}Create a Malaika Nest account — we use your email and M-Pesa number to send receipts and order updates.{% endblock %}
+{% block meta_description %}Create a Malaika Nest account to save your contact details for orders.{% endblock %}
 
-{% block content %}
-<section class="coast-page shop-frame coast-auth-page" aria-labelledby="signup-title">
-  <div class="coast-auth-panel">
-    <h1 id="signup-title">Create your account</h1>
-    <p class="coast-auth-sub">We use your email and M-Pesa number to send receipts and order updates. Nothing else.</p>
+{% block access_title %}Create your account{% endblock %}
+{% block access_description %}Save your contact details for receipts and delivery updates.{% endblock %}
 
-    {% if non_field_error %}
-      <div class="coast-form-errors" role="alert"><p>{{ non_field_error }}</p></div>
-    {% endif %}
-    {% if form.non_field_errors %}
-      <div class="coast-form-errors" role="alert">
-        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
-      </div>
-    {% endif %}
-
-    <form method="post" action="{% url 'storefront:signup' %}" novalidate>
-      {% csrf_token %}
-      <div class="coast-field">
-        <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
-        {{ form.email }}
-        {% for error in form.email.errors %}<p class="coast-field-error">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="coast-field">
-        <label for="{{ form.phone_number.id_for_label }}">{{ form.phone_number.label }}</label>
-        {{ form.phone_number }}
-        {% for error in form.phone_number.errors %}<p class="coast-field-error">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="coast-field">
-        <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
-        {{ form.password1 }}
-        {% for error in form.password1.errors %}<p class="coast-field-error">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="coast-field">
-        <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
-        {{ form.password2 }}
-        {% for error in form.password2.errors %}<p class="coast-field-error">{{ error }}</p>{% endfor %}
-      </div>
-      <button type="submit" class="coast-button coast-button-primary coast-auth-submit">Create account</button>
-    </form>
-
-    <p class="coast-auth-alt">Already have an account? <a href="{% url 'storefront:signin' %}">Sign in</a></p>
-  </div>
-</section>
-<script src="{% static 'storefront/pw-toggle.js' %}" defer></script>
+{% block access_form %}
+<form class="account-access-form" method="post" action="{% url 'storefront:signup' %}">
+  {% csrf_token %}
+  {% for field in form %}
+    {% include "storefront/partials/account_access_field.html" with field=field only %}
+  {% endfor %}
+  <button class="account-access-submit" type="submit">Create account</button>
+</form>
 {% endblock %}
+
+{% block access_switch %}Already have an account? <a href="{% url 'storefront:signin' %}">Sign in</a>{% endblock %}

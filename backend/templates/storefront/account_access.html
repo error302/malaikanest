@@ -1,0 +1,32 @@
+{% extends "storefront/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'storefront/account-access.css' %}?v=1">
+{% endblock %}
+
+{% block content %}
+<section class="shop-frame account-access" aria-labelledby="account-access-title">
+  <div class="account-access-frame">
+    <div class="account-access-content">
+      <header class="account-access-header">
+        <h1 id="account-access-title">{% block access_title %}{% endblock %}</h1>
+        <p>{% block access_description %}{% endblock %}</p>
+      </header>
+      {% if non_field_error or form.non_field_errors %}
+        <div class="account-access-errors" role="alert">
+          {% if non_field_error %}<p>{{ non_field_error }}</p>{% endif %}
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+      {% block access_form %}{% endblock %}
+      <p class="account-access-switch">{% block access_switch %}{% endblock %}</p>
+    </div>
+    <div class="account-access-art" aria-hidden="true">
+      <img class="account-access-photo" src="{% static 'nest-home/coastal-campaign-mobile.webp' %}" alt="" width="720" height="480">
+    </div>
+  </div>
+</section>
+<script src="{% static 'storefront/pw-toggle.js' %}" defer></script>
+{% endblock %}

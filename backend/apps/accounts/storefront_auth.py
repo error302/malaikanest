@@ -34,7 +34,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView
 from django.core.cache import cache
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.cache import never_cache
 
 from apps.accounts.models import KENYAN_PHONE_VALIDATOR, User, normalize_kenyan_phone
 
@@ -88,8 +91,10 @@ class SignInForm(auth_forms.AuthenticationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Email address"
+        self.fields["username"].widget.input_type = "email"
         self.fields["username"].widget.attrs.update(
-            {"class": _INPUT_CLASS, "autocomplete": "email", "inputmode": "email"}
+            {"class": _INPUT_CLASS, "autocomplete": "username", "inputmode": "email"}
         )
         self.fields["password"].widget.attrs.update(
             {"class": _INPUT_CLASS, "autocomplete": "current-password"}
@@ -98,13 +103,14 @@ class SignInForm(auth_forms.AuthenticationForm):
 
 class SignUpForm(forms.Form):
     email = forms.EmailField(
-        label="Email",
+        label="Email address",
         max_length=254,
         widget=forms.EmailInput(attrs={"class": _INPUT_CLASS, "autocomplete": "email"}),
     )
     phone_number = forms.CharField(
-        label="Phone (M-Pesa number)",
+        label="Mobile number",
         max_length=20,
+        help_text="Use a Kenyan number, for example 0712 345 678.",
         widget=forms.TextInput(attrs={"class": _INPUT_CLASS, "autocomplete": "tel", "inputmode": "tel"}),
     )
     password1 = forms.CharField(
@@ -185,6 +191,7 @@ class SignInView(auth_views.LoginView):
         return super().form_invalid(form)
 
 
+@method_decorator(never_cache, name="dispatch")
 class SignUpView(View):
     template_name = "storefront/signup.html"
 
@@ -233,6 +240,15 @@ class SignUpView(View):
 class SignOutView(LogoutView):
     """POST-only sign-out (Django 5 enforces this for CSRF safety)."""
 
+    next_page = reverse_lazy("storefront:signin")
+
+    def post(self, request, *args, **kwargs):
+        was_signed_in = request.user.is_authenticated
+        response = super().post(request, *args, **kwargs)
+        if was_signed_in:
+            messages.success(request, "You’re signed out.")
+        return response
+
 
 class AccountPhoneForm(forms.Form):
     """Self-service phone update. Email is the sign-in ID, so it stays
@@ -253,6 +269,7 @@ class AccountPhoneForm(forms.Form):
         return normalized
 
 
+@method_decorator(never_cache, name="dispatch")
 class AccountHomeView(LoginRequiredMixin, View):
     """Signed-in landing: account details + phone self-service edit."""
 
