@@ -12,6 +12,21 @@ export function Dashboard() {
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [period, setPeriod] = useState("30");
+  const [hideAmounts, setHideAmounts] = useState(() => {
+    try { return localStorage.getItem("manager_hide_overview_amounts") === "true"; }
+    catch { return false; }
+  });
+
+  function toggleAmounts() {
+    const next = !hideAmounts;
+    setHideAmounts(next);
+    try { localStorage.setItem("manager_hide_overview_amounts", String(next)); }
+    catch { /* The setting remains active until this page is closed. */ }
+  }
+
+  function displayAmount(value: string) {
+    return hideAmounts ? "Amount hidden" : money.format(Number(value));
+  }
 
   useEffect(() => {
     let alive = true;
@@ -36,6 +51,9 @@ export function Dashboard() {
         <section className="panel sales-panel" aria-labelledby="sales-title">
           <div className="section-heading">
             <h3 id="sales-title">Payments received</h3>
+            <button type="button" className="btn ghost small" onClick={toggleAmounts} aria-pressed={hideAmounts}>
+              {hideAmounts ? "Show amounts" : "Hide amounts"}
+            </button>
             <label className="sales-period">
               <span>Period</span>
               <select value={period} onChange={(event) => {
@@ -60,14 +78,14 @@ export function Dashboard() {
             <p>Payment details are unavailable.</p>
           ) : (
             <>
-              <p className="sales-total">{money.format(Number(data.payments.received))}</p>
+              <p className="sales-total">{displayAmount(data.payments.received)}</p>
               <p className="sales-note">Gross online payments recorded by the shop, before refunds and fees.</p>
               {data.payments.by_method.length > 0 && (
                 <ul className="dashboard-list">
                   {data.payments.by_method.map(row => (
                     <li key={row.method}>
                       <span>{paymentMethods[row.method] || row.method}<small>{row.count} {row.count === 1 ? "payment" : "payments"}</small></span>
-                      <strong>{money.format(Number(row.amount))}</strong>
+                      <strong>{displayAmount(row.amount)}</strong>
                     </li>
                   ))}
                 </ul>
@@ -102,7 +120,7 @@ export function Dashboard() {
                 {data.recent_orders.map(order => (
                   <li key={order.id}>
                     <span><strong>{order.order_number}</strong><small>{order.customer_name} · {date.format(new Date(order.created_at))}</small></span>
-                    <span>{money.format(Number(order.total))}<small>{ORDER_STATUS_LABELS[order.status as OrderStatus] ?? order.status}</small></span>
+                    <span>{displayAmount(order.total)}<small>{ORDER_STATUS_LABELS[order.status as OrderStatus] ?? order.status}</small></span>
                   </li>
                 ))}
               </ul>
