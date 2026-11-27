@@ -11,3 +11,30 @@
 .product-option input:focus-visible + span { outline: 2px solid #1b304a; outline-offset: 2px; }
 .product-option input:disabled + span { color: #526579; background: #f3f4f5; cursor: not-allowed; }
 .pdp-availability { align-self: center; margin: 0; color: #405671; font-size: .85rem; }
+.product-option-card:has(.pdp-swatch) { grid-template-columns: 22px 1fr; column-gap: 9px; align-items: center; }
+.pdp-swatch { grid-row: span 2; width: 22px; height: 22px; border-radius: 50%; background: var(--swatch, #e0e5e7); border: 1px solid #172c4c40; }
+.pdp-swatch[data-colour="brown"] { --swatch: #825d47; }
+.pdp-swatch[data-colour="pink"] { --swatch: #eca5b5; }
+.pdp-swatch[data-colour="blue"] { --swatch: #78a5cd; }
+.pdp-swatch[data-colour="green"] { --swatch: #72a288; }
+.pdp-swatch[data-colour="white"] { --swatch: #fff; }
+.pdp-swatch[data-colour="black"] { --swatch: #202020; }
+.pdp-swatch[data-colour="gray"] { --swatch: #92969a; }
+.pdp-swatch[data-colour="purple"] { --swatch: #9b76b9; }
+.pdp-swatch[data-colour="yellow"] { --swatch: #f1cc69; }
+.pdp-swatch[data-colour="red"] { --swatch: #c24b49; }
+.pdp-swatch[data-colour="orange"] { --swatch: #ef9a60; }
+.pdp-swatch[data-colour="beige"] { --swatch: #e2ceb4; }
+.pdp-swatch[data-colour="multi"] { background: conic-gradient(#eca5b5, #f1cc69, #78a5cd, #eca5b5); }
+.pdp-gallery { display: grid; align-content: start; gap: 12px; min-width: 0; }
+#mainProductImage { width: 100%; height: 100%; object-fit: contain; }
+#mainProductImage[hidden], .pdp-no-photo[hidden], .pdp-thumbnails[hidden] { display: none; }
+.pdp-no-photo { display: grid; width: 100%; height: 100%; min-height: 200px; place-items: center; color: var(--coast-muted); text-align: center; }
+.pdp-stock-badge { position: absolute; top: 16px; right: 16px; }
+.pdp-thumbnails { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; }
+.pdp-thumbnails button { display: grid; justify-items: center; gap: 4px; width: 102px; flex: 0 0 auto; border: 1px solid var(--coast-line); padding: 5px; border-radius: 8px; background: #fff; font: inherit; font-size: .72rem; color: var(--coast-deep); cursor: pointer; }
+.pdp-thumbnails button[aria-pressed="true"] { border-color: var(--coast-deep); box-shadow: inset 0 0 0 1px var(--coast-deep); }
+.pdp-thumbnails img { width: 100%; height: 62px; object-fit: contain; }
+.pdp-purchase-actions { display: grid; gap: 10px; }
+.pdp-secondary-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.pdp-secondary-actions .nest-pdp-wa { width: auto; min-height: 44px; background: transparent; color: #17603e; border: 1px solid #72a288; }

@@ -212,6 +212,36 @@ class ProductDetailView(View):
         prepare_product(product)
         variants = product.shop_variants
         available_variants = [variant for variant in variants if variant.shop_stock > 0]
+        blanket = product.slug == "soft-plush-baby-blanket-shawl"
+        gallery = list(product.images.all())
+        shared = []
+        by_variant = {}
+        cover = product.get_image_url
+        if cover and not blanket and not any(photo.variant_id and photo.get_image_url == cover for photo in gallery):
+            shared.append({"url": cover, "label": "Cover photo"})
+        for photo in gallery:
+            url = photo.get_image_url
+            if not url:
+                continue
+            photos = by_variant.setdefault(photo.variant_id, []) if photo.variant_id else shared
+            if not any(entry["url"] == url for entry in photos):
+                photos.append({"url": url, "label": photo.alt_text or "Product photo"})
+
+        for variant in variants:
+            variant.gallery = list(by_variant.get(variant.pk, []))
+            if variant.image:
+                name = variant.image.name
+                url = name if name.startswith(("https://", "http://")) else variant.image.url
+                if not any(photo["url"] == url for photo in variant.gallery):
+                    variant.gallery.insert(0, {"url": url, "label": str(variant)})
+            variant.gallery = variant.gallery or shared
+
+        default_variant = None
+        if len(available_variants) == 1:
+            default_variant = available_variants[0]
+        elif blanket and available_variants:
+            default_variant = next((variant for variant in available_variants if variant.gallery), available_variants[0])
+        initial_gallery = default_variant.gallery if default_variant else shared
 
         # Related products in same category
         related_products = (
@@ -232,7 +262,10 @@ class ProductDetailView(View):
         context = {
             "product": product,
             "variants": variants,
-            "default_variant": available_variants[0] if len(available_variants) == 1 else None,
+            "default_variant": default_variant,
+            "initial_gallery": initial_gallery,
+            "gallery_variants": [{"id": str(variant.pk), "photos": variant.gallery} for variant in variants],
+            "blanket": blanket,
             "wishlist_ids": get_wishlist_ids(request),
             "related_products": related_products,
             "mombasa_fee": get_delivery_fee_for_region("mombasa"),

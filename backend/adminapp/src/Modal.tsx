@@ -2,7 +2,7 @@ import { KeyboardEvent, ReactNode, useEffect, useRef } from "react";
 
 export function trapModalTab(event: KeyboardEvent<HTMLDialogElement>) {
   if (event.key !== "Tab") return;
-  const elements = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex="0"]')).filter(el => !el.matches(":disabled") && el.getClientRects().length > 0);
+  const elements = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [tabindex="0"]')).filter(el => !el.matches(":disabled") && el.getClientRects().length > 0);
   const first = elements[0], last = elements[elements.length - 1];
   if (!first) { event.preventDefault(); return; }
   if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }

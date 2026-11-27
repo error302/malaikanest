@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, CatalogueOption, CatalogueOptions, Category, Paged, Product, Variant } from "./api";
-import { productChanges, productForm, SaveIntent, validatePhotos, validateVariants } from "./productDraft";
+import { productChanges, productForm, SaveIntent, validateVariants } from "./productDraft";
 import { VariantsEditor } from "./VariantsEditor";
 import { Modal, trapModalTab } from "./Modal";
-import { PhotosEditor } from "./PhotosEditor";
-import { useObjectUrl } from "./useObjectUrl";
+import { DraftPhoto, PhotosEditor } from "./PhotosEditor";
 import { useUnsavedChanges } from "./useUnsavedChanges";
 
 const PAGE_SIZE = 25;
@@ -258,14 +257,22 @@ function EditDrawer({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
-  const [cover, setCover] = useState<File | null>(null);
-  const coverInput = useRef<HTMLInputElement>(null);
-  const coverPreview = useObjectUrl(cover);
-  const linkedCover = /^https?:\/\//i.test(form.image_url.trim()) ? form.image_url.trim() : "";
+  const [staged, setStaged] = useState<DraftPhoto[]>([]);
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const categoryGroups = new Map<string, Category[]>();
+  const queryWords = categoryQuery.toLowerCase().trim().split(/\s+/);
+  for (const category of categories) {
+    const path = category.path_label || category.full_slug || category.name;
+    if (category.id !== form.category && !queryWords.every(word => path.toLowerCase().includes(word))) continue;
+    const group = path.split(/\s*›\s*|\//)[0];
+    const entries = categoryGroups.get(group) ?? [];
+    entries.push(category);
+    categoryGroups.set(group, entries);
+  }
   const [loaded, setLoaded] = useState(!product.id);
   const [attempt, setAttempt] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
-  const dirty = Boolean(cover) || JSON.stringify(form) !== JSON.stringify(productForm(current)) || JSON.stringify(variants) !== JSON.stringify(current.variants ?? []);
+  const dirty = staged.length > 0 || JSON.stringify(form) !== JSON.stringify(productForm(current)) || JSON.stringify(variants) !== JSON.stringify(current.variants ?? []);
   const locked = busy || photoBusy || !loaded;
 
   useEffect(() => {
@@ -298,7 +305,7 @@ function EditDrawer({
 
   function close() {
     if (busy || photoBusy) return;
-    if (dirty && !window.confirm("Discard unsaved product details and size changes? Photo changes are already saved.")) return;
+    if (dirty && !window.confirm("Discard unsaved changes?")) return;
     onClose();
   }
 
@@ -307,15 +314,20 @@ function EditDrawer({
       ...previous, images: full.images, image: full.image,
       image_url: full.image_url, image_full_url: full.image_full_url,
     }));
-    setForm(previous => previous.image_url === (current.image_url ?? "")
-      ? { ...previous, image_url: full.image_url ?? "" }
-      : previous);
+    setForm(previous => ({ ...previous, image_url: full.image_url ?? "" }));
     onSaved();
   }
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
     setNotice("");
+  }
+
+  function jumpToSection(event: React.MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    const heading = document.getElementById(event.currentTarget.hash.slice(1));
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
   }
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
@@ -326,8 +338,18 @@ function EditDrawer({
     const variantError = validateVariants(variants, current.variants ?? []);
     if (variantError) { setError(variantError); return; }
     if (intent === "publish" && !window.confirm("Publish this product and make it visible in the shop?")) return;
+    if (intent === "draft" && !window.confirm("Unpublish this product and move it to drafts?")) return;
     const body = productChanges(current, form, intent);
-    if (isNew) body.image_url = form.image_url.trim();
+    const [cover, ...gallery] = staged;
+    if (isNew) {
+      body.image_url = cover?.url ?? "";
+      const galleryUrls = gallery.flatMap(photo => photo.url ? [photo.url] : []);
+      if (galleryUrls.length) body.gallery_image_urls = galleryUrls;
+    }
+    const files = [
+      ...(cover?.file ? [{ key: "image", file: cover.file }] : []),
+      ...gallery.flatMap(photo => photo.file ? [{ key: "gallery_images", file: photo.file }] : []),
+    ];
     if (variants.length) delete body.stock;
     if (JSON.stringify(variants) !== JSON.stringify(current.variants ?? [])) {
       body.variants = variants.map((v) => ({
@@ -340,17 +362,21 @@ function EditDrawer({
     setError("");
     setNotice("");
     try {
-      const saved = isNew && cover
-        ? await api.saveProductMultipart(null, body, [{ key: "image", file: cover }])
+      const saved = isNew && files.length
+        ? await api.saveProductMultipart(null, body, files)
         : await api.saveProduct(isNew ? null : current.id, body);
-      setCover(null);
+      setStaged([]);
+      setCategoryQuery("");
       setCurrent(saved);
       setForm(productForm(saved));
       setVariants(saved.variants ?? []);
-      setNotice(isNew ? "Draft saved. Review the product and publish when ready." : intent === "publish" ? "Published." : intent === "draft" ? "Saved as a hidden draft." : "Changes saved. Visibility unchanged.");
+      setNotice(isNew ? "Draft saved. Review the product and publish when ready." : intent === "publish" ? "Published." : intent === "draft" ? "Saved as a hidden draft." : "Changes saved.");
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      const message = err instanceof Error ? err.message : "Save failed";
+      setError(files.length && message === "An unexpected server error occurred."
+        ? "The draft could not be saved with these photos. Retry or remove a photo and save again."
+        : message);
     } finally {
       setBusy(false);
     }
@@ -359,174 +385,159 @@ function EditDrawer({
   return (
     <dialog onKeyDown={trapModalTab} ref={dialog} className="product-dialog panel" aria-labelledby="product-editor-title" onCancel={(event) => { event.preventDefault(); close(); }}>
       <form onSubmit={save}>
-        <div className="dialog-heading"><h3 id="product-editor-title">{isNew ? "New product" : `Edit — ${current.name}`}</h3><button className="btn ghost" type="button" onClick={close} disabled={busy || photoBusy}>Close</button></div>
-        <p className="variants-hint">{isNew ? "Enter the name, category and price. Then add stock and any size or colour options." : current.is_active ? "Visible in the shop." : "Hidden draft. Add photos and check sizes before publishing."}</p>
-        {error && <div className="error" role="alert">{error}</div>}
-        {notice && <div className="notice" role="status">{notice}</div>}
-        {!loaded && (error ? <button className="btn ghost" type="button" onClick={() => setAttempt((value) => value + 1)}>Retry loading</button> : <p role="status">Loading product details…</p>)}
-        <fieldset disabled={locked} className="product-fields">
-        <div className="product-basics">
-        <label className="field">
-          <span>Name</span>
-          <input type="text" value={form.name} onChange={(e) => set("name", e.target.value)} required />
-        </label>
-        <label className="field">
-          <span>Price (KES)</span>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.price}
-            onChange={(e) => set("price", e.target.value)}
-            required
-          />
-        </label>
-        <label className="field">
-          <span>Category</span>
-          <select required value={form.category} onChange={(e) => set("category", e.target.value)}>
-            <option value="">—</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.path_label || c.full_slug || c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        </div>
-        <section className="product-inventory" aria-labelledby="product-inventory-title">
-          <h4 id="product-inventory-title">Stock</h4>
-          {variants.length === 0 && <div className="product-basics">
-          <label className="field">
-            <span>Stock</span>
-            <input type="number" min="0" step="1" value={form.stock} onChange={event => set("stock", Number(event.target.value))} />
-          </label>
-        <label className="field">
-          <span>Single size (optional)</span>
-          <select value={form.size_label} onChange={(e) => set("size_label", e.target.value)} disabled={!options.sizes.length}>
-            <option value="">Not specified</option>
-            {form.size_label && !options.sizes.some(size => size.value === form.size_label) && <option value={form.size_label}>{form.size_label.toUpperCase()}</option>}
-            {options.sizes.map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
-          </select>
-        </label>
-          </div>}
-        <VariantsEditor sizeOptions={options.sizes} variants={variants} previous={current.variants ?? []} onChange={(rows) => { setVariants(rows); setNotice(""); }} />
-        </section>
-        <details className="editor-details">
-          <summary>Description and catalogue details</summary>
-        <label className="field">
-          <span>Description</span>
-          <textarea value={form.description} onChange={(e) => set("description", e.target.value)} />
-        </label>
-        <label className="field">
-          <span>Age group (broad)</span>
-          <select value={form.age_group} onChange={(e) => set("age_group", e.target.value)}>
-            <option value="">Not specified</option>
-            <option value="baby">Baby (0-2 years)</option>
-            <option value="toddler">Toddler (2-5 years)</option>
-            <option value="kids">Kids (6-12 years)</option>
-          </select>
-        </label>
-        <label className="field">
-          <span>Age range (shown on the product page)</span>
-          <select value={form.age_range} onChange={e => set("age_range", e.target.value)} disabled={!options.age_ranges.length}>
-            <option value="">Not specified</option>
-            {form.age_range && !options.age_ranges.some(option => option.value === form.age_range) && <option value={form.age_range}>{form.age_range}</option>}
-            {options.age_ranges.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="field">
-          <span>Condition</span>
-          <select value={form.condition} onChange={e => set("condition", e.target.value)} disabled={!options.conditions.length}>
-            {!options.conditions.length && <option value={form.condition}>{form.condition}</option>}
-            {options.conditions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="field">
-          <span>Gender</span>
-          <select value={form.gender} onChange={(e) => set("gender", e.target.value)}>
-            <option value="unisex">Unisex</option>
-            <option value="boy">Boy</option>
-            <option value="girl">Girl</option>
-          </select>
-        </label>
-        <label className="field">
-          <span>Compare price (KES, for "save X%" badge)</span>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.compare_price}
-            onChange={(e) => set("compare_price", e.target.value)}
-          />
-        </label>
-        </details>
-        <details className="editor-details">
-          <summary>Measurements, fabric and care</summary>
-        <label className="field">
-          <span>Fabric &amp; care</span>
-          <textarea value={form.fabric} onChange={(e) => set("fabric", e.target.value)} />
-        </label>
-        <label className="field">
-          <span>What's included</span>
-          <textarea value={form.whats_included} onChange={(e) => set("whats_included", e.target.value)} />
-        </label>
-        <p className="variants-hint">Enter verified measurements in cm, stating body or garment measurements. Leave unknown details blank.</p>
-        <label className="field">
-          <span>Measurements &amp; fit (shown on the product page)</span>
-          <textarea
-            value={form.size_guide}
-            onChange={(e) => set("size_guide", e.target.value)}
-            placeholder="e.g. 2y: chest 54 cm, length 38 cm"
-          />
-        </label>
-        {isNew && <label className="field">
-          <span>URL slug (optional; generated from name)</span>
-          <input type="text" pattern="[a-zA-Z0-9_-]+" maxLength={300} value={form.slug} onChange={(e) => set("slug", e.target.value)} />
-        </label>}
-        </details>
-        </fieldset>
-        {isNew && <section className="product-cover product-cover-draft" aria-label="Product cover photo">
-          {(coverPreview || linkedCover) && <img src={coverPreview || linkedCover} alt="Cover preview" />}
+        <div className="product-editor-body">
+        <div className="dialog-heading product-editor-heading">
           <div>
-          <label className="field">
-            <span>Cloudinary image URL (optional)</span>
-            <input type="url" inputMode="url" placeholder="https://res.cloudinary.com/…" value={form.image_url} disabled={locked}
-                   onChange={event => {
-                     set("image_url", event.target.value);
-                     if (event.target.value.trim()) {
-                       setCover(null);
-                       if (coverInput.current) coverInput.current.value = "";
-                     }
-                   }} />
-          </label>
-          <label className="field file-picker">
-            <span>Choose cover from files (optional)</span>
-            <input ref={coverInput} type="file" disabled={locked} accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                   onChange={event => {
-                     const file = event.target.files?.[0];
-                     const problem = file ? validatePhotos([file]) : "";
-                     setError(problem);
-                     if (problem) {
-                       event.target.value = "";
-                       setCover(null);
-                     } else if (file) {
-                       set("image_url", "");
-                       setCover(file);
-                     }
-                   }} />
-            <small>JPG, PNG or WebP, up to 5 MB. The cover uploads when you create the draft.</small>
-          </label>
+            <h3 id="product-editor-title">{isNew ? "New product" : current.name}</h3>
+            <p className="editor-hint">{isNew ? "Start with the basics. Add the rest when you’re ready." : current.is_active ? "Visible in the shop" : "Private draft"}</p>
           </div>
-        </section>}
-        {!isNew && loaded && (
-          <PhotosEditor productId={current.id} mainImage={current.image_full_url ?? current.image} gallery={current.images ?? []} onChanged={refreshPhotos} disabled={busy} onBusyChange={setPhotoBusy} />
-        )}
-        <div className="editor-actions">
+        </div>
+        {!loaded && (error ? <button className="btn ghost" type="button" onClick={() => setAttempt(value => value + 1)}>Retry loading</button> : <p role="status">Loading product details…</p>)}
+        <nav className="editor-sections-nav" aria-label="Product sections">
+          <a href="#editor-basics" onClick={jumpToSection}>Basics</a>
+          <a href="#editor-stock" onClick={jumpToSection}>Stock</a>
+          <a href="#editor-photos" onClick={jumpToSection}>Photos</a>
+          <a href="#editor-details" onClick={jumpToSection}>Details</a>
+        </nav>
+        <fieldset disabled={locked} className="product-fields">
+          <section className="product-editor-section" aria-labelledby="editor-basics">
+            <h4 id="editor-basics" tabIndex={-1}>Basic info &amp; pricing</h4>
+            <div className="product-basics">
+              <label className="field editor-full">
+                <span>Product name</span>
+                <input type="text" value={form.name} onChange={e => set("name", e.target.value)} required />
+              </label>
+              <label className="field">
+                <span>Price (KES)</span>
+                <input type="number" min="0" step="0.01" value={form.price} onChange={e => set("price", e.target.value)} required />
+              </label>
+              <label className="field">
+                <span>Compare price (KES) <small>Optional</small></span>
+                <input type="number" min="0" step="0.01" value={form.compare_price} onChange={e => set("compare_price", e.target.value)} />
+                <small>Original price before a discount.</small>
+              </label>
+              <div className="category-picker editor-full">
+                <label className="field">
+                  <span>Find a category</span>
+                  <input type="search" value={categoryQuery} onChange={e => setCategoryQuery(e.target.value)} placeholder="Search, e.g. T-shirts" />
+                </label>
+                <label className="field">
+                  <span>Category</span>
+                  <select required value={form.category} onChange={e => { set("category", e.target.value); setCategoryQuery(""); }}>
+                    <option value="">Choose a category</option>
+                    {categoryGroups.size === 0 && <option disabled>No matching categories</option>}
+                    {[...categoryGroups].map(([group, entries]) => <optgroup key={group} label={group}>
+                      {entries.map(category => <option key={category.id} value={category.id}>{category.path_label || category.full_slug || category.name}</option>)}
+                    </optgroup>)}
+                  </select>
+                </label>
+              </div>
+              <label className="field">
+                <span>Condition</span>
+                <select value={form.condition} onChange={e => set("condition", e.target.value)} disabled={!options.conditions.length}>
+                  {!options.conditions.length && <option value={form.condition}>{form.condition}</option>}
+                  {options.conditions.map(option => <option key={option.value} value={option.value}>
+                    {option.value === "mtumba" ? "Mtumba (Pre-Loved)" : option.label}
+                  </option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>Gender</span>
+                <select value={form.gender} onChange={e => set("gender", e.target.value)}>
+                  <option value="unisex">Unisex</option>
+                  <option value="boy">Boy</option>
+                  <option value="girl">Girl</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Age group</span>
+                <select value={form.age_group} onChange={e => set("age_group", e.target.value)}>
+                  <option value="">Not specified</option>
+                  <option value="baby">Baby (0–2 years)</option>
+                  <option value="toddler">Toddler (2–5 years)</option>
+                  <option value="kids">Kids (6–12 years)</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Age range</span>
+                <select value={form.age_range} onChange={e => set("age_range", e.target.value)} disabled={!options.age_ranges.length}>
+                  <option value="">Not specified</option>
+                  {form.age_range && !options.age_ranges.some(option => option.value === form.age_range) && <option value={form.age_range}>{form.age_range}</option>}
+                  {options.age_ranges.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="product-editor-section" aria-labelledby="editor-stock">
+            <h4 id="editor-stock" tabIndex={-1}>Variants &amp; stock</h4>
+            {variants.length === 0 && <>
+              <p className="editor-hint">If this product has one option, enter its stock here.</p>
+              <div className="product-basics">
+                <label className="field">
+                  <span>Stock count</span>
+                  <input type="number" min="0" step="1" value={form.stock} onChange={event => set("stock", Number(event.target.value))} />
+                </label>
+                <label className="field">
+                  <span>Single size <small>Optional</small></span>
+                  <select value={form.size_label} onChange={e => set("size_label", e.target.value)} disabled={!options.sizes.length}>
+                    <option value="">Not specified</option>
+                    {form.size_label && !options.sizes.some(size => size.value === form.size_label) && <option value={form.size_label}>{form.size_label.toUpperCase()}</option>}
+                    {options.sizes.map(size => <option key={size.value} value={size.value}>{size.label}</option>)}
+                  </select>
+                </label>
+              </div>
+            </>}
+            <VariantsEditor sizeOptions={options.sizes} variants={variants} previous={current.variants ?? []} onChange={rows => { setVariants(rows); setNotice(""); }} />
+          </section>
+
+          <section className="product-editor-section" aria-labelledby="editor-photos">
+            <h4 id="editor-photos" tabIndex={-1}>Photos</h4>
+            <PhotosEditor product={current} staged={staged} onStage={photos => { setStaged(photos); setNotice(""); }}
+                          onChanged={refreshPhotos} disabled={busy || !loaded} onBusyChange={setPhotoBusy} />
+          </section>
+
+          <section className="product-editor-section" aria-labelledby="editor-details">
+            <h4 id="editor-details" tabIndex={-1}>Description, care &amp; measurements</h4>
+            <p className="editor-hint">These details are optional. Leave anything you’re unsure about blank.</p>
+            <div className="product-basics">
+              <label className="field editor-full">
+                <span>Description</span>
+                <textarea value={form.description} onChange={e => set("description", e.target.value)} />
+              </label>
+              <label className="field">
+                <span>Fabric &amp; care</span>
+                <textarea value={form.fabric} onChange={e => set("fabric", e.target.value)} />
+              </label>
+              <label className="field">
+                <span>What's included</span>
+                <textarea value={form.whats_included} onChange={e => set("whats_included", e.target.value)} />
+              </label>
+              <label className="field editor-full">
+                <span>Measurements &amp; fit</span>
+                <textarea value={form.size_guide} onChange={e => set("size_guide", e.target.value)} placeholder="e.g. 2y: chest 54 cm, length 38 cm" />
+                <small>Use verified measurements in centimetres.</small>
+              </label>
+            </div>
+            {isNew && <details className="editor-details">
+              <summary>Product link</summary>
+              <label className="field">
+                <span>Custom URL slug <small>Optional</small></span>
+                <input type="text" pattern="[a-zA-Z0-9_\-]+" maxLength={300} value={form.slug} onChange={e => set("slug", e.target.value)} />
+                <small>Leave blank to use the product name.</small>
+              </label>
+            </details>}
+          </section>
+        </fieldset>
+        </div>
+        <div className="editor-actions product-editor-footer">
+          {error && <p className="error editor-feedback" role="alert">{error}</p>}
+          {notice && <p className="notice editor-feedback" role="status">{notice}</p>}
           <button className="btn" disabled={locked} type="submit" value="save">
             {busy ? "Saving…" : isNew ? "Create draft" : "Save changes"}
           </button>
           {!isNew && <button className="btn ghost" disabled={locked} type="submit" value={current.is_active ? "draft" : "publish"}>
-            {current.is_active ? "Unpublish to draft" : "Publish product"}
+            {current.is_active ? "Unpublish to draft" : "Publish to shop"}
           </button>}
           <button className="btn ghost" disabled={busy || photoBusy} type="button" onClick={close}>Close</button>
         </div>

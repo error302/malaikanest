@@ -1,37 +1,71 @@
 import { useRef, useState } from "react";
-import { api, Product, ProductImage } from "./api";
+import { api, COLOR_CHOICES, Product, ProductImage, Variant } from "./api";
 import { validatePhotos } from "./productDraft";
+import { useObjectUrl } from "./useObjectUrl";
 
-/**
- * Photo manager for the product drawer.
- *
- * Photos are applied immediately (each action is its own PATCH), unlike the
- * text fields which save with the drawer's Save button. The main photo and
- * gallery both render above the Save button so no change is lost.
- */
-export function PhotosEditor({
-  productId,
-  mainImage,
-  gallery,
-  onChanged,
-  disabled = false,
-  onBusyChange,
-}: {
-  productId: string;
-  mainImage?: string | null;
-  gallery: ProductImage[];
+export type DraftPhoto = { id: string; file?: File; url?: string };
+
+function PhotoPreview({ file, url, alt }: { file?: File; url?: string; alt: string }) {
+  const preview = useObjectUrl(file ?? null);
+  const [failed, setFailed] = useState(false);
+  const src = preview || url;
+  return src && !failed
+    ? <img src={src} alt={alt} onError={() => setFailed(true)} />
+    : <div className="photo-empty">Preview unavailable</div>;
+}
+
+function PhotoDetails({ photo, variants, disabled, save }: {
+  photo: ProductImage;
+  variants: Variant[];
+  disabled: boolean;
+  save: (values: { id: string; variant_id: string | null; alt_text: string }) => void;
+}) {
+  const [variant, setVariant] = useState(photo.variant_id ?? "");
+  const [caption, setCaption] = useState(photo.alt_text ?? "");
+  return (
+    <details className="photo-details editor-details">
+      <summary>Photo details</summary>
+      <label className="field">
+        <span>Show for</span>
+        <select value={variant} disabled={disabled} onChange={e => setVariant(e.target.value)}>
+          <option value="">All variants</option>
+          {variants.filter(row => row.id).map(row => <option key={row.id} value={row.id}>
+            {[row.size_label || row.size, row.color_label || COLOR_CHOICES.find(choice => choice.value === row.color)?.label].filter(Boolean).join(" · ") || "Standard"}
+          </option>)}
+        </select>
+      </label>
+      <label className="field">
+        <span>Photo label</span>
+        <input type="text" maxLength={200} placeholder="e.g. Fabric close-up" value={caption} disabled={disabled} onChange={e => setCaption(e.target.value)} />
+      </label>
+      <button type="button" className="btn ghost small" disabled={disabled || (variant === (photo.variant_id ?? "") && caption.trim() === (photo.alt_text ?? ""))}
+              onClick={() => save({ id: photo.id, variant_id: variant || null, alt_text: caption.trim() })}>Save photo details</button>
+    </details>
+  );
+}
+
+export function PhotosEditor({ product, staged, onStage, onChanged, disabled, onBusyChange }: {
+  product: Product;
+  staged: DraftPhoto[];
+  onStage: (photos: DraftPhoto[]) => void;
   onChanged: (product: Product) => void;
-  disabled?: boolean;
+  disabled: boolean;
   onBusyChange: (busy: boolean) => void;
 }) {
+  const [method, setMethod] = useState<"device" | "url">("device");
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [urlInput, setUrlInput] = useState("");
-
+  const [busy, setBusy] = useState(false);
   const running = useRef(false);
+  const nextPhoto = useRef(0);
+  const isNew = !product.id;
+  const gallery = product.images ?? [];
+  const main = product.image_full_url || product.image;
+  const standaloneCover = main && !gallery.some(photo => photo.url === main);
+  const locked = busy || disabled;
 
-  async function run(action: () => Promise<Product>) {
+  async function run(action: () => Promise<Product>, failure = "Photo changes could not be saved.") {
     if (running.current || disabled) return;
     running.current = true;
     setBusy(true);
@@ -39,11 +73,11 @@ export function PhotosEditor({
     setError("");
     setNotice("");
     try {
-      const saved = await action();
-      onChanged(saved);
+      onChanged(await action());
       setNotice("Photos saved.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Photo update failed");
+    } catch (err) {
+      const message = err instanceof Error && err.message !== "An unexpected server error occurred." ? err.message : failure;
+      setError(message);
     } finally {
       running.current = false;
       setBusy(false);
@@ -51,127 +85,121 @@ export function PhotosEditor({
     }
   }
 
-  function onApplyUrlAsMain() {
-    const trimmed = urlInput.trim();
-    if (!trimmed) return;
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-      setError("Please enter a valid URL starting with https://");
+  function addFiles(files: File[]) {
+    if (!files.length) return;
+    setNotice("");
+    const problem = validatePhotos(files);
+    setError(problem);
+    if (problem) return;
+    if (isNew) {
+      onStage([...staged, ...files.map(file => ({ id: String(nextPhoto.current++), file }))]);
+      return;
+    }
+    const [first, ...rest] = files;
+    void run(() => api.saveProductMultipart(product.id, {}, main
+      ? files.map(file => ({ key: "gallery_images", file }))
+      : [{ key: "image", file: first }, ...rest.map(file => ({ key: "gallery_images", file }))]),
+      "The upload failed. Choose the photo again to retry.");
+  }
+
+  function addUrl() {
+    const url = urlInput.trim();
+    if (!/^https?:\/\/[^\s]+$/i.test(url)) {
+      setError("Paste the full photo link beginning with https://.");
+      return;
+    }
+    setError("");
+    setNotice("");
+    if (isNew) {
+      onStage([...staged, { id: String(nextPhoto.current++), url }]);
+      setUrlInput("");
       return;
     }
     void run(async () => {
-      const res = await api.saveProduct(productId, { image_url: trimmed });
+      const result = await api.saveProduct(product.id, main ? { add_gallery_url: url } : { image_url: url });
       setUrlInput("");
-      return res;
+      return result;
     });
   }
 
-  function onApplyUrlToGallery() {
-    const trimmed = urlInput.trim();
-    if (!trimmed) return;
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-      setError("Please enter a valid URL starting with https://");
-      return;
-    }
-    void run(async () => {
-      const res = await api.saveProduct(productId, { add_gallery_url: trimmed } as Record<string, unknown>);
-      setUrlInput("");
-      return res;
-    });
-  }
-
-  function pick(action: (files: File[]) => Promise<Product>, list: File[]) {
-    if (!list.length) return;
-    const problem = validatePhotos(list);
-    if (problem) { setError(problem); return; }
-    void run(() => action(list));
-  }
-
-  function onMainPicked(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (f) pick((files) => api.saveProductMultipart(productId, {}, files.map((file) => ({ key: "image", file }))), [f]);
-  }
-
-  function onGalleryPicked(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
-    pick((list) => api.saveProductMultipart(productId, {}, list.map((file) => ({ key: "gallery_images", file }))), files);
+  function remove(action: () => void) {
+    if (window.confirm("Remove this photo from the product?")) action();
   }
 
   return (
-    <section className="photos-editor" aria-labelledby="product-photos-heading">
-      <h4 id="product-photos-heading">Product photos</h4>
-      <p className="variants-hint">The cover appears in the shop and product list. Photos save when you choose them.</p>
-      {busy && <p role="status">Saving photos…</p>}
-      {!busy && notice && <p role="status">{notice}</p>}
-      {error && <div className="error" role="alert">{error}</div>}
-
-      <div className="product-cover">
-        {mainImage ? <img src={mainImage} alt="Product cover" /> : <div className="photo-empty">Add a front photo</div>}
-        <div>
+    <div className="product-photos">
+      <p className="editor-hint">{isNew ? "Photos will save with your draft." : "Photo changes save here as you make them."} The cover appears in the shop listing.</p>
+      <div className="photo-picker">
+        <div className="photo-methods" role="group" aria-label="How to add photos">
+          <button type="button" className="btn ghost small" aria-pressed={method === "device"} disabled={locked} onClick={() => setMethod("device")}>Upload from device</button>
+          <button type="button" className="btn ghost small" aria-pressed={method === "url"} disabled={locked} onClick={() => setMethod("url")}>Add from Cloudinary URL</button>
+        </div>
+        {method === "device" ? (
           <label className="field file-picker">
-            <span>{mainImage ? "Replace cover from files" : "Choose cover from files"}</span>
-            <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" disabled={busy || disabled} onChange={onMainPicked} />
-            <small>JPG, PNG or WebP, up to 5 MB per photo.</small>
+            <span>Choose photos</span>
+            <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple disabled={locked} onChange={event => {
+              const files = Array.from(event.target.files ?? []);
+              event.target.value = "";
+              addFiles(files);
+            }} />
+            <small>JPG, PNG or WebP · up to 5 MB each</small>
           </label>
-          {mainImage && <button type="button" className="btn ghost small danger" disabled={busy || disabled} onClick={() => {
-            if (confirm("Remove the main photo? Gallery copies are kept.")) void run(() => api.saveProduct(productId, { image: null, image_url: null }));
-          }}>Remove cover</button>}
-        </div>
+        ) : (
+          <div className="photo-link-entry">
+            <label className="field">
+              <span>Cloudinary image URL</span>
+              <input type="text" inputMode="url" placeholder="https://res.cloudinary.com/…" value={urlInput} disabled={locked}
+                     onChange={event => setUrlInput(event.target.value)} onKeyDown={event => {
+                       if (event.key === "Enter") { event.preventDefault(); if (urlInput.trim()) addUrl(); }
+                     }} />
+            </label>
+            <button type="button" className="btn small" disabled={locked || !urlInput.trim()} onClick={addUrl}>Add photo</button>
+          </div>
+        )}
+        {busy && <p role="status" className="editor-hint">Saving photos…</p>}
+        {!busy && notice && <p role="status" className="editor-hint">{notice}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
       </div>
-
-      <div className="photo-url-box">
-        <label className="field">
-          <span>Cloudinary image URL</span>
-          <input type="url" inputMode="url" placeholder="https://res.cloudinary.com/…" value={urlInput} onChange={e => setUrlInput(e.target.value)} disabled={busy || disabled} />
-        </label>
-        <div className="photo-actions">
-          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlAsMain}>Set as cover</button>
-          <button type="button" className="btn ghost small" disabled={busy || disabled || !urlInput.trim()} onClick={onApplyUrlToGallery}>Add to gallery</button>
-        </div>
-      </div>
-
-      <label className="field file-picker">
-        <span>Add gallery photos from files</span>
-        <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple disabled={busy || disabled} onChange={onGalleryPicked} />
-        <small>Choose one or more back views or close-ups.</small>
-      </label>
-
-      {gallery.length > 0 && (
-        <div className="photo-grid">
-          {gallery.map((img) => (
-            <div key={img.id} className={`photo-cell ${img.is_primary ? "is-primary" : ""}`}>
-              <img src={img.url} alt={img.alt_text || "Product image"} />
-              <div className="photo-actions">
-                {!img.is_primary && (
-                  <button
-                    type="button"
-                    className="btn ghost tiny"
-                    disabled={busy || disabled}
-                    title="Use as main photo"
-                    onClick={() => run(() => api.setPrimaryImage(productId, img.id))}
-                  >
-                    Make main
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn ghost tiny danger"
-                  disabled={busy || disabled}
-                  title="Delete photo"
-                  onClick={() => {
-                    if (confirm("Delete this photo?")) run(() => api.deleteProductImage(productId, img.id));
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-              {img.is_primary && <span className="photo-primary-tag">Main</span>}
+      <div className="photo-grid">
+        {staged.map((photo, index) => (
+          <div className="photo-cell" key={photo.id}>
+            <PhotoPreview file={photo.file} url={photo.url} alt={index ? "Gallery preview" : "Cover preview"} />
+            <span className="photo-role">{index ? "Gallery photo" : "Cover"}</span>
+            <div className="photo-actions">
+              {index > 0 && <button type="button" className="btn ghost small" onClick={() => onStage([photo, ...staged.filter(item => item.id !== photo.id)])}>Set as cover</button>}
+              <button type="button" className="btn ghost small danger" onClick={() => remove(() => onStage(staged.filter(item => item.id !== photo.id)))}>Remove</button>
             </div>
-          ))}
-        </div>
-      )}
-
-    </section>
+          </div>
+        ))}
+        {standaloneCover && (
+          <div className="photo-cell">
+            <PhotoPreview key={main} url={main} alt="Product cover" />
+            <span className="photo-role">Cover</span>
+            <div className="photo-actions">
+              <button type="button" className="btn ghost small danger" disabled={locked} onClick={() => remove(() => {
+                void run(() => api.saveProduct(product.id, { image: null, image_url: null }));
+              })}>Remove</button>
+            </div>
+          </div>
+        )}
+        {gallery.map(photo => {
+          const cover = photo.is_primary || photo.url === main;
+          return (
+            <div key={photo.id} className="photo-cell">
+              <PhotoPreview key={photo.url} url={photo.url} alt={photo.alt_text || (cover ? "Product cover" : "Gallery photo")} />
+              <span className="photo-role">{cover ? "Cover" : "Gallery photo"}</span>
+              <div className="photo-actions">
+                {!cover && <button type="button" className="btn ghost small" disabled={locked} onClick={() => void run(() => api.setPrimaryImage(product.id, photo.id))}>Set as cover</button>}
+                <button type="button" className="btn ghost small danger" disabled={locked} onClick={() => remove(() => {
+                  void run(() => api.deleteProductImage(product.id, photo.id));
+                })}>Remove</button>
+              </div>
+              <PhotoDetails key={JSON.stringify([photo.variant_id, photo.alt_text])} photo={photo} variants={product.variants ?? []} disabled={locked}
+                            save={values => void run(() => api.saveProduct(product.id, { photo_details: values }))} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

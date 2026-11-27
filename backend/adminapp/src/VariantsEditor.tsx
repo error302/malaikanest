@@ -37,10 +37,17 @@ export function VariantsEditor({
   return (
     <div className="variants-editor">
       <div className="variants-head">
-        <h4>Sizes and colours</h4>
-        <button type="button" className="btn ghost small" aria-expanded={adding} aria-controls="variant-builder" disabled={!sizeOptions.length} onClick={() => setAdding(value => !value)}>
-          {adding ? "Close variant picker" : "Add variants"}
-        </button>
+        <h5>Sizes and colours</h5>
+        <div className="photo-actions">
+          <button type="button" className="btn ghost small"
+                  onClick={() => onChange([...variants, { size: null, color: null, stock: 1, is_active: true, price_modifier: "0" }])}>
+            + Add variant
+          </button>
+          {sizeOptions.length > 0 && <button type="button" className="btn ghost small" aria-expanded={adding}
+                  onClick={() => setAdding(value => !value)}>
+            {adding ? "Close size picker" : "Add several sizes"}
+          </button>}
+        </div>
       </div>
       {adding && (
         <div className="variant-builder" id="variant-builder">
@@ -100,21 +107,21 @@ export function VariantsEditor({
                       </select>
                     </label>
                     <label className="field">
-                      <span>Stock</span>
+                      <span>Stock count</span>
                       <input type="number" min={held} step={1} required value={row.stock}
                              onChange={event => update(index, { stock: Number(event.target.value) })} />
                     </label>
                   </div>
                   <div className="variant-row-actions">
                     <label className="check">
-                      <input type="checkbox" checked={row.is_active} onChange={event => update(index, { is_active: event.target.checked })} />
+                      <input type="checkbox" role="switch" checked={row.is_active} onChange={event => update(index, { is_active: event.target.checked })} />
                       Show in shop
                     </label>
                     <small>{available} available{held > 0 && `, ${held} reserved`}</small>
                     {!row.id && <button className="btn ghost small danger" type="button" onClick={() => onChange(variants.filter((_, i) => i !== index))}>Remove</button>}
                   </div>
                   <details className="editor-details variant-extra">
-                    <summary>SKU and price adjustment</summary>
+                    <summary>More options</summary>
                     <div className="variant-builder-fields">
                       <label className="field">
                         <span>SKU (optional)</span>

@@ -1,7 +1,7 @@
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from apps.products.models import Category, Inventory, Product, ProductVariant, VariantInventory
+from apps.products.models import Category, Inventory, Product, ProductImage, ProductVariant, VariantInventory
 
 
 @override_settings(SECURE_SSL_REDIRECT=False, ALLOWED_HOSTS=['testserver'])
@@ -75,6 +75,28 @@ class SizeShoppingTests(TestCase):
         self.assertContains(response, '2y: chest 54 cm.')
         self.assertNotContains(response, '<script>alert(1)</script>')
         self.assertNotContains(response, 'up to 56 cm')
+
+    def test_blanket_defaults_to_the_available_photographed_variant(self):
+        self.product.slug = "soft-plush-baby-blanket-shawl"
+        self.product.image_url = "https://example.test/unavailable-blue.webp"
+        self.product.save()
+        VariantInventory.objects.filter(variant=self.empty).update(reserved=0)
+        self.variant.color = "brown"
+        self.variant.save()
+        self.empty.color = "pink"
+        self.empty.save()
+        ProductImage.objects.create(product=self.product, variant=self.variant, position=0,
+                                    image_url="https://example.test/brown.webp", alt_text="Packaged blanket")
+        ProductImage.objects.create(product=self.product, variant=self.variant, position=1,
+                                    image_url="https://example.test/brown-detail.webp", alt_text="Fabric close-up")
+        response = self.client.get(reverse("storefront:product_detail", args=[self.product.slug]))
+        self.assertEqual(response.context["default_variant"], self.variant)
+        photos = {item["id"]: item["photos"] for item in response.context["gallery_variants"]}
+        self.assertEqual([item["label"] for item in photos[str(self.variant.pk)]], ["Packaged blanket", "Fabric close-up"])
+        self.assertEqual(photos[str(self.empty.pk)], [])
+        self.assertContains(response, 'data-colour="pink"')
+        self.assertContains(response, "Ask us for the blanket dimensions")
+        self.assertNotContains(response, "unavailable-blue.webp")
 
     def test_pagination_preserves_filters(self):
         Product.objects.bulk_create([
