@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -20,6 +21,7 @@ settings.configure(
     ALLOWED_HOSTS=["testserver"],
     CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}},
     STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}},
+    CLOUDINARY_STORAGE={"CLOUD_NAME": "test-cloud", "API_KEY": "test-key", "API_SECRET": "test-secret"},
     MIGRATION_MODULES={key: None for key in ["auth", "contenttypes", "accounts", "core", "products", "orders"]},
     REST_FRAMEWORK={
         "DEFAULT_AUTHENTICATION_CLASSES": [],
@@ -33,7 +35,7 @@ import django
 django.setup()
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.test.runner import DiscoverRunner
 from django.utils.datastructures import MultiValueDict
 from django.urls import include, path
@@ -103,6 +105,39 @@ class AdminProductApiTests(TestCase):
         data = response.json()["data"]
         self.assertEqual(data["image_full_url"], cover_url)
         self.assertEqual(data["variants"][0]["size_label"], "8–10 years")
+
+    @override_settings(
+        STORAGES={"default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"}},
+    )
+    def test_draft_sends_the_complete_cover_file_to_cloudinary(self):
+        from cloudinary.exceptions import BadRequest
+        from cloudinary.utils import handle_file_parameter
+
+        photo = BytesIO()
+        Image.new("RGB", (12, 12), "yellow").save(photo, format="PNG")
+        image_bytes = photo.getvalue()
+        upload = SimpleUploadedFile("cover.png", image_bytes, content_type="image/png")
+
+        def upload_to_cloudinary(file, **options):
+            _, contents = handle_file_parameter(file, None)
+            if contents != image_bytes:
+                raise BadRequest("Invalid image file")
+            return {"public_id": "products/test-cover"}
+
+        with patch("cloudinary.uploader.upload", side_effect=upload_to_cloudinary) as send:
+            response = self.client.post("/api/products/admin/products/", {
+                "name": "Upload draft", "slug": "upload-draft",
+                "category": str(self.category.id), "price": "150", "stock": "01",
+                "size_label": "10-12y", "status": "draft", "is_active": False,
+                "image": upload,
+            }, format="multipart")
+
+        self.assertEqual(response.status_code, 201, response.content)
+        send.assert_called_once()
+        product = Product.objects.get(slug="upload-draft")
+        self.assertEqual(product.image.name, "products/test-cover")
+        self.assertEqual(product.inventory.quantity, 1)
+        self.assertFalse(product.is_active)
 
     def test_owner_data_survives_a_description_only_save(self):
         product_id = self.create_product(size_guide="Owner guide", fabric="Owner fabric", whats_included="Owner contents")

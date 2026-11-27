@@ -38,6 +38,9 @@ def validate_image_file(image):
         except Exception:
             logger.debug("Image validation failed: %s", image)
             raise ValidationError("Invalid or corrupted image file")
+        finally:
+            # Cloudinary's storage adapter reads the stream from its current position.
+            image.seek(0)
 
 
 class Brand(BaseModel):
