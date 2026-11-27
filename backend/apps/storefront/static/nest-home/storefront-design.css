@@ -253,6 +253,9 @@ main :is([class~="border-[#EADBCE]"],[class~="border-[#8B6914]"]) { border-color
   .nest-shopping-info { margin-top: 20px !important; gap: 10px !important; }
   .nest-pdp-block { margin-top: 16px; }
   .nest-pdp-form { margin-top: 16px; gap: 16px; }
+  /* The sticky bar is the always-visible Add to Cart on phones; the in-page
+     button sits far down the page, so keep this one pinned and visible. */
+  .nest-product-detail .nest-sticky-cta { display: flex !important; }
   /* The sticky bar owns the place-order action on phones; two identical
      buttons in view invite double submissions. */
   .nest-checkout-page .checkout-submit-desktop { display: none; }
