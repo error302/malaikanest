@@ -369,6 +369,16 @@ function EditDrawer({
             onChange={(e) => set("image_url", e.target.value)}
           />
         </label>
+         {form.image_url.trim() ? (
+           <div style={{ margin: "0 0 12px" }}>
+             <img
+               src={form.image_url}
+               alt="Preview"
+               style={{ maxHeight: 180, maxWidth: "100%", objectFit: "contain", borderRadius: 8, border: "1px solid var(--border)", display: "block" }}
+               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+             />
+           </div>
+         ) : null}
         {isNew && <label className="field">
           <span>URL slug (optional; generated from name)</span>
           <input type="text" pattern="[a-zA-Z0-9_-]+" maxLength={300} value={form.slug} onChange={(e) => set("slug", e.target.value)} />
