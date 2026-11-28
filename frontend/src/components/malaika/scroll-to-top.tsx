@@ -33,7 +33,7 @@ export function ScrollToTop() {
       type="button"
       onClick={scrollToTop}
       aria-label="Scroll to top"
-      className={`fixed bottom-[calc(6rem_+_env(safe-area-inset-bottom,_0px))] right-4 lg:bottom-6 lg:right-6 z-[130] w-11 h-11 rounded-full shadow-warm-lg border flex items-center justify-center transition-all duration-300 ${
+      className={`fixed bottom-[calc(6rem_+_env(safe-area-inset-bottom,_0px))] right-4 lg:bottom-6 lg:right-6 z-[130] w-11 h-11 rounded-full shadow-warm-lg border flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:ring-offset-2 ${
         visible
           ? 'opacity-100 translate-y-0 pointer-events-auto'
           : 'opacity-0 translate-y-4 pointer-events-none'
