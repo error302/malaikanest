@@ -128,6 +128,17 @@ class AdminProductApiTests(TestCase):
         self.assertEqual(data["image_full_url"], cover_url)
         self.assertEqual(data["variants"][0]["size_label"], "8–10 years")
 
+    def test_clothing_sizes_can_be_saved_and_found_in_manager(self):
+        options = self.client.get("/api/products/admin/products/catalogue-options/").json()["data"]
+        self.assertIn({"value": "xl", "label": "Extra Large (XL)"}, options["sizes"])
+        product_id = self.create_product(variants=[
+            {"size": "xl", "color": "blue", "stock": 2, "is_active": True},
+        ])
+        product = self.client.get(f"/api/products/admin/products/{product_id}/").json()["data"]
+        self.assertEqual(product["variants"][0]["size_label"], "Extra Large (XL)")
+        results = self.client.get("/api/products/admin/products/", {"size": "xl"}).json()["data"]["results"]
+        self.assertIn(product_id, [item["id"] for item in results])
+
     @override_settings(
         STORAGES={"default": {"BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage"}},
         FILE_UPLOAD_MAX_MEMORY_SIZE=1,

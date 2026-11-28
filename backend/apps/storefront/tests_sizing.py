@@ -22,6 +22,17 @@ class SizeShoppingTests(TestCase):
         empty = self.client.get(reverse('storefront:product_list'), {'size': '3y'})
         self.assertEqual(list(empty.context['products']), [])
 
+    def test_clothing_size_variants_show_and_filter_by_available_stock(self):
+        self.variant.size = "xl"
+        self.variant.save(update_fields=["size"])
+        response = self.client.get(reverse("storefront:product_detail", args=[self.product.slug]))
+        self.assertContains(response, "Extra Large (XL)")
+        listing = self.client.get(reverse("storefront:product_list"), {"size": "xl"})
+        self.assertIn(self.product, listing.context["products"])
+        VariantInventory.objects.filter(variant=self.variant).update(reserved=3)
+        listing = self.client.get(reverse("storefront:product_list"), {"size": "xl"})
+        self.assertNotIn(self.product, listing.context["products"])
+
     def test_shop_age_range_matches_range_and_existing_exact_year_sizes(self):
         self.variant.size = '9y'
         self.variant.save(update_fields=['size'])

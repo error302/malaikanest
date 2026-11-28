@@ -350,7 +350,15 @@ class Product(BaseModel):
         ("8-10y", "8–10 years"),
         ("10-12y", "10–12 years"),
     ]
-    SHOP_SIZE_CHOICES = [*AGE_SIZE_CHOICES, ("one-size", "One size")]
+    CLOTHING_SIZE_CHOICES = [
+        ("xs", "Extra Small (XS)"),
+        ("s", "Small (S)"),
+        ("m", "Medium (M)"),
+        ("l", "Large (L)"),
+        ("xl", "Extra Large (XL)"),
+        ("xxl", "Double Extra Large (XXL)"),
+    ]
+    SHOP_SIZE_CHOICES = [*AGE_SIZE_CHOICES, *CLOTHING_SIZE_CHOICES, ("one-size", "One size")]
     SHOP_AGE_RANGE_CHOICES = [(label.replace("–", "-"), label) for _, label in AGE_SIZE_CHOICES]
     AGE_RANGE_CHOICES = [
         *SHOP_AGE_RANGE_CHOICES,
