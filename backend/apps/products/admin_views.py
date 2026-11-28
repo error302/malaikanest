@@ -3,6 +3,8 @@ from rest_framework.authentication import SessionAuthentication
 from apps.accounts.authentication import CookieJWTAuthentication
 
 from django.db.models import Q
+from django.db.models import Count, Subquery, OuterRef, IntegerField
+from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from django.core.management import call_command
@@ -158,6 +160,18 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        # Optimize total_orders count to avoid N+1 queries
+        order_count_subquery = Order.objects.filter(
+            user=OuterRef('pk')
+        ).order_by().values('user').annotate(
+            count=Count('pk')
+        ).values('count')[:1]
+
+        queryset = queryset.annotate(
+            total_orders_count=Coalesce(Subquery(order_count_subquery), 0, output_field=IntegerField())
+        )
+
         search = self.request.query_params.get("search")
 
         if search:
